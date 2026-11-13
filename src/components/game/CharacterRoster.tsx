@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 import { ArtImage } from "@/components/ui/ArtImage";
 import { PixelButton } from "@/components/ui/PixelButton";
-import { getCharacterArt } from "@/assets/manifest";
+import { artFor } from "@/lib/character/art";
 import { useI18n } from "@/i18n";
 import type { Character } from "@/lib/types";
 
@@ -33,7 +33,7 @@ export function CharacterRoster({
                 className="px-frame px-focus flex w-44 items-center gap-2 text-left lg:w-full"
                 style={{ "--frame": `var(--frame-${active ? "gold-card" : "card"})` } as CSSProperties}
               >
-                <ArtImage art={getCharacterArt(c.portrait).sprite} alt="" showTag={false} className="w-12 shrink-0 bg-well" />
+                <ArtImage art={artFor(c).sprite} alt="" showTag={false} className="w-12 shrink-0 bg-well" />
                 <span className="min-w-0">
                   <span className={`block truncate font-head text-base font-bold ${active ? "text-label" : "text-ink"}`}>{c.name.trim() || t("common.unnamed")}</span>
                   <span className="block truncate text-sm text-ink-soft">{c.age.trim() ? t("common.ageValue", { age: c.age.trim() }) : t("common.ageUnknown")}</span>

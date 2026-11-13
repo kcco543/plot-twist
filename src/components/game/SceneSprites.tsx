@@ -1,6 +1,6 @@
 "use client";
 
-import { getCharacterArt } from "@/assets/manifest";
+import { artFor } from "@/lib/character/art";
 import { useI18n } from "@/i18n";
 import type { Character } from "@/lib/types";
 
@@ -19,7 +19,7 @@ export function SceneSprites({ characters, selectedId, onSelect }: { characters:
     <>
       {shown.map((c, i) => {
         const active = c.id === selectedId;
-        const art = getCharacterArt(c.portrait).sprite;
+        const art = artFor(c).sprite;
         return (
           <button
             key={c.id}

@@ -9,6 +9,9 @@ import type { ArtAsset } from "@/assets/manifest";
  * stays square and sharp. Children are positioned in art-pixel coordinates.
  * On screens narrower than the art, it falls back to a uniform fractional scale
  * (still no stretching).
+ * `fit="device"` (Play Mode) scales in whole DEVICE pixels instead, so on a
+ * retina screen it can use 2.5×, 3.5× … and fill more of the space while every
+ * art pixel stays perfectly square. `maxHeight` keeps the stage on screen.
  */
 export function PixelStage({
   art,
@@ -18,6 +21,8 @@ export function PixelStage({
   tag,
   overlay,
   className = "",
+  fit = "integer",
+  maxHeight,
 }: {
   art: ArtAsset;
   label: string;
@@ -28,6 +33,9 @@ export function PixelStage({
   /** Unscaled layer on top (readable UI text). Position children with percentages. */
   overlay?: ReactNode;
   className?: string;
+  fit?: "integer" | "device";
+  /** Upper bound for the stage height in CSS px. */
+  maxHeight?: number;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
@@ -37,12 +45,14 @@ export function PixelStage({
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => {
       const w = entry.contentRect.width;
-      const s = w / art.width;
-      setScale(s >= 1 ? Math.floor(s) : s);
+      let s = w / art.width;
+      if (maxHeight) s = Math.min(s, Math.max(1, maxHeight / art.height));
+      const dpr = fit === "device" ? Math.max(1, Math.round(window.devicePixelRatio || 1)) : 1;
+      setScale(s >= 1 ? Math.floor(s * dpr) / dpr : s);
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [art.width]);
+  }, [art.width, art.height, fit, maxHeight]);
 
   const w = art.width * scale;
   const h = art.height * scale;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CharacterInfoPanel } from "@/components/game/CharacterInfoPanel";
 import { ControlPad } from "@/components/game/ControlPad";
@@ -14,18 +14,21 @@ import { Panel } from "@/components/ui/Panel";
 import { PixelButton, PixelLink } from "@/components/ui/PixelButton";
 import { PixelIcon } from "@/components/ui/PixelIcon";
 import { environmentArt } from "@/assets/manifest";
-import { gameActions, useSave } from "@/lib/gameStore";
+import { AiRequestError, briefFor, memoryBrief, requestTurn, useAiStatus } from "@/lib/ai/client";
+import { gameActions, getSave, useSave } from "@/lib/gameStore";
 import { useHydrated } from "@/lib/persistentStore";
-import { demoCast, introLine, lineFor, renderLine, type Action } from "@/lib/scenes";
+import { demoCast, introLine, renderLine } from "@/lib/scenes";
 import { TEXT_SPEED_MS, useSettings } from "@/lib/settingsStore";
+import { neutralState, plan, type Action, type Beat } from "@/lib/story/engine";
+import { beatToLines } from "@/lib/story/localWriter";
 import { getWorld } from "@/lib/worlds";
-import type { StoryLine } from "@/lib/types";
+import type { Character, StoryLine } from "@/lib/types";
 import { useI18n } from "@/i18n";
 
 const isTyping = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
 
 export default function PlayPage() {
-  const { t, locale } = useI18n();
+  const { t, tx, locale } = useI18n();
   const router = useRouter();
   const hydrated = useHydrated();
   const save = useSave();
@@ -39,24 +42,106 @@ export default function PlayPage() {
   const selectedIndex = Math.max(0, cast.findIndex((c) => c.id === pickedId));
   const selected = cast[selectedIndex] ?? null;
 
-  // The current line is stored as data, so switching language re-renders it.
-  const [line, setLine] = useState<StoryLine | null>(null);
-  const shownLine = renderLine(line ?? introLine(save.environment.description, envType), locale);
-  const turn = useRef(0);
+  // The current beat's lines are stored as data, so switching language re-renders built-in lines.
+  const [queue, setQueue] = useState<StoryLine[]>([]);
+  const [lineIndex, setLineIndex] = useState(0);
+  const current = queue[lineIndex] ?? null;
+  const shownLine = renderLine(current ?? introLine(save.environment.description, envType), locale);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const ai = useAiStatus();
+  const useAi = Boolean(ai?.text && settings.aiStory);
 
   const [logOpen, setLogOpen] = useState(false);
   const [pauseOpen, setPauseOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const anyModal = logOpen || pauseOpen || settingsOpen;
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
+  const anyModal = logOpen || pauseOpen || settingsOpen || sheetOpen;
+
+  // Keep the stage + dialogue on screen: the stage may use the window height minus the HUD and dialogue.
+  const [stageMax, setStageMax] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    const update = () => setStageMax(window.innerWidth >= 1024 ? Math.max(300, window.innerHeight - 250) : undefined);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  /** Ask the AI to word a beat. Returns null if it can't, so the built-in lines are used instead. */
+  const writeWithAi = useCallback(
+    async (beat: Beat, actor: Character, other: Character | null): Promise<StoryLine[] | null> => {
+      if (!world) return null;
+      const save = getSave();
+      const recentLines = save.log.slice(-8).map((e) => renderLine(e, locale).text).filter(Boolean);
+      const delta = beat.bondBefore && beat.bondAfter ? beat.bondAfter.affinity - beat.bondBefore.affinity : null;
+      try {
+        const out = await requestTurn({
+          locale,
+          world: world.id,
+          place: envType,
+          placeDescription: save.environment.description.slice(0, 1200),
+          beat: {
+            kind: beat.kind,
+            type: beat.type,
+            reaction: beat.reaction,
+            approach: beat.approach,
+            topic: beat.topic,
+            outcome: beat.outcome,
+            moodBefore: beat.moodBefore,
+            moodAfter: beat.moodAfter,
+            bondChange: delta === null ? null : delta >= 5 ? "closer" : delta <= -5 ? "further" : "same",
+            recalled: beat.recalled ? memoryBrief(beat.recalled) : null,
+          },
+          actor: briefFor(actor),
+          other: other ? briefFor(other) : null,
+          bond: beat.bondAfter,
+          memories: (save.story.characters[actor.id]?.memories ?? []).slice(-6).map(memoryBrief),
+          recentLines: recentLines.map((l) => l.slice(0, 400)),
+        });
+        if (beat.memoryId && out.memoryNote) gameActions.setMemoryNote(actor.id, beat.memoryId, out.memoryNote);
+        const who = (id: string): StoryLine["speaker"] => {
+          const c = id === actor.id ? actor : id === other?.id ? other : null;
+          return c ? { kind: "character", name: c.name.trim(), id: c.id } : { kind: "narrator" };
+        };
+        return out.lines.map((l) => ({ speaker: who(l.speaker), key: "custom", params: { text: l.text }, source: "ai" }));
+      } catch (e) {
+        setNote(t("play.aiFallback", { reason: t(`ai.errors.${e instanceof AiRequestError ? e.code : "failed"}` as "ai.errors.failed") }));
+        return null;
+      }
+    },
+    [world, envType, locale, t],
+  );
 
   const act = useCallback(
-    (action: Action) => {
-      if (!selected) return;
-      const next = lineFor(action, selected, turn.current++, envType);
-      setLine(next);
-      gameActions.appendLog(next);
+    async (action: Action) => {
+      if (!selected || !world || busy) return;
+      setNote(null);
+      // 1. Game rules decide what happens and update state (mood, bonds, memories).
+      const { beat, story } = plan({
+        story: getSave().story,
+        cast,
+        actorId: selected.id,
+        action,
+        world: world.id,
+        place: envType,
+        frequency: settings.eventFrequency,
+      });
+      gameActions.setStory(story);
+      const other = beat.otherId ? (cast.find((c) => c.id === beat.otherId) ?? null) : null;
+      // 2. A writer puts it into words: the AI if available, otherwise built-in templates.
+      let lines: StoryLine[] | null = null;
+      if (useAi) {
+        setBusy(true);
+        lines = await writeWithAi(beat, selected, other);
+        setBusy(false);
+      }
+      lines ??= beatToLines(beat, cast, envType, world.id);
+      setQueue(lines);
+      setLineIndex(0);
+      gameActions.appendLines(lines);
     },
-    [selected, envType],
+    [selected, world, busy, cast, envType, settings.eventFrequency, useAi, writeWithAi],
   );
   const cycle = useCallback(
     (dir: 1 | -1) => {
@@ -80,6 +165,7 @@ export default function PlayPage() {
         z: () => act("talk"),
         x: () => act("observe"),
         c: () => act("wait"),
+        v: () => act("twist"),
         l: () => setLogOpen(true),
         escape: () => setPauseOpen(true),
         p: () => setPauseOpen(true),
@@ -121,16 +207,19 @@ export default function PlayPage() {
   const selectedName = selected ? selected.name.trim() || t("common.unnamed") : null;
 
   return (
-    <main className="gutter mx-auto w-full max-w-6xl flex-1 pt-4 sm:pt-6" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
+    <main className="gutter mx-auto w-full max-w-[1600px] flex-1 pt-3 sm:pt-4" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
       {/* HUD */}
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-label text-[10px] uppercase" style={{ color: world.accent }}>
             {worldName}
           </p>
           <h1 className="truncate font-head text-xl font-bold sm:text-2xl">{envName}</h1>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="hidden font-label text-[10px] uppercase text-ink-mute md:inline" title={t("settings.aiStoryDesc")}>
+            {useAi ? t("play.writer.ai") : t("play.writer.builtin")}
+          </span>
           <PixelButton size="sm" variant="magic" icon="book" onClick={() => setLogOpen(true)} aria-label={t("play.storyLog")}>
             <span className="hidden min-[420px]:inline">{t("play.storyLog")}</span>
             <span className="bg-lavender-hi px-1 text-[11px] text-label tabular-nums">{save.log.length}</span>
@@ -148,23 +237,54 @@ export default function PlayPage() {
         </p>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="flex min-w-0 flex-col gap-4">
+      {/* Desktop: viewport ≈78% / character sidebar ≈21%. Phones: viewport first, character sheet in a bottom drawer. */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(14.5rem,21%)] xl:gap-5">
+        <div className="flex min-w-0 flex-col gap-3">
           <PixelStage
             art={environmentArt[world.id][envType]}
             label={t("play.viewportAlt", { place: envName, world: worldName })}
             frame={world.frame}
             tag={t("common.placeholder")}
+            fit="device"
+            maxHeight={stageMax}
             overlay={<SceneLabels characters={cast} selectedId={selected?.id ?? null} />}
           >
             <SceneSprites characters={cast} selectedId={selected?.id ?? null} onSelect={setPickedId} />
           </PixelStage>
-          <ControlPad name={selectedName} onPrev={() => cycle(-1)} onNext={() => cycle(1)} onInteract={() => act("talk")} disabled={cast.length === 0} />
-          <DialogueBox speaker={shownLine.speaker} text={shownLine.text} msPerChar={TEXT_SPEED_MS[settings.textSpeed]} targetName={selectedName} onAction={act} />
+          <ControlPad
+            name={selectedName}
+            mood={selected ? tx(`moods.${(save.story.characters[selected.id] ?? neutralState()).mood}`) : null}
+            onPrev={() => cycle(-1)}
+            onNext={() => cycle(1)}
+            onInteract={() => act("talk")}
+            onInfo={() => setSheetOpen(true)}
+            disabled={cast.length === 0 || busy}
+          />
+          <DialogueBox
+            speaker={busy ? t("scene.narrator") : shownLine.speaker}
+            text={busy ? "" : shownLine.text}
+            msPerChar={TEXT_SPEED_MS[settings.textSpeed]}
+            targetName={selectedName}
+            onAction={act}
+            index={lineIndex}
+            total={Math.max(1, queue.length)}
+            onNext={() => setLineIndex((i) => Math.min(queue.length - 1, i + 1))}
+            busy={busy}
+            note={note}
+          />
           <p className="hidden font-label text-[10px] uppercase text-ink-mute lg:block">{t("play.keyboardHint")}</p>
         </div>
-        <CharacterInfoPanel character={selected} isDemo={isDemo} />
+        <div className="hidden min-w-0 lg:block">
+          <div className="lg:sticky lg:top-20">
+            <CharacterInfoPanel character={selected} cast={cast} story={save.story} isDemo={isDemo} />
+          </div>
+        </div>
       </div>
+
+      {/* Phone / tablet character sheet */}
+      <Modal open={sheetOpen} onClose={() => setSheetOpen(false)} title={t("play.character")} closeLabel={t("play.sidebar.close")}>
+        <CharacterInfoPanel character={selected} cast={cast} story={save.story} isDemo={isDemo} framed={false} />
+      </Modal>
 
       {/* Story log */}
       <Modal
@@ -194,6 +314,7 @@ export default function PlayPage() {
                 <li key={e.id} className="bg-well px-3 py-2 shadow-[inset_4px_0_0_var(--color-lavender)]">
                   <p className="font-label text-[10px] uppercase text-rose">
                     {r.speaker} · {new Date(e.at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
+                    {"source" in e && e.source === "ai" && <span className="ml-1 bg-lavender-hi px-1 text-label">AI</span>}
                   </p>
                   <p className="text-lg leading-snug">{r.text}</p>
                 </li>
@@ -204,7 +325,12 @@ export default function PlayPage() {
       </Modal>
 
       {/* Pause menu */}
-      <Modal open={pauseOpen} onClose={() => setPauseOpen(false)} title={t("play.paused")} closeLabel={t("common.close")} size="sm">
+      <Modal
+        open={pauseOpen}
+        onClose={() => {
+          setPauseOpen(false);
+          setResetDone(false);
+        }} title={t("play.paused")} closeLabel={t("common.close")} size="sm">
         <nav className="flex flex-col gap-3" aria-label={t("play.pauseMenu")}>
           <PixelButton variant="primary" icon="play" onClick={() => setPauseOpen(false)} data-autofocus>
             {t("play.resume")}
@@ -225,6 +351,22 @@ export default function PlayPage() {
           <PixelButton variant="secondary" icon="map" onClick={() => router.push("/builder")}>
             {t("play.editSetting")}
           </PixelButton>
+          <PixelButton
+            variant="ghost"
+            icon="undo"
+            onClick={() => {
+              gameActions.resetStory();
+              setQueue([]);
+              setResetDone(true);
+            }}
+          >
+            {t("play.resetStory")}
+          </PixelButton>
+          {resetDone && (
+            <p role="status" className="text-center font-label text-xs uppercase text-mint-deep">
+              {t("play.resetStoryDone")}
+            </p>
+          )}
           <PixelButton variant="ghost" icon="home" onClick={() => router.push("/")}>
             {t("play.quit")}
           </PixelButton>

@@ -20,14 +20,25 @@
     "notWritten": "Not written yet",
     "autosaved": "Autosaved",
     "settings": "Settings",
-    "title": "Title"
+    "title": "Title",
+    "someone": "someone",
+    "on": "On",
+    "off": "Off",
+    "new": "New",
+    "retry": "Try again",
+    "save": "Save",
+    "undo": "Undo",
+    "remove": "Remove"
   },
   "language": {
     "label": "Language",
     "switchTo": "Switch language",
     "en": "English",
     "zh-CN": "简体中文",
-    "short": { "en": "EN", "zh-CN": "中" },
+    "short": {
+      "en": "EN",
+      "zh-CN": "中"
+    },
     "note": "Only the interface changes. Your characters and stories stay in the language you wrote them in."
   },
   "title": {
@@ -38,7 +49,7 @@
     "load": "Load Game",
     "settings": "Settings",
     "pressStart": "Press start",
-    "version": "v0.3 · prototype",
+    "version": "v0.4 · prototype",
     "menu": "Main menu"
   },
   "nav": {
@@ -66,22 +77,38 @@
       "western-fantasy": {
         "name": "Western Fantasy",
         "blurb": "Mossy villages, crooked castles and prophecies nobody reads to the end.",
-        "tags": ["Quests", "Magic", "Kingdoms"]
+        "tags": [
+          "Quests",
+          "Magic",
+          "Kingdoms"
+        ]
       },
       "modern": {
         "name": "Modern",
         "blurb": "Cafés, late trains and group chats where secrets hide in plain sight.",
-        "tags": ["City", "Slice of life", "Drama"]
+        "tags": [
+          "City",
+          "Slice of life",
+          "Drama"
+        ]
       },
       "ancient-china": {
         "name": "Ancient China",
         "blurb": "Courtyards, roadside inns and wandering swordsmen with debts of honor.",
-        "tags": ["Wuxia", "Court", "Legend"]
+        "tags": [
+          "Wuxia",
+          "Court",
+          "Legend"
+        ]
       },
       "otherworld": {
         "name": "Otherworld",
         "blurb": "Floating islands, glowing plants and rules of physics that change their minds.",
-        "tags": ["Surreal", "Cosmic", "Strange"]
+        "tags": [
+          "Surreal",
+          "Cosmic",
+          "Strange"
+        ]
       }
     }
   },
@@ -102,28 +129,96 @@
     "deleteTitle": "Delete character?",
     "deleteBody": "{name} will be gone for good. This can't be undone.",
     "thisCharacter": "This character",
-    "sections": { "identity": "Identity", "inner": "Inner life", "ties": "Ties & rules" },
+    "sections": {
+      "identity": "Identity",
+      "inner": "Inner life",
+      "ties": "Ties, rules & canon",
+      "voice": "Values & voice"
+    },
     "portrait": {
       "title": "Portrait",
       "alt": "Portrait of {name}",
       "prev": "Previous portrait",
       "next": "Next portrait",
       "count": "{n} / {total}",
-      "note": "Placeholder portraits. Your own art, a pixel editor or AI portraits can plug into this frame later."
-    }
+      "note": "Placeholder portraits. Your own art, a pixel editor or AI portraits can plug into this frame later.",
+      "custom": "Custom art",
+      "makeSprite": "Make a pixel sprite"
+    },
+    "tabsLabel": "Character sections",
+    "tabs": {
+      "profile": "Written profile",
+      "sliders": "Personality",
+      "analysis": "Behavior",
+      "look": "Look & sprite"
+    },
+    "methodsNote": "Describe your character in words, with sliders, or both. The two are saved separately and sliders never rewrite what you wrote.",
+    "toReview": "{count} to review"
   },
   "character": {
     "fields": {
-      "name": { "label": "Name", "placeholder": "e.g. Juniper Vale" },
-      "age": { "label": "Age", "placeholder": "e.g. 19, ancient, unknown" },
-      "appearance": { "label": "Appearance", "placeholder": "What do people notice first?" },
-      "personality": { "label": "Personality", "placeholder": "Curious, impatient, kind in a loud way..." },
-      "background": { "label": "Background", "placeholder": "Where do they come from? What happened?" },
-      "goals": { "label": "Goals", "placeholder": "What do they want more than anything?" },
-      "fears": { "label": "Fears", "placeholder": "What would they never admit to being scared of?" },
-      "habits": { "label": "Habits", "placeholder": "Little things they do without thinking." },
-      "relationships": { "label": "Relationships", "placeholder": "Friends, rivals, family, unfinished business..." },
-      "rules": { "label": "Character rules & boundaries", "placeholder": "Things this character would NEVER do, or topics the story should avoid." }
+      "name": {
+        "label": "Name",
+        "placeholder": "e.g. Juniper Vale"
+      },
+      "age": {
+        "label": "Age",
+        "placeholder": "e.g. 19, ancient, unknown"
+      },
+      "appearance": {
+        "label": "Appearance",
+        "placeholder": "What do people notice first?"
+      },
+      "personality": {
+        "label": "Personality",
+        "placeholder": "Curious, impatient, kind in a loud way..."
+      },
+      "background": {
+        "label": "Background",
+        "placeholder": "Where do they come from? What happened?"
+      },
+      "goals": {
+        "label": "Goals",
+        "placeholder": "What do they want more than anything?"
+      },
+      "fears": {
+        "label": "Fears",
+        "placeholder": "What would they never admit to being scared of?"
+      },
+      "habits": {
+        "label": "Habits & preferences",
+        "placeholder": "Little things they do without thinking. Favorite foods, pet peeves..."
+      },
+      "relationships": {
+        "label": "Relationships",
+        "placeholder": "Friends, rivals, family, unfinished business..."
+      },
+      "rules": {
+        "label": "Character rules & boundaries",
+        "placeholder": "Things this character would NEVER do, or topics the story should avoid."
+      },
+      "identity": {
+        "label": "Identity",
+        "placeholder": "Role, job, title, species... e.g. apprentice cartographer"
+      },
+      "values": {
+        "label": "Values & beliefs",
+        "placeholder": "What do they believe is right? What won't they compromise on?"
+      },
+      "speakingStyle": {
+        "label": "Speaking style",
+        "placeholder": "Short sentences? Big words? A catchphrase? Never swears?"
+      },
+      "canon": {
+        "label": "Must stay consistent",
+        "placeholder": "Key facts the story must never contradict. One per line."
+      }
+    },
+    "lock": {
+      "locked": "Locked",
+      "lockField": "Lock {field}",
+      "unlockField": "Unlock {field}",
+      "hint": "Locked details are canon. The AI must keep them exactly as written."
     }
   },
   "builder": {
@@ -145,11 +240,26 @@
     "play": "Play"
   },
   "environments": {
-    "interior": { "name": "Indoor Room", "hint": "Bedrooms, taverns, cafés, inns" },
-    "street": { "name": "Town & Street", "hint": "Markets, alleys, main roads" },
-    "wilderness": { "name": "Wilderness", "hint": "Forests, fields, riverbanks" },
-    "ruins": { "name": "Ruins & Dungeon", "hint": "Temples, caves, forgotten places" },
-    "dreamscape": { "name": "Dreamscape", "hint": "Memories, visions, impossible rooms" }
+    "interior": {
+      "name": "Indoor Room",
+      "hint": "Bedrooms, taverns, cafés, inns"
+    },
+    "street": {
+      "name": "Town & Street",
+      "hint": "Markets, alleys, main roads"
+    },
+    "wilderness": {
+      "name": "Wilderness",
+      "hint": "Forests, fields, riverbanks"
+    },
+    "ruins": {
+      "name": "Ruins & Dungeon",
+      "hint": "Temples, caves, forgotten places"
+    },
+    "dreamscape": {
+      "name": "Dreamscape",
+      "hint": "Memories, visions, impossible rooms"
+    }
   },
   "play": {
     "noWorldTitle": "No world chosen",
@@ -165,13 +275,18 @@
     "selectSomeone": "Select someone",
     "showFullLine": "Show full line",
     "dialogue": "Dialogue",
-    "actions": { "talk": "Talk", "observe": "Observe", "wait": "Wait" },
+    "actions": {
+      "talk": "Talk",
+      "observe": "Observe",
+      "wait": "Wait",
+      "twist": "Twist!"
+    },
     "character": "Character",
     "selectInScene": "Select a character in the scene.",
     "demoCharacter": "Demo character.",
     "createOwn": "Create your own cast",
     "editInStudio": "Edit in studio",
-    "keyboardHint": "Keys: ← → choose · Z talk · X observe · C wait · L log · Esc pause",
+    "keyboardHint": "Keys: ← → choose · Z talk · X observe · C wait · V twist · L log · Esc pause",
     "controls": "Game controls",
     "prevCharacter": "Previous character",
     "nextCharacter": "Next character",
@@ -185,7 +300,36 @@
     "editCast": "Edit cast",
     "editSetting": "Edit setting",
     "quit": "Quit to title",
-    "autosaveNote": "Progress saves automatically."
+    "autosaveNote": "Progress saves automatically.",
+    "twistHint": "Trigger a personality-driven event",
+    "writing": "Writing",
+    "aiFallback": "AI writing didn't work ({reason}), so a built-in line was used.",
+    "writer": {
+      "ai": "AI writing",
+      "builtin": "Built-in writing"
+    },
+    "nextLine": "Next line",
+    "lineCount": "{n} / {total}",
+    "resetStory": "Reset moods, bonds & memories",
+    "resetStoryDone": "Story state reset.",
+    "sidebar": {
+      "tabs": {
+        "about": "About",
+        "state": "Mood & bonds",
+        "memories": "Memories"
+      },
+      "mood": "Mood",
+      "bonds": "Bonds",
+      "affinity": "Warmth",
+      "trust": "Trust",
+      "noBonds": "No bonds yet. Events between characters build them.",
+      "noMemories": "Nothing memorable yet.",
+      "behaviorApproved": "Behavior profile approved",
+      "behaviorNone": "Playing from sliders + text",
+      "open": "Character info",
+      "close": "Close character info",
+      "more": "More about {name}"
+    }
   },
   "scene": {
     "narrator": "Narrator",
@@ -196,7 +340,8 @@
       "goals": "what they want",
       "fears": "what scares them",
       "relationships": "the people in their life",
-      "background": "where they come from"
+      "background": "where they come from",
+      "values": "what they believe in"
     },
     "observeEmpty": "You look at {name}. They're still a sketch.",
     "observe": "You watch {name}. {detail}",
@@ -246,7 +391,12 @@
   "settings": {
     "title": "Settings",
     "textSpeed": "Text speed",
-    "speeds": { "slow": "Slow", "normal": "Normal", "fast": "Fast", "instant": "Instant" },
+    "speeds": {
+      "slow": "Slow",
+      "normal": "Normal",
+      "fast": "Fast",
+      "instant": "Instant"
+    },
     "crt": "CRT scanlines",
     "crtDesc": "Old-TV lines over the whole screen.",
     "motion": "Reduce motion",
@@ -254,12 +404,638 @@
     "on": "On",
     "off": "Off",
     "offlineTitle": "Offline play",
-    "offlineReady": "Everything in this version works offline after your first visit: saves live in this browser.",
-    "offlineFuture": "Future AI features (story events, map and portrait generation) will need an internet connection.",
+    "offlineReady": "Everything except the AI features works offline after your first visit. Saves live in this browser.",
+    "offlineFuture": "AI analysis, AI dialogue and pixel generation need an internet connection and API keys on the server.",
     "danger": "Danger zone",
     "dangerDesc": "Deletes your world, characters and story log from this browser.",
     "erase": "Erase save data",
     "eraseConfirm": "Yes, erase all",
-    "erased": "Save data erased."
+    "erased": "Save data erased.",
+    "eventFrequency": "Event frequency",
+    "eventFrequencyDesc": "How often waiting turns into a plot twist.",
+    "frequencies": {
+      "calm": "Calm",
+      "normal": "Normal",
+      "chaotic": "Chaotic"
+    },
+    "aiStory": "AI story writing",
+    "aiStoryDesc": "Let the AI write dialogue when it's set up. Off means built-in lines only.",
+    "aiTitle": "AI services",
+    "aiText": "Personality analysis & dialogue",
+    "aiImage": "Pixel character generation",
+    "aiReady": "Ready",
+    "aiMissing": "Not configured",
+    "aiChecking": "Checking"
+  },
+  "traits": {
+    "extroversion": {
+      "low": "Introverted",
+      "high": "Extroverted"
+    },
+    "impulsiveness": {
+      "low": "Cautious",
+      "high": "Impulsive"
+    },
+    "expressiveness": {
+      "low": "Reserved",
+      "high": "Expressive"
+    },
+    "trust": {
+      "low": "Distrustful",
+      "high": "Trusting"
+    },
+    "idealism": {
+      "low": "Pragmatic",
+      "high": "Idealistic"
+    },
+    "dependence": {
+      "low": "Independent",
+      "high": "Dependent"
+    },
+    "confrontation": {
+      "low": "Conflict-avoidant",
+      "high": "Confrontational"
+    },
+    "playfulness": {
+      "low": "Serious",
+      "high": "Playful"
+    },
+    "empathy": {
+      "low": "Self-centered",
+      "high": "Empathetic"
+    },
+    "rebelliousness": {
+      "low": "Rule-following",
+      "high": "Rebellious"
+    }
+  },
+  "sliders": {
+    "title": "Personality sliders",
+    "intro": "Each slider is a tendency, not a rule. Leave any of them unset and the game reads your written profile instead.",
+    "notSet": "Not set",
+    "set": "Set",
+    "clear": "Clear",
+    "clearAll": "Clear all",
+    "balanced": "Balanced",
+    "leans": "Leans {pole}",
+    "strongly": "Strongly {pole}",
+    "valueText": "{value} of 100: {lean}",
+    "setCount": "{count} of {total} set"
+  },
+  "conflicts": {
+    "title": "Review differences",
+    "intro": "Your written profile and the sliders seem to disagree here. Both can be true at once, so you decide. Nothing changes until you pick.",
+    "item": "You wrote “{words}”, but the {trait} slider is at {value} ({lean}).",
+    "keepBoth": "Keep both",
+    "keepBothHint": "It's nuance. The AI will treat it as a situational difference.",
+    "matchSlider": "Set slider to {value}",
+    "editText": "Edit my text",
+    "none": "No differences between your text and the sliders.",
+    "reviewed": "{count} kept as nuance",
+    "showReviewed": "Review them again"
+  },
+  "reactions": {
+    "confront": "Confront",
+    "deflect": "Deflect",
+    "withdraw": "Withdraw",
+    "comfort": "Comfort",
+    "joke": "Joke",
+    "investigate": "Investigate",
+    "act": "Act fast",
+    "cooperate": "Cooperate"
+  },
+  "approaches": {
+    "direct": "Direct",
+    "guarded": "Guarded",
+    "warm": "Warm",
+    "teasing": "Teasing",
+    "probing": "Probing",
+    "rambling": "Rambling",
+    "formal": "Formal",
+    "curt": "Curt"
+  },
+  "moods": {
+    "calm": "calm",
+    "happy": "cheerful",
+    "anxious": "uneasy",
+    "irritated": "irritated",
+    "sad": "down",
+    "excited": "fired up",
+    "suspicious": "suspicious",
+    "embarrassed": "embarrassed"
+  },
+  "events": {
+    "confide": "Confide",
+    "argument": "Argument",
+    "misunderstanding": "Misunderstanding",
+    "kindness": "Kindness",
+    "tease": "Tease",
+    "askHelp": "Asking for help",
+    "rivalry": "Rivalry",
+    "rumor": "Rumor",
+    "temptation": "Temptation",
+    "goalStep": "Goal",
+    "fearTrigger": "Fear",
+    "memoryEcho": "Memory",
+    "worldQuirk": "World quirk",
+    "discovery": "Discovery",
+    "quietMoment": "Quiet moment"
+  },
+  "memories": {
+    "confide": "the time {with} opened up to them",
+    "argument": "the argument with {with}",
+    "misunderstanding": "the misunderstanding with {with}",
+    "kindness": "the kindness {with} showed them",
+    "tease": "being teased by {with}",
+    "askHelp": "asking {with} for help",
+    "rivalry": "the rivalry with {with}",
+    "rumor": "the rumor about {with}",
+    "temptation": "the day they almost broke a rule",
+    "goalStep": "a step toward their goal",
+    "fearTrigger": "the moment their fear came close",
+    "memoryEcho": "an old memory",
+    "worldQuirk": "a very strange day",
+    "discovery": "a strange discovery",
+    "quietMoment": "a quiet moment",
+    "generic": "something that happened before"
+  },
+  "analysis": {
+    "title": "Behavior analysis",
+    "intro": "The analysis reads your written profile, sliders, relationships, rules, memories and current mood, and turns them into a behavioral profile. You review it before it affects the story.",
+    "run": "Run AI analysis",
+    "rerun": "Run AI analysis again",
+    "runLocal": "Use built-in analysis",
+    "running": "Analyzing",
+    "unavailable": "AI analysis unavailable until configured",
+    "unavailableHint": "Add ANTHROPIC_API_KEY to .env.local and restart the app. The built-in analysis works offline in the meantime.",
+    "needInput": "Write something in the profile or set a slider first.",
+    "pending": "Waiting for your approval",
+    "approved": "Approved · used in play",
+    "approve": "Approve",
+    "discard": "Discard",
+    "stale": "You've edited this character since this analysis. Run it again to include the changes.",
+    "notUsedYet": "Until you approve an analysis, play uses your sliders and written profile directly.",
+    "noneYet": "No analysis yet.",
+    "sourceAi": "AI analysis",
+    "sourceLocal": "Built-in analysis",
+    "approvedOn": "Approved {date}",
+    "sections": {
+      "summary": "Summary",
+      "traits": "Core traits",
+      "speech": "Speech",
+      "emotions": "Emotional patterns",
+      "decision": "Decisions",
+      "social": "With others",
+      "motivations": "Motivations",
+      "boundaries": "Boundaries",
+      "approaches": "Dialogue approaches",
+      "tendencies": "Reaction tendencies",
+      "conflicts": "Differences noticed",
+      "hooks": "Story hooks"
+    },
+    "length": {
+      "terse": "terse",
+      "measured": "measured",
+      "chatty": "chatty"
+    },
+    "sample": "Sample line",
+    "tics": "Habits",
+    "avoids": "Avoids",
+    "but": "But: {text}",
+    "source": {
+      "written": "from text",
+      "sliders": "from sliders",
+      "both": "text + sliders"
+    },
+    "local": {
+      "sliderEvidence": "Slider set to {value}.",
+      "textEvidence": "From the written profile.",
+      "listSep": ", ",
+      "summary": "{name} leans {traits}.",
+      "summaryNeutral": "{name} is balanced on every slider so far, so the written profile carries the most weight.",
+      "summaryWritten": "In your words: “{text}”",
+      "register": {
+        "terse": "Short and to the point.",
+        "measured": "Measured; says what's needed.",
+        "chatty": "Talkative; thinks out loud."
+      },
+      "decision": {
+        "fast": "Decides quickly and adjusts later.",
+        "slow": "Weighs the options before committing.",
+        "mixed": "Careful with big choices, quick with small ones."
+      },
+      "social": {
+        "out": "Seeks people out and fills silences.",
+        "in": "Keeps a small circle and needs time alone.",
+        "mixed": "Comfortable in a group, but picks their moments."
+      },
+      "triggers": {
+        "confront": "When challenged or treated unfairly",
+        "deflect": "When things get too personal",
+        "withdraw": "When overwhelmed",
+        "comfort": "When someone else is hurting",
+        "joke": "When the mood gets tense",
+        "investigate": "When something doesn't add up",
+        "act": "When there's a chance to do something",
+        "cooperate": "When a problem is too big for one person"
+      },
+      "variations": {
+        "confront": "With people they trust, they argue more gently.",
+        "deflect": "If it truly matters, they face it eventually.",
+        "withdraw": "Around someone they trust, they open up instead.",
+        "comfort": "When they're hurting themselves, they may need comfort back.",
+        "joke": "In a real crisis the jokes stop.",
+        "investigate": "With close friends they ask instead of assuming.",
+        "act": "When someone else is at stake, they slow down.",
+        "cooperate": "If trust breaks, they go it alone."
+      },
+      "conflictNote": "Your text and this slider point different ways. Both can be true; review it on the Personality tab."
+    }
+  },
+  "ai": {
+    "errors": {
+      "not_configured": "not set up yet",
+      "refused": "the AI declined this request",
+      "invalid_output": "the AI's answer didn't pass validation",
+      "rate_limited": "too many requests, try again in a moment",
+      "auth": "the API key was rejected",
+      "failed": "the AI service had a problem",
+      "offline": "you're offline",
+      "bad_request": "the request was invalid",
+      "too_large": "the image is larger than 8 MB",
+      "bad_type": "only PNG, JPG or WebP images work"
+    },
+    "errorTitle": "That didn't work: {reason}."
+  },
+  "sprite": {
+    "title": "Pixel character",
+    "intro": "Upload a picture of your character and turn it into a standing sprite (32×32) and portrait (96×96) in the game's pixel style.",
+    "standingOnly": "Standing pose only. Walking animations aren't part of this version.",
+    "upload": "Upload reference",
+    "replace": "Choose another image",
+    "fileHint": "PNG, JPG or WebP · up to 8 MB",
+    "reference": "Your reference",
+    "referenceNote": "Shown only here and never saved. Your original file is not changed.",
+    "permission": "I made this image or have permission to use it.",
+    "generate": "Generate pixel character",
+    "regenerate": "Regenerate",
+    "generating": "Drawing your character",
+    "generatingHint": "This can take up to a minute.",
+    "unavailable": "AI generation unavailable until configured",
+    "unavailableHint": "Add OPENAI_API_KEY to .env.local and restart the app to turn it on. You can still use the quick conversion below.",
+    "convert": "Quick pixel conversion (no AI)",
+    "convertHint": "Shrinks your picture straight into sprite pixels. Works best on drawings with a plain background.",
+    "result": "Result",
+    "rawLabel": "Generated image",
+    "spriteLabel": "Sprite · 32×32",
+    "portraitLabel": "Portrait · 96×96",
+    "onStage": "In the scene",
+    "options": "Conversion",
+    "colors": "Colors",
+    "outline": "Outline",
+    "removeBg": "Remove plain background",
+    "edit": "Edit pixels",
+    "save": "Save to character",
+    "saved": "Saved to {name} and your sprite library.",
+    "discard": "Discard",
+    "library": "Sprite library",
+    "libraryEmpty": "Sprites you save appear here, and any character can reuse them.",
+    "use": "Use",
+    "inUse": "In use",
+    "deleteFromLibrary": "Remove from library",
+    "usePlaceholder": "Use placeholder art",
+    "currentArt": "Current look",
+    "source": {
+      "ai": "AI",
+      "converted": "Converted",
+      "edited": "Edited"
+    },
+    "fileErrors": {
+      "type": "That file type isn't supported. Use PNG, JPG or WebP.",
+      "size": "That image is larger than 8 MB.",
+      "read": "That image couldn't be read."
+    },
+    "spec": {
+      "ok": "Meets the sprite spec (32×32, hard edges, limited palette).",
+      "size": "Wrong size",
+      "empty": "Almost empty: try turning off background removal",
+      "softEdges": "Soft edges found",
+      "tooManyColors": "Too many colors"
+    },
+    "nothingFound": "Couldn't find a character in this image. Try turning off “Remove plain background”."
+  },
+  "editor": {
+    "title": "Pixel editor",
+    "pencil": "Pencil",
+    "eraser": "Eraser",
+    "picker": "Pick color",
+    "color": "Color {hex}",
+    "canvas": "Sprite pixels, 32 by 32. Use the pointer to draw.",
+    "apply": "Apply edits",
+    "note": "Edits change the sprite. The portrait stays as it was."
+  },
+  "story": {
+    "talk": {
+      "direct": [
+        "“{text}” That's the truth of it.",
+        "Since you asked: “{text}”",
+        "“{text}” There. Now you know."
+      ],
+      "guarded": [
+        "...Fine. “{text}” Don't make it a thing.",
+        "“{text}” ...That's all you're getting.",
+        "(after a long pause) “{text}”"
+      ],
+      "warm": [
+        "Oh, I don't mind telling you. “{text}”",
+        "“{text}” Thanks for asking, really.",
+        "Come sit. “{text}”"
+      ],
+      "teasing": [
+        "You're nosy today! Fine: “{text}”",
+        "“{text}” Don't laugh. Okay, you can laugh a little.",
+        "Guess. No? Fine: “{text}”"
+      ],
+      "probing": [
+        "Why do you want to know? ...“{text}” Your turn.",
+        "“{text}” Now, what about you?",
+        "Before I answer, who's asking? ...All right. “{text}”"
+      ],
+      "rambling": [
+        "So, okay, long story, but basically: “{text}” ...and that's the short version!",
+        "“{text}” Wait, did I already tell you that? Anyway!",
+        "Oh! That reminds me: “{text}” Where was I?"
+      ],
+      "formal": [
+        "If I may: “{text}”",
+        "“{text}” I trust that answers your question.",
+        "Allow me to be clear. “{text}”"
+      ],
+      "curt": [
+        "“{text}” Next question.",
+        "“{text}”",
+        "Short version: “{text}”"
+      ]
+    },
+    "observe": {
+      "calm": [
+        "You watch {name}. {detail}",
+        "{name} seems settled for now. {detail}"
+      ],
+      "happy": [
+        "{name} is humming under their breath. {detail}",
+        "Something has put {name} in a good mood. {detail}"
+      ],
+      "anxious": [
+        "{name} keeps glancing at the door. {detail}",
+        "{name} looks like they're bracing for something. {detail}"
+      ],
+      "irritated": [
+        "{name}'s jaw is set. Best tread lightly. {detail}",
+        "{name} is tapping impatiently. {detail}"
+      ],
+      "sad": [
+        "{name} is quieter than usual. {detail}",
+        "{name} stares at nothing in particular. {detail}"
+      ],
+      "excited": [
+        "{name} can barely stay still. {detail}",
+        "{name}'s eyes are bright with some new idea. {detail}"
+      ],
+      "suspicious": [
+        "{name} is watching everyone a little too carefully. {detail}",
+        "{name} narrows their eyes at nothing. {detail}"
+      ],
+      "embarrassed": [
+        "{name} is pretending very hard that nothing happened. {detail}",
+        "{name}'s ears have gone pink. {detail}"
+      ]
+    },
+    "events": {
+      "confide": [
+        "{other} sits down next to {name}. “Can I tell you something? {text}”",
+        "Out of nowhere, {other} admits something to {name}: “{text}”",
+        "{other} lowers their voice. “{name}, I've never said this out loud. {text}”"
+      ],
+      "argument": [
+        "{other} frowns at {name}. “You really believe ‘{text}’? Seriously?”",
+        "It starts small, then {other} tells {name} they're wrong about ‘{text}’.",
+        "{name} and {other} end up on opposite sides, and it's about ‘{text}’."
+      ],
+      "misunderstanding": [
+        "{name} catches half a sentence from {other}: “...can't trust them...” Wait. Them who?",
+        "{name} sees {other} quickly hide a note. Probably nothing. Probably.",
+        "{other} laughs right as {name} walks in. Was that about {name}?"
+      ],
+      "kindness": [
+        "{other} quietly leaves something warm next to {name}.",
+        "{other} fixes the thing {name} was struggling with, without making a fuss.",
+        "{other} saves {name} the good seat in the {place}."
+      ],
+      "tease": [
+        "{other} grins. “Nice look today, {name}. Very... bold.”",
+        "{other} does a spot-on impression of {name}. Everyone saw.",
+        "“Oh no,” says {other}, “{name} has an idea again.”"
+      ],
+      "askHelp": [
+        "{name} needs a hand with this: ‘{text}’. {other} is right there.",
+        "{name} realizes they can't manage ‘{text}’ alone. They look at {other}.",
+        "A chance to get closer to ‘{text}’ appears, but it needs two people. {other} is nearby."
+      ],
+      "rivalry": [
+        "{name} and {other} reach for the same thing in the {place} at the same moment.",
+        "Only one of them can win this. {name} and {other} both know it.",
+        "{other} gets the credit for something {name} did. Or did they?"
+      ],
+      "rumor": [
+        "Someone in the {place} whispers a rumor about {other}. {name} hears every word.",
+        "Word around the {place} is that {other} has been hiding something.",
+        "{name} overhears: “Did you hear what {other} did?”"
+      ],
+      "temptation": [
+        "An easy shortcut appears, but it would mean going against this: ‘{text}’.",
+        "Someone offers {name} exactly what they want, if they bend ‘{text}’. Just once.",
+        "No one is watching. {name} could ignore ‘{text}’ and nobody would know."
+      ],
+      "goalStep": [
+        "Something in the {place} might bring {name} closer to ‘{text}’.",
+        "A clue about ‘{text}’ turns up where {name} least expected it.",
+        "{name} gets a real chance to work on ‘{text}’."
+      ],
+      "fearTrigger": [
+        "Something in the {place} brushes too close to {name}'s fear: ‘{text}’.",
+        "For a moment the {place} feels exactly like ‘{text}’. {name} goes still.",
+        "A small, ordinary thing reminds {name} of ‘{text}’."
+      ],
+      "memoryEcho": [
+        "Something here reminds {name} of {memory}.",
+        "{name} suddenly thinks of {memory} again.",
+        "A smell, a sound, and {name} is back in {memory}."
+      ],
+      "quietMoment": [
+        "A quiet moment. {name} does what they always do: ‘{text}’.",
+        "Nothing happens, and {name} slips into an old habit: ‘{text}’.",
+        "The {place} goes quiet. You notice something about {name}: ‘{text}’."
+      ],
+      "worldQuirk": {
+        "western-fantasy": [
+          "A crow lands nearby and very clearly says “{name}”. Then it leaves.",
+          "Every candle in the {place} leans the same way for a moment.",
+          "A prophecy scroll blows past. The last line is smudged, as usual."
+        ],
+        "modern": [
+          "Every phone in the {place} buzzes at once. Same message: “soon”.",
+          "The lights flicker, and a song nobody chose starts playing.",
+          "A delivery arrives addressed to {name}. Nobody ordered it."
+        ],
+        "ancient-china": [
+          "A paper crane lands on {name}'s sleeve, carrying a sealed message.",
+          "A wandering swordsman bows to {name} as if they've met before.",
+          "The temple bell rings once, though no one is near it."
+        ],
+        "otherworld": [
+          "Gravity takes a short break. Everything floats an inch, then settles.",
+          "A glowing plant in the {place} turns to follow {name}.",
+          "A small creature trades {name} a pebble for a button and runs off."
+        ]
+      },
+      "discovery": {
+        "interior": [
+          "{name} finds a note tucked under a loose floorboard.",
+          "Behind a cupboard, {name} finds a key that fits nothing here.",
+          "{name} finds a drawer that wasn't there yesterday."
+        ],
+        "street": [
+          "{name} spots a dropped map with one street circled.",
+          "A stall {name} has never noticed is selling exactly one thing.",
+          "{name} finds a coin stamped with an unfamiliar face."
+        ],
+        "wilderness": [
+          "{name} finds footprints that stop in the middle of a field.",
+          "Under a mossy stone, {name} finds a tiny carved door.",
+          "{name} finds a ribbon tied around a tree, very deliberately."
+        ],
+        "ruins": [
+          "{name} uncovers a mural of someone who looks a lot like them.",
+          "{name} finds a lantern that's still warm.",
+          "A loose stone reveals a hollow with a sealed letter inside."
+        ],
+        "dreamscape": [
+          "{name} finds a door standing on its own, slightly open.",
+          "{name} finds a clock with no hands, ticking anyway.",
+          "{name} finds a photograph of a day that hasn't happened yet."
+        ]
+      }
+    },
+    "outcome": {
+      "progress": [
+        "It works. A real step forward.",
+        "Against the odds, it pays off."
+      ],
+      "setback": [
+        "It doesn't go to plan. Not even close.",
+        "A setback. Annoying, but not the end."
+      ]
+    },
+    "react": {
+      "pair": {
+        "confront": [
+          "No, {other}. We're doing this now.",
+          "Say that again, {other}. Slowly.",
+          "I'm not letting that slide, {other}."
+        ],
+        "deflect": [
+          "Anyway! Weather's nice, huh?",
+          "Let's... not, {other}.",
+          "Interesting. Totally unrelated question: snacks?"
+        ],
+        "withdraw": [
+          "I need a minute.",
+          "...I'm going to go stand over there.",
+          "Can we talk about this later, {other}?"
+        ],
+        "comfort": [
+          "Hey. I'm here, {other}.",
+          "That makes sense. Thank you for telling me.",
+          "You don't have to carry that alone, {other}."
+        ],
+        "joke": [
+          "Well, that's going in my memoir.",
+          "Bold move, {other}. I respect it.",
+          "If we survive this, I'm telling everyone."
+        ],
+        "investigate": [
+          "Wait. What exactly do you mean, {other}?",
+          "Hm. Who else knows about this?",
+          "Something doesn't add up. Walk me through it."
+        ],
+        "act": [
+          "Right. I'm handling it. Now.",
+          "Talking's over, {other}. Let's move.",
+          "Don't stop me. I've already decided."
+        ],
+        "cooperate": [
+          "Okay, {other}. Let's figure it out together.",
+          "Fine. Your way this time.",
+          "We're better at this as a team, {other}."
+        ]
+      },
+      "solo": {
+        "confront": [
+          "Not today. I'm facing this.",
+          "Fine. Come on, then.",
+          "I'm done running from this."
+        ],
+        "deflect": [
+          "Nope. Not thinking about it.",
+          "Hah. Anyway.",
+          "Let's pretend that didn't happen."
+        ],
+        "withdraw": [
+          "...I think I'll keep my distance.",
+          "I'm not ready for this.",
+          "Maybe another time."
+        ],
+        "comfort": [
+          "It's okay. That was then.",
+          "Deep breath. It's all right.",
+          "I'm glad I remember it."
+        ],
+        "joke": [
+          "Well. That's new.",
+          "Of course this happens to me.",
+          "Ten out of ten, very weird."
+        ],
+        "investigate": [
+          "Hold on. Let me look closer.",
+          "There's a reason for this. I'll find it.",
+          "Interesting... very interesting."
+        ],
+        "act": [
+          "No time to think. Going for it!",
+          "Right, let's do this.",
+          "I'll just... try it and see!"
+        ],
+        "cooperate": [
+          "I should tell the others about this.",
+          "Someone else should see this.",
+          "This is a job for more than one person."
+        ]
+      }
+    },
+    "after": [
+      "{name} is left feeling {mood}.",
+      "Afterwards, {name} seems {mood}."
+    ],
+    "bond": {
+      "up": [
+        "Something between {name} and {other} gets a little warmer.",
+        "{name} and {other} understand each other a bit better now."
+      ],
+      "down": [
+        "Things between {name} and {other} get a little colder.",
+        "A small crack appears between {name} and {other}."
+      ]
+    }
   }
 }

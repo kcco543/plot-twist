@@ -239,3 +239,43 @@ html[data-crt="on"] body::after {
 @media (max-width: 1023px) {
   body:has(:is(input, textarea):focus) .action-bar { position: static; }
 }
+
+/* ==========================================================================
+   v0.4 additions: personality sliders, tabs, pixel editor
+   ========================================================================== */
+@layer components {
+  /* Pixel slider: chunky track, square thumb. Value fill comes from --fill (0–100%). */
+  .px-range {
+    --fill: 50%;
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 28px; background: transparent; cursor: pointer; touch-action: pan-y;
+  }
+  .px-range::-webkit-slider-runnable-track {
+    height: calc(var(--u) * 4);
+    background: linear-gradient(to right, var(--color-lavender) 0 var(--fill), var(--color-well) var(--fill) 100%);
+    box-shadow: 0 0 0 var(--u) var(--color-line), inset 0 var(--u) 0 rgba(91, 74, 134, 0.12);
+  }
+  .px-range::-moz-range-track {
+    height: calc(var(--u) * 4);
+    background: linear-gradient(to right, var(--color-lavender) 0 var(--fill), var(--color-well) var(--fill) 100%);
+    box-shadow: 0 0 0 var(--u) var(--color-line);
+  }
+  .px-range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: calc(var(--u) * 8); height: calc(var(--u) * 8); margin-top: calc(var(--u) * -2);
+    background: var(--color-butter); border: var(--u) solid var(--color-outline); box-shadow: inset calc(var(--u) * -1) calc(var(--u) * -1) 0 var(--color-butter-lo);
+  }
+  .px-range::-moz-range-thumb {
+    width: calc(var(--u) * 7); height: calc(var(--u) * 7); border-radius: 0;
+    background: var(--color-butter); border: var(--u) solid var(--color-outline);
+  }
+  .px-range:focus-visible { outline: var(--u) dashed var(--color-label); outline-offset: calc(var(--u) * 2); }
+  .px-range[data-unset="true"]::-webkit-slider-thumb { background: var(--color-well); box-shadow: none; border-style: dashed; }
+  .px-range[data-unset="true"]::-moz-range-thumb { background: var(--color-well); border-style: dashed; }
+  .px-range[data-unset="true"]::-webkit-slider-runnable-track { background: var(--color-well); }
+  .px-range[data-unset="true"]::-moz-range-track { background: var(--color-well); }
+
+  /* Tab strip (Character Studio, sidebar). */
+  .px-tabbar { display: flex; gap: calc(var(--u) * 2); overflow-x: auto; scrollbar-width: none; }
+  .px-tabbar::-webkit-scrollbar { display: none; }
+}

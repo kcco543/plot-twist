@@ -20,14 +20,25 @@
     "notWritten": "还没写",
     "autosaved": "已自动保存",
     "settings": "设置",
-    "title": "标题"
+    "title": "标题",
+    "someone": "某人",
+    "on": "开",
+    "off": "关",
+    "new": "新",
+    "retry": "重试",
+    "save": "保存",
+    "undo": "撤销",
+    "remove": "移除"
   },
   "language": {
     "label": "语言",
     "switchTo": "切换语言",
     "en": "English",
     "zh-CN": "简体中文",
-    "short": { "en": "EN", "zh-CN": "中" },
+    "short": {
+      "en": "EN",
+      "zh-CN": "中"
+    },
     "note": "只会切换界面语言。你写的角色和故事会保持原来的语言。"
   },
   "title": {
@@ -38,7 +49,7 @@
     "load": "读取存档",
     "settings": "设置",
     "pressStart": "按下开始",
-    "version": "v0.3 · 原型",
+    "version": "v0.4 · 原型",
     "menu": "主菜单"
   },
   "nav": {
@@ -66,22 +77,38 @@
       "western-fantasy": {
         "name": "西方奇幻",
         "blurb": "长满青苔的村庄、歪歪扭扭的城堡，还有没人读到结尾的预言。",
-        "tags": ["冒险", "魔法", "王国"]
+        "tags": [
+          "冒险",
+          "魔法",
+          "王国"
+        ]
       },
       "modern": {
         "name": "现代",
         "blurb": "咖啡馆、末班车，还有群聊里明晃晃藏着的秘密。",
-        "tags": ["都市", "日常", "戏剧"]
+        "tags": [
+          "都市",
+          "日常",
+          "戏剧"
+        ]
       },
       "ancient-china": {
         "name": "古代中国",
         "blurb": "庭院、路边客栈，还有背负恩义之债的浪迹剑客。",
-        "tags": ["武侠", "朝堂", "传说"]
+        "tags": [
+          "武侠",
+          "朝堂",
+          "传说"
+        ]
       },
       "otherworld": {
         "name": "异世界",
         "blurb": "漂浮的岛屿、发光的植物，以及会改变主意的物理法则。",
-        "tags": ["超现实", "宇宙", "奇异"]
+        "tags": [
+          "超现实",
+          "宇宙",
+          "奇异"
+        ]
       }
     }
   },
@@ -102,28 +129,96 @@
     "deleteTitle": "删除角色？",
     "deleteBody": "{name}将被永久删除，此操作无法撤销。",
     "thisCharacter": "这个角色",
-    "sections": { "identity": "身份", "inner": "内心", "ties": "关系与规则" },
+    "sections": {
+      "identity": "身份",
+      "inner": "内心世界",
+      "ties": "关系、规则与设定",
+      "voice": "价值观与说话方式"
+    },
     "portrait": {
       "title": "头像",
       "alt": "{name}的头像",
       "prev": "上一个头像",
       "next": "下一个头像",
       "count": "{n} / {total}",
-      "note": "这些是占位头像。之后可以在这个画框里放入你自己的作品、像素编辑器或 AI 生成的头像。"
-    }
+      "note": "这些是占位头像。之后可以在这个画框里放入你自己的作品、像素编辑器或 AI 生成的头像。",
+      "custom": "自定义形象",
+      "makeSprite": "制作像素形象"
+    },
+    "tabsLabel": "角色分区",
+    "tabs": {
+      "profile": "文字设定",
+      "sliders": "性格",
+      "analysis": "行为",
+      "look": "外观与像素形象"
+    },
+    "methodsNote": "可以用文字描述角色，也可以用滑块，或两者结合。两者分开保存，滑块永远不会改写你写的内容。",
+    "toReview": "{count} 项待查看"
   },
   "character": {
     "fields": {
-      "name": { "label": "名字", "placeholder": "例如：林小满" },
-      "age": { "label": "年龄", "placeholder": "例如：19、上古、未知" },
-      "appearance": { "label": "外貌", "placeholder": "别人第一眼会注意到什么？" },
-      "personality": { "label": "性格", "placeholder": "好奇、急性子、温柔却嗓门很大……" },
-      "background": { "label": "背景", "placeholder": "他们来自哪里？发生过什么？" },
-      "goals": { "label": "目标", "placeholder": "他们最想要的是什么？" },
-      "fears": { "label": "恐惧", "placeholder": "他们绝不会承认自己害怕什么？" },
-      "habits": { "label": "习惯", "placeholder": "他们下意识会做的小动作。" },
-      "relationships": { "label": "人际关系", "placeholder": "朋友、对手、家人、未了的恩怨……" },
-      "rules": { "label": "角色规则与底线", "placeholder": "这个角色绝对不会做的事，或故事应避开的话题。" }
+      "name": {
+        "label": "名字",
+        "placeholder": "例如：林小满"
+      },
+      "age": {
+        "label": "年龄",
+        "placeholder": "例如：19、上古、未知"
+      },
+      "appearance": {
+        "label": "外貌",
+        "placeholder": "别人第一眼会注意到什么？"
+      },
+      "personality": {
+        "label": "性格",
+        "placeholder": "好奇、急性子、温柔却嗓门很大……"
+      },
+      "background": {
+        "label": "背景",
+        "placeholder": "他们来自哪里？发生过什么？"
+      },
+      "goals": {
+        "label": "目标",
+        "placeholder": "他们最想要的是什么？"
+      },
+      "fears": {
+        "label": "恐惧",
+        "placeholder": "他们绝不会承认自己害怕什么？"
+      },
+      "habits": {
+        "label": "习惯与喜好",
+        "placeholder": "下意识的小动作、爱吃的东西、讨厌的事……"
+      },
+      "relationships": {
+        "label": "人际关系",
+        "placeholder": "朋友、对手、家人、未了的恩怨……"
+      },
+      "rules": {
+        "label": "角色规则与底线",
+        "placeholder": "这个角色绝对不会做的事，或故事应避开的话题。"
+      },
+      "identity": {
+        "label": "身份",
+        "placeholder": "角色、职业、头衔、种族……例如：见习地图师"
+      },
+      "values": {
+        "label": "价值观与信念",
+        "placeholder": "他们认为什么是对的？在什么事上绝不妥协？"
+      },
+      "speakingStyle": {
+        "label": "说话方式",
+        "placeholder": "句子短？爱用大词？有口头禅？从不说脏话？"
+      },
+      "canon": {
+        "label": "必须保持一致的设定",
+        "placeholder": "故事绝不能违背的关键事实，每行一条。"
+      }
+    },
+    "lock": {
+      "locked": "已锁定",
+      "lockField": "锁定{field}",
+      "unlockField": "解锁{field}",
+      "hint": "锁定的内容是固定设定，AI 必须原样保留。"
     }
   },
   "builder": {
@@ -145,11 +240,26 @@
     "play": "开始"
   },
   "environments": {
-    "interior": { "name": "室内房间", "hint": "卧室、酒馆、咖啡馆、客栈" },
-    "street": { "name": "城镇街道", "hint": "集市、小巷、大路" },
-    "wilderness": { "name": "野外", "hint": "森林、田野、河岸" },
-    "ruins": { "name": "遗迹地牢", "hint": "神庙、洞穴、被遗忘之地" },
-    "dreamscape": { "name": "梦境", "hint": "回忆、幻象、不可能的房间" }
+    "interior": {
+      "name": "室内房间",
+      "hint": "卧室、酒馆、咖啡馆、客栈"
+    },
+    "street": {
+      "name": "城镇街道",
+      "hint": "集市、小巷、大路"
+    },
+    "wilderness": {
+      "name": "野外",
+      "hint": "森林、田野、河岸"
+    },
+    "ruins": {
+      "name": "遗迹地牢",
+      "hint": "神庙、洞穴、被遗忘之地"
+    },
+    "dreamscape": {
+      "name": "梦境",
+      "hint": "回忆、幻象、不可能的房间"
+    }
   },
   "play": {
     "noWorldTitle": "尚未选择世界",
@@ -165,13 +275,18 @@
     "selectSomeone": "选择一个角色",
     "showFullLine": "显示整句",
     "dialogue": "对话",
-    "actions": { "talk": "交谈", "observe": "观察", "wait": "等待" },
+    "actions": {
+      "talk": "交谈",
+      "observe": "观察",
+      "wait": "等待",
+      "twist": "转折！"
+    },
     "character": "角色",
     "selectInScene": "在场景中选择一个角色。",
     "demoCharacter": "示例角色。",
     "createOwn": "创建你自己的角色",
     "editInStudio": "在工作室中编辑",
-    "keyboardHint": "按键：← → 切换角色 · Z 交谈 · X 观察 · C 等待 · L 记录 · Esc 暂停",
+    "keyboardHint": "按键：← → 切换角色 · Z 交谈 · X 观察 · C 等待 · V 转折 · L 记录 · Esc 暂停",
     "controls": "游戏操作",
     "prevCharacter": "上一个角色",
     "nextCharacter": "下一个角色",
@@ -185,7 +300,36 @@
     "editCast": "编辑角色",
     "editSetting": "编辑场景",
     "quit": "回到标题",
-    "autosaveNote": "进度会自动保存。"
+    "autosaveNote": "进度会自动保存。",
+    "twistHint": "触发一个由性格驱动的事件",
+    "writing": "正在书写",
+    "aiFallback": "AI 书写没有成功（{reason}），已改用内置台词。",
+    "writer": {
+      "ai": "AI 书写",
+      "builtin": "内置台词"
+    },
+    "nextLine": "下一句",
+    "lineCount": "{n} / {total}",
+    "resetStory": "重置心情、关系和记忆",
+    "resetStoryDone": "故事状态已重置。",
+    "sidebar": {
+      "tabs": {
+        "about": "简介",
+        "state": "心情与关系",
+        "memories": "记忆"
+      },
+      "mood": "心情",
+      "bonds": "关系",
+      "affinity": "亲近",
+      "trust": "信任",
+      "noBonds": "还没有关系变化。角色之间发生事件后才会出现。",
+      "noMemories": "还没有值得记住的事。",
+      "behaviorApproved": "行为档案已确认",
+      "behaviorNone": "按滑块和文字设定演出",
+      "open": "角色信息",
+      "close": "关闭角色信息",
+      "more": "关于{name}的更多信息"
+    }
   },
   "scene": {
     "narrator": "旁白",
@@ -196,7 +340,8 @@
       "goals": "想要的东西",
       "fears": "害怕的东西",
       "relationships": "身边的人",
-      "background": "自己的来历"
+      "background": "自己的来历",
+      "values": "自己的信念"
     },
     "observeEmpty": "你看着{name}。他们还只是一张草稿。",
     "observe": "你注视着{name}。{detail}",
@@ -246,7 +391,12 @@
   "settings": {
     "title": "设置",
     "textSpeed": "文字速度",
-    "speeds": { "slow": "慢", "normal": "普通", "fast": "快", "instant": "瞬间" },
+    "speeds": {
+      "slow": "慢",
+      "normal": "普通",
+      "fast": "快",
+      "instant": "瞬间"
+    },
     "crt": "CRT 扫描线",
     "crtDesc": "在整个画面上叠加老电视的扫描线。",
     "motion": "减少动态效果",
@@ -254,12 +404,638 @@
     "on": "开",
     "off": "关",
     "offlineTitle": "离线游玩",
-    "offlineReady": "首次访问后，此版本的所有功能都可离线使用：存档保存在此浏览器中。",
-    "offlineFuture": "未来的 AI 功能（故事事件、地图和头像生成）需要联网。",
+    "offlineReady": "首次访问后，除 AI 功能外的一切都可离线使用。存档保存在这个浏览器中。",
+    "offlineFuture": "AI 分析、AI 对话和像素生成需要联网，并且服务器上要有 API 密钥。",
     "danger": "危险区域",
     "dangerDesc": "从此浏览器中删除你的世界、角色和故事记录。",
     "erase": "清除存档",
     "eraseConfirm": "确定，全部清除",
-    "erased": "存档已清除。"
+    "erased": "存档已清除。",
+    "eventFrequency": "事件频率",
+    "eventFrequencyDesc": "等待时多常会发生剧情转折。",
+    "frequencies": {
+      "calm": "平静",
+      "normal": "正常",
+      "chaotic": "混乱"
+    },
+    "aiStory": "AI 书写故事",
+    "aiStoryDesc": "配置好之后，由 AI 书写对话。关闭则只使用内置台词。",
+    "aiTitle": "AI 服务",
+    "aiText": "性格分析与对话",
+    "aiImage": "像素形象生成",
+    "aiReady": "可用",
+    "aiMissing": "未配置",
+    "aiChecking": "检查中"
+  },
+  "traits": {
+    "extroversion": {
+      "low": "内向",
+      "high": "外向"
+    },
+    "impulsiveness": {
+      "low": "谨慎",
+      "high": "冲动"
+    },
+    "expressiveness": {
+      "low": "内敛",
+      "high": "外露"
+    },
+    "trust": {
+      "low": "多疑",
+      "high": "信任他人"
+    },
+    "idealism": {
+      "low": "务实",
+      "high": "理想主义"
+    },
+    "dependence": {
+      "low": "独立",
+      "high": "依赖"
+    },
+    "confrontation": {
+      "low": "回避冲突",
+      "high": "正面冲突"
+    },
+    "playfulness": {
+      "low": "严肃",
+      "high": "爱玩"
+    },
+    "empathy": {
+      "low": "自我中心",
+      "high": "善于共情"
+    },
+    "rebelliousness": {
+      "low": "守规矩",
+      "high": "叛逆"
+    }
+  },
+  "sliders": {
+    "title": "性格滑块",
+    "intro": "每个滑块代表一种倾向，而不是硬性规定。没有设置的滑块，游戏会改为参考你的文字设定。",
+    "notSet": "未设置",
+    "set": "设置",
+    "clear": "清除",
+    "clearAll": "全部清除",
+    "balanced": "均衡",
+    "leans": "偏{pole}",
+    "strongly": "非常{pole}",
+    "valueText": "{value}/100：{lean}",
+    "setCount": "已设置 {count}/{total}"
+  },
+  "conflicts": {
+    "title": "查看差异",
+    "intro": "你的文字设定和滑块在这里似乎不一致。两者可以同时成立，由你决定。在你选择之前，什么都不会改变。",
+    "item": "你写了“{words}”，但“{trait}”滑块在 {value}（{lean}）。",
+    "keepBoth": "两者都保留",
+    "keepBothHint": "这是角色的复杂之处。AI 会把它当作因情境而异的表现。",
+    "matchSlider": "把滑块设为 {value}",
+    "editText": "修改我的文字",
+    "none": "文字设定和滑块之间没有差异。",
+    "reviewed": "{count} 项已作为复杂性保留",
+    "showReviewed": "重新查看"
+  },
+  "reactions": {
+    "confront": "正面对抗",
+    "deflect": "岔开话题",
+    "withdraw": "退缩",
+    "comfort": "安慰",
+    "joke": "开玩笑",
+    "investigate": "追查",
+    "act": "立刻行动",
+    "cooperate": "合作"
+  },
+  "approaches": {
+    "direct": "直截了当",
+    "guarded": "有所保留",
+    "warm": "温暖",
+    "teasing": "调侃",
+    "probing": "刨根问底",
+    "rambling": "絮絮叨叨",
+    "formal": "正式",
+    "curt": "简短"
+  },
+  "moods": {
+    "calm": "平静",
+    "happy": "开心",
+    "anxious": "不安",
+    "irritated": "烦躁",
+    "sad": "低落",
+    "excited": "跃跃欲试",
+    "suspicious": "多疑",
+    "embarrassed": "难为情"
+  },
+  "events": {
+    "confide": "倾诉",
+    "argument": "争执",
+    "misunderstanding": "误会",
+    "kindness": "善意",
+    "tease": "调侃",
+    "askHelp": "求助",
+    "rivalry": "较量",
+    "rumor": "传闻",
+    "temptation": "诱惑",
+    "goalStep": "目标",
+    "fearTrigger": "恐惧",
+    "memoryEcho": "回忆",
+    "worldQuirk": "世界怪事",
+    "discovery": "发现",
+    "quietMoment": "安静时刻"
+  },
+  "memories": {
+    "confide": "{with}向自己敞开心扉的那次",
+    "argument": "和{with}的那场争吵",
+    "misunderstanding": "和{with}之间的误会",
+    "kindness": "{with}的那份善意",
+    "tease": "被{with}取笑的那次",
+    "askHelp": "向{with}求助的那次",
+    "rivalry": "和{with}的较量",
+    "rumor": "关于{with}的传闻",
+    "temptation": "差点打破规矩的那天",
+    "goalStep": "向目标迈进的那一步",
+    "fearTrigger": "恐惧逼近的那一刻",
+    "memoryEcho": "一段旧回忆",
+    "worldQuirk": "非常奇怪的一天",
+    "discovery": "一次奇怪的发现",
+    "quietMoment": "一段安静的时光",
+    "generic": "以前发生过的事"
+  },
+  "analysis": {
+    "title": "行为分析",
+    "intro": "分析会读取你的文字设定、滑块、人际关系、规则、记忆和当前心情，整理成一份行为档案。它影响故事之前，需要你先查看。",
+    "run": "运行 AI 分析",
+    "rerun": "重新运行 AI 分析",
+    "runLocal": "使用内置分析",
+    "running": "分析中",
+    "unavailable": "AI 分析尚未配置，暂不可用",
+    "unavailableHint": "在 .env.local 中添加 ANTHROPIC_API_KEY 并重启应用。在此之前，内置分析可离线使用。",
+    "needInput": "请先写一些设定或设置一个滑块。",
+    "pending": "等待你确认",
+    "approved": "已确认 · 用于游戏",
+    "approve": "确认",
+    "discard": "丢弃",
+    "stale": "这次分析之后你修改过角色。重新运行即可包含这些修改。",
+    "notUsedYet": "在你确认分析之前，游戏会直接使用你的滑块和文字设定。",
+    "noneYet": "还没有分析。",
+    "sourceAi": "AI 分析",
+    "sourceLocal": "内置分析",
+    "approvedOn": "确认于 {date}",
+    "sections": {
+      "summary": "概述",
+      "traits": "核心特质",
+      "speech": "说话风格",
+      "emotions": "情绪模式",
+      "decision": "做决定",
+      "social": "与人相处",
+      "motivations": "动机",
+      "boundaries": "底线",
+      "approaches": "对话方式",
+      "tendencies": "反应倾向",
+      "conflicts": "发现的差异",
+      "hooks": "故事钩子"
+    },
+    "length": {
+      "terse": "简短",
+      "measured": "适中",
+      "chatty": "话多"
+    },
+    "sample": "示例台词",
+    "tics": "习惯",
+    "avoids": "避免",
+    "but": "不过：{text}",
+    "source": {
+      "written": "来自文字",
+      "sliders": "来自滑块",
+      "both": "文字 + 滑块"
+    },
+    "local": {
+      "sliderEvidence": "滑块设为 {value}。",
+      "textEvidence": "来自文字设定。",
+      "listSep": "、",
+      "summary": "{name}偏向{traits}。",
+      "summaryNeutral": "{name}目前在所有滑块上都很均衡，因此文字设定的分量最重。",
+      "summaryWritten": "用你的话说：“{text}”",
+      "register": {
+        "terse": "简短直接。",
+        "measured": "说话有分寸，只说必要的。",
+        "chatty": "话多，边想边说。"
+      },
+      "decision": {
+        "fast": "决定得快，之后再调整。",
+        "slow": "做决定前会反复权衡。",
+        "mixed": "大事谨慎，小事果断。"
+      },
+      "social": {
+        "out": "主动找人，喜欢打破沉默。",
+        "in": "朋友圈不大，需要独处时间。",
+        "mixed": "在人群中也自在，但会挑时机。"
+      },
+      "triggers": {
+        "confront": "被质疑或受到不公对待时",
+        "deflect": "话题变得太私人时",
+        "withdraw": "感到招架不住时",
+        "comfort": "看到别人难过时",
+        "joke": "气氛紧张时",
+        "investigate": "事情说不通时",
+        "act": "有机会做点什么时",
+        "cooperate": "问题大到一个人解决不了时"
+      },
+      "variations": {
+        "confront": "面对信任的人时，争论会温和许多。",
+        "deflect": "如果真的很重要，最终还是会面对。",
+        "withdraw": "在信任的人身边，反而会敞开心扉。",
+        "comfort": "自己难过的时候，也需要别人安慰。",
+        "joke": "遇到真正的危机，玩笑就停了。",
+        "investigate": "对亲近的朋友，会直接问而不是乱猜。",
+        "act": "事关别人时，会放慢脚步。",
+        "cooperate": "一旦信任破裂，就会独自行动。"
+      },
+      "conflictNote": "文字设定和这个滑块方向不同。两者可以同时成立，可在“性格”标签页查看。"
+    }
+  },
+  "ai": {
+    "errors": {
+      "not_configured": "尚未配置",
+      "refused": "AI 拒绝了这个请求",
+      "invalid_output": "AI 的回答没有通过校验",
+      "rate_limited": "请求太多，请稍后再试",
+      "auth": "API 密钥无效",
+      "failed": "AI 服务出了问题",
+      "offline": "你现在离线",
+      "bad_request": "请求无效",
+      "too_large": "图片超过 8 MB",
+      "bad_type": "只支持 PNG、JPG 或 WebP 图片"
+    },
+    "errorTitle": "没有成功：{reason}。"
+  },
+  "sprite": {
+    "title": "像素形象",
+    "intro": "上传一张角色图片，把它变成游戏像素风格的站立形象（32×32）和头像（96×96）。",
+    "standingOnly": "目前只有站立姿势，这个版本不包含行走动画。",
+    "upload": "上传参考图",
+    "replace": "换一张图片",
+    "fileHint": "PNG、JPG 或 WebP · 不超过 8 MB",
+    "reference": "你的参考图",
+    "referenceNote": "只在这里显示，不会被保存。你的原始文件不会被修改。",
+    "permission": "这张图是我画的，或我有权使用它。",
+    "generate": "生成像素形象",
+    "regenerate": "重新生成",
+    "generating": "正在绘制你的角色",
+    "generatingHint": "可能需要一分钟左右。",
+    "unavailable": "AI 生成尚未配置，暂不可用",
+    "unavailableHint": "在 .env.local 中添加 OPENAI_API_KEY 并重启应用即可开启。你仍然可以使用下方的快速转换。",
+    "convert": "快速像素转换（不用 AI）",
+    "convertHint": "把你的图片直接缩成像素形象。背景单一的手绘图效果最好。",
+    "result": "结果",
+    "rawLabel": "生成的图片",
+    "spriteLabel": "形象 · 32×32",
+    "portraitLabel": "头像 · 96×96",
+    "onStage": "在场景中",
+    "options": "转换设置",
+    "colors": "颜色数",
+    "outline": "描边",
+    "removeBg": "去除纯色背景",
+    "edit": "编辑像素",
+    "save": "保存到角色",
+    "saved": "已保存到{name}和你的形象库。",
+    "discard": "丢弃",
+    "library": "形象库",
+    "libraryEmpty": "你保存的形象会出现在这里，任何角色都可以重复使用。",
+    "use": "使用",
+    "inUse": "使用中",
+    "deleteFromLibrary": "从形象库移除",
+    "usePlaceholder": "使用占位图",
+    "currentArt": "当前形象",
+    "source": {
+      "ai": "AI",
+      "converted": "转换",
+      "edited": "已编辑"
+    },
+    "fileErrors": {
+      "type": "不支持这种文件类型，请使用 PNG、JPG 或 WebP。",
+      "size": "图片超过 8 MB。",
+      "read": "无法读取这张图片。"
+    },
+    "spec": {
+      "ok": "符合形象规格（32×32、硬边缘、有限色板）。",
+      "size": "尺寸不对",
+      "empty": "几乎是空的：试试关闭去背景",
+      "softEdges": "存在半透明边缘",
+      "tooManyColors": "颜色太多"
+    },
+    "nothingFound": "在图片中找不到角色。试试关闭“去除纯色背景”。"
+  },
+  "editor": {
+    "title": "像素编辑器",
+    "pencil": "画笔",
+    "eraser": "橡皮",
+    "picker": "取色",
+    "color": "颜色 {hex}",
+    "canvas": "形象像素，32×32。用指针绘制。",
+    "apply": "应用修改",
+    "note": "修改只作用于形象，头像保持不变。"
+  },
+  "story": {
+    "talk": {
+      "direct": [
+        "“{text}”事实就是这样。",
+        "既然你问了：“{text}”",
+        "“{text}”好了，现在你知道了。"
+      ],
+      "guarded": [
+        "……好吧。“{text}”别大惊小怪。",
+        "“{text}”……我就说这么多。",
+        "（沉默良久）“{text}”"
+      ],
+      "warm": [
+        "跟你说也没关系。“{text}”",
+        "“{text}”谢谢你愿意问，真的。",
+        "来，坐下说。“{text}”"
+      ],
+      "teasing": [
+        "你今天好八卦呀！好吧：“{text}”",
+        "“{text}”不许笑。好吧，可以笑一点点。",
+        "你猜？猜不到？好吧：“{text}”"
+      ],
+      "probing": [
+        "你为什么想知道？……“{text}”该你了。",
+        "“{text}”那你呢？",
+        "回答之前，先说说是谁在问？……好吧。“{text}”"
+      ],
+      "rambling": [
+        "那个，说来话长，总之就是：“{text}”……这已经是简短版了！",
+        "“{text}”等等，我是不是说过了？算了！",
+        "啊！这让我想起来了：“{text}”我刚说到哪儿了？"
+      ],
+      "formal": [
+        "容我直言：“{text}”",
+        "“{text}”希望这回答了你的问题。",
+        "请允许我说清楚：“{text}”"
+      ],
+      "curt": [
+        "“{text}”下一个问题。",
+        "“{text}”",
+        "简单说：“{text}”"
+      ]
+    },
+    "observe": {
+      "calm": [
+        "你看着{name}。{detail}",
+        "{name}此刻看起来很平静。{detail}"
+      ],
+      "happy": [
+        "{name}正小声哼着歌。{detail}",
+        "不知什么让{name}心情很好。{detail}"
+      ],
+      "anxious": [
+        "{name}不停地瞟向门口。{detail}",
+        "{name}像是在为什么事做心理准备。{detail}"
+      ],
+      "irritated": [
+        "{name}咬紧了牙关，最好别惹。{detail}",
+        "{name}不耐烦地敲着手指。{detail}"
+      ],
+      "sad": [
+        "{name}比平时安静。{detail}",
+        "{name}发着呆，不知在看什么。{detail}"
+      ],
+      "excited": [
+        "{name}兴奋得坐不住。{detail}",
+        "{name}眼睛发亮，像是有了新主意。{detail}"
+      ],
+      "suspicious": [
+        "{name}打量每个人的眼神有点太仔细了。{detail}",
+        "{name}眯起眼睛，不知在怀疑什么。{detail}"
+      ],
+      "embarrassed": [
+        "{name}正拼命假装什么都没发生。{detail}",
+        "{name}的耳朵红红的。{detail}"
+      ]
+    },
+    "events": {
+      "confide": [
+        "{other}在{name}身边坐下。“我能跟你说件事吗？{text}”",
+        "{other}毫无预兆地向{name}坦白：“{text}”",
+        "{other}压低声音：“{name}，这话我从没说出口过。{text}”"
+      ],
+      "argument": [
+        "{other}皱眉看着{name}：“你真的相信‘{text}’？认真的？”",
+        "一开始只是小事，后来{other}说{name}在‘{text}’这件事上错了。",
+        "{name}和{other}站到了对立面，起因是‘{text}’。"
+      ],
+      "misunderstanding": [
+        "{name}只听到{other}半句话：“……不能信他们……”等等，他们是谁？",
+        "{name}看见{other}飞快地藏起一张纸条。大概没什么。大概。",
+        "{name}一进门，{other}就笑了。是在笑{name}吗？"
+      ],
+      "kindness": [
+        "{other}悄悄在{name}身边放了一样暖乎乎的东西。",
+        "{other}不声不响地帮{name}弄好了那件头疼的事。",
+        "{other}在{place}里给{name}留了个好位置。"
+      ],
+      "tease": [
+        "{other}咧嘴一笑：“{name}，今天这身真……大胆。”",
+        "{other}把{name}学得惟妙惟肖，大家都看到了。",
+        "“完了，”{other}说，“{name}又有主意了。”"
+      ],
+      "askHelp": [
+        "{name}在这件事上需要帮手：‘{text}’。{other}正好在旁边。",
+        "{name}意识到‘{text}’一个人做不到，看向了{other}。",
+        "一个接近‘{text}’的机会出现了，但需要两个人。{other}就在附近。"
+      ],
+      "rivalry": [
+        "{name}和{other}在{place}里同时伸手去拿同一样东西。",
+        "这次只能有一个赢家，{name}和{other}心里都清楚。",
+        "{name}做的事，功劳却算在了{other}头上。真是这样吗？"
+      ],
+      "rumor": [
+        "{place}里有人在悄悄议论{other}，{name}一字不漏地听见了。",
+        "{place}里都在传，{other}一直在隐瞒什么。",
+        "{name}无意中听到：“你听说{other}干了什么吗？”"
+      ],
+      "temptation": [
+        "一条捷径摆在眼前，可走了就违背了这一条：‘{text}’。",
+        "有人愿意给{name}最想要的东西，只要{name}放宽‘{text}’，就一次。",
+        "四下无人。{name}就算无视‘{text}’，也不会有人知道。"
+      ],
+      "goalStep": [
+        "{place}里有样东西，也许能让{name}离‘{text}’更近一步。",
+        "关于‘{text}’的线索，出现在{name}最意想不到的地方。",
+        "{name}终于有了一个真正推进‘{text}’的机会。"
+      ],
+      "fearTrigger": [
+        "{place}里有样东西，离{name}的恐惧太近了：‘{text}’。",
+        "有那么一瞬间，{place}让人想起‘{text}’。{name}僵住了。",
+        "一件再普通不过的小事，让{name}想起了‘{text}’。"
+      ],
+      "memoryEcho": [
+        "这里的一切让{name}想起了{memory}。",
+        "{name}忽然又想起了{memory}。",
+        "一阵气味、一个声音，{name}仿佛又回到了{memory}。"
+      ],
+      "quietMoment": [
+        "安静的片刻。{name}又做起了老习惯：‘{text}’。",
+        "什么也没发生，{name}放松下来，露出老习惯：‘{text}’。",
+        "{place}安静下来。你注意到{name}的一个小细节：‘{text}’。"
+      ],
+      "worldQuirk": {
+        "western-fantasy": [
+          "一只乌鸦落在旁边，清清楚楚地叫了声“{name}”，然后飞走了。",
+          "{place}里所有的烛火同时朝一个方向倾斜了一下。",
+          "一卷预言书被风吹过，最后一行照例糊掉了。"
+        ],
+        "modern": [
+          "{place}里所有手机同时震动，内容都一样：“快了”。",
+          "灯闪了几下，一首没人点过的歌开始播放。",
+          "来了一个寄给{name}的快递，可谁也没下过单。"
+        ],
+        "ancient-china": [
+          "一只纸鹤落在{name}的袖子上，带着一封封好的信。",
+          "一位游侠向{name}抱拳行礼，仿佛早就认识。",
+          "庙里的钟响了一声，可钟旁空无一人。"
+        ],
+        "otherworld": [
+          "重力短暂地休息了一下。所有东西都飘起一寸，又落了回去。",
+          "{place}里一株发光的植物转过来，一直跟着{name}。",
+          "一只小生物用一颗石子换走了{name}的一颗纽扣，跑掉了。"
+        ]
+      },
+      "discovery": {
+        "interior": [
+          "{name}在一块松动的地板下发现了一张字条。",
+          "{name}在柜子后面找到一把钥匙，这里没有任何锁配得上它。",
+          "{name}发现了一个昨天还不存在的抽屉。"
+        ],
+        "street": [
+          "{name}捡到一张掉落的地图，上面圈出了一条街。",
+          "{name}发现一个从没注意过的小摊，只卖一样东西。",
+          "{name}捡到一枚硬币，上面印着一张陌生的脸。"
+        ],
+        "wilderness": [
+          "{name}发现一串脚印在田野中央突然消失了。",
+          "{name}在长满青苔的石头下发现了一扇小小的雕花门。",
+          "{name}发现一棵树上系着丝带，系得非常用心。"
+        ],
+        "ruins": [
+          "{name}发现一幅壁画，画中人和自己长得很像。",
+          "{name}找到一盏灯笼，摸上去还是温的。",
+          "一块松动的石头后面藏着一个空洞，里面有封封好的信。"
+        ],
+        "dreamscape": [
+          "{name}发现一扇独自立着的门，微微开着。",
+          "{name}发现一个没有指针的钟，却还在滴答作响。",
+          "{name}发现一张照片，拍的是还没发生的一天。"
+        ]
+      }
+    },
+    "outcome": {
+      "progress": [
+        "成功了，实实在在的一步。",
+        "出乎意料，这次真的有了回报。"
+      ],
+      "setback": [
+        "事情完全没按计划走。",
+        "受挫了。很烦，但还没结束。"
+      ]
+    },
+    "react": {
+      "pair": {
+        "confront": [
+          "不行，{other}。我们现在就说清楚。",
+          "{other}，你再说一遍。慢慢说。",
+          "这事我不会就这么算了，{other}。"
+        ],
+        "deflect": [
+          "话说回来！今天天气不错哈？",
+          "要不……还是算了吧，{other}。",
+          "有意思。换个毫不相关的问题：有零食吗？"
+        ],
+        "withdraw": [
+          "我需要缓一下。",
+          "……我去那边站一会儿。",
+          "{other}，这事能晚点再说吗？"
+        ],
+        "comfort": [
+          "嘿，我在呢，{other}。",
+          "我明白了。谢谢你告诉我。",
+          "你不用一个人扛着，{other}。"
+        ],
+        "joke": [
+          "好，这段我要写进回忆录。",
+          "大胆啊，{other}，我佩服。",
+          "要是我们能活着出去，我一定到处说。"
+        ],
+        "investigate": [
+          "等等，{other}，你到底是什么意思？",
+          "嗯……还有谁知道这件事？",
+          "有点不对劲。你从头讲一遍。"
+        ],
+        "act": [
+          "好，我来处理，现在就去。",
+          "别说了，{other}，走吧。",
+          "别拦我，我已经决定了。"
+        ],
+        "cooperate": [
+          "好，{other}，我们一起想办法。",
+          "行，这次听你的。",
+          "我们俩一起干更顺手，{other}。"
+        ]
+      },
+      "solo": {
+        "confront": [
+          "今天不躲了，我要面对它。",
+          "好啊，来吧。",
+          "我不想再逃避了。"
+        ],
+        "deflect": [
+          "不想，不想，不去想。",
+          "哈。总之。",
+          "就当没发生过吧。"
+        ],
+        "withdraw": [
+          "……我还是离远点吧。",
+          "我还没准备好。",
+          "下次吧。"
+        ],
+        "comfort": [
+          "没事的，都过去了。",
+          "深呼吸，没关系的。",
+          "还好我还记得。"
+        ],
+        "joke": [
+          "嗯，这倒是头一回。",
+          "这种事果然只会发生在我身上。",
+          "满分十分，怪异度十分。"
+        ],
+        "investigate": [
+          "等一下，让我仔细看看。",
+          "这背后一定有原因，我会查清楚。",
+          "有意思……非常有意思。"
+        ],
+        "act": [
+          "没时间想了，冲！",
+          "好，开干。",
+          "我就……先试试看吧！"
+        ],
+        "cooperate": [
+          "这件事得告诉其他人。",
+          "得让别人也来看看。",
+          "这事一个人可办不成。"
+        ]
+      }
+    },
+    "after": [
+      "{name}此刻感到{mood}。",
+      "之后，{name}显得有些{mood}。"
+    ],
+    "bond": {
+      "up": [
+        "{name}和{other}之间变得更亲近了一点。",
+        "{name}和{other}现在更懂彼此了。"
+      ],
+      "down": [
+        "{name}和{other}之间冷淡了一些。",
+        "{name}和{other}之间出现了一道小小的裂痕。"
+      ]
+    }
   }
 }

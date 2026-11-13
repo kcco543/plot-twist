@@ -9,13 +9,15 @@ import { LanguageSwitch } from "./LanguageSwitch";
 import { updateSettings, useSettings } from "@/lib/settingsStore";
 import { gameActions } from "@/lib/gameStore";
 import { useI18n } from "@/i18n";
-import type { TextSpeed } from "@/lib/types";
+import type { EventFrequency, TextSpeed } from "@/lib/types";
+import { useAiStatus } from "@/lib/ai/client";
 
 const Section = ({ children }: { children: React.ReactNode }) => <div className="border-t-[3px] border-dashed border-line pt-5">{children}</div>;
 
 export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useI18n();
   const settings = useSettings();
+  const ai = useAiStatus();
   const [confirmErase, setConfirmErase] = useState(false);
   const [erased, setErased] = useState(false);
 
@@ -62,6 +64,45 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
               onLabel={t("settings.on")}
               offLabel={t("settings.off")}
             />
+          </div>
+        </Section>
+        <Section>
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-1">
+              <Choice<EventFrequency>
+                label={t("settings.eventFrequency")}
+                value={settings.eventFrequency ?? "normal"}
+                onChange={(eventFrequency) => updateSettings({ eventFrequency })}
+                options={(["calm", "normal", "chaotic"] as const).map((v) => ({ value: v, label: t(`settings.frequencies.${v}`) }))}
+              />
+              <p className="text-sm text-ink-soft">{t("settings.eventFrequencyDesc")}</p>
+            </div>
+            <Toggle
+              label={t("settings.aiStory")}
+              description={t("settings.aiStoryDesc")}
+              checked={settings.aiStory ?? true}
+              onChange={(aiStory) => updateSettings({ aiStory })}
+              onLabel={t("settings.on")}
+              offLabel={t("settings.off")}
+            />
+            <div>
+              <p className="font-label text-xs uppercase tracking-wide text-label">{t("settings.aiTitle")}</p>
+              <ul className="mt-2 flex flex-col gap-1 text-base">
+                {(
+                  [
+                    ["aiText", ai?.text],
+                    ["aiImage", ai?.image],
+                  ] as const
+                ).map(([key, on]) => (
+                  <li key={key} className="flex items-center justify-between gap-3">
+                    <span>{t(`settings.${key}`)}</span>
+                    <span className={`font-label text-[10px] uppercase ${ai === null ? "text-ink-mute" : on ? "text-mint-deep" : "text-coral-deep"}`}>
+                      {ai === null ? t("settings.aiChecking") : on ? t("settings.aiReady") : t("settings.aiMissing")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </Section>
         <Section>

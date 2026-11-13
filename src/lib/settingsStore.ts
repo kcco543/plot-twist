@@ -3,7 +3,7 @@
 import { createPersistentStore } from "./persistentStore";
 import type { Settings, TextSpeed } from "./types";
 
-export const defaultSettings: Settings = { crt: false, reduceMotion: false, textSpeed: "normal" };
+export const defaultSettings: Settings = { crt: false, reduceMotion: false, textSpeed: "normal", eventFrequency: "normal", aiStory: true };
 
 const store = createPersistentStore<Settings>("plot-twist:settings:v1", defaultSettings);
 
