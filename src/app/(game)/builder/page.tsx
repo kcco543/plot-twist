@@ -3,78 +3,105 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ActionBar, ScreenHeader } from "@/components/ScreenHeader";
-import { RoomViewport } from "@/components/game/RoomViewport";
+import { PixelStage } from "@/components/game/PixelStage";
 import { ArtImage } from "@/components/ui/ArtImage";
 import { Field } from "@/components/ui/Field";
+import { LoadingDots } from "@/components/ui/LoadingDots";
 import { Panel } from "@/components/ui/Panel";
 import { PixelButton, PixelLink } from "@/components/ui/PixelButton";
-import { environmentArt } from "@/assets/manifest";
+import { defaultWorld, environmentArt } from "@/assets/manifest";
 import { ENVIRONMENT_TYPES } from "@/lib/environments";
 import { gameActions, useSave } from "@/lib/gameStore";
 import { activeMapGenerator, type MapPreview } from "@/lib/mapGenerator";
 import { getWorld } from "@/lib/worlds";
+import { useI18n } from "@/i18n";
 
 export default function WorldBuilderPage() {
+  const { t, locale } = useI18n();
   const router = useRouter();
   const save = useSave();
   const world = getWorld(save.worldId);
   const { description, type } = save.environment;
   const [preview, setPreview] = useState<MapPreview | null>(null);
+  const worldName = world ? t(`worlds.list.${world.id}.name` as const) : "";
+  const envName = t(`environments.${type}.name` as const);
+  const title = world ? `${worldName} · ${envName}` : envName;
 
-  // Ask the (currently placeholder) map generator for a preview whenever the inputs change.
+  // Ask the (currently placeholder) map generator for a preview when the inputs change.
   useEffect(() => {
     let cancelled = false;
-    activeMapGenerator.generate({ worldId: save.worldId, type, description }).then((p) => !cancelled && setPreview(p));
+    activeMapGenerator.generate({ worldId: save.worldId, type, description, locale }).then((p) => !cancelled && setPreview(p));
     return () => {
       cancelled = true;
     };
-  }, [save.worldId, type, description]);
+  }, [save.worldId, type, description, locale]);
+
+  const previewPanel = (
+    <Panel
+      title={t("builder.preview")}
+      titleRight={
+        <span className="mt-1 bg-plum-900 px-1.5 py-1 font-label text-[10px] uppercase text-cream-dim">
+          {preview ? t(preview.source === "generated" ? "builder.sourceGenerated" : "builder.sourcePlaceholder") : <LoadingDots />}
+        </span>
+      }
+    >
+      <div className="flex flex-col gap-3">
+        {preview ? (
+          <PixelStage art={preview.art} label={t("builder.previewAlt", { title })} frame={world?.frame ?? "card"}>
+            <span className="absolute left-1 top-1 bg-ink/85 px-1 py-[1px] font-label text-[6px] uppercase leading-none text-cream">{title}</span>
+          </PixelStage>
+        ) : (
+          <p role="status" className="flex aspect-[5/3] items-center justify-center gap-2 font-label text-xs uppercase text-cream-dim">
+            {t("builder.generating")} <LoadingDots />
+          </p>
+        )}
+        <p className="min-h-12 text-lg leading-snug text-cream-dim">{description.trim() ? `“${description.trim()}”` : t("builder.quoteEmpty")}</p>
+      </div>
+    </Panel>
+  );
 
   return (
     <>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-10 sm:px-6">
-        <ScreenHeader kicker="Step 3 · World builder" title="Set the scene">
-          Describe where your story begins and pick a type of place. The preview shows placeholder art for now.
+      <main className="gutter mx-auto w-full max-w-6xl flex-1 pt-8 sm:pt-10">
+        <ScreenHeader kicker={t("builder.kicker")} title={t("builder.heading")}>
+          {t("builder.intro")}
         </ScreenHeader>
 
-        <div className="grid gap-8 lg:grid-cols-[1fr_1.15fr]">
-          <div className="flex flex-col gap-8">
-            <Panel title="Description">
-              <div className="p-5">
-                <Field
-                  label="Describe the environment"
-                  multiline
-                  rows={5}
-                  maxLength={600}
-                  value={description}
-                  onChange={(v) => gameActions.updateEnvironment({ description: v })}
-                  placeholder="A cramped bookshop above a noodle stand. It always smells like rain, and the back door is locked from the inside..."
-                  hint="Saved automatically. Later, this text will drive AI map generation."
-                />
-              </div>
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+          <div className="flex min-w-0 flex-col gap-8">
+            <Panel title={t("builder.description")}>
+              <Field
+                label={t("builder.describeLabel")}
+                multiline
+                rows={5}
+                maxLength={600}
+                value={description}
+                onChange={(v) => gameActions.updateEnvironment({ description: v })}
+                placeholder={t("builder.describePlaceholder")}
+                hint={t("builder.describeHint")}
+              />
             </Panel>
 
-            <Panel title="Environment type">
-              <div role="radiogroup" aria-label="Environment type" className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
+            {/* On phones the preview sits right under the description, before the type picker. */}
+            <div className="lg:hidden">{previewPanel}</div>
+
+            <Panel title={t("builder.type")}>
+              <div role="radiogroup" aria-label={t("builder.type")} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
                 {ENVIRONMENT_TYPES.map((env) => {
-                  const active = env.id === type;
+                  const active = env === type;
                   return (
                     <button
-                      key={env.id}
+                      key={env}
                       role="radio"
                       aria-checked={active}
-                      title={env.hint}
-                      onClick={() => gameActions.updateEnvironment({ type: env.id })}
-                      className="px-frame px-focus flex flex-col text-left transition-transform duration-100 hover:-translate-y-0.5"
-                      style={
-                        {
-                          "--frame": active ? "var(--color-sun)" : "var(--color-ink-600)",
-                          background: active ? "var(--color-ink-700)" : "var(--color-ink-900)",
-                        } as React.CSSProperties
-                      }
+                      title={t(`environments.${env}.hint` as const)}
+                      onClick={() => gameActions.updateEnvironment({ type: env })}
+                      className={`px-frame px-focus flex flex-col text-left transition-transform duration-100 ${active ? "" : "hover:-translate-y-0.5"}`}
+                      style={{ "--frame": `var(--frame-${active ? "gold-card" : "card"})` } as React.CSSProperties}
                     >
-                      <ArtImage art={environmentArt[env.id]} alt="" showTag={false} className="aspect-[8/5] border-b-4 border-ink-950" />
-                      <span className={`px-2 py-2 font-display text-[9px] uppercase leading-snug ${active ? "text-sun" : "text-paper"}`}>{env.name}</span>
+                      <ArtImage art={environmentArt[save.worldId ?? defaultWorld][env]} alt="" showTag={false} className="w-full border-2 border-ink" />
+                      <span className={`pt-2 font-head text-base font-bold leading-tight ${active ? "text-butter" : "text-cream"}`}>{t(`environments.${env}.name` as const)}</span>
+                      <span className="text-sm leading-snug text-cream-dim">{t(`environments.${env}.hint` as const)}</span>
                     </button>
                   );
                 })}
@@ -82,29 +109,16 @@ export default function WorldBuilderPage() {
             </Panel>
           </div>
 
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <Panel title="Preview" titleRight={<span className="font-display text-[8px] uppercase text-paper-dim">{preview?.source ?? "..."}</span>}>
-              <div className="flex flex-col gap-4 p-5">
-                {preview && (
-                  <RoomViewport art={preview.art} label={`${preview.title} preview`} accent={world?.accent}>
-                    <span className="absolute left-2 top-2 bg-ink-950/85 px-2 py-1 font-display text-[8px] uppercase text-paper">{preview.title}</span>
-                  </RoomViewport>
-                )}
-                <p className="min-h-12 text-lg leading-snug text-paper-dim">
-                  {description.trim() ? `“${description.trim()}”` : "No description yet. Your words will appear here."}
-                </p>
-              </div>
-            </Panel>
-          </div>
+          <div className="hidden min-w-0 lg:sticky lg:top-24 lg:block lg:self-start">{previewPanel}</div>
         </div>
       </main>
 
       <ActionBar>
         <PixelLink href="/studio" variant="ghost" icon="left">
-          Cast
+          {t("builder.backToCast")}
         </PixelLink>
         <PixelButton variant="primary" icon="play" onClick={() => router.push("/play")}>
-          Play
+          {t("builder.play")}
         </PixelButton>
       </ActionBar>
     </>

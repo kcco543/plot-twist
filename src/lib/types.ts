@@ -27,12 +27,22 @@ export type EnvironmentDraft = {
   type: EnvironmentTypeId;
 };
 
-export type LogEntry = {
-  id: string;
-  at: number;
-  speaker: string;
-  text: string;
+export type Speaker = { kind: "narrator" } | { kind: "character"; name: string };
+
+/**
+ * A story line stored as a translation key + params, so the log re-renders
+ * in whichever language is active. User-written text travels in params as-is.
+ */
+export type StoryLine = {
+  speaker: Speaker;
+  key: "scene.talk" | "scene.silent" | "scene.observe" | "scene.observeEmpty" | "scene.wait" | "scene.intro" | "custom";
+  /** For list messages (scene.wait). */
+  index?: number;
+  params: Record<string, string>;
 };
+
+/** v0.2 entries are StoryLines. v0.1 saves stored plain `speaker` + `text`; both still render. */
+export type LogEntry = { id: string; at: number } & (StoryLine | { speaker: string; text: string });
 
 export type SaveData = {
   version: 1;

@@ -1,6 +1,8 @@
 "use client";
 
-/** Segmented single-choice control (radio group) in pixel style. */
+import { buttonStyle } from "./PixelButton";
+
+/** Segmented single choice (radio group) using candy buttons. */
 export function Choice<T extends string>({
   label,
   value,
@@ -14,8 +16,8 @@ export function Choice<T extends string>({
 }) {
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="mb-3 font-display text-[10px] uppercase tracking-wide text-sun">{label}</legend>
-      <div className="flex flex-wrap gap-3" role="radiogroup">
+      <legend className="mb-2 font-label text-xs uppercase tracking-wide text-butter">{label}</legend>
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
         {options.map((o) => {
           const active = o.value === value;
           return (
@@ -24,12 +26,8 @@ export function Choice<T extends string>({
               role="radio"
               aria-checked={active}
               onClick={() => onChange(o.value)}
-              className="px-btn min-h-9 px-3 py-2 text-[10px]"
-              style={
-                active
-                  ? ({ "--face": "var(--color-sun)", "--edge": "var(--color-sun-dark)", "--ink": "var(--color-ink-950)" } as React.CSSProperties)
-                  : ({ "--face": "var(--color-ink-900)", "--frame": "var(--color-ink-400)", "--edge": "var(--color-ink-800)" } as React.CSSProperties)
-              }
+              className="px-btn min-h-11 px-2 text-[15px]"
+              style={buttonStyle(active ? "accent" : "ghost")}
             >
               {o.label}
             </button>
@@ -40,26 +38,36 @@ export function Choice<T extends string>({
   );
 }
 
-export function Toggle({ label, description, checked, onChange }: { label: string; description?: string; checked: boolean; onChange: (v: boolean) => void }) {
+export function Toggle({
+  label,
+  description,
+  checked,
+  onChange,
+  onLabel,
+  offLabel,
+}: {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  onLabel: string;
+  offLabel: string;
+}) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <div>
-        <p className="font-display text-[10px] uppercase tracking-wide text-sun">{label}</p>
-        {description && <p className="mt-1 text-base text-paper-dim">{description}</p>}
+      <div className="min-w-0">
+        <p className="font-label text-xs uppercase tracking-wide text-butter">{label}</p>
+        {description && <p className="mt-1 text-base leading-snug text-cream-dim">{description}</p>}
       </div>
       <button
         role="switch"
         aria-checked={checked}
         aria-label={label}
         onClick={() => onChange(!checked)}
-        className="px-btn min-h-9 w-20 shrink-0 text-[10px]"
-        style={
-          checked
-            ? ({ "--face": "var(--color-mint)", "--edge": "var(--color-mint-dark)", "--ink": "var(--color-ink-950)" } as React.CSSProperties)
-            : ({ "--face": "var(--color-ink-900)", "--frame": "var(--color-ink-400)", "--edge": "var(--color-ink-800)" } as React.CSSProperties)
-        }
+        className="px-btn min-h-11 w-20 shrink-0 text-[15px]"
+        style={buttonStyle(checked ? "success" : "ghost")}
       >
-        {checked ? "On" : "Off"}
+        {checked ? onLabel : offLabel}
       </button>
     </div>
   );

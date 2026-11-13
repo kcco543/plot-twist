@@ -1,6 +1,10 @@
+"use client";
+
+import type { CSSProperties } from "react";
 import { ArtImage } from "@/components/ui/ArtImage";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { getCharacterArt } from "@/assets/manifest";
+import { useI18n } from "@/i18n";
 import type { Character } from "@/lib/types";
 
 export function CharacterRoster({
@@ -14,30 +18,25 @@ export function CharacterRoster({
   onSelect: (id: string) => void;
   onAdd: () => void;
 }) {
+  const { t } = useI18n();
   return (
-    <div className="flex flex-col gap-4">
-      <ul className="flex gap-4 overflow-x-auto p-2 pb-4 lg:flex-col lg:overflow-visible lg:p-1" aria-label="Your characters">
+    <div className="flex flex-col gap-3">
+      {/* Phones: horizontal swipe strip. Desktop: vertical list. */}
+      <ul className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0" aria-label={t("studio.castList")}>
         {characters.map((c) => {
           const active = c.id === selectedId;
           return (
-            <li key={c.id} className="shrink-0 lg:shrink">
+            <li key={c.id} className="shrink-0 snap-start lg:shrink">
               <button
                 onClick={() => onSelect(c.id)}
                 aria-current={active ? "true" : undefined}
-                className="px-frame px-focus flex w-44 items-center gap-3 p-2 text-left transition-colors lg:w-full"
-                style={
-                  {
-                    "--frame": active ? "var(--color-sun)" : "var(--color-ink-600)",
-                    background: active ? "var(--color-ink-700)" : "var(--color-ink-900)",
-                  } as React.CSSProperties
-                }
+                className="px-frame px-focus flex w-44 items-center gap-2 text-left lg:w-full"
+                style={{ "--frame": `var(--frame-${active ? "gold-card" : "card"})` } as CSSProperties}
               >
-                <ArtImage art={getCharacterArt(c.portrait).portrait} alt="" showTag={false} className="size-12 shrink-0 bg-ink-950" />
+                <ArtImage art={getCharacterArt(c.portrait).sprite} alt="" showTag={false} className="w-12 shrink-0 bg-plum-900" />
                 <span className="min-w-0">
-                  <span className={`block truncate font-display text-[10px] uppercase ${active ? "text-sun" : "text-paper"}`}>
-                    {c.name.trim() || "Unnamed"}
-                  </span>
-                  <span className="block truncate text-sm text-paper-dim">{c.age.trim() ? `Age ${c.age}` : "Age ?"}</span>
+                  <span className={`block truncate font-head text-base font-bold ${active ? "text-butter" : "text-cream"}`}>{c.name.trim() || t("common.unnamed")}</span>
+                  <span className="block truncate text-sm text-cream-dim">{c.age.trim() ? t("common.ageValue", { age: c.age.trim() }) : t("common.ageUnknown")}</span>
                 </span>
               </button>
             </li>
@@ -45,7 +44,7 @@ export function CharacterRoster({
         })}
       </ul>
       <PixelButton variant="accent" size="sm" icon="plus" onClick={onAdd} className="w-full">
-        New character
+        {t("studio.new")}
       </PixelButton>
     </div>
   );

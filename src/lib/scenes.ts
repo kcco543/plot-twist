@@ -1,72 +1,75 @@
 /**
- * Scripted placeholder interactions for Play Mode.
- * No AI here: lines are assembled from what the player wrote in the
- * Character Studio, so every character already "sounds" like themselves.
+ * Scripted placeholder interactions for Play Mode (no AI).
+ * Lines are built from what the player wrote in the Character Studio and
+ * stored as translation keys, so every predefined phrase exists in English
+ * and Chinese while the player's own words stay untouched.
  */
-import type { Character } from "./types";
+import type { Character, EnvironmentTypeId, LogEntry, StoryLine } from "./types";
 import { createBlankCharacter } from "./gameStore";
+import { translate, translateList, type Locale } from "@/i18n";
 
 export type Action = "talk" | "observe" | "wait";
 
-const pick = <T,>(list: T[], n: number) => list[((n % list.length) + list.length) % list.length];
+const TOPICS = ["goals", "fears", "relationships", "background"] as const;
 const clean = (s: string) => s.trim().replace(/\s+/g, " ");
+const pickIndex = (len: number, n: number) => ((n % len) + len) % len;
 
-export function lineFor(action: Action, c: Character, turn: number, place: string): { speaker: string; text: string } {
-  const name = clean(c.name) || "Unnamed";
+export function lineFor(action: Action, c: Character, turn: number, place: EnvironmentTypeId): StoryLine {
+  const name = clean(c.name);
+  const character = { kind: "character" as const, name };
+  const narrator = { kind: "narrator" as const };
   if (action === "talk") {
-    const topics = (
-      [
-        ["goals", "what they want"],
-        ["fears", "what scares them"],
-        ["relationships", "the people in their life"],
-        ["background", "where they come from"],
-      ] as const
-    ).filter(([f]) => clean(c[f]));
-    if (topics.length === 0) {
-      return { speaker: name, text: "...  (They have nothing to say yet. Give them goals or fears in the Character Studio.)" };
-    }
-    const [field, label] = pick(topics, turn);
-    return { speaker: name, text: `[on ${label}] "${clean(c[field])}"` };
+    const topics = TOPICS.filter((f) => clean(c[f]));
+    if (topics.length === 0) return { speaker: character, key: "scene.silent", params: {} };
+    const topic = topics[pickIndex(topics.length, turn)];
+    return { speaker: character, key: "scene.talk", params: { topic, text: clean(c[topic]) } };
   }
   if (action === "observe") {
     const details = [c.appearance, c.habits, c.personality].map(clean).filter(Boolean);
-    if (details.length === 0) return { speaker: "Narrator", text: `You look at ${name}. They're still a sketch.` };
-    return { speaker: "Narrator", text: `You watch ${name}. ${pick(details, turn)}` };
+    if (details.length === 0) return { speaker: narrator, key: "scene.observeEmpty", params: { name } };
+    return { speaker: narrator, key: "scene.observe", params: { name, detail: details[pickIndex(details.length, turn)] } };
   }
-  const ambience = [
-    `Time passes in the ${place}. Nobody admits they're waiting for something.`,
-    `A quiet moment in the ${place}. ${name} glances your way.`,
-    `Somewhere in the ${place}, something creaks. Everyone pretends not to notice.`,
-  ];
-  return { speaker: "Narrator", text: pick(ambience, turn) };
+  return { speaker: narrator, key: "scene.wait", index: turn, params: { place, name } };
 }
 
-/** Shown in Play Mode when the player hasn't created anyone yet. */
-export function demoCast(): Character[] {
-  const a = createBlankCharacter(0);
-  const b = createBlankCharacter(2);
-  return [
-    {
-      ...a,
-      id: "demo-1",
-      name: "Juniper",
-      age: "19",
-      appearance: "They keep tucking a pencil behind their ear and forgetting it's there.",
-      personality: "Curious, impatient, kind in a loud way.",
-      goals: "Find out who left the letter on my doorstep.",
-      fears: "That the letter was meant for someone else.",
-      relationships: "Owes Rook a favor. Won't say what for.",
-    },
-    {
-      ...b,
-      id: "demo-2",
-      name: "Rook",
-      age: "27",
-      appearance: "Long coat, tired eyes, very clean boots.",
-      personality: "Dry humor, says less than they know.",
-      habits: "Rook taps the table twice before answering any question.",
-      goals: "Keep everyone out of trouble. Mostly Juniper.",
-      fears: "Being needed and not showing up.",
-    },
-  ];
+export function introLine(description: string, place: EnvironmentTypeId): StoryLine {
+  const text = clean(description);
+  return text
+    ? { speaker: { kind: "narrator" }, key: "custom", params: { text } }
+    : { speaker: { kind: "narrator" }, key: "scene.intro", params: { place } };
+}
+
+/** Turn a stored line into display text in the active language. */
+export function renderLine(line: StoryLine | LogEntry, locale: Locale): { speaker: string; text: string } {
+  if (typeof line.speaker === "string" && "text" in line) return { speaker: line.speaker, text: line.text }; // v0.1 save
+  const l = line as StoryLine;
+  const unnamed = translate(locale, "common.unnamed");
+  const p: Record<string, string> = { ...l.params };
+  if (p.name !== undefined) p.name = p.name || unnamed;
+  if (p.place) p.place = translate(locale, `environments.${p.place}.name`);
+  if (p.topic) p.topic = translate(locale, `scene.topics.${p.topic}`);
+  const speaker = l.speaker.kind === "narrator" ? translate(locale, "scene.narrator") : l.speaker.name || unnamed;
+  let text: string;
+  if (l.key === "custom") text = p.text ?? "";
+  else if (l.key === "scene.wait") {
+    const list = translateList(locale, "scene.wait");
+    text = list[pickIndex(list.length, l.index ?? 0)].replace(/\{(\w+)\}/g, (_, k) => p[k] ?? "");
+  } else text = translate(locale, l.key, p);
+  return { speaker, text };
+}
+
+/** Shown in Play Mode when the player hasn't created anyone yet (predefined, so it's translated). */
+export function demoCast(locale: Locale): Character[] {
+  const tr = (k: string) => translate(locale, k);
+  const fields = ["name", "age", "appearance", "personality", "habits", "goals", "fears", "relationships"] as const;
+  return (["a", "b"] as const).map((id, i) => {
+    const base = createBlankCharacter(i === 0 ? 0 : 2);
+    const filled = Object.fromEntries(
+      fields.map((f) => {
+        const v = tr(`demo.${id}.${f}`);
+        return [f, v === `demo.${id}.${f}` ? "" : v];
+      }),
+    );
+    return { ...base, ...filled, id: `demo-${id}` };
+  });
 }

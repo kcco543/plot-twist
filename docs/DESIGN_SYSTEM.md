@@ -1,0 +1,146 @@
+# PLOT TWIST! design system — "Cozy chaos" (v0.2)
+
+> You create the characters. They create the chaos.
+
+This document is the single reference for how PLOT TWIST! looks, reads and moves. Tokens live in `src/app/globals.css`, frames in `src/app/frames.css` (generated), components in `src/components/ui/`.
+
+## 1. What the six references share
+
+The references were used for **principles only**. No characters, compositions or game-specific looks are copied.
+
+| Principle | What it means for PLOT TWIST! |
+| --- | --- |
+| **Chubby, expressive characters** | Characters are about 2 heads tall, with big heads, simple dot eyes with a white shine, and blush marks. The silhouette must read at 32×32. |
+| **Colored outlines, never black** | Outlines are plum ink `#1b1526`. No pure `#000` anywhere in art or UI. |
+| **Hue-shifted shading** | Every material uses a 3-tone ramp. Shadows shift cooler (toward purple or blue-green) and highlights shift warmer (toward yellow or cream). There are no gradients, no anti-aliasing and no blur. |
+| **Clear pixel clusters** | Shapes are simple and rounded, with no noise or single stray pixels. Props are a little odd: mushrooms, floating islands, crooked windows. |
+| **Calm back, bright front** | Backgrounds are darker and less saturated. Characters and interactive things are the most saturated colors on screen. |
+| **Busy, lived-in rooms** | Scenes are layered (sky, far hills, midground, floor, props, characters). Every room should hint at a story. |
+| **Retro game UI** | Framed windows, nameplate tabs, speech boxes, portrait badges, candy buttons. |
+
+## 2. Color
+
+### Neutrals (plum)
+| Token | Hex | Use |
+| --- | --- | --- |
+| `ink` | `#1b1526` | Outlines, text on candy colors |
+| `plum-950` / `plum-900` | `#1f1830` / `#231c30` | Deep wells, top bar, stage background |
+| `plum-800` | `#30273f` | **Midnight Plum**, the page background |
+| `plum-700` | `#3d3250` | Panel face |
+| `plum-600` | `#4e4266` | Card face, dividers |
+| `plum-500` / `plum-300` | `#66588a` / `#a596c6` | Muted borders / muted text |
+| `cream` | `#fff0d5` | **Warm Cream**, main text |
+| `cream-dim` | `#d8cbe3` | Secondary text |
+
+### Candy ramps (`-lo` / base / `-hi`)
+| Ramp | lo | base | hi | Role |
+| --- | --- | --- | --- | --- |
+| lavender | `#6a55a6` | `#9d86ce` | `#d2c4f2` | Magic, secondary actions (Load, Observe) |
+| pink | `#c0507f` | `#f48db5` | `#ffc7dc` | **Primary** actions, brand, speaker tabs |
+| mint | `#3b9a8a` | `#72d9b7` | `#c4f5df` | Success, saved, "on" |
+| butter | `#d29a45` | `#f8d77c` | `#fff3c4` | Selection, focus ring, labels |
+| teal | `#2b7d8c` | `#4fc3cc` | `#aef0ee` | Water, glow, Otherworld cyan |
+| coral | `#b8494a` | `#f07a62` | `#ffb59c` | Danger, Modern accent |
+| jade | `#255b4d` | `#3f8f74` | `#8fd1ac` | Ancient China accent, foliage |
+
+The six suggested core colors are used as given. The `-lo` and `-hi` steps were added to make ramps. Text contrast: cream on plum-800 is about 13:1, and ink on pink, mint or butter is above 7:1.
+
+### Worlds
+Every world keeps the same UI. Only the environment art, props and accent change.
+
+| World | Accent token | Rim frame | Environment palette |
+| --- | --- | --- | --- |
+| Western Fantasy | butter `#f8d77c` | gold | warm wood, deep forest green, gold, violet |
+| Modern | coral-hi `#ffb59c` | coral | warm neutrals, muted blue, coral, turquoise |
+| Ancient China | jade-hi `#8fd1ac` | jade | jade green, vermilion, warm cream, dark wood |
+| Otherworld | lavender-hi `#d2c4f2` | lavender | lavender, pink, cyan, luminous teal |
+
+## 3. Typography
+
+| Role | Token | Latin | Chinese | Use |
+| --- | --- | --- | --- | --- |
+| Shout | `font-shout` | Press Start 2P | ZCOOL QingKe HuangYou | Logo and big moments only |
+| Display | `font-display` | Pixelify Sans | ZCOOL QingKe HuangYou | Screen titles (h1), logo subtitle |
+| Heading / UI | `font-head` | Pixelify Sans 600–700 | Noto Sans SC 700 | Buttons, card titles, names |
+| Body | `font-body` | Pixelify Sans 400 | Noto Sans SC 400 | Paragraphs, inputs, dialogue |
+| Label | `font-label` | Silkscreen | Noto Sans SC | Small caps labels, eyebrows, tags |
+
+Each stack lists the Latin pixel face first and the CJK face next. Mixed text (for example a Chinese UI with an English character name) renders each glyph in the right font. Chinese fonts load on demand by unicode range. ZCOOL has a single weight, so it is never fake-bolded. Chinese gets slightly taller line height.
+
+Scale (px): 10 · 12 label, 14 · 15 small, 17 · 18 body, 20 lead, 22 · 24 card title, 28 → 40 h1, 42 → 96 logo. Body text is never smaller than 16px on phones, which also stops iOS from zooming in on focus.
+
+## 4. The pixel unit and frames
+
+- **1 UI pixel = `--u`**, which is 3px on phones and 4px from 640px up. Borders, offsets and shadows are multiples of it.
+- **Frames** are 9-slice images, 12×12 art pixels each: a plum outline, 2-step rounded corners, a light edge on the top-left and a shaded edge on the bottom-right. They are generated by `scripts/build-frames.mjs` into CSS variables (`--frame-panel`, `--frame-pink`, ...).
+- Use `.px-frame` with `--frame: var(--frame-<name>)`. `.px-shadow` adds a 1-unit ink drop shadow.
+
+| Frame | Use |
+| --- | --- |
+| `panel` | Main windows |
+| `card` | Items inside panels (roster, environment types) |
+| `gold`, `gold-card` | Selected item, portrait badge |
+| `cream` | Dialogue box |
+| `inset`, `inset-focus` | Text fields (focused = butter rim) |
+| `world-*` | World cards, game stage rim |
+| button frames | `pink`, `butter`, `mint`, `lavender`, `plum`, `ghost`, `coral`, each with a `-pressed` twin, plus `disabled` |
+
+## 5. Components (`src/components/ui`)
+
+| Component | Rules |
+| --- | --- |
+| **PixelButton / PixelLink** | Variants: `primary` (pink), `accent` (butter), `success` (mint), `magic` (lavender), `secondary` (plum), `ghost`, `danger` (coral). Sizes sm 44px, md 48px, lg 56px min height, so every one is touch-sized. **Hover** lifts 1u (pointer devices only, never needed to use the app). **Active** presses down 1u and swaps to the pressed frame. **Focus** shows a dashed butter ring. **Disabled** uses a flat plum frame and muted text. **Loading** shows stepped dots and sets `aria-busy`. |
+| **Panel** | Framed window. `title` becomes a butter nameplate tab on the top edge. |
+| **Nameplate tab** (`.px-tab`) | Shared by panels (butter), dialogue speaker (pink) and modal titles (pink). |
+| **Modal** | A centered window on desktop and a bottom sheet on phones. Esc and the backdrop close it, focus returns to where it was, and the page behind doesn't scroll. |
+| **Field** | Label in butter caps with a character counter. The input uses the sunken `inset` frame. It is a plain controlled input, so Chinese IME composition works. |
+| **Choice / Toggle** | Segmented radio and on/off switch built from candy buttons. |
+| **ArtImage** | Shows pixel art with nearest-neighbor scaling, keeping the art's own aspect ratio. `contain` letterboxes and `cover` crops; it never stretches. Placeholder art gets a small tag. |
+| **PixelStage** (`components/game`) | The game screen. It scales a 320×192 room by a **whole number** (1×, 2×, 3×), so pixels stay square. On screens narrower than the art it falls back to a uniform scale. Readable labels sit in an unscaled overlay. |
+| **LoadingDots / LoadingState** | Stepped "..." with a status label. |
+| **PixelIcon** | 7×7 pixel icons drawn in `currentColor`. No emoji anywhere. |
+
+Game pieces (`src/components/game`): WorldCard, CharacterRoster, CharacterEditor, PortraitSlot, PixelStage, SceneSprites / SceneLabels, DialogueBox, ControlPad, CharacterInfoPanel.
+
+## 6. Layout and spacing
+
+- Spacing follows a 4px scale (Tailwind's default): 4, 8, 12, 16, 24, 32, 40.
+- Side gutters are `max(16px, safe-area-inset)`. The top bar, bottom action bar, modals and title screen all clear the notch and home indicator.
+- Breakpoints: phones up to 639px, tablets 640–1023px, desktop 1024px and up. The step navigation in the top bar appears from 1024px. Below that, a compact step strip is shown.
+- When a text field is focused on a phone or tablet, the sticky bottom bar becomes static so the keyboard never hides the field.
+- Content max width is 1152px. Running text stays under about 65 characters.
+
+## 7. Motion
+
+All motion is stepped (`steps()`), with no smooth easing.
+
+| Name | Spec | Where |
+| --- | --- | --- |
+| Snap | 80ms, 2 steps, 1u | Button hover and press |
+| Screen in | 240ms, 4 steps, 12px rise | Every page change |
+| Pop | 160ms, 3 steps | Modals |
+| Bob | 1s, 2 frames, 1u | Selected character, empty-state icons |
+| Blink | Off for about 7% of a 3.2s loop | "Press start" |
+| Cursor | 1s on/off | Typewriter cursor |
+
+"Reduce motion" in Settings, or the operating system's setting, turns all of it off.
+
+## 8. Pixel-art standards
+
+| Asset | Size | Notes |
+| --- | --- | --- |
+| Map tile | 16×16 | Rooms are 20×12 tiles = **320×192** |
+| Character sprite | **32×32** | Character about 20×28 inside, feet on row 30, 1px plum outline |
+| Portrait | **96×96** | Head and shoulders, transparent background, same palette as the sprite |
+| Title background | 320×180 | Cropped to fit, never stretched |
+| PWA icons | 192, 512, maskable 512, apple 180 | `public/icons` |
+
+- Draw at 1× and export PNG with transparency. Don't pre-scale.
+- One light direction everywhere: top-left.
+- Use at most 3 tones per material, taken from the ramps above, and up to about 12 colors per sprite.
+- Keep the same perspective (straight-on, slightly top-down floor) and the same character proportions in every world.
+- The app scales with `image-rendering: pixelated`. Never use `next/image` for pixel art, because it resamples.
+
+## 9. Placeholder art
+
+Everything in `public/assets` is **placeholder** art, generated by `scripts/generate-placeholders.mjs` from the ramps above, and tagged "Placeholder" in the UI. To use your own art, replace a file (same name and size) or update `src/assets/manifest.ts`, then set `placeholder: false`.

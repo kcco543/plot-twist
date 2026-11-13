@@ -12,16 +12,21 @@ type Props = {
   className?: string;
 };
 
+/**
+ * Labeled text field. Plain controlled input/textarea, so IME composition
+ * (Chinese pinyin, Japanese, etc.) works natively.
+ */
 export function Field({ label, value, onChange, placeholder, multiline, rows = 3, maxLength, hint, className = "" }: Props) {
   const id = useId();
+  const hintId = `${id}-hint`;
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
+    <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
       <div className="flex items-baseline justify-between gap-2">
-        <label htmlFor={id} className="font-display text-[10px] uppercase tracking-wide text-sun">
+        <label htmlFor={id} className="font-label text-xs uppercase tracking-wide text-butter">
           {label}
         </label>
         {maxLength && (
-          <span className="text-sm text-ink-400" aria-hidden>
+          <span className="font-label text-[10px] text-plum-300 tabular-nums" aria-hidden>
             {value.length}/{maxLength}
           </span>
         )}
@@ -34,6 +39,7 @@ export function Field({ label, value, onChange, placeholder, multiline, rows = 3
           value={value}
           maxLength={maxLength}
           placeholder={placeholder}
+          aria-describedby={hint ? hintId : undefined}
           onChange={(e) => onChange(e.target.value)}
         />
       ) : (
@@ -43,10 +49,15 @@ export function Field({ label, value, onChange, placeholder, multiline, rows = 3
           value={value}
           maxLength={maxLength}
           placeholder={placeholder}
+          aria-describedby={hint ? hintId : undefined}
           onChange={(e) => onChange(e.target.value)}
         />
       )}
-      {hint && <p className="text-sm text-paper-dim">{hint}</p>}
+      {hint && (
+        <p id={hintId} className="text-sm text-cream-dim">
+          {hint}
+        </p>
+      )}
     </div>
   );
 }

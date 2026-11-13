@@ -1,0 +1,264 @@
+{
+  "meta": {
+    "title": "PLOT TWIST! 剧情反转",
+    "description": "角色由你创造，混乱由他们制造。一个为原创角色打造的像素风叙事沙盒。"
+  },
+  "common": {
+    "back": "返回",
+    "continue": "继续",
+    "close": "关闭",
+    "done": "完成",
+    "cancel": "取消",
+    "delete": "删除",
+    "keep": "保留",
+    "loading": "加载中",
+    "loadingSave": "正在读取存档",
+    "placeholder": "占位图",
+    "unnamed": "未命名",
+    "ageValue": "{age} 岁",
+    "ageUnknown": "年龄未知",
+    "notWritten": "还没写",
+    "autosaved": "已自动保存",
+    "settings": "设置",
+    "title": "标题"
+  },
+  "language": {
+    "label": "语言",
+    "switchTo": "切换语言",
+    "en": "English",
+    "zh-CN": "简体中文",
+    "short": { "en": "EN", "zh-CN": "中" },
+    "note": "只会切换界面语言。你写的角色和故事会保持原来的语言。"
+  },
+  "title": {
+    "tagline1": "角色由你创造，",
+    "tagline2": "混乱由他们制造。",
+    "subtitle": "剧情反转！",
+    "start": "开始游戏",
+    "load": "读取存档",
+    "settings": "设置",
+    "pressStart": "按下开始",
+    "version": "v0.2 · 原型",
+    "menu": "主菜单"
+  },
+  "nav": {
+    "steps": "游戏步骤",
+    "world": "世界",
+    "cast": "角色",
+    "setting": "场景",
+    "play": "游玩",
+    "stepOf": "第 {n} / {total} 步",
+    "home": "PLOT TWIST! 标题画面",
+    "offline": "离线"
+  },
+  "worlds": {
+    "kicker": "第 1 步 · 选择世界",
+    "heading": "故事会在哪里失控？",
+    "intro": "选择你的角色生活的世界。之后也可以更改。",
+    "group": "世界",
+    "badge": "世界",
+    "selected": "已选择",
+    "selectedLabel": "已选择：",
+    "none": "尚未选择世界",
+    "illustration": "{name}插图",
+    "list": {
+      "western-fantasy": {
+        "name": "西方奇幻",
+        "blurb": "长满青苔的村庄、歪歪扭扭的城堡，还有没人读到结尾的预言。",
+        "tags": ["冒险", "魔法", "王国"]
+      },
+      "modern": {
+        "name": "现代",
+        "blurb": "咖啡馆、末班车，还有群聊里明晃晃藏着的秘密。",
+        "tags": ["都市", "日常", "戏剧"]
+      },
+      "ancient-china": {
+        "name": "古代中国",
+        "blurb": "庭院、路边客栈，还有背负恩义之债的浪迹剑客。",
+        "tags": ["武侠", "朝堂", "传说"]
+      },
+      "otherworld": {
+        "name": "异世界",
+        "blurb": "漂浮的岛屿、发光的植物，以及会改变主意的物理法则。",
+        "tags": ["超现实", "宇宙", "奇异"]
+      }
+    }
+  },
+  "studio": {
+    "kicker": "第 2 步 · 角色工作室",
+    "heading": "召集你的角色",
+    "introWorld": "你的故事发生在{world}。所有内容都会自动保存在此浏览器中。",
+    "intro": "所有内容都会自动保存在此浏览器中。",
+    "emptyTitle": "还没有角色",
+    "emptyBody": "创建你的第一个原创角色。他们是谁？又在隐瞒什么？",
+    "create": "创建角色",
+    "new": "新角色",
+    "castCount": "角色 · {count}",
+    "castList": "你的角色",
+    "editing": "正在编辑 {name}",
+    "next": "构建世界",
+    "backToWorlds": "世界",
+    "deleteTitle": "删除角色？",
+    "deleteBody": "{name}将被永久删除，此操作无法撤销。",
+    "thisCharacter": "这个角色",
+    "sections": { "identity": "身份", "inner": "内心", "ties": "关系与规则" },
+    "portrait": {
+      "title": "头像",
+      "alt": "{name}的头像",
+      "prev": "上一个头像",
+      "next": "下一个头像",
+      "count": "{n} / {total}",
+      "note": "这些是占位头像。之后可以在这个画框里放入你自己的作品、像素编辑器或 AI 生成的头像。"
+    }
+  },
+  "character": {
+    "fields": {
+      "name": { "label": "名字", "placeholder": "例如：林小满" },
+      "age": { "label": "年龄", "placeholder": "例如：19、上古、未知" },
+      "appearance": { "label": "外貌", "placeholder": "别人第一眼会注意到什么？" },
+      "personality": { "label": "性格", "placeholder": "好奇、急性子、温柔却嗓门很大……" },
+      "background": { "label": "背景", "placeholder": "他们来自哪里？发生过什么？" },
+      "goals": { "label": "目标", "placeholder": "他们最想要的是什么？" },
+      "fears": { "label": "恐惧", "placeholder": "他们绝不会承认自己害怕什么？" },
+      "habits": { "label": "习惯", "placeholder": "他们下意识会做的小动作。" },
+      "relationships": { "label": "人际关系", "placeholder": "朋友、对手、家人、未了的恩怨……" },
+      "rules": { "label": "角色规则与底线", "placeholder": "这个角色绝对不会做的事，或故事应避开的话题。" }
+    }
+  },
+  "builder": {
+    "kicker": "第 3 步 · 世界构建",
+    "heading": "布置场景",
+    "intro": "描述故事开始的地方，并选择场所类型。目前预览使用的是占位图。",
+    "description": "描述",
+    "describeLabel": "描述这个环境",
+    "describePlaceholder": "面馆楼上一间挤得满满的书店。这里总有雨的味道，后门却是从里面锁上的……",
+    "describeHint": "自动保存。之后这段文字将用于 AI 生成地图。",
+    "type": "环境类型",
+    "preview": "预览",
+    "previewAlt": "{title}预览",
+    "sourcePlaceholder": "占位图",
+    "sourceGenerated": "已生成",
+    "generating": "正在绘制预览",
+    "quoteEmpty": "还没有描述。你写的文字会显示在这里。",
+    "backToCast": "角色",
+    "play": "开始"
+  },
+  "environments": {
+    "interior": { "name": "室内房间", "hint": "卧室、酒馆、咖啡馆、客栈" },
+    "street": { "name": "城镇街道", "hint": "集市、小巷、大路" },
+    "wilderness": { "name": "野外", "hint": "森林、田野、河岸" },
+    "ruins": { "name": "遗迹地牢", "hint": "神庙、洞穴、被遗忘之地" },
+    "dreamscape": { "name": "梦境", "hint": "回忆、幻象、不可能的房间" }
+  },
+  "play": {
+    "noWorldTitle": "尚未选择世界",
+    "noWorldBody": "每个故事都需要一个发生的地方。先选择一个世界吧。",
+    "chooseWorld": "选择世界",
+    "demoNotice": "你还没有创建角色，所以先由示例角色登场。",
+    "storyLog": "故事记录",
+    "pause": "暂停",
+    "pauseMenu": "暂停菜单",
+    "viewportAlt": "{world}中的{place}",
+    "selectCharacter": "选择{name}",
+    "with": "对象：{name}",
+    "selectSomeone": "选择一个角色",
+    "showFullLine": "显示整句",
+    "dialogue": "对话",
+    "actions": { "talk": "交谈", "observe": "观察", "wait": "等待" },
+    "character": "角色",
+    "selectInScene": "在场景中选择一个角色。",
+    "demoCharacter": "示例角色。",
+    "createOwn": "创建你自己的角色",
+    "editInStudio": "在工作室中编辑",
+    "keyboardHint": "按键：← → 切换角色 · Z 交谈 · X 观察 · C 等待 · L 记录 · Esc 暂停",
+    "controls": "游戏操作",
+    "prevCharacter": "上一个角色",
+    "nextCharacter": "下一个角色",
+    "interact": "与选中的角色交谈",
+    "log": {
+      "empty": "还什么都没发生。去和别人聊聊吧。",
+      "clear": "清空记录"
+    },
+    "paused": "已暂停",
+    "resume": "继续游戏",
+    "editCast": "编辑角色",
+    "editSetting": "编辑场景",
+    "quit": "回到标题",
+    "autosaveNote": "进度会自动保存。"
+  },
+  "scene": {
+    "narrator": "旁白",
+    "intro": "{place}里很安静，安静得过分。选一个人，看看会发生什么。",
+    "silent": "……（他们还无话可说。去角色工作室给他们写下目标或恐惧吧。）",
+    "talk": "【聊到{topic}】“{text}”",
+    "topics": {
+      "goals": "想要的东西",
+      "fears": "害怕的东西",
+      "relationships": "身边的人",
+      "background": "自己的来历"
+    },
+    "observeEmpty": "你看着{name}。他们还只是一张草稿。",
+    "observe": "你注视着{name}。{detail}",
+    "wait": [
+      "{place}里时间流逝。没人承认自己在等什么。",
+      "{place}里片刻安静。{name}朝你瞥了一眼。",
+      "{place}的某处传来吱呀一声。大家都假装没听见。"
+    ]
+  },
+  "demo": {
+    "a": {
+      "name": "小满",
+      "age": "19",
+      "appearance": "总把铅笔夹在耳后，然后忘了它在那儿。",
+      "personality": "好奇、急性子，温柔却嗓门很大。",
+      "goals": "查出是谁把那封信留在我家门口。",
+      "fears": "那封信其实是写给别人的。",
+      "relationships": "欠阿乌一个人情，但不肯说是为什么。"
+    },
+    "b": {
+      "name": "阿乌",
+      "age": "27",
+      "appearance": "长外套、疲惫的眼神、一尘不染的靴子。",
+      "personality": "冷幽默，知道的比说出口的多。",
+      "habits": "阿乌回答任何问题前都会先敲两下桌子。",
+      "goals": "让大家别惹麻烦，尤其是小满。",
+      "fears": "被需要的时候却没能出现。"
+    }
+  },
+  "load": {
+    "kicker": "读取存档",
+    "heading": "存档",
+    "intro": "你的游戏会自动保存在此浏览器中。",
+    "emptyTitle": "没有存档",
+    "emptyBody": "开始新游戏来创建你的第一个存档。",
+    "newGame": "新游戏",
+    "slot": "存档 1",
+    "world": "世界",
+    "cast": "角色",
+    "setting": "场景",
+    "saved": "保存于",
+    "notChosen": "未选择",
+    "noWorld": "无世界",
+    "characters": "{count} 个角色",
+    "character": "1 个角色"
+  },
+  "settings": {
+    "title": "设置",
+    "textSpeed": "文字速度",
+    "speeds": { "slow": "慢", "normal": "普通", "fast": "快", "instant": "瞬间" },
+    "crt": "CRT 扫描线",
+    "crtDesc": "在整个画面上叠加老电视的扫描线。",
+    "motion": "减少动态效果",
+    "motionDesc": "关闭页面过渡和跳动动画。",
+    "on": "开",
+    "off": "关",
+    "offlineTitle": "离线游玩",
+    "offlineReady": "首次访问后，此版本的所有功能都可离线使用：存档保存在此浏览器中。",
+    "offlineFuture": "未来的 AI 功能（故事事件、地图和头像生成）需要联网。",
+    "danger": "危险区域",
+    "dangerDesc": "从此浏览器中删除你的世界、角色和故事记录。",
+    "erase": "清除存档",
+    "eraseConfirm": "确定，全部清除",
+    "erased": "存档已清除。"
+  }
+}

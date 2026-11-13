@@ -1,225 +1,218 @@
 @import "tailwindcss";
+@import "./frames.css";
 
 /* ==========================================================================
-   PLOT TWIST! design tokens
-   All colors, sizes and motion live here. Components use these through
-   Tailwind utilities (bg-ink-900, text-twist, font-display ...) or the
-   pixel component classes defined below. Change a token, the whole app follows.
+   PLOT TWIST! DESIGN TOKENS  ·  "Cozy chaos"
+   Full rules: docs/DESIGN_SYSTEM.md
+   Every color, font and timing lives here. Components reach them through
+   Tailwind utilities (bg-plum-800, text-pink, font-head ...) or the
+   pixel classes further down. Change a token and the whole game follows.
    ========================================================================== */
 @theme {
-  /* Base: midnight ink */
-  --color-ink-950: #0e0a1c;
-  --color-ink-900: #160f2b;
-  --color-ink-800: #211741;
-  --color-ink-700: #2e2257;
-  --color-ink-600: #43347a;
-  --color-ink-400: #7d6fae;
+  /* Plum neutrals: ground, panels, outlines. Never pure black. */
+  --color-ink: #1b1526; /* outline + text on candy colors */
+  --color-plum-950: #1f1830;
+  --color-plum-900: #231c30;
+  --color-plum-800: #30273f; /* Midnight Plum: page background */
+  --color-plum-700: #3d3250; /* panel face */
+  --color-plum-600: #4e4266; /* card face, borders */
+  --color-plum-500: #66588a;
+  --color-plum-300: #a596c6; /* muted text */
 
-  /* Text */
-  --color-paper: #fff4e0;
-  --color-paper-dim: #c7bce3;
+  --color-cream: #fff0d5; /* Warm Cream: main text */
+  --color-cream-dim: #d8cbe3; /* secondary text */
 
-  /* Brand accents */
-  --color-twist: #ff3f6c; /* primary — the plot twist */
-  --color-twist-dark: #b81f48;
-  --color-sun: #ffc93c; /* highlight / selection */
-  --color-sun-dark: #b9851a;
-  --color-mint: #3ee0b0; /* success / saved */
-  --color-mint-dark: #1f9c78;
+  /* Candy ramps: -lo (shadow, hue-shifted cooler) / base / -hi (highlight, warmer) */
+  --color-lavender-lo: #6a55a6;
+  --color-lavender: #9d86ce;
+  --color-lavender-hi: #d2c4f2;
+  --color-pink-lo: #c0507f;
+  --color-pink: #f48db5; /* Candy Pink: primary action, brand */
+  --color-pink-hi: #ffc7dc;
+  --color-mint-lo: #3b9a8a;
+  --color-mint: #72d9b7; /* success, saved */
+  --color-mint-hi: #c4f5df;
+  --color-butter-lo: #d29a45;
+  --color-butter: #f8d77c; /* selection, focus, labels */
+  --color-butter-hi: #fff3c4;
+  --color-teal-lo: #2b7d8c;
+  --color-teal: #4fc3cc;
+  --color-teal-hi: #aef0ee;
+  --color-coral-lo: #b8494a;
+  --color-coral: #f07a62; /* danger */
+  --color-coral-hi: #ffb59c;
+  --color-jade-lo: #255b4d;
+  --color-jade: #3f8f74;
+  --color-jade-hi: #8fd1ac;
 
-  /* World accents (one per world) */
-  --color-world-fantasy: #e8b84a;
-  --color-world-modern: #4cb5ff;
-  --color-world-china: #e2493a;
-  --color-world-other: #a46bff;
+  /* World accents (text-safe on plum) */
+  --color-world-western-fantasy: #f8d77c;
+  --color-world-modern: #ffb59c;
+  --color-world-ancient-china: #8fd1ac;
+  --color-world-otherworld: #d2c4f2;
 
-  --font-display: var(--font-press-start), ui-monospace, monospace;
-  --font-body: var(--font-pixelify), ui-monospace, monospace;
+  /* Type. Latin pixel faces first; Chinese falls through to the CJK face. */
+  --font-shout: var(--font-press-start), var(--font-zcool), ui-monospace, monospace;
+  --font-head: var(--font-pixelify), var(--font-noto-sc), system-ui, sans-serif;
+  /* Big display titles only (h1, logo subtitle): Chinese gets the blocky ZCOOL face. */
+  --font-display: var(--font-pixelify), var(--font-zcool), var(--font-noto-sc), system-ui, sans-serif;
+  --font-body: var(--font-pixelify), var(--font-noto-sc), system-ui, sans-serif;
+  --font-label: var(--font-silkscreen), var(--font-noto-sc), ui-monospace, monospace;
 
-  --animate-blink: blink 1s steps(1) infinite;
-  --animate-screen-in: screen-in 320ms steps(6) both;
-  --animate-pop: pop 180ms steps(3) both;
-  --animate-bob: bob 1.2s steps(2) infinite;
+  --animate-blink: blink 3.2s steps(1) infinite;
+  --animate-cursor: cursor 1s steps(1) infinite;
+  --animate-screen-in: screen-in 240ms steps(4) both;
+  --animate-pop: pop 160ms steps(3) both;
+  --animate-bob: bob 1s steps(2) infinite;
+  --animate-dots: dots 1.2s steps(4) infinite;
 }
 
-/* Pixel unit: every border, notch and shadow is a multiple of this. */
+/* One UI pixel. Every frame, notch and offset is a multiple of it. */
 :root {
-  --px: 4px;
+  --u: 3px;
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+}
+@media (min-width: 640px) {
+  :root { --u: 4px; }
 }
 
-@keyframes blink {
-  50% { opacity: 0; }
-}
-@keyframes screen-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes pop {
-  from { opacity: 0; transform: scale(0.94); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes bob {
-  50% { transform: translateY(calc(var(--px) * -1)); }
-}
+@keyframes blink { 0%, 90% { opacity: 1; } 91%, 97% { opacity: 0.2; } }
+@keyframes cursor { 50% { opacity: 0; } }
+@keyframes screen-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes bob { 50% { transform: translateY(calc(var(--u) * -1)); } }
+@keyframes dots { 0% { clip-path: inset(0 100% 0 0); } 100% { clip-path: inset(0 0 0 0); } }
 
 html {
-  background: var(--color-ink-950);
+  background: var(--color-plum-900);
   color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
 }
-
 body {
-  background: var(--color-ink-900);
-  color: var(--color-paper);
+  background-color: var(--color-plum-800);
+  background-image: radial-gradient(var(--color-plum-700) 1.5px, transparent 1.5px);
+  background-size: 16px 16px;
+  color: var(--color-cream);
   font-family: var(--font-body);
   font-size: 1.125rem;
   line-height: 1.5;
   -webkit-font-smoothing: none;
+  -webkit-tap-highlight-color: transparent;
+}
+html[lang="zh-CN"] body { line-height: 1.6; -webkit-font-smoothing: antialiased; }
+html[lang="zh-CN"] .font-label { letter-spacing: 0.04em; }
+/* ZCOOL has a single weight: never fake-bold it. */
+html[lang="zh-CN"] .font-display { font-weight: 400; }
+
+/* Real pixel-art assets: nearest-neighbor scaling, never smoothed. */
+.pixelated, .pixelated img { image-rendering: pixelated; }
+
+::selection { background: var(--color-butter); color: var(--color-ink); }
+
+/* Settings: reduce motion (also honors the OS setting) */
+html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
 }
 
-img.pixelated,
-.pixelated img {
-  image-rendering: pixelated;
-}
-
-::selection {
-  background: var(--color-sun);
-  color: var(--color-ink-900);
-}
-
-/* Settings: reduce motion */
-html[data-motion="reduced"] *,
-html[data-motion="reduced"] *::before,
-html[data-motion="reduced"] *::after {
-  animation-duration: 0.001ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.001ms !important;
-}
-
-/* Settings: CRT scanlines overlay */
+/* Settings: CRT scanlines */
 html[data-crt="on"] body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.18) 0,
-    rgba(0, 0, 0, 0.18) 1px,
-    transparent 1px,
-    transparent 3px
-  );
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 100;
+  background: repeating-linear-gradient(to bottom, rgba(27, 21, 38, 0.22) 0, rgba(27, 21, 38, 0.22) 1px, transparent 1px, transparent 3px);
 }
 
 /* ==========================================================================
-   Pixel component classes
+   PIXEL COMPONENT CLASSES
    ========================================================================== */
 @layer components {
-  /* Notched pixel frame. Set --frame to recolor. */
+  /* 9-slice storybook frame. Pick the art with --frame: var(--frame-panel) etc. */
   .px-frame {
-    --frame: var(--color-paper);
-    position: relative;
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--frame),
-      0 var(--px) 0 0 var(--frame),
-      calc(var(--px) * -1) 0 0 0 var(--frame),
-      var(--px) 0 0 0 var(--frame);
+    --frame: var(--frame-panel);
+    border: calc(var(--u) * 4) solid transparent;
+    border-image-source: var(--frame);
+    border-image-slice: 4 fill;
+    border-image-width: calc(var(--u) * 4);
+    border-image-repeat: stretch;
+    image-rendering: pixelated;
   }
+  .px-shadow { filter: drop-shadow(var(--u) var(--u) 0 var(--color-ink)); }
 
-  /* Panel = frame + hard drop shadow */
-  .px-panel {
-    --frame: var(--color-ink-400);
-    --drop: var(--color-ink-950);
-    background: var(--color-ink-800);
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--frame),
-      0 var(--px) 0 0 var(--frame),
-      calc(var(--px) * -1) 0 0 0 var(--frame),
-      var(--px) 0 0 0 var(--frame),
-      calc(var(--px) * 2) calc(var(--px) * 2) 0 0 var(--drop);
-  }
-
+  /* Candy button. Variant sets --frame and --frame-pressed. */
   .px-btn {
-    --face: var(--color-ink-700);
-    --edge: var(--color-ink-950);
-    --ink: var(--color-paper);
-    --frame: var(--color-paper);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    --frame: var(--frame-plum);
+    --frame-pressed: var(--frame-plum-pressed);
+    --ink: var(--color-cream);
+    position: relative;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    font-family: var(--font-head); font-weight: 700; line-height: 1.1;
     color: var(--ink);
-    background: var(--face);
-    cursor: pointer;
-    user-select: none;
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--frame),
-      0 var(--px) 0 0 var(--frame),
-      calc(var(--px) * -1) 0 0 0 var(--frame),
-      var(--px) 0 0 0 var(--frame),
-      inset 0 calc(var(--px) * -1) 0 0 var(--edge),
-      calc(var(--px) * 1.5) calc(var(--px) * 1.5) 0 calc(var(--px) * 0.5) var(--color-ink-950);
+    cursor: pointer; user-select: none; touch-action: manipulation;
+    border: calc(var(--u) * 4) solid transparent;
+    border-image: var(--frame) 4 fill / calc(var(--u) * 4) stretch;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 var(--u) 0 var(--color-ink));
     transition: transform 80ms steps(2), filter 80ms steps(2);
   }
-  .px-btn:hover:not(:disabled) {
-    transform: translate(calc(var(--px) * -0.5), calc(var(--px) * -0.5));
-    filter: brightness(1.12);
+  @media (hover: hover) {
+    .px-btn:hover:not(:disabled):not([aria-disabled="true"]) { transform: translateY(calc(var(--u) * -1)); filter: drop-shadow(0 calc(var(--u) * 2) 0 var(--color-ink)); }
   }
-  .px-btn:active:not(:disabled) {
-    transform: translate(var(--px), var(--px));
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--frame),
-      0 var(--px) 0 0 var(--frame),
-      calc(var(--px) * -1) 0 0 0 var(--frame),
-      var(--px) 0 0 0 var(--frame),
-      inset 0 var(--px) 0 0 var(--edge);
+  .px-btn:active:not(:disabled):not([aria-disabled="true"]), .px-btn[data-pressed="true"] {
+    transform: translateY(var(--u)); filter: none; border-image-source: var(--frame-pressed);
   }
-  .px-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.45;
+  .px-btn:disabled, .px-btn[aria-disabled="true"] {
+    cursor: not-allowed; border-image-source: var(--frame-disabled); color: var(--color-plum-300); filter: none;
   }
-  .px-btn:focus-visible,
-  .px-focus:focus-visible {
-    outline: var(--px) dashed var(--color-sun);
-    outline-offset: calc(var(--px) * 2);
+  .px-btn[aria-busy="true"] { cursor: progress; }
+
+  /* Focus ring: dashed butter, offset outside the frame. */
+  .px-btn:focus-visible, .px-focus:focus-visible {
+    outline: var(--u) dashed var(--color-butter); outline-offset: calc(var(--u) * 2);
   }
 
+  /* Text field: sunken frame, butter rim on focus. */
   .px-input {
     width: 100%;
-    background: var(--color-ink-950);
-    color: var(--color-paper);
-    font-family: var(--font-body);
-    font-size: 1.125rem;
-    padding: 0.5rem 0.75rem;
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-ink-600),
-      0 var(--px) 0 0 var(--color-ink-600),
-      calc(var(--px) * -1) 0 0 0 var(--color-ink-600),
-      var(--px) 0 0 0 var(--color-ink-600);
-    transition: box-shadow 80ms steps(2);
+    color: var(--color-cream);
+    font-family: var(--font-body); font-size: 1.0625rem; line-height: 1.45;
+    padding: 0.125rem 0.25rem;
+    border: calc(var(--u) * 4) solid transparent;
+    border-image: var(--frame-inset) 4 fill / calc(var(--u) * 4) stretch;
+    image-rendering: pixelated;
+    transition: border-image-source 80ms steps(2);
   }
-  .px-input::placeholder {
-    color: var(--color-ink-400);
-  }
-  .px-input:focus {
-    outline: none;
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-sun),
-      0 var(--px) 0 0 var(--color-sun),
-      calc(var(--px) * -1) 0 0 0 var(--color-sun),
-      var(--px) 0 0 0 var(--color-sun);
+  /* 16px+ so iOS doesn't zoom on focus */
+  @media (max-width: 639px) { .px-input { font-size: 1rem; } }
+  .px-input::placeholder { color: var(--color-plum-300); opacity: 1; }
+  .px-input:focus { outline: none; border-image-source: var(--frame-inset-focus); }
+
+  /* Nameplate tab: sits on the top edge of a frame. */
+  .px-tab {
+    display: inline-flex; align-items: center; gap: 0.375rem;
+    font-family: var(--font-label); font-size: 0.75rem; line-height: 1; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-ink);
+    padding: 0.125rem 0.375rem;
+    border: calc(var(--u) * 3) solid transparent;
+    border-image: var(--frame-butter) 4 fill / calc(var(--u) * 3) stretch;
+    image-rendering: pixelated;
   }
 
-  /* Checkerboard used behind placeholder art + game viewport */
+  /* Checkerboard behind pixel art and the game stage. */
   .px-checker {
-    background-color: var(--color-ink-900);
+    background-color: var(--color-plum-900);
     background-image:
-      linear-gradient(45deg, var(--color-ink-800) 25%, transparent 25%, transparent 75%, var(--color-ink-800) 75%),
-      linear-gradient(45deg, var(--color-ink-800) 25%, transparent 25%, transparent 75%, var(--color-ink-800) 75%);
-    background-size: calc(var(--px) * 4) calc(var(--px) * 4);
-    background-position: 0 0, calc(var(--px) * 2) calc(var(--px) * 2);
+      linear-gradient(45deg, var(--color-plum-950) 25%, transparent 25%, transparent 75%, var(--color-plum-950) 75%),
+      linear-gradient(45deg, var(--color-plum-950) 25%, transparent 25%, transparent 75%, var(--color-plum-950) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 8px 8px;
   }
+
+  .gutter { padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+}
+
+/* Mobile keyboard: when a field is focused on small screens, let the bottom action bar scroll away instead of covering the field. */
+@media (max-width: 1023px) {
+  body:has(:is(input, textarea):focus) .action-bar { position: static; }
 }
