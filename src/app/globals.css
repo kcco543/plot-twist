@@ -1,225 +1,241 @@
 @import "tailwindcss";
+@import "./frames.css";
 
 /* ==========================================================================
-   PLOT TWIST! design tokens
-   All colors, sizes and motion live here. Components use these through
-   Tailwind utilities (bg-ink-900, text-twist, font-display ...) or the
-   pixel component classes defined below. Change a token, the whole app follows.
+   PLOT TWIST! DESIGN TOKENS  ·  "Cozy chaos"
+   Full rules: docs/DESIGN_SYSTEM.md
+   Every color, font and timing lives here. Components reach them through
+   Tailwind utilities (bg-surface, text-ink, font-head ...) or the
+   pixel classes further down. Change a token and the whole game follows.
    ========================================================================== */
 @theme {
-  /* Base: midnight ink */
-  --color-ink-950: #0e0a1c;
-  --color-ink-900: #160f2b;
-  --color-ink-800: #211741;
-  --color-ink-700: #2e2257;
-  --color-ink-600: #43347a;
-  --color-ink-400: #7d6fae;
+  /* Ink: deep plum, used for text and outlines (never pure black). */
+  --color-ink: #3d3060;
+  --color-ink-soft: #66598a; /* secondary text */
+  --color-ink-mute: #958ab4; /* hints, placeholders */
+  --color-outline: #5b4a86; /* pixel outlines on art + buttons */
+  --color-label: #7653c2; /* small caps labels, active text */
+  --color-rose: #c4507c; /* pink text (readable) */
+  --color-mint-deep: #2a8a6d;
+  --color-coral-deep: #c2573f;
 
-  /* Text */
-  --color-paper: #fff4e0;
-  --color-paper-dim: #c7bce3;
+  /* Surfaces: light and airy */
+  --color-bg: #eee8f9; /* page */
+  --color-surface: #fffaf3; /* panels (warm cream) */
+  --color-well: #f3edfc; /* sunken areas, tags */
+  --color-line: #e0d5f1; /* subtle dividers */
 
-  /* Brand accents */
-  --color-twist: #ff3f6c; /* primary — the plot twist */
-  --color-twist-dark: #b81f48;
-  --color-sun: #ffc93c; /* highlight / selection */
-  --color-sun-dark: #b9851a;
-  --color-mint: #3ee0b0; /* success / saved */
-  --color-mint-dark: #1f9c78;
+  /* Candy accents: -lo shadow (cooler) / base / -hi highlight (warmer) */
+  --color-lavender-lo: #977ed8;
+  --color-lavender: #c3b2f0;
+  --color-lavender-hi: #efe8ff;
+  --color-periwinkle-lo: #7f8fe0;
+  --color-periwinkle: #aab8f5;
+  --color-periwinkle-hi: #e6ebff;
+  --color-pink-lo: #d97aa2;
+  --color-pink: #f5a8c5; /* dusty pink: primary action */
+  --color-pink-hi: #ffe0ec;
+  --color-peach-lo: #e98a6a;
+  --color-peach: #ffc3a0;
+  --color-peach-hi: #ffe6d8;
+  --color-mint-lo: #62bf9f;
+  --color-mint: #9de3c8;
+  --color-mint-hi: #dcfaee;
+  --color-butter-lo: #e8b85a;
+  --color-butter: #ffe08a; /* soft yellow: selection */
+  --color-butter-hi: #fff6d2;
+  --color-teal: #8fd8e6;
+  --color-coral: #ffb898;
 
-  /* World accents (one per world) */
-  --color-world-fantasy: #e8b84a;
-  --color-world-modern: #4cb5ff;
-  --color-world-china: #e2493a;
-  --color-world-other: #a46bff;
+  /* Deep plum: supporting dark color only (game stage letterbox, tooltips) */
+  --color-plum: #3a2d55;
 
-  --font-display: var(--font-press-start), ui-monospace, monospace;
-  --font-body: var(--font-pixelify), ui-monospace, monospace;
+  /* World accents, dark enough to read on cream */
+  --color-world-western-fantasy: #b27a14;
+  --color-world-modern: #cf5f45;
+  --color-world-ancient-china: #2e8a68;
+  --color-world-otherworld: #8457d1;
 
-  --animate-blink: blink 1s steps(1) infinite;
-  --animate-screen-in: screen-in 320ms steps(6) both;
-  --animate-pop: pop 180ms steps(3) both;
-  --animate-bob: bob 1.2s steps(2) infinite;
+  /* Type. Latin pixel faces first; Chinese falls through to the CJK face. */
+  --font-shout: var(--font-press-start), var(--font-zcool), ui-monospace, monospace;
+  --font-head: var(--font-pixelify), var(--font-noto-sc), system-ui, sans-serif;
+  /* Big display titles only (h1, logo subtitle): Chinese gets the blocky ZCOOL face. */
+  --font-display: var(--font-pixelify), var(--font-zcool), var(--font-noto-sc), system-ui, sans-serif;
+  --font-body: var(--font-pixelify), var(--font-noto-sc), system-ui, sans-serif;
+  --font-label: var(--font-silkscreen), var(--font-noto-sc), ui-monospace, monospace;
+
+  --animate-blink: blink 3.2s steps(1) infinite;
+  --animate-cursor: cursor 1s steps(1) infinite;
+  --animate-screen-in: screen-in 240ms steps(4) both;
+  --animate-pop: pop 160ms steps(3) both;
+  --animate-bob: bob 1s steps(2) infinite;
+  --animate-dots: dots 1.2s steps(4) infinite;
+  --animate-twinkle: twinkle 2.4s steps(1) infinite;
 }
 
-/* Pixel unit: every border, notch and shadow is a multiple of this. */
+/* One UI pixel. Every frame, notch and offset is a multiple of it. */
 :root {
-  --px: 4px;
+  --u: 2px;
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+}
+@media (min-width: 640px) {
+  :root { --u: 3px; }
 }
 
-@keyframes blink {
-  50% { opacity: 0; }
-}
-@keyframes screen-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes pop {
-  from { opacity: 0; transform: scale(0.94); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes bob {
-  50% { transform: translateY(calc(var(--px) * -1)); }
-}
+@keyframes blink { 0%, 90% { opacity: 1; } 91%, 97% { opacity: 0.2; } }
+@keyframes cursor { 50% { opacity: 0; } }
+@keyframes screen-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes bob { 50% { transform: translateY(calc(var(--u) * -1)); } }
+@keyframes twinkle { 0%, 60% { opacity: 1; transform: scale(1); } 61%, 80% { opacity: 0.35; transform: scale(0.6); } 81%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes dots { 0% { clip-path: inset(0 100% 0 0); } 100% { clip-path: inset(0 0 0 0); } }
 
 html {
-  background: var(--color-ink-950);
-  color-scheme: dark;
+  background: var(--color-bg);
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
 }
-
 body {
-  background: var(--color-ink-900);
-  color: var(--color-paper);
+  background-color: var(--color-bg);
+  /* faint pixel sparkles */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 48 48' shape-rendering='crispEdges'%3E%3Cg fill='%23ddd2f3'%3E%3Crect x='6' y='8' width='1' height='3'/%3E%3Crect x='5' y='9' width='3' height='1'/%3E%3Crect x='34' y='30' width='1' height='3'/%3E%3Crect x='33' y='31' width='3' height='1'/%3E%3C/g%3E%3Cg fill='%23f6d4e2'%3E%3Crect x='22' y='20' width='1' height='1'/%3E%3Crect x='41' y='6' width='1' height='1'/%3E%3Crect x='12' y='38' width='1' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 96px 96px;
+  color: var(--color-ink);
   font-family: var(--font-body);
   font-size: 1.125rem;
   line-height: 1.5;
   -webkit-font-smoothing: none;
+  -webkit-tap-highlight-color: transparent;
+}
+html[lang="zh-CN"] body { line-height: 1.6; -webkit-font-smoothing: antialiased; }
+html[lang="zh-CN"] .font-label { letter-spacing: 0.04em; }
+/* ZCOOL has a single weight: never fake-bold it. */
+html[lang="zh-CN"] .font-display { font-weight: 400; }
+
+/* Real pixel-art assets: nearest-neighbor scaling, never smoothed. */
+.pixelated, .pixelated img { image-rendering: pixelated; }
+
+::selection { background: var(--color-butter); color: var(--color-ink); }
+
+/* Settings: reduce motion (also honors the OS setting) */
+html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
 }
 
-img.pixelated,
-.pixelated img {
-  image-rendering: pixelated;
-}
-
-::selection {
-  background: var(--color-sun);
-  color: var(--color-ink-900);
-}
-
-/* Settings: reduce motion */
-html[data-motion="reduced"] *,
-html[data-motion="reduced"] *::before,
-html[data-motion="reduced"] *::after {
-  animation-duration: 0.001ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.001ms !important;
-}
-
-/* Settings: CRT scanlines overlay */
+/* Settings: CRT scanlines */
 html[data-crt="on"] body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.18) 0,
-    rgba(0, 0, 0, 0.18) 1px,
-    transparent 1px,
-    transparent 3px
-  );
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 100;
+  background: repeating-linear-gradient(to bottom, rgba(61, 48, 96, 0.09) 0, rgba(61, 48, 96, 0.09) 1px, transparent 1px, transparent 3px);
 }
 
 /* ==========================================================================
-   Pixel component classes
+   PIXEL COMPONENT CLASSES
    ========================================================================== */
 @layer components {
-  /* Notched pixel frame. Set --frame to recolor. */
+  /* 9-slice storybook frame. Pick the art with --frame: var(--frame-panel) etc. */
   .px-frame {
-    --frame: var(--color-paper);
-    position: relative;
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--frame),
-      0 var(--px) 0 0 var(--frame),
-      calc(var(--px) * -1) 0 0 0 var(--frame),
-      var(--px) 0 0 0 var(--frame);
+    --frame: var(--frame-panel);
+    border: calc(var(--u) * 4) solid transparent;
+    border-image-source: var(--frame);
+    border-image-slice: 4 fill;
+    border-image-width: calc(var(--u) * 4);
+    border-image-repeat: stretch;
+    image-rendering: pixelated;
   }
-
-  /* Panel = frame + hard drop shadow */
-  .px-panel {
-    --frame: var(--color-ink-400);
-    --drop: var(--color-ink-950);
-    background: var(--color-ink-800);
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--frame),
-      0 var(--px) 0 0 var(--frame),
-      calc(var(--px) * -1) 0 0 0 var(--frame),
-      var(--px) 0 0 0 var(--frame),
-      calc(var(--px) * 2) calc(var(--px) * 2) 0 0 var(--drop);
+  /* Soft offset shadow (lavender, not black). */
+  .px-shadow { filter: drop-shadow(0 calc(var(--u) * 2) 0 rgba(91, 74, 134, 0.14)); }
+  .px-lift { transition: transform 100ms steps(2), filter 100ms steps(2); }
+  @media (hover: hover) {
+    .px-lift:hover { transform: translateY(calc(var(--u) * -1)); filter: drop-shadow(0 calc(var(--u) * 3) 0 rgba(91, 74, 134, 0.2)); }
   }
+  /* Selected card: gold rim (frame) + soft butter halo. */
+  .px-selected { filter: drop-shadow(0 0 0 var(--color-butter)) drop-shadow(0 calc(var(--u) * 2) 0 rgba(232, 184, 90, 0.45)); }
 
+  /* Candy button. Variant sets --frame and --frame-pressed. */
   .px-btn {
-    --face: var(--color-ink-700);
-    --edge: var(--color-ink-950);
-    --ink: var(--color-paper);
-    --frame: var(--color-paper);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    --frame: var(--frame-plum);
+    --frame-pressed: var(--frame-plum-pressed);
+    --ink: var(--color-ink);
+    position: relative;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    font-family: var(--font-head); font-weight: 700; line-height: 1.1;
     color: var(--ink);
-    background: var(--face);
-    cursor: pointer;
-    user-select: none;
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--frame),
-      0 var(--px) 0 0 var(--frame),
-      calc(var(--px) * -1) 0 0 0 var(--frame),
-      var(--px) 0 0 0 var(--frame),
-      inset 0 calc(var(--px) * -1) 0 0 var(--edge),
-      calc(var(--px) * 1.5) calc(var(--px) * 1.5) 0 calc(var(--px) * 0.5) var(--color-ink-950);
+    cursor: pointer; user-select: none; touch-action: manipulation;
+    border: calc(var(--u) * 4) solid transparent;
+    border-image: var(--frame) 4 fill / calc(var(--u) * 4) stretch;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 calc(var(--u) * 1.5) 0 rgba(91, 74, 134, 0.3));
     transition: transform 80ms steps(2), filter 80ms steps(2);
   }
-  .px-btn:hover:not(:disabled) {
-    transform: translate(calc(var(--px) * -0.5), calc(var(--px) * -0.5));
-    filter: brightness(1.12);
+  @media (hover: hover) {
+    .px-btn:hover:not(:disabled):not([aria-disabled="true"]) { transform: translateY(calc(var(--u) * -1)); filter: drop-shadow(0 calc(var(--u) * 2.5) 0 rgba(91, 74, 134, 0.3)) brightness(1.04); }
   }
-  .px-btn:active:not(:disabled) {
-    transform: translate(var(--px), var(--px));
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--frame),
-      0 var(--px) 0 0 var(--frame),
-      calc(var(--px) * -1) 0 0 0 var(--frame),
-      var(--px) 0 0 0 var(--frame),
-      inset 0 var(--px) 0 0 var(--edge);
+  .px-btn:active:not(:disabled):not([aria-disabled="true"]), .px-btn[data-pressed="true"] {
+    transform: translateY(var(--u)); filter: none; border-image-source: var(--frame-pressed);
   }
-  .px-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.45;
+  .px-btn:disabled, .px-btn[aria-disabled="true"] {
+    cursor: not-allowed; border-image-source: var(--frame-disabled); color: var(--color-ink-mute); filter: none;
   }
-  .px-btn:focus-visible,
-  .px-focus:focus-visible {
-    outline: var(--px) dashed var(--color-sun);
-    outline-offset: calc(var(--px) * 2);
+  .px-btn[aria-busy="true"] { cursor: progress; }
+
+  /* Focus ring: dashed lavender, offset outside the frame. */
+  .px-btn:focus-visible, .px-focus:focus-visible {
+    outline: var(--u) dashed var(--color-label); outline-offset: calc(var(--u) * 2);
   }
 
+  /* Text field: sunken frame, butter rim on focus. */
   .px-input {
     width: 100%;
-    background: var(--color-ink-950);
-    color: var(--color-paper);
-    font-family: var(--font-body);
-    font-size: 1.125rem;
-    padding: 0.5rem 0.75rem;
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-ink-600),
-      0 var(--px) 0 0 var(--color-ink-600),
-      calc(var(--px) * -1) 0 0 0 var(--color-ink-600),
-      var(--px) 0 0 0 var(--color-ink-600);
-    transition: box-shadow 80ms steps(2);
+    color: var(--color-ink);
+    font-family: var(--font-body); font-size: 1.0625rem; line-height: 1.45;
+    padding: 0.125rem 0.25rem;
+    border: calc(var(--u) * 4) solid transparent;
+    border-image: var(--frame-inset) 4 fill / calc(var(--u) * 4) stretch;
+    image-rendering: pixelated;
+    transition: border-image-source 80ms steps(2);
   }
-  .px-input::placeholder {
-    color: var(--color-ink-400);
-  }
-  .px-input:focus {
-    outline: none;
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-sun),
-      0 var(--px) 0 0 var(--color-sun),
-      calc(var(--px) * -1) 0 0 0 var(--color-sun),
-      var(--px) 0 0 0 var(--color-sun);
+  /* 16px+ so iOS doesn't zoom on focus */
+  @media (max-width: 639px) { .px-input { font-size: 1rem; } }
+  .px-input::placeholder { color: var(--color-ink-mute); opacity: 1; }
+  .px-input:focus { outline: none; border-image-source: var(--frame-inset-focus); }
+
+  /* Nameplate tab: sits on the top edge of a frame. */
+  .px-tab {
+    display: inline-flex; align-items: center; gap: 0.375rem;
+    font-family: var(--font-label); font-size: 0.75rem; line-height: 1; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-ink);
+    padding: 0.125rem 0.375rem;
+    border: calc(var(--u) * 3) solid transparent;
+    border-image: var(--frame-tab) 4 fill / calc(var(--u) * 3) stretch;
+    image-rendering: pixelated;
   }
 
-  /* Checkerboard used behind placeholder art + game viewport */
+  /* Checkerboard behind pixel art and the game stage. */
   .px-checker {
-    background-color: var(--color-ink-900);
+    background-color: var(--color-well);
     background-image:
-      linear-gradient(45deg, var(--color-ink-800) 25%, transparent 25%, transparent 75%, var(--color-ink-800) 75%),
-      linear-gradient(45deg, var(--color-ink-800) 25%, transparent 25%, transparent 75%, var(--color-ink-800) 75%);
-    background-size: calc(var(--px) * 4) calc(var(--px) * 4);
-    background-position: 0 0, calc(var(--px) * 2) calc(var(--px) * 2);
+      linear-gradient(45deg, var(--color-lavender-hi) 25%, transparent 25%, transparent 75%, var(--color-lavender-hi) 75%),
+      linear-gradient(45deg, var(--color-lavender-hi) 25%, transparent 25%, transparent 75%, var(--color-lavender-hi) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 8px 8px;
   }
+
+  .gutter { padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+
+  /* Scalloped top edge (bottom action bar, footers). */
+  .px-scallop { position: relative; }
+  .px-scallop::before {
+    content: ""; position: absolute; left: 0; right: 0; top: -6px; height: 6px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='6' viewBox='0 0 8 3' shape-rendering='crispEdges'%3E%3Crect x='2' y='0' width='4' height='1' fill='%23e0d5f1'/%3E%3Crect x='1' y='1' width='6' height='1' fill='%23fffaf3'/%3E%3Crect x='0' y='2' width='8' height='1' fill='%23fffaf3'/%3E%3Crect x='1' y='0' width='1' height='1' fill='%23e0d5f1'/%3E%3Crect x='6' y='0' width='1' height='1' fill='%23e0d5f1'/%3E%3Crect x='0' y='1' width='1' height='1' fill='%23e0d5f1'/%3E%3Crect x='7' y='1' width='1' height='1' fill='%23e0d5f1'/%3E%3C/svg%3E") repeat-x;
+    image-rendering: pixelated;
+  }
+}
+
+/* Mobile keyboard: when a field is focused on small screens, let the bottom action bar scroll away instead of covering the field. */
+@media (max-width: 1023px) {
+  body:has(:is(input, textarea):focus) .action-bar { position: static; }
 }

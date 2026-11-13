@@ -1,56 +1,26 @@
 import type { WorldId } from "./types";
 import type { IconName } from "@/components/ui/PixelIcon";
 
+/**
+ * World data that is NOT text. Names, blurbs and tags are translated:
+ * see worlds.list.<id> in src/i18n/locales/*.json.
+ */
 export type World = {
   id: WorldId;
-  name: string;
-  /** One-line pitch shown on the card. */
-  blurb: string;
-  tags: string[];
   icon: IconName;
-  /** CSS color token for the world's accent. */
+  /** Text-safe accent color on cream (CSS var). */
   accent: string;
-  /** Darker partner for text on accent backgrounds. */
-  accentInk: string;
+  /** 9-slice frame for this world's rim. */
+  frame: `world-${WorldId}`;
+  /** The hero world: fully illustrated art, shown first-class in the UI. */
+  featured?: boolean;
 };
 
 export const WORLDS: World[] = [
-  {
-    id: "western-fantasy",
-    name: "Western Fantasy",
-    blurb: "Castles, taverns and old prophecies that nobody reads to the end.",
-    tags: ["Quests", "Magic", "Kingdoms"],
-    icon: "sword",
-    accent: "var(--color-world-fantasy)",
-    accentInk: "var(--color-ink-950)",
-  },
-  {
-    id: "modern",
-    name: "Modern",
-    blurb: "Group chats, late trains and secrets hiding in plain sight.",
-    tags: ["City", "Slice of life", "Drama"],
-    icon: "phone",
-    accent: "var(--color-world-modern)",
-    accentInk: "var(--color-ink-950)",
-  },
-  {
-    id: "ancient-china",
-    name: "Ancient China",
-    blurb: "Jade halls, wandering swordsmen and debts of honor.",
-    tags: ["Wuxia", "Court", "Legend"],
-    icon: "lantern",
-    accent: "var(--color-world-china)",
-    accentInk: "var(--color-paper)",
-  },
-  {
-    id: "otherworld",
-    name: "Otherworld",
-    blurb: "Floating islands and rules of physics that change their minds.",
-    tags: ["Surreal", "Cosmic", "Strange"],
-    icon: "eye",
-    accent: "var(--color-world-other)",
-    accentInk: "var(--color-ink-950)",
-  },
+  { id: "western-fantasy", icon: "sword", accent: "var(--color-world-western-fantasy)", frame: "world-western-fantasy" },
+  { id: "modern", icon: "phone", accent: "var(--color-world-modern)", frame: "world-modern" },
+  { id: "ancient-china", icon: "lantern", accent: "var(--color-world-ancient-china)", frame: "world-ancient-china" },
+  { id: "otherworld", icon: "eye", accent: "var(--color-world-otherworld)", frame: "world-otherworld", featured: true },
 ];
 
 export const getWorld = (id: WorldId | null) => WORLDS.find((w) => w.id === id) ?? null;

@@ -4,11 +4,17 @@ import { useState } from "react";
 import { Modal } from "./ui/Modal";
 import { Choice, Toggle } from "./ui/Choice";
 import { PixelButton } from "./ui/PixelButton";
+import { PixelIcon } from "./ui/PixelIcon";
+import { LanguageSwitch } from "./LanguageSwitch";
 import { updateSettings, useSettings } from "@/lib/settingsStore";
 import { gameActions } from "@/lib/gameStore";
+import { useI18n } from "@/i18n";
 import type { TextSpeed } from "@/lib/types";
 
+const Section = ({ children }: { children: React.ReactNode }) => <div className="border-t-[3px] border-dashed border-line pt-5">{children}</div>;
+
 export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useI18n();
   const settings = useSettings();
   const [confirmErase, setConfirmErase] = useState(false);
   const [erased, setErased] = useState(false);
@@ -20,40 +26,70 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   };
 
   return (
-    <Modal open={open} onClose={close} title="Settings" footer={<PixelButton variant="accent" onClick={close} icon="check">Done</PixelButton>}>
-      <div className="flex flex-col gap-7">
-        <Choice<TextSpeed>
-          label="Text speed"
-          value={settings.textSpeed}
-          onChange={(textSpeed) => updateSettings({ textSpeed })}
-          options={[
-            { value: "slow", label: "Slow" },
-            { value: "normal", label: "Normal" },
-            { value: "fast", label: "Fast" },
-            { value: "instant", label: "Instant" },
-          ]}
-        />
-        <Toggle
-          label="CRT scanlines"
-          description="Old-TV lines over the whole screen."
-          checked={settings.crt}
-          onChange={(crt) => updateSettings({ crt })}
-        />
-        <Toggle
-          label="Reduce motion"
-          description="Turns off page transitions and bouncing."
-          checked={settings.reduceMotion}
-          onChange={(reduceMotion) => updateSettings({ reduceMotion })}
-        />
-        <div className="border-t-4 border-dashed border-ink-700 pt-6">
-          <p className="font-display text-[10px] uppercase tracking-wide text-twist">Danger zone</p>
-          <p className="mt-1 mb-4 text-base text-paper-dim">Deletes your world, characters and story log from this browser.</p>
+    <Modal
+      open={open}
+      onClose={close}
+      title={t("settings.title")}
+      closeLabel={t("common.close")}
+      footer={
+        <PixelButton variant="accent" onClick={close} icon="check">
+          {t("common.done")}
+        </PixelButton>
+      }
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-2">
+          <p className="font-label text-xs uppercase tracking-wide text-label">{t("language.label")}</p>
+          <LanguageSwitch full />
+          <p className="text-sm text-ink-soft">{t("language.note")}</p>
+        </div>
+        <Section>
+          <Choice<TextSpeed>
+            label={t("settings.textSpeed")}
+            value={settings.textSpeed}
+            onChange={(textSpeed) => updateSettings({ textSpeed })}
+            options={(["slow", "normal", "fast", "instant"] as const).map((v) => ({ value: v, label: t(`settings.speeds.${v}`) }))}
+          />
+        </Section>
+        <Section>
+          <div className="flex flex-col gap-5">
+            <Toggle label={t("settings.crt")} description={t("settings.crtDesc")} checked={settings.crt} onChange={(crt) => updateSettings({ crt })} onLabel={t("settings.on")} offLabel={t("settings.off")} />
+            <Toggle
+              label={t("settings.motion")}
+              description={t("settings.motionDesc")}
+              checked={settings.reduceMotion}
+              onChange={(reduceMotion) => updateSettings({ reduceMotion })}
+              onLabel={t("settings.on")}
+              offLabel={t("settings.off")}
+            />
+          </div>
+        </Section>
+        <Section>
+          <p className="flex items-center gap-2 font-label text-xs uppercase tracking-wide text-label">
+            <PixelIcon name="offline" size={12} /> {t("settings.offlineTitle")}
+          </p>
+          <ul className="mt-2 flex flex-col gap-1.5 text-base leading-snug">
+            <li className="flex gap-2">
+              <PixelIcon name="check" size={12} className="mt-1.5 text-mint-deep" />
+              <span>{t("settings.offlineReady")}</span>
+            </li>
+            <li className="flex gap-2 text-ink-soft">
+              <PixelIcon name="clock" size={12} className="mt-1.5 text-label" />
+              <span>{t("settings.offlineFuture")}</span>
+            </li>
+          </ul>
+        </Section>
+        <Section>
+          <p className="font-label text-xs uppercase tracking-wide text-coral-deep">{t("settings.danger")}</p>
+          <p className="mt-1 mb-3 text-base text-ink-soft">{t("settings.dangerDesc")}</p>
           {erased ? (
-            <p className="font-display text-[10px] uppercase text-mint">Save data erased.</p>
+            <p role="status" className="font-label text-xs uppercase text-mint-deep">
+              {t("settings.erased")}
+            </p>
           ) : confirmErase ? (
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-3">
               <PixelButton
-                variant="primary"
+                variant="danger"
                 size="sm"
                 icon="trash"
                 onClick={() => {
@@ -62,18 +98,18 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                   setErased(true);
                 }}
               >
-                Yes, erase all
+                {t("settings.eraseConfirm")}
               </PixelButton>
               <PixelButton variant="ghost" size="sm" onClick={() => setConfirmErase(false)}>
-                Cancel
+                {t("common.cancel")}
               </PixelButton>
             </div>
           ) : (
-            <PixelButton variant="danger" size="sm" icon="trash" onClick={() => setConfirmErase(true)}>
-              Erase save data
+            <PixelButton variant="ghost" size="sm" icon="trash" onClick={() => setConfirmErase(true)}>
+              {t("settings.erase")}
             </PixelButton>
           )}
-        </div>
+        </Section>
       </div>
     </Modal>
   );

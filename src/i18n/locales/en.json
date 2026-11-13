@@ -1,0 +1,265 @@
+{
+  "meta": {
+    "title": "PLOT TWIST!",
+    "description": "You create the characters. They create the chaos. A pixel-art storytelling sandbox for original characters."
+  },
+  "common": {
+    "back": "Back",
+    "continue": "Continue",
+    "close": "Close",
+    "done": "Done",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "keep": "Keep",
+    "loading": "Loading",
+    "loadingSave": "Loading save",
+    "placeholder": "Placeholder",
+    "unnamed": "Unnamed",
+    "ageValue": "Age {age}",
+    "ageUnknown": "Age unknown",
+    "notWritten": "Not written yet",
+    "autosaved": "Autosaved",
+    "settings": "Settings",
+    "title": "Title"
+  },
+  "language": {
+    "label": "Language",
+    "switchTo": "Switch language",
+    "en": "English",
+    "zh-CN": "简体中文",
+    "short": { "en": "EN", "zh-CN": "中" },
+    "note": "Only the interface changes. Your characters and stories stay in the language you wrote them in."
+  },
+  "title": {
+    "tagline1": "You create the characters.",
+    "tagline2": "They create the chaos.",
+    "subtitle": "",
+    "start": "Start Game",
+    "load": "Load Game",
+    "settings": "Settings",
+    "pressStart": "Press start",
+    "version": "v0.3 · prototype",
+    "menu": "Main menu"
+  },
+  "nav": {
+    "steps": "Game steps",
+    "world": "World",
+    "cast": "Cast",
+    "setting": "Setting",
+    "play": "Play",
+    "stepOf": "Step {n} of {total}",
+    "home": "PLOT TWIST! title screen",
+    "offline": "Offline"
+  },
+  "worlds": {
+    "kicker": "Step 1 · Choose a world",
+    "heading": "Where does it all go wrong?",
+    "intro": "Pick the world your characters live in. You can change it later.",
+    "group": "Worlds",
+    "featured": "Featured",
+    "badge": "World",
+    "selected": "Selected",
+    "selectedLabel": "Selected:",
+    "none": "No world selected",
+    "illustration": "{name} illustration",
+    "list": {
+      "western-fantasy": {
+        "name": "Western Fantasy",
+        "blurb": "Mossy villages, crooked castles and prophecies nobody reads to the end.",
+        "tags": ["Quests", "Magic", "Kingdoms"]
+      },
+      "modern": {
+        "name": "Modern",
+        "blurb": "Cafés, late trains and group chats where secrets hide in plain sight.",
+        "tags": ["City", "Slice of life", "Drama"]
+      },
+      "ancient-china": {
+        "name": "Ancient China",
+        "blurb": "Courtyards, roadside inns and wandering swordsmen with debts of honor.",
+        "tags": ["Wuxia", "Court", "Legend"]
+      },
+      "otherworld": {
+        "name": "Otherworld",
+        "blurb": "Floating islands, glowing plants and rules of physics that change their minds.",
+        "tags": ["Surreal", "Cosmic", "Strange"]
+      }
+    }
+  },
+  "studio": {
+    "kicker": "Step 2 · Character studio",
+    "heading": "Assemble your cast",
+    "introWorld": "Your story takes place in {world}. Everything saves automatically in this browser.",
+    "intro": "Everything saves automatically in this browser.",
+    "emptyTitle": "No characters yet",
+    "emptyBody": "Create your first original character. Who are they, and what are they hiding?",
+    "create": "Create character",
+    "new": "New character",
+    "castCount": "Cast · {count}",
+    "castList": "Your characters",
+    "editing": "Editing {name}",
+    "next": "Build world",
+    "backToWorlds": "Worlds",
+    "deleteTitle": "Delete character?",
+    "deleteBody": "{name} will be gone for good. This can't be undone.",
+    "thisCharacter": "This character",
+    "sections": { "identity": "Identity", "inner": "Inner life", "ties": "Ties & rules" },
+    "portrait": {
+      "title": "Portrait",
+      "alt": "Portrait of {name}",
+      "prev": "Previous portrait",
+      "next": "Next portrait",
+      "count": "{n} / {total}",
+      "note": "Placeholder portraits. Your own art, a pixel editor or AI portraits can plug into this frame later."
+    }
+  },
+  "character": {
+    "fields": {
+      "name": { "label": "Name", "placeholder": "e.g. Juniper Vale" },
+      "age": { "label": "Age", "placeholder": "e.g. 19, ancient, unknown" },
+      "appearance": { "label": "Appearance", "placeholder": "What do people notice first?" },
+      "personality": { "label": "Personality", "placeholder": "Curious, impatient, kind in a loud way..." },
+      "background": { "label": "Background", "placeholder": "Where do they come from? What happened?" },
+      "goals": { "label": "Goals", "placeholder": "What do they want more than anything?" },
+      "fears": { "label": "Fears", "placeholder": "What would they never admit to being scared of?" },
+      "habits": { "label": "Habits", "placeholder": "Little things they do without thinking." },
+      "relationships": { "label": "Relationships", "placeholder": "Friends, rivals, family, unfinished business..." },
+      "rules": { "label": "Character rules & boundaries", "placeholder": "Things this character would NEVER do, or topics the story should avoid." }
+    }
+  },
+  "builder": {
+    "kicker": "Step 3 · World builder",
+    "heading": "Set the scene",
+    "intro": "Describe where your story begins and pick a type of place. The preview uses placeholder art for now.",
+    "description": "Description",
+    "describeLabel": "Describe the environment",
+    "describePlaceholder": "A cramped bookshop above a noodle stand. It always smells like rain, and the back door is locked from the inside...",
+    "describeHint": "Saved automatically. Later, this text will drive AI map generation.",
+    "type": "Environment type",
+    "preview": "Preview",
+    "previewAlt": "{title} preview",
+    "sourcePlaceholder": "Placeholder",
+    "sourceGenerated": "Generated",
+    "generating": "Drawing preview",
+    "quoteEmpty": "No description yet. Your words will appear here.",
+    "backToCast": "Cast",
+    "play": "Play"
+  },
+  "environments": {
+    "interior": { "name": "Indoor Room", "hint": "Bedrooms, taverns, cafés, inns" },
+    "street": { "name": "Town & Street", "hint": "Markets, alleys, main roads" },
+    "wilderness": { "name": "Wilderness", "hint": "Forests, fields, riverbanks" },
+    "ruins": { "name": "Ruins & Dungeon", "hint": "Temples, caves, forgotten places" },
+    "dreamscape": { "name": "Dreamscape", "hint": "Memories, visions, impossible rooms" }
+  },
+  "play": {
+    "noWorldTitle": "No world chosen",
+    "noWorldBody": "Every story needs somewhere to happen. Pick a world first.",
+    "chooseWorld": "Choose world",
+    "demoNotice": "You haven't created anyone yet, so a demo cast is standing in.",
+    "storyLog": "Story log",
+    "pause": "Pause",
+    "pauseMenu": "Pause menu",
+    "viewportAlt": "{place} in {world}",
+    "selectCharacter": "Select {name}",
+    "with": "With {name}",
+    "selectSomeone": "Select someone",
+    "showFullLine": "Show full line",
+    "dialogue": "Dialogue",
+    "actions": { "talk": "Talk", "observe": "Observe", "wait": "Wait" },
+    "character": "Character",
+    "selectInScene": "Select a character in the scene.",
+    "demoCharacter": "Demo character.",
+    "createOwn": "Create your own cast",
+    "editInStudio": "Edit in studio",
+    "keyboardHint": "Keys: ← → choose · Z talk · X observe · C wait · L log · Esc pause",
+    "controls": "Game controls",
+    "prevCharacter": "Previous character",
+    "nextCharacter": "Next character",
+    "interact": "Talk to selected character",
+    "log": {
+      "empty": "Nothing has happened yet. Talk to someone.",
+      "clear": "Clear log"
+    },
+    "paused": "Paused",
+    "resume": "Resume",
+    "editCast": "Edit cast",
+    "editSetting": "Edit setting",
+    "quit": "Quit to title",
+    "autosaveNote": "Progress saves automatically."
+  },
+  "scene": {
+    "narrator": "Narrator",
+    "intro": "The {place} is quiet. Too quiet. Pick someone and see what happens.",
+    "silent": "...  (They have nothing to say yet. Give them goals or fears in the Character Studio.)",
+    "talk": "[on {topic}] “{text}”",
+    "topics": {
+      "goals": "what they want",
+      "fears": "what scares them",
+      "relationships": "the people in their life",
+      "background": "where they come from"
+    },
+    "observeEmpty": "You look at {name}. They're still a sketch.",
+    "observe": "You watch {name}. {detail}",
+    "wait": [
+      "Time passes in the {place}. Nobody admits they're waiting for something.",
+      "A quiet moment in the {place}. {name} glances your way.",
+      "Somewhere in the {place}, something creaks. Everyone pretends not to notice."
+    ]
+  },
+  "demo": {
+    "a": {
+      "name": "Juniper",
+      "age": "19",
+      "appearance": "They keep tucking a pencil behind their ear and forgetting it's there.",
+      "personality": "Curious, impatient, kind in a loud way.",
+      "goals": "Find out who left the letter on my doorstep.",
+      "fears": "That the letter was meant for someone else.",
+      "relationships": "Owes Rook a favor. Won't say what for."
+    },
+    "b": {
+      "name": "Rook",
+      "age": "27",
+      "appearance": "Long coat, tired eyes, very clean boots.",
+      "personality": "Dry humor, says less than they know.",
+      "habits": "Rook taps the table twice before answering any question.",
+      "goals": "Keep everyone out of trouble. Mostly Juniper.",
+      "fears": "Being needed and not showing up."
+    }
+  },
+  "load": {
+    "kicker": "Load game",
+    "heading": "Save file",
+    "intro": "Your game is saved in this browser automatically.",
+    "emptyTitle": "No save data",
+    "emptyBody": "Start a new game to create your first save.",
+    "newGame": "New game",
+    "slot": "Slot 1",
+    "world": "World",
+    "cast": "Cast",
+    "setting": "Setting",
+    "saved": "Saved",
+    "notChosen": "Not chosen",
+    "noWorld": "No world",
+    "characters": "{count} characters",
+    "character": "1 character"
+  },
+  "settings": {
+    "title": "Settings",
+    "textSpeed": "Text speed",
+    "speeds": { "slow": "Slow", "normal": "Normal", "fast": "Fast", "instant": "Instant" },
+    "crt": "CRT scanlines",
+    "crtDesc": "Old-TV lines over the whole screen.",
+    "motion": "Reduce motion",
+    "motionDesc": "Turns off page transitions and bouncing.",
+    "on": "On",
+    "off": "Off",
+    "offlineTitle": "Offline play",
+    "offlineReady": "Everything in this version works offline after your first visit: saves live in this browser.",
+    "offlineFuture": "Future AI features (story events, map and portrait generation) will need an internet connection.",
+    "danger": "Danger zone",
+    "dangerDesc": "Deletes your world, characters and story log from this browser.",
+    "erase": "Erase save data",
+    "eraseConfirm": "Yes, erase all",
+    "erased": "Save data erased."
+  }
+}

@@ -2,7 +2,7 @@
 
 import { createPersistentStore } from "./persistentStore";
 import { makeId } from "./id";
-import type { Character, CharacterTextField, EnvironmentDraft, LogEntry, SaveData, WorldId } from "./types";
+import type { Character, CharacterTextField, EnvironmentDraft, SaveData, StoryLine, WorldId } from "./types";
 
 const SAVE_KEY = "plot-twist:save:v1";
 
@@ -74,8 +74,8 @@ export const gameActions = {
   updateEnvironment(patch: Partial<EnvironmentDraft>) {
     touch((s) => ({ ...s, environment: { ...s.environment, ...patch } }));
   },
-  appendLog(entry: Omit<LogEntry, "id" | "at">) {
-    touch((s) => ({ ...s, log: [...s.log, { ...entry, id: makeId("log"), at: Date.now() }].slice(-200) }));
+  appendLog(line: StoryLine) {
+    touch((s) => ({ ...s, log: [...s.log, { ...line, id: makeId("log"), at: Date.now() }].slice(-200) }));
   },
   clearLog() {
     touch((s) => ({ ...s, log: [] }));

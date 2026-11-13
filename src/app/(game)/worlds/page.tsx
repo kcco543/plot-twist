@@ -6,19 +6,21 @@ import { WorldCard } from "@/components/game/WorldCard";
 import { PixelButton, PixelLink } from "@/components/ui/PixelButton";
 import { gameActions, useSave } from "@/lib/gameStore";
 import { WORLDS, getWorld } from "@/lib/worlds";
+import { useI18n } from "@/i18n";
 
 export default function WorldSelectPage() {
+  const { t, tx } = useI18n();
   const router = useRouter();
   const save = useSave();
   const selected = getWorld(save.worldId);
 
   return (
     <>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-10 sm:px-6">
-        <ScreenHeader kicker="Step 1 · Choose a world" title="Where does it all go wrong?">
-          Pick the world your characters live in. You can change it later.
+      <main className="gutter mx-auto w-full max-w-6xl flex-1 pt-8 sm:pt-10">
+        <ScreenHeader kicker={t("worlds.kicker")} title={t("worlds.heading")}>
+          {t("worlds.intro")}
         </ScreenHeader>
-        <div role="radiogroup" aria-label="Worlds" className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
+        <div role="radiogroup" aria-label={t("worlds.group")} className="grid grid-cols-1 gap-6 min-[560px]:grid-cols-2 xl:grid-cols-4">
           {WORLDS.map((w) => (
             <WorldCard key={w.id} world={w} selected={save.worldId === w.id} onSelect={() => gameActions.selectWorld(w.id)} />
           ))}
@@ -26,19 +28,19 @@ export default function WorldSelectPage() {
       </main>
       <ActionBar>
         <PixelLink href="/" variant="ghost" icon="left">
-          Title
+          {t("common.title")}
         </PixelLink>
-        <p className="order-first w-full text-center font-display text-[10px] uppercase text-paper-dim sm:order-none sm:w-auto">
+        <p className="order-first w-full text-center font-label text-xs uppercase text-ink-soft sm:order-none sm:w-auto" aria-live="polite">
           {selected ? (
             <>
-              Selected: <span style={{ color: selected.accent }}>{selected.name}</span>
+              {t("worlds.selectedLabel")} <span style={{ color: selected.accent }}>{tx(`worlds.list.${selected.id}.name`)}</span>
             </>
           ) : (
-            "No world selected"
+            t("worlds.none")
           )}
         </p>
         <PixelButton variant="primary" iconRight="right" disabled={!selected} onClick={() => router.push("/studio")}>
-          Continue
+          {t("common.continue")}
         </PixelButton>
       </ActionBar>
     </>

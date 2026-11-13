@@ -4,57 +4,83 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "./Logo";
+import { LanguageSwitch } from "./LanguageSwitch";
 import { PixelButton } from "./ui/PixelButton";
+import { PixelIcon } from "./ui/PixelIcon";
 import { SettingsModal } from "./SettingsModal";
+import { useI18n, type MessageKey } from "@/i18n";
+import { useOnline } from "@/lib/useOnline";
 
-const STEPS = [
-  { href: "/worlds", label: "World" },
-  { href: "/studio", label: "Cast" },
-  { href: "/builder", label: "Setting" },
-  { href: "/play", label: "Play" },
+const STEPS: { href: string; label: MessageKey }[] = [
+  { href: "/worlds", label: "nav.world" },
+  { href: "/studio", label: "nav.cast" },
+  { href: "/builder", label: "nav.setting" },
+  { href: "/play", label: "nav.play" },
 ];
 
 export function AppBar() {
+  const { t } = useI18n();
   const pathname = usePathname();
+  const online = useOnline();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const current = STEPS.findIndex((s) => pathname.startsWith(s.href));
 
   return (
-    <header className="sticky top-0 z-40 border-b-4 border-ink-950 bg-ink-800">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <Link href="/" className="px-focus shrink-0" aria-label="PLOT TWIST! title screen">
+    <header className="sticky top-0 z-40 border-b-2 border-line bg-surface/95 shadow-[0_4px_14px_rgba(91,74,134,0.08)] backdrop-blur-sm" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+      <div className="gutter mx-auto flex max-w-6xl items-center justify-between gap-3 py-2">
+        <Link href="/" className="px-focus flex min-h-11 shrink-0 items-center" aria-label={t("nav.home")}>
           <Logo size="sm" />
         </Link>
-        <nav aria-label="Game steps" className="hidden md:block">
+        <nav aria-label={t("nav.steps")} className="hidden lg:block">
           <ol className="flex items-center gap-1">
             {STEPS.map((s, i) => {
               const active = i === current;
               const done = current > i;
               return (
                 <li key={s.href} className="flex items-center gap-1">
-                  {i > 0 && <span className="px-1 text-ink-400" aria-hidden>›</span>}
+                  {i > 0 && (
+                    <span className="text-ink-mute" aria-hidden>
+                      <PixelIcon name="right" size={8} />
+                    </span>
+                  )}
                   <Link
                     href={s.href}
                     aria-current={active ? "step" : undefined}
-                    className={`px-focus px-2 py-1 font-display text-[10px] uppercase transition-colors ${
-                      active ? "bg-sun text-ink-950" : done ? "text-mint hover:text-paper" : "text-paper-dim hover:text-paper"
+                    className={`px-focus flex min-h-11 items-center gap-1.5 px-2 font-label text-xs uppercase transition-colors ${
+                      active ? "bg-lavender-hi text-label shadow-[inset_0_-3px_0_var(--color-lavender)]" : done ? "text-mint-deep hover:bg-mint-hi hover:text-ink" : "text-ink-soft hover:bg-well hover:text-ink"
                     }`}
                   >
-                    {i + 1}.{s.label}
+                    <span className={`grid size-5 place-items-center text-[10px] ${active ? "bg-butter text-ink shadow-[1px_1px_0_var(--color-butter-lo)]" : done ? "bg-mint text-ink" : "bg-line text-ink-soft"}`}>
+                      {done ? <PixelIcon name="check" size={9} /> : i + 1}
+                    </span>
+                    {t(s.label)}
                   </Link>
                 </li>
               );
             })}
           </ol>
         </nav>
-        <PixelButton size="sm" variant="ghost" icon="gear" onClick={() => setSettingsOpen(true)} aria-label="Settings">
-          <span className="hidden sm:inline">Settings</span>
-        </PixelButton>
+        <div className="flex items-center gap-2">
+          {!online && (
+            <span className="flex items-center gap-1 bg-coral px-1.5 py-1 font-label text-[10px] uppercase text-ink" role="status">
+              <PixelIcon name="offline" size={10} />
+              {t("nav.offline")}
+            </span>
+          )}
+          <LanguageSwitch />
+          <PixelButton size="sm" variant="ghost" icon="gear" onClick={() => setSettingsOpen(true)} aria-label={t("common.settings")} className="min-w-11" />
+        </div>
       </div>
       {current >= 0 && (
-        <p className="border-t-4 border-ink-950 bg-ink-900 px-4 py-2 text-center font-display text-[9px] uppercase text-paper-dim md:hidden">
-          Step {current + 1} of {STEPS.length} · <span className="text-sun">{STEPS[current].label}</span>
-        </p>
+        <div className="gutter flex items-center justify-between gap-3 border-t border-line bg-well/80 py-1.5 lg:hidden">
+          <span className="font-label text-[10px] uppercase text-ink-soft">{t("nav.stepOf", { n: current + 1, total: STEPS.length })}</span>
+          <span className="font-head text-sm font-semibold text-label">{t(STEPS[current].label)}</span>
+          <span className="flex gap-1" aria-hidden>
+            {STEPS.map((s, i) => (
+              <span key={s.href} className={`block h-2 w-5 ${i === current ? "bg-label" : i < current ? "bg-mint" : "bg-line"}`} />
+            ))}
+          </span>
+        </div>
       )}
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </header>

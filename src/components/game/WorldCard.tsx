@@ -1,44 +1,47 @@
+"use client";
+
 import type { CSSProperties } from "react";
 import { ArtImage } from "@/components/ui/ArtImage";
+import { CornerSparkles, Sparkle } from "@/components/ui/Deco";
 import { PixelIcon } from "@/components/ui/PixelIcon";
 import { worldArt } from "@/assets/manifest";
+import { useI18n } from "@/i18n";
 import type { World } from "@/lib/worlds";
 
 export function WorldCard({ world, selected, onSelect }: { world: World; selected: boolean; onSelect: () => void }) {
+  const { t, tl } = useI18n();
+  const name = t(`worlds.list.${world.id}.name` as const);
+  const tags = tl(`worlds.list.${world.id}.tags` as const);
   return (
     <button
       role="radio"
       aria-checked={selected}
       onClick={onSelect}
-      className={`px-panel px-focus group flex flex-col text-left transition-transform duration-100 hover:-translate-y-1 ${selected ? "-translate-y-1" : ""}`}
-      style={
-        {
-          "--frame": selected ? "var(--color-sun)" : world.accent,
-          "--drop": selected ? world.accent : "var(--color-ink-950)",
-        } as CSSProperties
-      }
+      className={`px-frame px-focus px-shadow group relative flex flex-col text-left ${selected ? "px-selected -translate-y-1" : "px-lift"}`}
+      style={{ "--frame": `var(--frame-${selected ? "gold-card" : world.frame})` } as CSSProperties}
     >
-      <div className="flex items-center justify-between gap-2 px-3 py-2" style={{ background: world.accent, color: world.accentInk }}>
-        <span className="flex items-center gap-2 font-display text-[9px] uppercase">
-          <PixelIcon name={world.icon} size={14} />
-          World
+      {(selected || world.featured) && <CornerSparkles />}
+      <div className="relative">
+        <ArtImage art={worldArt[world.id]} alt={t("worlds.illustration", { name })} tagLabel={t("common.placeholder")} fit="cover" className="w-full border-2 border-outline/40" />
+        <span className="absolute left-1 top-1 flex items-center gap-1 bg-white/90 px-1.5 py-1 font-label text-[10px] uppercase shadow-[1px_1px_0_rgba(91,74,134,0.25)]" style={{ color: world.accent }}>
+          <PixelIcon name={world.icon} size={10} /> {world.featured ? t("worlds.featured") : t("worlds.badge")}
         </span>
         {selected && (
-          <span className="flex items-center gap-1 bg-ink-950 px-2 py-1 font-display text-[8px] uppercase text-sun">
-            <PixelIcon name="check" size={10} /> Selected
+          <span className="absolute right-1 top-1 flex animate-pop items-center gap-1 bg-butter px-1.5 py-1 font-label text-[10px] uppercase text-ink shadow-[1px_1px_0_var(--color-butter-lo)]">
+            <PixelIcon name="check" size={10} /> {t("worlds.selected")}
           </span>
         )}
       </div>
-      <ArtImage art={worldArt[world.id]} alt={`${world.name} illustration`} className="aspect-[8/5] border-y-4 border-ink-950" />
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <h2 className="font-display text-sm uppercase leading-snug" style={{ color: world.accent }}>
-          {world.name}
+      <div className="flex flex-1 flex-col gap-2 px-1 pt-3 pb-1">
+        <h2 className="flex items-center gap-1.5 font-head text-xl font-bold leading-tight sm:text-[22px]" style={{ color: world.accent }}>
+          {name}
+          {world.featured && <Sparkle size={9} twinkle className="text-butter-lo" />}
         </h2>
-        <p className="text-lg leading-snug text-paper">{world.blurb}</p>
-        <ul className="mt-auto flex flex-wrap gap-2 pt-2">
-          {world.tags.map((t) => (
-            <li key={t} className="border-2 border-ink-600 px-2 py-0.5 text-sm text-paper-dim">
-              {t}
+        <p className="text-base leading-snug text-ink">{t(`worlds.list.${world.id}.blurb` as const)}</p>
+        <ul className="mt-auto flex flex-wrap gap-1.5 pt-2">
+          {tags.map((tag) => (
+            <li key={tag} className="border border-line bg-well px-2 py-0.5 text-sm text-ink-soft">
+              {tag}
             </li>
           ))}
         </ul>

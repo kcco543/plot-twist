@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ActionBar, ScreenHeader } from "@/components/ScreenHeader";
 import { CharacterEditor } from "@/components/game/CharacterEditor";
 import { CharacterRoster } from "@/components/game/CharacterRoster";
+import { LoadingState } from "@/components/ui/LoadingDots";
 import { Modal } from "@/components/ui/Modal";
 import { Panel } from "@/components/ui/Panel";
 import { PixelButton, PixelLink } from "@/components/ui/PixelButton";
@@ -12,8 +13,11 @@ import { PixelIcon } from "@/components/ui/PixelIcon";
 import { gameActions, useSave } from "@/lib/gameStore";
 import { useHydrated } from "@/lib/persistentStore";
 import { getWorld } from "@/lib/worlds";
+import { useI18n } from "@/i18n";
+import { Rich } from "@/i18n/Rich";
 
 export default function CharacterStudioPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const hydrated = useHydrated();
   const save = useSave();
@@ -34,42 +38,42 @@ export default function CharacterStudioPage() {
 
   return (
     <>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-10 sm:px-6">
-        <ScreenHeader kicker="Step 2 · Character studio" title="Assemble your cast">
+      <main className="gutter mx-auto w-full max-w-6xl flex-1 pt-8 sm:pt-10">
+        <ScreenHeader kicker={t("studio.kicker")} title={t("studio.heading")}>
           {world ? (
-            <>
-              Your story takes place in <span style={{ color: world.accent }}>{world.name}</span>. Everything saves automatically in this browser.
-            </>
+            <Rich template={t("studio.introWorld")} values={{ world: <span style={{ color: world.accent }}>{t(`worlds.list.${world.id}.name` as const)}</span> }} />
           ) : (
-            "Everything saves automatically in this browser."
+            t("studio.intro")
           )}
         </ScreenHeader>
 
         {!hydrated ? (
-          <p className="font-display text-[10px] uppercase text-paper-dim">Loading save...</p>
+          <LoadingState label={t("common.loadingSave")} />
         ) : save.characters.length === 0 ? (
-          <Panel className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-12 text-center">
-            <PixelIcon name="user" size={40} className="text-sun animate-bob" />
-            <h2 className="font-display text-sm uppercase">No characters yet</h2>
-            <p className="text-lg text-paper-dim">Create your first original character. Who are they, and what are they hiding?</p>
-            <PixelButton variant="primary" icon="plus" onClick={add}>
-              Create character
-            </PixelButton>
+          <Panel className="mx-auto max-w-xl">
+            <div className="flex flex-col items-center gap-4 px-2 py-8 text-center">
+              <PixelIcon name="user" size={40} className="animate-bob text-label" />
+              <h2 className="font-head text-2xl font-bold">{t("studio.emptyTitle")}</h2>
+              <p className="text-lg text-ink-soft">{t("studio.emptyBody")}</p>
+              <PixelButton variant="primary" icon="plus" onClick={add}>
+                {t("studio.create")}
+              </PixelButton>
+            </div>
           </Panel>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-[16rem_1fr]">
-            <aside className="lg:sticky lg:top-24 lg:self-start">
-              <p className="mb-3 font-display text-[10px] uppercase text-paper-dim">Cast · {save.characters.length}</p>
+          <div className="grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
+            <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+              <p className="mb-2 font-label text-xs uppercase text-ink-soft">{t("studio.castCount", { count: save.characters.length })}</p>
               <CharacterRoster characters={save.characters} selectedId={selected?.id ?? null} onSelect={setPickedId} onAdd={add} />
             </aside>
             {selected && (
-              <section aria-label={`Editing ${selected.name || "unnamed character"}`}>
-                <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                  <p className="flex items-center gap-2 font-display text-[10px] uppercase text-mint" aria-live="polite">
-                    <PixelIcon name="check" size={12} /> Autosaved
+              <section aria-label={t("studio.editing", { name: selected.name || t("common.unnamed") })} className="min-w-0">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="flex items-center gap-2 font-label text-xs uppercase text-mint-deep" role="status">
+                    <PixelIcon name="check" size={12} /> {t("common.autosaved")}
                   </p>
-                  <PixelButton variant="danger" size="sm" icon="trash" onClick={() => setConfirmDelete(true)}>
-                    Delete
+                  <PixelButton variant="ghost" size="sm" icon="trash" onClick={() => setConfirmDelete(true)}>
+                    {t("common.delete")}
                   </PixelButton>
                 </div>
                 <CharacterEditor key={selected.id} character={selected} onChange={(patch) => gameActions.updateCharacter(selected.id, patch)} />
@@ -81,32 +85,31 @@ export default function CharacterStudioPage() {
 
       <ActionBar>
         <PixelLink href="/worlds" variant="ghost" icon="left">
-          Worlds
+          {t("studio.backToWorlds")}
         </PixelLink>
         <PixelButton variant="primary" iconRight="right" disabled={save.characters.length === 0} onClick={() => router.push("/builder")}>
-          Build world
+          {t("studio.next")}
         </PixelButton>
       </ActionBar>
 
       <Modal
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
-        title="Delete character?"
+        title={t("studio.deleteTitle")}
+        closeLabel={t("common.close")}
         size="sm"
         footer={
           <>
             <PixelButton variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
-              Keep
+              {t("common.keep")}
             </PixelButton>
-            <PixelButton variant="primary" size="sm" icon="trash" onClick={remove}>
-              Delete
+            <PixelButton variant="danger" size="sm" icon="trash" onClick={remove}>
+              {t("common.delete")}
             </PixelButton>
           </>
         }
       >
-        <p className="text-lg">
-          <span className="text-sun">{selected?.name.trim() || "This character"}</span> will be gone for good. This can&apos;t be undone.
-        </p>
+        <p className="text-lg">{t("studio.deleteBody", { name: selected?.name.trim() || t("studio.thisCharacter") })}</p>
       </Modal>
     </>
   );

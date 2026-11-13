@@ -1,10 +1,17 @@
 # PLOT TWIST!
 
 > You create the characters. They create the chaos.
+> 角色由你创造，混乱由他们制造。
 
-A pixel-art storytelling sandbox for original character creators. Pick a world, build a cast, set the scene, and watch personality-driven stories unfold.
+A pixel-art storytelling sandbox for original character creators. Pick a world, build a cast, set the scene, and watch personality-driven stories unfold. It runs in English and Simplified Chinese, works on phones and desktop, and can be installed as an app.
 
-This is **v0.1, the first prototype**: the foundation, design system and core user flows. AI generation, a pixel editor and autonomous NPC behavior come later.
+**v0.3 · prototype**: a lighter pastel restyle with Otherworld as the fully illustrated hero world, on top of v0.2's bilingual UI (Settings → Language: English / 简体中文), mobile-first layout and PWA support.
+
+Where things live:
+
+- **Design system:** tokens in `src/app/globals.css`, pixel frames in `scripts/build-frames.mjs` (generates `src/app/frames.css`), components in `src/components/ui/`, rules in `docs/DESIGN_SYSTEM.md`.
+- **Translations:** `src/i18n/locales/en.json` and `src/i18n/locales/zh-CN.json`, loaded by `src/i18n/index.ts`.
+- **Art:** `scripts/generate-placeholders.mjs` and `scripts/otherworld.mjs` (run `node scripts/generate-placeholders.mjs`), wired up in `src/assets/manifest.ts`.
 
 ## Run it locally
 
@@ -12,57 +19,86 @@ Requires Node.js 18.18 or newer.
 
 ```bash
 npm install
-npm run dev
+npm run dev          # http://localhost:3000
 ```
 
-Then open http://localhost:3000.
+To test the production build and the installable app or offline mode (the service worker only runs in production):
 
-Other scripts: `npm run build` (production build + type check), `npm run start` (serve the build), `npm run lint`.
+```bash
+npm run build
+npm run start        # http://localhost:3000
+```
 
-## What's in the prototype
+To try it on your phone, connect it to the same Wi-Fi and open `http://<your-computer's-ip>:3000`. Offline caching and the install prompt need HTTPS (or localhost), so test those on a deployed copy, for example on Vercel.
+
+## Screens
 
 | Screen | Route | What works |
 | --- | --- | --- |
-| Title screen | `/` | Start Game, Load Game, Settings |
-| Load game | `/load` | Shows your save slot and continues where you left off |
-| World select | `/worlds` | Four worlds, each with its own accent, icon and art |
-| Character studio | `/studio` | Create, edit and delete multiple characters (10 fields + portrait) |
-| World builder | `/builder` | Environment description, 5 environment types, live preview |
-| Play mode | `/play` | Viewport with characters, info panel, dialogue (Talk / Observe / Wait), story log, pause menu |
+| Title screen | `/` | Start Game, Load Game, Settings, language switch |
+| Load game | `/load` | Save slot summary and Continue |
+| World select | `/worlds` | Four worlds, each with its own accent and art |
+| Character studio | `/studio` | Create, edit and delete characters (10 fields + portrait picker) |
+| World builder | `/builder` | Description, 5 environment types, live preview per world |
+| Play mode | `/play` | Game stage, character panel, dialogue (Talk / Observe / Wait), story log, pause menu, touch pad, keyboard controls |
 
-Everything saves to the browser's `localStorage` automatically, so it survives a refresh. Settings (text speed, CRT scanlines, reduce motion, erase save) live in the settings menu.
+Saves live in the browser's `localStorage` and survive refreshes, language switches and going offline.
 
-## Project structure
-
-```
-public/assets/          ← all placeholder art (replace with your own)
-src/assets/manifest.ts  ← the one list of every art file the app uses
-src/app/                ← pages (Next.js App Router)
-  page.tsx              ← title screen
-  (game)/               ← in-game screens sharing the top bar
-src/components/ui/      ← design-system building blocks (buttons, panels, icons, modal, fields)
-src/components/game/    ← game-specific pieces (world card, roster, viewport, dialogue...)
-src/lib/                ← data, save system, settings, map generator interface
-src/app/globals.css     ← design tokens (colors, fonts, motion) + pixel component styles
-```
-
-## Replacing the placeholder art
-
-All art lives in `public/assets/` and is listed in `src/assets/manifest.ts`.
-
-1. Overwrite a file with your own image using the **same filename**, or add a new file and update its path in the manifest. PNG, GIF, WEBP and SVG all work.
-2. Set `placeholder: false` for that entry so the "PLACEHOLDER" tag disappears.
-
-Pixel art is scaled with crisp edges (`image-rendering: pixelated`). Suggested aspect ratios: worlds and environments 8:5, portraits 1:1, sprites 2:3.
+### Controls in Play Mode
+- **Keyboard:** ← → (or A / D) choose a character · Z / Enter / Space talk · X observe · C wait · L story log · Esc / P pause
+- **Touch:** the ◀ ▶ pad chooses a character, **A** talks, and the three big dialogue buttons do the rest. You can also tap a character in the scene.
 
 ## Design system
 
-Colors, fonts and animation timings are tokens in `src/app/globals.css` (`@theme`). Components use them through Tailwind classes such as `bg-ink-800`, `text-twist` or `font-display`, and through the pixel classes `.px-panel`, `.px-btn`, `.px-frame` and `.px-input`. Change a token and every screen follows.
+See **[docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** for the palette, fonts, frames, components, motion and pixel-art standards.
 
-Fonts: Press Start 2P (headings, buttons) and Pixelify Sans (body text), both from Google Fonts.
+- Tokens: `src/app/globals.css`
+- Pixel frames: `src/app/frames.css`, generated by `node scripts/build-frames.mjs`
+- UI components: `src/components/ui/`, game components: `src/components/game/`
 
-## Ready for later
+## Languages (EN / 简体中文)
 
-- **AI map generation:** `src/lib/mapGenerator.ts` defines a `MapGenerator` interface. The World Builder only calls `activeMapGenerator`, so an AI-backed version can be swapped in without UI changes.
-- **Portraits:** `src/components/game/PortraitSlot.tsx` is the frame a pixel editor or AI portrait generator will render into.
-- **Story events:** Play Mode lines come from `src/lib/scenes.ts`, built from what you wrote about each character. This is where smarter story logic will plug in.
+```
+src/i18n/
+  index.ts            ← useI18n() → { locale, setLocale, t, tl }, plus the saved language
+  Rich.tsx            ← fills {placeholders} with styled elements
+  locales/
+    en.json           ← source of truth (every key)
+    zh-CN.json        ← same keys, Simplified Chinese
+```
+
+- Keys are type-checked against `en.json`, so a typo is a TypeScript error.
+- To add a string, add it to **both** JSON files with the same key, then use `t("section.key")`.
+- Switching language never reloads the page or touches save data.
+- **Your own writing is never translated.** Character names, bios and descriptions stay in the language you wrote them in.
+- Predefined story lines (Play Mode narration, demo characters) exist in both languages. The story log stores lines as keys, so it re-renders when you switch.
+- Future AI generation receives `locale` (see `src/lib/ai/storyRequest.ts` and `src/lib/mapGenerator.ts`).
+
+## Installable app (PWA)
+
+- Manifest: `src/app/manifest.ts`. Name, colors, standalone display and icons.
+- Service worker: `public/sw.js`, registered in production builds only.
+- **Works offline after one online visit:** every screen, all art, fonts and your saves.
+- **Needs internet:** nothing in this version. Future AI features (story events, map and portrait generation) will.
+- Icons in `public/icons/` are placeholders.
+
+## Art: what to replace
+
+All art is **placeholder**, generated by `scripts/generate-placeholders.mjs`, tagged "Placeholder" in the UI, and listed in `src/assets/manifest.ts`.
+
+| Folder | Files | Size |
+| --- | --- | --- |
+| `public/assets/characters/` | `portrait-01…06.png`, `sprite-01…06.png` | 96×96, 32×32 |
+| `public/assets/environments/<world>/` | `interior`, `street`, `wilderness`, `ruins`, `dreamscape` `.png` × 4 worlds | 320×192 |
+| `public/assets/ui/` | `title-background.png` | 320×180 |
+| `public/icons/` | `icon-192`, `icon-512`, `icon-maskable-512`, `apple-touch-icon` | as named |
+| `src/app/icon.png` | browser tab icon | 192×192 |
+
+Replace a file with the same name and size, or point the manifest at a new one, then set `placeholder: false`.
+
+## Not built yet
+
+These are on purpose, to keep v0.2 and v0.3 redesigns with no new gameplay:
+- **Pixel portrait editor.** The portrait frame in the Character Studio is ready for one. For now you pick from placeholder portraits.
+- **Free movement and map collision.** Play Mode has no walking yet. The touch pad and arrow keys choose characters instead.
+- **AI story, map and portrait generation.** The interfaces are in place but nothing calls an AI.
