@@ -1,26 +1,225 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   PLOT TWIST! design tokens
+   All colors, sizes and motion live here. Components use these through
+   Tailwind utilities (bg-ink-900, text-twist, font-display ...) or the
+   pixel component classes defined below. Change a token, the whole app follows.
+   ========================================================================== */
+@theme {
+  /* Base: midnight ink */
+  --color-ink-950: #0e0a1c;
+  --color-ink-900: #160f2b;
+  --color-ink-800: #211741;
+  --color-ink-700: #2e2257;
+  --color-ink-600: #43347a;
+  --color-ink-400: #7d6fae;
+
+  /* Text */
+  --color-paper: #fff4e0;
+  --color-paper-dim: #c7bce3;
+
+  /* Brand accents */
+  --color-twist: #ff3f6c; /* primary — the plot twist */
+  --color-twist-dark: #b81f48;
+  --color-sun: #ffc93c; /* highlight / selection */
+  --color-sun-dark: #b9851a;
+  --color-mint: #3ee0b0; /* success / saved */
+  --color-mint-dark: #1f9c78;
+
+  /* World accents (one per world) */
+  --color-world-fantasy: #e8b84a;
+  --color-world-modern: #4cb5ff;
+  --color-world-china: #e2493a;
+  --color-world-other: #a46bff;
+
+  --font-display: var(--font-press-start), ui-monospace, monospace;
+  --font-body: var(--font-pixelify), ui-monospace, monospace;
+
+  --animate-blink: blink 1s steps(1) infinite;
+  --animate-screen-in: screen-in 320ms steps(6) both;
+  --animate-pop: pop 180ms steps(3) both;
+  --animate-bob: bob 1.2s steps(2) infinite;
+}
+
+/* Pixel unit: every border, notch and shadow is a multiple of this. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --px: 4px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@keyframes blink {
+  50% { opacity: 0; }
+}
+@keyframes screen-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes bob {
+  50% { transform: translateY(calc(var(--px) * -1)); }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-ink-950);
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-ink-900);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: none;
+}
+
+img.pixelated,
+.pixelated img {
+  image-rendering: pixelated;
+}
+
+::selection {
+  background: var(--color-sun);
+  color: var(--color-ink-900);
+}
+
+/* Settings: reduce motion */
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Settings: CRT scanlines overlay */
+html[data-crt="on"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.18) 0,
+    rgba(0, 0, 0, 0.18) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* ==========================================================================
+   Pixel component classes
+   ========================================================================== */
+@layer components {
+  /* Notched pixel frame. Set --frame to recolor. */
+  .px-frame {
+    --frame: var(--color-paper);
+    position: relative;
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--frame),
+      0 var(--px) 0 0 var(--frame),
+      calc(var(--px) * -1) 0 0 0 var(--frame),
+      var(--px) 0 0 0 var(--frame);
+  }
+
+  /* Panel = frame + hard drop shadow */
+  .px-panel {
+    --frame: var(--color-ink-400);
+    --drop: var(--color-ink-950);
+    background: var(--color-ink-800);
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--frame),
+      0 var(--px) 0 0 var(--frame),
+      calc(var(--px) * -1) 0 0 0 var(--frame),
+      var(--px) 0 0 0 var(--frame),
+      calc(var(--px) * 2) calc(var(--px) * 2) 0 0 var(--drop);
+  }
+
+  .px-btn {
+    --face: var(--color-ink-700);
+    --edge: var(--color-ink-950);
+    --ink: var(--color-paper);
+    --frame: var(--color-paper);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    background: var(--face);
+    cursor: pointer;
+    user-select: none;
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--frame),
+      0 var(--px) 0 0 var(--frame),
+      calc(var(--px) * -1) 0 0 0 var(--frame),
+      var(--px) 0 0 0 var(--frame),
+      inset 0 calc(var(--px) * -1) 0 0 var(--edge),
+      calc(var(--px) * 1.5) calc(var(--px) * 1.5) 0 calc(var(--px) * 0.5) var(--color-ink-950);
+    transition: transform 80ms steps(2), filter 80ms steps(2);
+  }
+  .px-btn:hover:not(:disabled) {
+    transform: translate(calc(var(--px) * -0.5), calc(var(--px) * -0.5));
+    filter: brightness(1.12);
+  }
+  .px-btn:active:not(:disabled) {
+    transform: translate(var(--px), var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--frame),
+      0 var(--px) 0 0 var(--frame),
+      calc(var(--px) * -1) 0 0 0 var(--frame),
+      var(--px) 0 0 0 var(--frame),
+      inset 0 var(--px) 0 0 var(--edge);
+  }
+  .px-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+  .px-btn:focus-visible,
+  .px-focus:focus-visible {
+    outline: var(--px) dashed var(--color-sun);
+    outline-offset: calc(var(--px) * 2);
+  }
+
+  .px-input {
+    width: 100%;
+    background: var(--color-ink-950);
+    color: var(--color-paper);
+    font-family: var(--font-body);
+    font-size: 1.125rem;
+    padding: 0.5rem 0.75rem;
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--color-ink-600),
+      0 var(--px) 0 0 var(--color-ink-600),
+      calc(var(--px) * -1) 0 0 0 var(--color-ink-600),
+      var(--px) 0 0 0 var(--color-ink-600);
+    transition: box-shadow 80ms steps(2);
+  }
+  .px-input::placeholder {
+    color: var(--color-ink-400);
+  }
+  .px-input:focus {
+    outline: none;
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--color-sun),
+      0 var(--px) 0 0 var(--color-sun),
+      calc(var(--px) * -1) 0 0 0 var(--color-sun),
+      var(--px) 0 0 0 var(--color-sun);
+  }
+
+  /* Checkerboard used behind placeholder art + game viewport */
+  .px-checker {
+    background-color: var(--color-ink-900);
+    background-image:
+      linear-gradient(45deg, var(--color-ink-800) 25%, transparent 25%, transparent 75%, var(--color-ink-800) 75%),
+      linear-gradient(45deg, var(--color-ink-800) 25%, transparent 25%, transparent 75%, var(--color-ink-800) 75%);
+    background-size: calc(var(--px) * 4) calc(var(--px) * 4);
+    background-position: 0 0, calc(var(--px) * 2) calc(var(--px) * 2);
+  }
 }
