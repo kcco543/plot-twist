@@ -31,9 +31,9 @@ export default function LoadGamePage() {
       ) : !hasSave ? (
         <Panel>
           <div className="flex flex-col items-center gap-4 px-2 py-8 text-center">
-            <PixelIcon name="load" size={40} className="text-plum-300" />
+            <PixelIcon name="load" size={40} className="text-ink-mute" />
             <h2 className="font-head text-2xl font-bold">{t("load.emptyTitle")}</h2>
-            <p className="text-lg text-cream-dim">{t("load.emptyBody")}</p>
+            <p className="text-lg text-ink-soft">{t("load.emptyBody")}</p>
             <div className="flex flex-wrap justify-center gap-3">
               <PixelLink href="/" variant="ghost" icon="left">
                 {t("common.title")}
@@ -49,9 +49,9 @@ export default function LoadGamePage() {
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="w-full shrink-0 sm:w-60">
               {world ? (
-                <ArtImage art={worldArt[world.id]} alt={t("worlds.illustration", { name: t(`worlds.list.${world.id}.name` as const) })} tagLabel={t("common.placeholder")} className="w-full border-[3px] border-ink" />
+                <ArtImage art={worldArt[world.id]} alt={t("worlds.illustration", { name: t(`worlds.list.${world.id}.name` as const) })} tagLabel={t("common.placeholder")} className="w-full border-2 border-outline/40" />
               ) : (
-                <div className="px-checker flex aspect-[5/3] items-center justify-center border-[3px] border-ink font-label text-xs uppercase text-cream-dim">{t("load.noWorld")}</div>
+                <div className="px-checker flex aspect-[5/3] items-center justify-center border-2 border-outline/40 font-label text-xs uppercase text-ink-soft">{t("load.noWorld")}</div>
               )}
               {count > 0 && (
                 <div className="mt-2 flex gap-1">
@@ -62,17 +62,17 @@ export default function LoadGamePage() {
               )}
             </div>
             <dl className="grid flex-1 grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-5 gap-y-2 text-lg">
-              <dt className="font-label text-[10px] uppercase text-pink">{t("load.world")}</dt>
+              <dt className="font-label text-[10px] uppercase text-rose">{t("load.world")}</dt>
               <dd style={{ color: world?.accent }}>{world ? t(`worlds.list.${world.id}.name` as const) : t("load.notChosen")}</dd>
-              <dt className="font-label text-[10px] uppercase text-pink">{t("load.cast")}</dt>
+              <dt className="font-label text-[10px] uppercase text-rose">{t("load.cast")}</dt>
               <dd>{count === 1 ? t("load.character") : t("load.characters", { count })}</dd>
-              <dt className="font-label text-[10px] uppercase text-pink">{t("load.setting")}</dt>
+              <dt className="font-label text-[10px] uppercase text-rose">{t("load.setting")}</dt>
               <dd>{t(`environments.${save.environment.type}.name` as const)}</dd>
-              <dt className="font-label text-[10px] uppercase text-pink">{t("load.saved")}</dt>
+              <dt className="font-label text-[10px] uppercase text-rose">{t("load.saved")}</dt>
               <dd className="tabular-nums">{new Date(save.updatedAt!).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })}</dd>
             </dl>
           </div>
-          <div className="mt-4 flex flex-wrap justify-between gap-3 border-t-[3px] border-dashed border-plum-600 pt-4">
+          <div className="mt-4 flex flex-wrap justify-between gap-3 border-t-[3px] border-dashed border-line pt-4">
             <PixelLink href="/" variant="ghost" icon="left">
               {t("common.title")}
             </PixelLink>

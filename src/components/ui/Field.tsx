@@ -22,11 +22,11 @@ export function Field({ label, value, onChange, placeholder, multiline, rows = 3
   return (
     <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
       <div className="flex items-baseline justify-between gap-2">
-        <label htmlFor={id} className="font-label text-xs uppercase tracking-wide text-butter">
+        <label htmlFor={id} className="font-label text-xs uppercase tracking-wide text-label">
           {label}
         </label>
         {maxLength && (
-          <span className="font-label text-[10px] text-plum-300 tabular-nums" aria-hidden>
+          <span className="font-label text-[10px] text-ink-mute tabular-nums" aria-hidden>
             {value.length}/{maxLength}
           </span>
         )}
@@ -54,7 +54,7 @@ export function Field({ label, value, onChange, placeholder, multiline, rows = 3
         />
       )}
       {hint && (
-        <p id={hintId} className="text-sm text-cream-dim">
+        <p id={hintId} className="text-sm text-ink-soft">
           {hint}
         </p>
       )}

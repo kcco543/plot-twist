@@ -26,7 +26,7 @@ export function SceneSprites({ characters, selectedId, onSelect }: { characters:
             onClick={() => onSelect(c.id)}
             aria-pressed={active}
             aria-label={t("play.selectCharacter", { name: c.name.trim() || t("common.unnamed") })}
-            className="group absolute focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-butter"
+            className="group absolute focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-label"
             style={{ left: spriteX(i, shown.length) - STAGE.sprite / 2, top: STAGE.floorY - STAGE.sprite, width: STAGE.sprite, height: STAGE.sprite }}
           >
             <span className="absolute bottom-0 left-1/2 h-[3px] w-6 -translate-x-1/2 bg-ink/40" aria-hidden />
@@ -51,7 +51,7 @@ export function SceneLabels({ characters, selectedId }: { characters: Character[
         return (
           <span key={c.id} className="absolute -translate-x-1/2" style={{ left: `${leftPct}%`, top: `${((STAGE.floorY + 2) / 192) * 100}%` }}>
             <span
-              className={`block max-w-24 truncate px-1 py-[1px] font-head text-[11px] font-bold leading-tight sm:text-xs ${active ? "bg-butter text-ink" : "bg-ink/80 text-cream"}`}
+              className={`block max-w-24 truncate px-1 py-[1px] font-head text-[11px] font-bold leading-tight sm:text-xs ${active ? "bg-butter text-ink" : "bg-white/90 text-ink"}`}
             >
               {c.name.trim() || t("common.unnamed")}
             </span>
@@ -63,7 +63,7 @@ export function SceneLabels({ characters, selectedId }: { characters: Character[
           <span
             key="marker"
             aria-hidden
-            className="absolute -translate-x-1/2 animate-bob text-butter"
+            className="absolute -translate-x-1/2 animate-bob text-label"
             style={{ left: `${(spriteX(i, shown.length) / STAGE.width) * 100}%`, top: `calc(${((STAGE.floorY - STAGE.sprite) / 192) * 100}% - 16px)` }}
           >
             <svg width="12" height="10" viewBox="0 0 6 5" shapeRendering="crispEdges" fill="currentColor">

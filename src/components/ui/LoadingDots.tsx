@@ -11,9 +11,9 @@ export function LoadingDots({ className = "" }: { className?: string }) {
 
 export function LoadingState({ label }: { label: string }) {
   return (
-    <p role="status" className="flex items-center justify-center gap-3 py-16 font-label text-xs uppercase text-cream-dim">
+    <p role="status" className="flex items-center justify-center gap-3 py-16 font-label text-xs uppercase text-ink-soft">
       {label}
-      <LoadingDots className="text-butter" />
+      <LoadingDots className="text-label" />
     </p>
   );
 }

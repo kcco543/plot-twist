@@ -5,51 +5,56 @@
    PLOT TWIST! DESIGN TOKENS  ·  "Cozy chaos"
    Full rules: docs/DESIGN_SYSTEM.md
    Every color, font and timing lives here. Components reach them through
-   Tailwind utilities (bg-plum-800, text-pink, font-head ...) or the
+   Tailwind utilities (bg-surface, text-ink, font-head ...) or the
    pixel classes further down. Change a token and the whole game follows.
    ========================================================================== */
 @theme {
-  /* Plum neutrals: ground, panels, outlines. Never pure black. */
-  --color-ink: #1b1526; /* outline + text on candy colors */
-  --color-plum-950: #1f1830;
-  --color-plum-900: #231c30;
-  --color-plum-800: #30273f; /* Midnight Plum: page background */
-  --color-plum-700: #3d3250; /* panel face */
-  --color-plum-600: #4e4266; /* card face, borders */
-  --color-plum-500: #66588a;
-  --color-plum-300: #a596c6; /* muted text */
+  /* Ink: deep plum, used for text and outlines (never pure black). */
+  --color-ink: #3d3060;
+  --color-ink-soft: #66598a; /* secondary text */
+  --color-ink-mute: #958ab4; /* hints, placeholders */
+  --color-outline: #5b4a86; /* pixel outlines on art + buttons */
+  --color-label: #7653c2; /* small caps labels, active text */
+  --color-rose: #c4507c; /* pink text (readable) */
+  --color-mint-deep: #2a8a6d;
+  --color-coral-deep: #c2573f;
 
-  --color-cream: #fff0d5; /* Warm Cream: main text */
-  --color-cream-dim: #d8cbe3; /* secondary text */
+  /* Surfaces: light and airy */
+  --color-bg: #eee8f9; /* page */
+  --color-surface: #fffaf3; /* panels (warm cream) */
+  --color-well: #f3edfc; /* sunken areas, tags */
+  --color-line: #e0d5f1; /* subtle dividers */
 
-  /* Candy ramps: -lo (shadow, hue-shifted cooler) / base / -hi (highlight, warmer) */
-  --color-lavender-lo: #6a55a6;
-  --color-lavender: #9d86ce;
-  --color-lavender-hi: #d2c4f2;
-  --color-pink-lo: #c0507f;
-  --color-pink: #f48db5; /* Candy Pink: primary action, brand */
-  --color-pink-hi: #ffc7dc;
-  --color-mint-lo: #3b9a8a;
-  --color-mint: #72d9b7; /* success, saved */
-  --color-mint-hi: #c4f5df;
-  --color-butter-lo: #d29a45;
-  --color-butter: #f8d77c; /* selection, focus, labels */
-  --color-butter-hi: #fff3c4;
-  --color-teal-lo: #2b7d8c;
-  --color-teal: #4fc3cc;
-  --color-teal-hi: #aef0ee;
-  --color-coral-lo: #b8494a;
-  --color-coral: #f07a62; /* danger */
-  --color-coral-hi: #ffb59c;
-  --color-jade-lo: #255b4d;
-  --color-jade: #3f8f74;
-  --color-jade-hi: #8fd1ac;
+  /* Candy accents: -lo shadow (cooler) / base / -hi highlight (warmer) */
+  --color-lavender-lo: #977ed8;
+  --color-lavender: #c3b2f0;
+  --color-lavender-hi: #efe8ff;
+  --color-periwinkle-lo: #7f8fe0;
+  --color-periwinkle: #aab8f5;
+  --color-periwinkle-hi: #e6ebff;
+  --color-pink-lo: #d97aa2;
+  --color-pink: #f5a8c5; /* dusty pink: primary action */
+  --color-pink-hi: #ffe0ec;
+  --color-peach-lo: #e98a6a;
+  --color-peach: #ffc3a0;
+  --color-peach-hi: #ffe6d8;
+  --color-mint-lo: #62bf9f;
+  --color-mint: #9de3c8;
+  --color-mint-hi: #dcfaee;
+  --color-butter-lo: #e8b85a;
+  --color-butter: #ffe08a; /* soft yellow: selection */
+  --color-butter-hi: #fff6d2;
+  --color-teal: #8fd8e6;
+  --color-coral: #ffb898;
 
-  /* World accents (text-safe on plum) */
-  --color-world-western-fantasy: #f8d77c;
-  --color-world-modern: #ffb59c;
-  --color-world-ancient-china: #8fd1ac;
-  --color-world-otherworld: #d2c4f2;
+  /* Deep plum: supporting dark color only (game stage letterbox, tooltips) */
+  --color-plum: #3a2d55;
+
+  /* World accents, dark enough to read on cream */
+  --color-world-western-fantasy: #b27a14;
+  --color-world-modern: #cf5f45;
+  --color-world-ancient-china: #2e8a68;
+  --color-world-otherworld: #8457d1;
 
   /* Type. Latin pixel faces first; Chinese falls through to the CJK face. */
   --font-shout: var(--font-press-start), var(--font-zcool), ui-monospace, monospace;
@@ -65,16 +70,17 @@
   --animate-pop: pop 160ms steps(3) both;
   --animate-bob: bob 1s steps(2) infinite;
   --animate-dots: dots 1.2s steps(4) infinite;
+  --animate-twinkle: twinkle 2.4s steps(1) infinite;
 }
 
 /* One UI pixel. Every frame, notch and offset is a multiple of it. */
 :root {
-  --u: 3px;
+  --u: 2px;
   --gutter-l: max(16px, env(safe-area-inset-left, 0px));
   --gutter-r: max(16px, env(safe-area-inset-right, 0px));
 }
 @media (min-width: 640px) {
-  :root { --u: 4px; }
+  :root { --u: 3px; }
 }
 
 @keyframes blink { 0%, 90% { opacity: 1; } 91%, 97% { opacity: 0.2; } }
@@ -82,18 +88,20 @@
 @keyframes screen-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @keyframes pop { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
 @keyframes bob { 50% { transform: translateY(calc(var(--u) * -1)); } }
+@keyframes twinkle { 0%, 60% { opacity: 1; transform: scale(1); } 61%, 80% { opacity: 0.35; transform: scale(0.6); } 81%, 100% { opacity: 1; transform: scale(1); } }
 @keyframes dots { 0% { clip-path: inset(0 100% 0 0); } 100% { clip-path: inset(0 0 0 0); } }
 
 html {
-  background: var(--color-plum-900);
-  color-scheme: dark;
+  background: var(--color-bg);
+  color-scheme: light;
   -webkit-text-size-adjust: 100%;
 }
 body {
-  background-color: var(--color-plum-800);
-  background-image: radial-gradient(var(--color-plum-700) 1.5px, transparent 1.5px);
-  background-size: 16px 16px;
-  color: var(--color-cream);
+  background-color: var(--color-bg);
+  /* faint pixel sparkles */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 48 48' shape-rendering='crispEdges'%3E%3Cg fill='%23ddd2f3'%3E%3Crect x='6' y='8' width='1' height='3'/%3E%3Crect x='5' y='9' width='3' height='1'/%3E%3Crect x='34' y='30' width='1' height='3'/%3E%3Crect x='33' y='31' width='3' height='1'/%3E%3C/g%3E%3Cg fill='%23f6d4e2'%3E%3Crect x='22' y='20' width='1' height='1'/%3E%3Crect x='41' y='6' width='1' height='1'/%3E%3Crect x='12' y='38' width='1' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 96px 96px;
+  color: var(--color-ink);
   font-family: var(--font-body);
   font-size: 1.125rem;
   line-height: 1.5;
@@ -121,7 +129,7 @@ html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-
 /* Settings: CRT scanlines */
 html[data-crt="on"] body::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 100;
-  background: repeating-linear-gradient(to bottom, rgba(27, 21, 38, 0.22) 0, rgba(27, 21, 38, 0.22) 1px, transparent 1px, transparent 3px);
+  background: repeating-linear-gradient(to bottom, rgba(61, 48, 96, 0.09) 0, rgba(61, 48, 96, 0.09) 1px, transparent 1px, transparent 3px);
 }
 
 /* ==========================================================================
@@ -138,13 +146,20 @@ html[data-crt="on"] body::after {
     border-image-repeat: stretch;
     image-rendering: pixelated;
   }
-  .px-shadow { filter: drop-shadow(var(--u) var(--u) 0 var(--color-ink)); }
+  /* Soft offset shadow (lavender, not black). */
+  .px-shadow { filter: drop-shadow(0 calc(var(--u) * 2) 0 rgba(91, 74, 134, 0.14)); }
+  .px-lift { transition: transform 100ms steps(2), filter 100ms steps(2); }
+  @media (hover: hover) {
+    .px-lift:hover { transform: translateY(calc(var(--u) * -1)); filter: drop-shadow(0 calc(var(--u) * 3) 0 rgba(91, 74, 134, 0.2)); }
+  }
+  /* Selected card: gold rim (frame) + soft butter halo. */
+  .px-selected { filter: drop-shadow(0 0 0 var(--color-butter)) drop-shadow(0 calc(var(--u) * 2) 0 rgba(232, 184, 90, 0.45)); }
 
   /* Candy button. Variant sets --frame and --frame-pressed. */
   .px-btn {
     --frame: var(--frame-plum);
     --frame-pressed: var(--frame-plum-pressed);
-    --ink: var(--color-cream);
+    --ink: var(--color-ink);
     position: relative;
     display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
     font-family: var(--font-head); font-weight: 700; line-height: 1.1;
@@ -153,29 +168,29 @@ html[data-crt="on"] body::after {
     border: calc(var(--u) * 4) solid transparent;
     border-image: var(--frame) 4 fill / calc(var(--u) * 4) stretch;
     image-rendering: pixelated;
-    filter: drop-shadow(0 var(--u) 0 var(--color-ink));
+    filter: drop-shadow(0 calc(var(--u) * 1.5) 0 rgba(91, 74, 134, 0.3));
     transition: transform 80ms steps(2), filter 80ms steps(2);
   }
   @media (hover: hover) {
-    .px-btn:hover:not(:disabled):not([aria-disabled="true"]) { transform: translateY(calc(var(--u) * -1)); filter: drop-shadow(0 calc(var(--u) * 2) 0 var(--color-ink)); }
+    .px-btn:hover:not(:disabled):not([aria-disabled="true"]) { transform: translateY(calc(var(--u) * -1)); filter: drop-shadow(0 calc(var(--u) * 2.5) 0 rgba(91, 74, 134, 0.3)) brightness(1.04); }
   }
   .px-btn:active:not(:disabled):not([aria-disabled="true"]), .px-btn[data-pressed="true"] {
     transform: translateY(var(--u)); filter: none; border-image-source: var(--frame-pressed);
   }
   .px-btn:disabled, .px-btn[aria-disabled="true"] {
-    cursor: not-allowed; border-image-source: var(--frame-disabled); color: var(--color-plum-300); filter: none;
+    cursor: not-allowed; border-image-source: var(--frame-disabled); color: var(--color-ink-mute); filter: none;
   }
   .px-btn[aria-busy="true"] { cursor: progress; }
 
-  /* Focus ring: dashed butter, offset outside the frame. */
+  /* Focus ring: dashed lavender, offset outside the frame. */
   .px-btn:focus-visible, .px-focus:focus-visible {
-    outline: var(--u) dashed var(--color-butter); outline-offset: calc(var(--u) * 2);
+    outline: var(--u) dashed var(--color-label); outline-offset: calc(var(--u) * 2);
   }
 
   /* Text field: sunken frame, butter rim on focus. */
   .px-input {
     width: 100%;
-    color: var(--color-cream);
+    color: var(--color-ink);
     font-family: var(--font-body); font-size: 1.0625rem; line-height: 1.45;
     padding: 0.125rem 0.25rem;
     border: calc(var(--u) * 4) solid transparent;
@@ -185,7 +200,7 @@ html[data-crt="on"] body::after {
   }
   /* 16px+ so iOS doesn't zoom on focus */
   @media (max-width: 639px) { .px-input { font-size: 1rem; } }
-  .px-input::placeholder { color: var(--color-plum-300); opacity: 1; }
+  .px-input::placeholder { color: var(--color-ink-mute); opacity: 1; }
   .px-input:focus { outline: none; border-image-source: var(--frame-inset-focus); }
 
   /* Nameplate tab: sits on the top edge of a frame. */
@@ -195,21 +210,29 @@ html[data-crt="on"] body::after {
     color: var(--color-ink);
     padding: 0.125rem 0.375rem;
     border: calc(var(--u) * 3) solid transparent;
-    border-image: var(--frame-butter) 4 fill / calc(var(--u) * 3) stretch;
+    border-image: var(--frame-tab) 4 fill / calc(var(--u) * 3) stretch;
     image-rendering: pixelated;
   }
 
   /* Checkerboard behind pixel art and the game stage. */
   .px-checker {
-    background-color: var(--color-plum-900);
+    background-color: var(--color-well);
     background-image:
-      linear-gradient(45deg, var(--color-plum-950) 25%, transparent 25%, transparent 75%, var(--color-plum-950) 75%),
-      linear-gradient(45deg, var(--color-plum-950) 25%, transparent 25%, transparent 75%, var(--color-plum-950) 75%);
+      linear-gradient(45deg, var(--color-lavender-hi) 25%, transparent 25%, transparent 75%, var(--color-lavender-hi) 75%),
+      linear-gradient(45deg, var(--color-lavender-hi) 25%, transparent 25%, transparent 75%, var(--color-lavender-hi) 75%);
     background-size: 16px 16px;
     background-position: 0 0, 8px 8px;
   }
 
   .gutter { padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+
+  /* Scalloped top edge (bottom action bar, footers). */
+  .px-scallop { position: relative; }
+  .px-scallop::before {
+    content: ""; position: absolute; left: 0; right: 0; top: -6px; height: 6px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='6' viewBox='0 0 8 3' shape-rendering='crispEdges'%3E%3Crect x='2' y='0' width='4' height='1' fill='%23e0d5f1'/%3E%3Crect x='1' y='1' width='6' height='1' fill='%23fffaf3'/%3E%3Crect x='0' y='2' width='8' height='1' fill='%23fffaf3'/%3E%3Crect x='1' y='0' width='1' height='1' fill='%23e0d5f1'/%3E%3Crect x='6' y='0' width='1' height='1' fill='%23e0d5f1'/%3E%3Crect x='0' y='1' width='1' height='1' fill='%23e0d5f1'/%3E%3Crect x='7' y='1' width='1' height='1' fill='%23e0d5f1'/%3E%3C/svg%3E") repeat-x;
+    image-rendering: pixelated;
+  }
 }
 
 /* Mobile keyboard: when a field is focused on small screens, let the bottom action bar scroll away instead of covering the field. */

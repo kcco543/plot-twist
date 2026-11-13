@@ -6,9 +6,9 @@ import { LoadingDots } from "./LoadingDots";
 /**
  * Candy button. One component, every state:
  * hover (lifts 1px, pointer devices only) · active (presses down, frame flips) ·
- * focus (dashed butter ring) · disabled (flat plum) · loading (dots + aria-busy).
+ * focus (dashed lavender ring) · disabled (flat, muted) · loading (dots + aria-busy).
  */
-export type ButtonVariant = "primary" | "accent" | "success" | "magic" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "accent" | "success" | "magic" | "calm" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
 
 const FRAMES: Record<ButtonVariant, [string, string, string]> = {
@@ -16,8 +16,9 @@ const FRAMES: Record<ButtonVariant, [string, string, string]> = {
   accent: ["butter", "butter-pressed", "var(--color-ink)"],
   success: ["mint", "mint-pressed", "var(--color-ink)"],
   magic: ["lavender", "lavender-pressed", "var(--color-ink)"],
-  secondary: ["plum", "plum-pressed", "var(--color-cream)"],
-  ghost: ["ghost", "ghost-pressed", "var(--color-cream)"],
+  calm: ["periwinkle", "periwinkle-pressed", "var(--color-ink)"],
+  secondary: ["plum", "plum-pressed", "var(--color-ink)"],
+  ghost: ["ghost", "ghost-pressed", "var(--color-ink-soft)"],
   danger: ["coral", "coral-pressed", "var(--color-ink)"],
 };
 

@@ -47,7 +47,7 @@ export function Modal({
       className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <button aria-label={closeLabel} className="absolute inset-0 cursor-default bg-ink/80" onClick={onClose} tabIndex={-1} />
+      <button aria-label={closeLabel} className="absolute inset-0 cursor-default bg-plum/40 backdrop-blur-[2px]" onClick={onClose} tabIndex={-1} />
       <div
         ref={ref}
         role="dialog"
@@ -65,7 +65,7 @@ export function Modal({
           </button>
         </div>
         <div className="overflow-y-auto overscroll-contain px-2 pt-6 pb-3 sm:px-3">{children}</div>
-        {footer && <footer className="flex flex-wrap justify-end gap-3 border-t-[3px] border-dashed border-plum-600 px-2 pt-3 pb-1">{footer}</footer>}
+        {footer && <footer className="flex flex-wrap justify-end gap-3 border-t-[3px] border-dashed border-line px-2 pt-3 pb-1">{footer}</footer>}
       </div>
     </div>
   );

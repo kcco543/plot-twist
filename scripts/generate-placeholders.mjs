@@ -3,6 +3,7 @@
 // All colors come from the PLOT TWIST! ramps (see docs/DESIGN_SYSTEM.md).
 // Replace any output with your own art: keep the filename, or edit src/assets/manifest.ts.
 import { Canvas, rng } from "./pixel.mjs";
+import { OTHERWORLD, otherworldTitle } from "./otherworld.mjs";
 
 const OUT = new URL("../public/", import.meta.url).pathname;
 const R = {
@@ -235,7 +236,9 @@ const ENV_TYPES = ["interior", "street", "wilderness", "ruins", "dreamscape"];
 for (const [worldId, P] of Object.entries(WORLD)) {
   for (const t of ENV_TYPES) {
     const c = new Canvas(W, H);
-    SCENES[t](c, P);
+    // Otherworld is the hero world and has its own detailed scenes.
+    if (worldId === "otherworld") OTHERWORLD[t](c);
+    else SCENES[t](c, P);
     c.savePNG(`${OUT}assets/environments/${worldId}/${t}.png`);
   }
 }
@@ -243,19 +246,7 @@ for (const [worldId, P] of Object.entries(WORLD)) {
 // ---------------------------------------------------------------- TITLE BACKGROUND (320x180)
 {
   const c = new Canvas(320, 180);
-
-  for (let i = 0; i < 6; i++) c.rect(0, i * 22, 320, 22, ["#1b1526", "#231c30", "#30273f", "#3e2f6b", "#5a3f8f", "#7a5fb8"][i]);
-  stars(c, 90, "#fff3c4", 110, 21); stars(c, 20, "#aef0ee", 90, 22);
-  c.object((L) => { L.ellipse(258, 36, 16, 16, R.cream); L.ellipse(252, 32, 4, 4, R.cream[0]); L.ellipse(264, 42, 3, 3, R.cream[0]); }, null);
-  hills(c, 132, "#4b3a7a", 20, 0.02, 31);
-  hills(c, 146, "#3e2f6b", 14, 0.035, 32);
-  for (const [x, y, w, cap] of [[56, 70, 44, R.pink], [270, 92, 36, R.teal]]) c.object((L) => {
-    L.rect(x - w / 2, y, w, 6, R.mint[1]); L.rect(x - w / 2, y, w, 2, R.mint[2]);
-    for (let i = 0; i < 4; i++) L.rect(x - w / 2 + 3 + i * 3, y + 6 + i * 4, w - 6 - i * 6, 4, R.stone[i % 2]);
-    L.ellipse(x + 2, y - 10, 12, 8, cap, (_, yy) => yy <= y - 8); L.rect(x - 2, y - 8, 8, 8, R.cream[1]); L.rect(x + 1, y - 4, 2, 4, R.wood[0]);
-  }, R.ink);
-  c.rect(0, 156, 320, 24, "#231c30"); c.rect(0, 156, 320, 1, "#4e4266");
-  for (const [x, cap, s] of [[24, R.pink, 12], [42, R.butter, 7], [296, R.lavender, 14], [278, R.mint, 6]]) mushroom(c, x, 160, cap, s);
+  otherworldTitle(c);
   c.savePNG(`${OUT}assets/ui/title-background.png`);
 }
 

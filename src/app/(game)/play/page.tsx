@@ -104,9 +104,9 @@ export default function PlayPage() {
       <main className="gutter mx-auto flex w-full max-w-xl flex-1 items-center py-16">
         <Panel className="w-full">
           <div className="flex flex-col items-center gap-4 px-2 py-8 text-center">
-            <PixelIcon name="map" size={40} className="text-butter" />
+            <PixelIcon name="map" size={40} className="text-label" />
             <h1 className="font-head text-2xl font-bold">{t("play.noWorldTitle")}</h1>
-            <p className="text-lg text-cream-dim">{t("play.noWorldBody")}</p>
+            <p className="text-lg text-ink-soft">{t("play.noWorldBody")}</p>
             <PixelLink href="/worlds" variant="primary" icon="map">
               {t("play.chooseWorld")}
             </PixelLink>
@@ -133,7 +133,7 @@ export default function PlayPage() {
         <div className="flex shrink-0 gap-2">
           <PixelButton size="sm" variant="magic" icon="book" onClick={() => setLogOpen(true)} aria-label={t("play.storyLog")}>
             <span className="hidden min-[420px]:inline">{t("play.storyLog")}</span>
-            <span className="bg-ink px-1 text-[11px] text-butter tabular-nums">{save.log.length}</span>
+            <span className="bg-lavender-hi px-1 text-[11px] text-label tabular-nums">{save.log.length}</span>
           </PixelButton>
           <PixelButton size="sm" variant="primary" icon="pause" onClick={() => setPauseOpen(true)} aria-label={t("play.pauseMenu")} className="min-w-11">
             <span className="hidden sm:inline">{t("play.pause")}</span>
@@ -142,8 +142,8 @@ export default function PlayPage() {
       </div>
 
       {isDemo && (
-        <p className="mb-4 flex items-center gap-2 bg-plum-900 px-3 py-2 text-base text-cream-dim shadow-[inset_4px_0_0_var(--color-butter)]">
-          <PixelIcon name="star" size={12} className="shrink-0 text-butter" />
+        <p className="mb-4 flex items-center gap-2 bg-butter-hi px-3 py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
+          <PixelIcon name="star" size={12} className="shrink-0 text-label" />
           {t("play.demoNotice")}
         </p>
       )}
@@ -161,7 +161,7 @@ export default function PlayPage() {
           </PixelStage>
           <ControlPad name={selectedName} onPrev={() => cycle(-1)} onNext={() => cycle(1)} onInteract={() => act("talk")} disabled={cast.length === 0} />
           <DialogueBox speaker={shownLine.speaker} text={shownLine.text} msPerChar={TEXT_SPEED_MS[settings.textSpeed]} targetName={selectedName} onAction={act} />
-          <p className="hidden font-label text-[10px] uppercase text-plum-300 lg:block">{t("play.keyboardHint")}</p>
+          <p className="hidden font-label text-[10px] uppercase text-ink-mute lg:block">{t("play.keyboardHint")}</p>
         </div>
         <CharacterInfoPanel character={selected} isDemo={isDemo} />
       </div>
@@ -185,14 +185,14 @@ export default function PlayPage() {
         }
       >
         {save.log.length === 0 ? (
-          <p className="text-lg text-cream-dim">{t("play.log.empty")}</p>
+          <p className="text-lg text-ink-soft">{t("play.log.empty")}</p>
         ) : (
           <ol className="flex flex-col gap-3">
             {[...save.log].reverse().map((e) => {
               const r = renderLine(e, locale);
               return (
-                <li key={e.id} className="bg-plum-800 px-3 py-2 shadow-[inset_4px_0_0_var(--color-pink)]">
-                  <p className="font-label text-[10px] uppercase text-pink">
+                <li key={e.id} className="bg-well px-3 py-2 shadow-[inset_4px_0_0_var(--color-lavender)]">
+                  <p className="font-label text-[10px] uppercase text-rose">
                     {r.speaker} · {new Date(e.at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                   </p>
                   <p className="text-lg leading-snug">{r.text}</p>
@@ -228,7 +228,7 @@ export default function PlayPage() {
           <PixelButton variant="ghost" icon="home" onClick={() => router.push("/")}>
             {t("play.quit")}
           </PixelButton>
-          <p className="text-center text-sm text-cream-dim">{t("play.autosaveNote")}</p>
+          <p className="text-center text-sm text-ink-soft">{t("play.autosaveNote")}</p>
         </nav>
       </Modal>
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />

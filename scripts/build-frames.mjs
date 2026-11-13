@@ -1,39 +1,44 @@
 // Builds src/app/frames.css: 9-slice pixel frames as CSS variables.
-// Each frame is a 12x12 pixel image: plum outline, 2-step rounded corners,
+// Each frame is a 12x12 pixel image: soft outline, 2-step rounded corners,
 // a light edge (top-left) and a shaded edge (bottom-right).
 // Run: node scripts/build-frames.mjs  (re-run after changing colors below)
 import fs from "node:fs";
 
-const INK = "#1b1526";
+const INK = "#5b4a86";
 // name: [highlight, face, shade, outline?]
+// v0.3 "pastel daylight": soft lavender outlines, cream faces, colored lips.
+const btn = (hi, base, lo) => [[hi, base, lo], [lo, base, base]];
+const [pink, pinkP] = btn("#ffe0ec", "#f5a8c5", "#d97aa2");
+const [butter, butterP] = btn("#fff6d2", "#ffe08a", "#e8b85a");
+const [mint, mintP] = btn("#dcfaee", "#9de3c8", "#62bf9f");
+const [lavender, lavenderP] = btn("#efe8ff", "#c3b2f0", "#977ed8");
+const [peri, periP] = btn("#e6ebff", "#aab8f5", "#7f8fe0");
+const [plum, plumP] = btn("#ffffff", "#efe9fb", "#d6caf0");
+const [coral, coralP] = btn("#ffe6d8", "#ffb898", "#e98a6a");
 const FRAMES = {
-  panel: ["#57496f", "#3d3250", "#2a2238"],
-  card: ["#66588a", "#4e4266", "#30273f"],
-  inset: ["#1f1830", "#261f35", "#4e4266"],
-  "inset-focus": ["#1f1830", "#261f35", "#4e4266", "#f8d77c"],
-  cream: ["#ffffff", "#fff0d5", "#e6d2b5"],
-  gold: ["#fff3c4", "#3d3250", "#d29a45"],
-  "gold-card": ["#fff3c4", "#4e4266", "#d29a45"],
-  pink: ["#ffc7dc", "#f48db5", "#c0507f"],
-  "pink-pressed": ["#c0507f", "#f48db5", "#f48db5"],
-  butter: ["#fff3c4", "#f8d77c", "#d29a45"],
-  "butter-pressed": ["#d29a45", "#f8d77c", "#f8d77c"],
-  mint: ["#c4f5df", "#72d9b7", "#3b9a8a"],
-  "mint-pressed": ["#3b9a8a", "#72d9b7", "#72d9b7"],
-  lavender: ["#d2c4f2", "#9d86ce", "#6a55a6"],
-  "lavender-pressed": ["#6a55a6", "#9d86ce", "#9d86ce"],
-  plum: ["#7a6ca0", "#4e4266", "#30273f"],
-  "plum-pressed": ["#30273f", "#4e4266", "#4e4266"],
-  ghost: ["#4e4266", "#30273f", "#231c30"],
-  "ghost-pressed": ["#231c30", "#30273f", "#30273f"],
-  coral: ["#ffb59c", "#f07a62", "#b8494a"],
-  "coral-pressed": ["#b8494a", "#f07a62", "#f07a62"],
-  disabled: ["#3d3250", "#3d3250", "#3d3250", "#2a2238"],
+  panel: ["#ffffff", "#fffaf3", "#efe4f7", "#b8a8dc"],
+  card: ["#ffffff", "#f7f1ff", "#e6dbf6", "#c6b8e6"],
+  inset: ["#e3d8f3", "#fdfbff", "#ffffff", "#b8a8dc"],
+  "inset-focus": ["#e3d8f3", "#fdfbff", "#ffffff", "#8a63c9"],
+  cream: ["#ffffff", "#fffaf0", "#f3e6d3"],
+  gold: ["#fff6cf", "#fffaf3", "#f2c66b", "#c99a3c"],
+  "gold-card": ["#fff6cf", "#fff9ec", "#f6d98f", "#d4a03f"],
+  pink, "pink-pressed": pinkP,
+  butter, "butter-pressed": butterP,
+  mint, "mint-pressed": mintP,
+  lavender, "lavender-pressed": lavenderP,
+  periwinkle: peri, "periwinkle-pressed": periP,
+  plum, "plum-pressed": plumP,
+  ghost: ["#ffffff", "#fffaf3", "#ece2f6", "#b8a8dc"],
+  "ghost-pressed": ["#ece2f6", "#fffaf3", "#fffaf3", "#b8a8dc"],
+  coral, "coral-pressed": coralP,
+  disabled: ["#eee8f5", "#eee8f5", "#eee8f5", "#d3c8e6"],
+  tab: ["#efe8ff", "#c3b2f0", "#977ed8", "#5b4a86"],
   // world rims
-  "world-western-fantasy": ["#fff3c4", "#3d3250", "#c98f3c"],
-  "world-modern": ["#ffb59c", "#3d3250", "#b8494a"],
-  "world-ancient-china": ["#8fd1ac", "#3d3250", "#255b4d"],
-  "world-otherworld": ["#d2c4f2", "#3d3250", "#6a55a6"],
+  "world-western-fantasy": ["#fff3c4", "#fffaf3", "#e8b85a", "#c9963a"],
+  "world-modern": ["#ffe2d6", "#fffaf3", "#f0997b", "#c8705a"],
+  "world-ancient-china": ["#d8f3e6", "#fffaf3", "#7cc4a4", "#3f8f74"],
+  "world-otherworld": ["#efe8ff", "#fffaf3", "#b9a6ec", "#8a6fd0"],
 };
 
 function frame([h, f, s, o = INK]) {

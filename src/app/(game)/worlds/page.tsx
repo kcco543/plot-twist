@@ -30,7 +30,7 @@ export default function WorldSelectPage() {
         <PixelLink href="/" variant="ghost" icon="left">
           {t("common.title")}
         </PixelLink>
-        <p className="order-first w-full text-center font-label text-xs uppercase text-cream-dim sm:order-none sm:w-auto" aria-live="polite">
+        <p className="order-first w-full text-center font-label text-xs uppercase text-ink-soft sm:order-none sm:w-auto" aria-live="polite">
           {selected ? (
             <>
               {t("worlds.selectedLabel")} <span style={{ color: selected.accent }}>{tx(`worlds.list.${selected.id}.name`)}</span>

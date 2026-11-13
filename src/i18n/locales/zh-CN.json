@@ -38,7 +38,7 @@
     "load": "读取存档",
     "settings": "设置",
     "pressStart": "按下开始",
-    "version": "v0.2 · 原型",
+    "version": "v0.3 · 原型",
     "menu": "主菜单"
   },
   "nav": {
@@ -56,6 +56,7 @@
     "heading": "故事会在哪里失控？",
     "intro": "选择你的角色生活的世界。之后也可以更改。",
     "group": "世界",
+    "featured": "精选",
     "badge": "世界",
     "selected": "已选择",
     "selectedLabel": "已选择：",

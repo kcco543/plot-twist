@@ -32,9 +32,9 @@ export function DialogueBox({
         <button onClick={skip} className="block w-full cursor-pointer px-1 pt-3 pb-1 text-left" aria-label={t("play.showFullLine")}>
           <p className="min-h-[4.5rem] text-lg leading-snug text-ink sm:text-xl" aria-live="polite">
             {shown}
-            {!done && <span className="animate-cursor text-pink-lo">▌</span>}
+            {!done && <span className="animate-cursor text-rose">▌</span>}
             {done && (
-              <span className="ml-1 inline-block animate-bob text-pink-lo" aria-hidden>
+              <span className="ml-1 inline-block animate-bob text-rose" aria-hidden>
                 ▼
               </span>
             )}
@@ -42,7 +42,7 @@ export function DialogueBox({
         </button>
       </div>
       <div className="flex items-center justify-between gap-2">
-        <span className="min-w-0 truncate font-label text-[10px] uppercase text-cream-dim">
+        <span className="min-w-0 truncate font-label text-[10px] uppercase text-ink-soft">
           {targetName ? t("play.with", { name: targetName }) : t("play.selectSomeone")}
         </span>
       </div>

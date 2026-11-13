@@ -33,10 +33,10 @@ export function CharacterRoster({
                 className="px-frame px-focus flex w-44 items-center gap-2 text-left lg:w-full"
                 style={{ "--frame": `var(--frame-${active ? "gold-card" : "card"})` } as CSSProperties}
               >
-                <ArtImage art={getCharacterArt(c.portrait).sprite} alt="" showTag={false} className="w-12 shrink-0 bg-plum-900" />
+                <ArtImage art={getCharacterArt(c.portrait).sprite} alt="" showTag={false} className="w-12 shrink-0 bg-well" />
                 <span className="min-w-0">
-                  <span className={`block truncate font-head text-base font-bold ${active ? "text-butter" : "text-cream"}`}>{c.name.trim() || t("common.unnamed")}</span>
-                  <span className="block truncate text-sm text-cream-dim">{c.age.trim() ? t("common.ageValue", { age: c.age.trim() }) : t("common.ageUnknown")}</span>
+                  <span className={`block truncate font-head text-base font-bold ${active ? "text-label" : "text-ink"}`}>{c.name.trim() || t("common.unnamed")}</span>
+                  <span className="block truncate text-sm text-ink-soft">{c.age.trim() ? t("common.ageValue", { age: c.age.trim() }) : t("common.ageUnknown")}</span>
                 </span>
               </button>
             </li>

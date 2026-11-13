@@ -13,6 +13,7 @@ export function ArtImage({
   tagLabel = "Placeholder",
   tagPosition = "bottom",
   fit = "contain",
+  focus,
 }: {
   art: ArtAsset;
   alt: string;
@@ -20,8 +21,14 @@ export function ArtImage({
   showTag?: boolean;
   tagLabel?: string;
   tagPosition?: "top" | "bottom";
-  /** contain = whole image, letterboxed; cover = cropped (never stretched). */
-  fit?: "contain" | "cover";
+  /**
+   * contain = whole image, letterboxed; cover = cropped (never stretched);
+   * native = drawn at 1 art pixel per CSS pixel and cropped around `focus`,
+   * so small thumbnails stay perfectly crisp instead of being resampled.
+   */
+  fit?: "contain" | "cover" | "native";
+  /** CSS object-position for cover/native crops, e.g. "50% 60%". */
+  focus?: string;
 }) {
   return (
     <div className={`relative overflow-hidden ${className}`} style={{ aspectRatio: `${art.width} / ${art.height}` }}>
@@ -32,11 +39,12 @@ export function ArtImage({
         width={art.width}
         height={art.height}
         draggable={false}
-        className={`pixelated absolute inset-0 h-full w-full ${fit === "cover" ? "object-cover" : "object-contain"}`}
+        className={`pixelated absolute inset-0 h-full w-full ${fit === "native" ? "object-none" : fit === "cover" ? "object-cover" : "object-contain"}`}
+        style={focus ? { objectPosition: focus } : undefined}
       />
       {showTag && art.placeholder && (
         <span
-          className={`absolute right-1 ${tagPosition === "top" ? "top-1" : "bottom-1"} bg-ink/80 px-1.5 py-0.5 font-label text-[9px] uppercase leading-none text-cream-dim`}
+          className={`absolute right-1 ${tagPosition === "top" ? "top-1" : "bottom-1"} bg-white/90 px-1.5 py-0.5 font-label text-[9px] uppercase leading-none text-ink-soft`}
         >
           {tagLabel}
         </span>

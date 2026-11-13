@@ -5,7 +5,13 @@
 
 A pixel-art storytelling sandbox for original character creators. Pick a world, build a cast, set the scene, and watch personality-driven stories unfold. It runs in English and Simplified Chinese, works on phones and desktop, and can be installed as an app.
 
-**v0.2 · prototype**: a cozy-chaos visual redesign, bilingual UI, a mobile-first layout and PWA support.
+**v0.3 · prototype**: a lighter pastel restyle with Otherworld as the fully illustrated hero world, on top of v0.2's bilingual UI (Settings → Language: English / 简体中文), mobile-first layout and PWA support.
+
+Where things live:
+
+- **Design system:** tokens in `src/app/globals.css`, pixel frames in `scripts/build-frames.mjs` (generates `src/app/frames.css`), components in `src/components/ui/`, rules in `docs/DESIGN_SYSTEM.md`.
+- **Translations:** `src/i18n/locales/en.json` and `src/i18n/locales/zh-CN.json`, loaded by `src/i18n/index.ts`.
+- **Art:** `scripts/generate-placeholders.mjs` and `scripts/otherworld.mjs` (run `node scripts/generate-placeholders.mjs`), wired up in `src/assets/manifest.ts`.
 
 ## Run it locally
 
@@ -92,7 +98,7 @@ Replace a file with the same name and size, or point the manifest at a new one, 
 
 ## Not built yet
 
-These are on purpose, to keep v0.2 a redesign with no new gameplay:
+These are on purpose, to keep v0.2 and v0.3 redesigns with no new gameplay:
 - **Pixel portrait editor.** The portrait frame in the Character Studio is ready for one. For now you pick from placeholder portraits.
 - **Free movement and map collision.** Play Mode has no walking yet. The touch pad and arrow keys choose characters instead.
 - **AI story, map and portrait generation.** The interfaces are in place but nothing calls an AI.

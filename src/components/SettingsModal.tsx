@@ -11,7 +11,7 @@ import { gameActions } from "@/lib/gameStore";
 import { useI18n } from "@/i18n";
 import type { TextSpeed } from "@/lib/types";
 
-const Section = ({ children }: { children: React.ReactNode }) => <div className="border-t-[3px] border-dashed border-plum-600 pt-5">{children}</div>;
+const Section = ({ children }: { children: React.ReactNode }) => <div className="border-t-[3px] border-dashed border-line pt-5">{children}</div>;
 
 export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useI18n();
@@ -39,9 +39,9 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
-          <p className="font-label text-xs uppercase tracking-wide text-butter">{t("language.label")}</p>
+          <p className="font-label text-xs uppercase tracking-wide text-label">{t("language.label")}</p>
           <LanguageSwitch full />
-          <p className="text-sm text-cream-dim">{t("language.note")}</p>
+          <p className="text-sm text-ink-soft">{t("language.note")}</p>
         </div>
         <Section>
           <Choice<TextSpeed>
@@ -65,25 +65,25 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
           </div>
         </Section>
         <Section>
-          <p className="flex items-center gap-2 font-label text-xs uppercase tracking-wide text-butter">
+          <p className="flex items-center gap-2 font-label text-xs uppercase tracking-wide text-label">
             <PixelIcon name="offline" size={12} /> {t("settings.offlineTitle")}
           </p>
           <ul className="mt-2 flex flex-col gap-1.5 text-base leading-snug">
             <li className="flex gap-2">
-              <PixelIcon name="check" size={12} className="mt-1.5 text-mint" />
+              <PixelIcon name="check" size={12} className="mt-1.5 text-mint-deep" />
               <span>{t("settings.offlineReady")}</span>
             </li>
-            <li className="flex gap-2 text-cream-dim">
-              <PixelIcon name="clock" size={12} className="mt-1.5 text-lavender" />
+            <li className="flex gap-2 text-ink-soft">
+              <PixelIcon name="clock" size={12} className="mt-1.5 text-label" />
               <span>{t("settings.offlineFuture")}</span>
             </li>
           </ul>
         </Section>
         <Section>
-          <p className="font-label text-xs uppercase tracking-wide text-coral">{t("settings.danger")}</p>
-          <p className="mt-1 mb-3 text-base text-cream-dim">{t("settings.dangerDesc")}</p>
+          <p className="font-label text-xs uppercase tracking-wide text-coral-deep">{t("settings.danger")}</p>
+          <p className="mt-1 mb-3 text-base text-ink-soft">{t("settings.dangerDesc")}</p>
           {erased ? (
-            <p role="status" className="font-label text-xs uppercase text-mint">
+            <p role="status" className="font-label text-xs uppercase text-mint-deep">
               {t("settings.erased")}
             </p>
           ) : confirmErase ? (

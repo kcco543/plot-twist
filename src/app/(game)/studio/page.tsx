@@ -52,9 +52,9 @@ export default function CharacterStudioPage() {
         ) : save.characters.length === 0 ? (
           <Panel className="mx-auto max-w-xl">
             <div className="flex flex-col items-center gap-4 px-2 py-8 text-center">
-              <PixelIcon name="user" size={40} className="animate-bob text-butter" />
+              <PixelIcon name="user" size={40} className="animate-bob text-label" />
               <h2 className="font-head text-2xl font-bold">{t("studio.emptyTitle")}</h2>
-              <p className="text-lg text-cream-dim">{t("studio.emptyBody")}</p>
+              <p className="text-lg text-ink-soft">{t("studio.emptyBody")}</p>
               <PixelButton variant="primary" icon="plus" onClick={add}>
                 {t("studio.create")}
               </PixelButton>
@@ -63,13 +63,13 @@ export default function CharacterStudioPage() {
         ) : (
           <div className="grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
             <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-              <p className="mb-2 font-label text-xs uppercase text-cream-dim">{t("studio.castCount", { count: save.characters.length })}</p>
+              <p className="mb-2 font-label text-xs uppercase text-ink-soft">{t("studio.castCount", { count: save.characters.length })}</p>
               <CharacterRoster characters={save.characters} selectedId={selected?.id ?? null} onSelect={setPickedId} onAdd={add} />
             </aside>
             {selected && (
               <section aria-label={t("studio.editing", { name: selected.name || t("common.unnamed") })} className="min-w-0">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <p className="flex items-center gap-2 font-label text-xs uppercase text-mint" role="status">
+                  <p className="flex items-center gap-2 font-label text-xs uppercase text-mint-deep" role="status">
                     <PixelIcon name="check" size={12} /> {t("common.autosaved")}
                   </p>
                   <PixelButton variant="ghost" size="sm" icon="trash" onClick={() => setConfirmDelete(true)}>

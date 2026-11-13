@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { CornerSparkles, Sparkle } from "./Deco";
 
 export type FrameName = "panel" | "card" | "cream" | "gold" | "gold-card" | `world-${string}`;
 
@@ -14,6 +15,7 @@ export function Panel({
   titleRight,
   as: Tag = "section",
   padded = true,
+  sparkles = false,
   "aria-label": ariaLabel,
 }: {
   children: ReactNode;
@@ -23,6 +25,8 @@ export function Panel({
   titleRight?: ReactNode;
   as?: "section" | "div" | "aside";
   padded?: boolean;
+  /** Twinkling corner sparkles, for the one panel on a screen that deserves attention. */
+  sparkles?: boolean;
   "aria-label"?: string;
 }) {
   return (
@@ -31,9 +35,13 @@ export function Panel({
       className={`px-frame px-shadow relative ${title ? "mt-5" : ""} ${className}`}
       style={{ "--frame": `var(--frame-${frame})` } as CSSProperties}
     >
+      {sparkles && <CornerSparkles />}
       {title && (
         <div className="absolute -top-7 left-1 right-1 flex items-start justify-between gap-2 sm:-top-8">
-          <h2 className="px-tab">{title}</h2>
+          <h2 className="px-tab">
+            <Sparkle size={7} className="text-butter-hi" />
+            {title}
+          </h2>
           {titleRight}
         </div>
       )}

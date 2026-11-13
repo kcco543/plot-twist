@@ -24,12 +24,12 @@ export function PortraitSlot({ index, name, onChange }: { index: number; name: s
       </div>
       <div className="flex items-center gap-2">
         <PixelButton size="sm" variant="ghost" icon="left" aria-label={t("studio.portrait.prev")} onClick={() => onChange(shown - 1)} className="min-w-11" />
-        <span className="min-w-14 text-center font-label text-xs text-cream-dim tabular-nums" aria-live="polite">
+        <span className="min-w-14 text-center font-label text-xs text-ink-soft tabular-nums" aria-live="polite">
           {t("studio.portrait.count", { n: shown + 1, total })}
         </span>
         <PixelButton size="sm" variant="ghost" icon="right" aria-label={t("studio.portrait.next")} onClick={() => onChange(shown + 1)} className="min-w-11" />
       </div>
-      <p className="max-w-52 text-center text-sm leading-snug text-plum-300">{t("studio.portrait.note")}</p>
+      <p className="max-w-52 text-center text-sm leading-snug text-ink-mute">{t("studio.portrait.note")}</p>
     </div>
   );
 }

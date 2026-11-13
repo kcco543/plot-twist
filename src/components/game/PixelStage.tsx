@@ -59,7 +59,7 @@ export function PixelStage({
             </div>
             {overlay && <div className="pointer-events-none absolute inset-0">{overlay}</div>}
             {tag && art.placeholder && (
-              <span className="absolute right-1 top-1 bg-ink/80 px-1.5 py-0.5 font-label text-[9px] uppercase leading-none text-cream-dim">{tag}</span>
+              <span className="absolute right-1 top-1 bg-white/90 px-1.5 py-0.5 font-label text-[9px] uppercase leading-none text-ink-soft">{tag}</span>
             )}
           </div>
         )}

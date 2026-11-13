@@ -23,35 +23,35 @@ export function CharacterInfoPanel({ character, isDemo }: { character: Character
               </div>
             </div>
             <div className="min-w-0">
-              <p className="truncate font-head text-xl font-bold text-butter">{character.name.trim() || t("common.unnamed")}</p>
-              <p className="text-base text-cream-dim">{character.age.trim() ? t("common.ageValue", { age: character.age.trim() }) : t("common.ageUnknown")}</p>
+              <p className="truncate font-head text-xl font-bold text-label">{character.name.trim() || t("common.unnamed")}</p>
+              <p className="text-base text-ink-soft">{character.age.trim() ? t("common.ageValue", { age: character.age.trim() }) : t("common.ageUnknown")}</p>
             </div>
           </div>
           <dl className="grid gap-2.5 min-[480px]:grid-cols-2 lg:grid-cols-1">
             {ROWS.map((key) => (
               <div key={key} className="min-w-0">
-                <dt className="font-label text-[10px] uppercase text-pink">{t(`character.fields.${key}.label` as const)}</dt>
-                <dd className="line-clamp-3 text-base leading-snug text-cream">{character[key].trim() || <span className="text-plum-300">{t("common.notWritten")}</span>}</dd>
+                <dt className="font-label text-[10px] uppercase text-rose">{t(`character.fields.${key}.label` as const)}</dt>
+                <dd className="line-clamp-3 text-base leading-snug text-ink">{character[key].trim() || <span className="text-ink-mute">{t("common.notWritten")}</span>}</dd>
               </div>
             ))}
           </dl>
-          <div className="border-t-[3px] border-dashed border-plum-600 pt-2">
+          <div className="border-t-[3px] border-dashed border-line pt-2">
             {isDemo ? (
-              <p className="text-sm text-cream-dim">
+              <p className="text-sm text-ink-soft">
                 {t("play.demoCharacter")}{" "}
-                <Link href="/studio" className="px-focus text-butter underline underline-offset-4 hover:text-cream">
+                <Link href="/studio" className="px-focus text-label underline underline-offset-4 hover:text-ink">
                   {t("play.createOwn")}
                 </Link>
               </p>
             ) : (
-              <Link href="/studio" className="px-focus inline-flex min-h-11 items-center gap-1 font-label text-xs uppercase text-butter hover:text-cream">
+              <Link href="/studio" className="px-focus inline-flex min-h-11 items-center gap-1 font-label text-xs uppercase text-label hover:text-ink">
                 <PixelIcon name="pencil" size={11} /> {t("play.editInStudio")}
               </Link>
             )}
           </div>
         </div>
       ) : (
-        <p className="text-base text-cream-dim">{t("play.selectInScene")}</p>
+        <p className="text-base text-ink-soft">{t("play.selectInScene")}</p>
       )}
     </Panel>
   );

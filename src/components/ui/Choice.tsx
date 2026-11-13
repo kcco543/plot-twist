@@ -16,7 +16,7 @@ export function Choice<T extends string>({
 }) {
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="mb-2 font-label text-xs uppercase tracking-wide text-butter">{label}</legend>
+      <legend className="mb-2 font-label text-xs uppercase tracking-wide text-label">{label}</legend>
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
         {options.map((o) => {
           const active = o.value === value;
@@ -56,8 +56,8 @@ export function Toggle({
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
-        <p className="font-label text-xs uppercase tracking-wide text-butter">{label}</p>
-        {description && <p className="mt-1 text-base leading-snug text-cream-dim">{description}</p>}
+        <p className="font-label text-xs uppercase tracking-wide text-label">{label}</p>
+        {description && <p className="mt-1 text-base leading-snug text-ink-soft">{description}</p>}
       </div>
       <button
         role="switch"

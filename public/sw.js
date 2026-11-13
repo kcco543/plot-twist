@@ -5,7 +5,7 @@
  * network-first for pages, falling back to the cached copy when offline.
  * Bump VERSION to force clients to refresh their cache.
  */
-const VERSION = "plot-twist-v0.2.1";
+const VERSION = "plot-twist-v0.3.0";
 const ROUTES = ["/", "/worlds", "/studio", "/builder", "/play", "/load"];
 const STATIC = ["/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 

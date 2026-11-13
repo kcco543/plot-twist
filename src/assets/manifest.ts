@@ -42,11 +42,11 @@ export const worldArt: Record<WorldId, ArtAsset> = {
   "western-fantasy": environmentArt["western-fantasy"].wilderness,
   modern: environmentArt.modern.street,
   "ancient-china": environmentArt["ancient-china"].street,
-  otherworld: environmentArt.otherworld.dreamscape,
+  otherworld: environmentArt.otherworld.wilderness,
 };
 
 /** Fallback when no world is chosen yet. */
-export const defaultWorld: WorldId = "western-fantasy";
+export const defaultWorld: WorldId = "otherworld";
 
 /** Portrait (96×96) + in-game sprite (32×32) pairs. A character stores the index it uses. */
 export const characterArt: { portrait: ArtAsset; sprite: ArtAsset }[] = [1, 2, 3, 4, 5, 6].map((n) => {

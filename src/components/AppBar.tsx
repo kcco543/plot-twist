@@ -26,7 +26,7 @@ export function AppBar() {
   const current = STEPS.findIndex((s) => pathname.startsWith(s.href));
 
   return (
-    <header className="sticky top-0 z-40 border-b-[3px] border-ink bg-plum-900" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+    <header className="sticky top-0 z-40 border-b-2 border-line bg-surface/95 shadow-[0_4px_14px_rgba(91,74,134,0.08)] backdrop-blur-sm" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
       <div className="gutter mx-auto flex max-w-6xl items-center justify-between gap-3 py-2">
         <Link href="/" className="px-focus flex min-h-11 shrink-0 items-center" aria-label={t("nav.home")}>
           <Logo size="sm" />
@@ -39,7 +39,7 @@ export function AppBar() {
               return (
                 <li key={s.href} className="flex items-center gap-1">
                   {i > 0 && (
-                    <span className="text-plum-500" aria-hidden>
+                    <span className="text-ink-mute" aria-hidden>
                       <PixelIcon name="right" size={8} />
                     </span>
                   )}
@@ -47,10 +47,10 @@ export function AppBar() {
                     href={s.href}
                     aria-current={active ? "step" : undefined}
                     className={`px-focus flex min-h-11 items-center gap-1.5 px-2 font-label text-xs uppercase transition-colors ${
-                      active ? "text-butter" : done ? "text-mint hover:text-cream" : "text-cream-dim hover:text-cream"
+                      active ? "bg-lavender-hi text-label shadow-[inset_0_-3px_0_var(--color-lavender)]" : done ? "text-mint-deep hover:bg-mint-hi hover:text-ink" : "text-ink-soft hover:bg-well hover:text-ink"
                     }`}
                   >
-                    <span className={`grid size-5 place-items-center text-[10px] ${active ? "bg-butter text-ink" : done ? "bg-mint text-ink" : "bg-plum-600 text-cream"}`}>
+                    <span className={`grid size-5 place-items-center text-[10px] ${active ? "bg-butter text-ink shadow-[1px_1px_0_var(--color-butter-lo)]" : done ? "bg-mint text-ink" : "bg-line text-ink-soft"}`}>
                       {done ? <PixelIcon name="check" size={9} /> : i + 1}
                     </span>
                     {t(s.label)}
@@ -72,12 +72,12 @@ export function AppBar() {
         </div>
       </div>
       {current >= 0 && (
-        <div className="gutter flex items-center justify-between gap-3 border-t-[3px] border-ink bg-plum-950 py-1.5 lg:hidden">
-          <span className="font-label text-[10px] uppercase text-cream-dim">{t("nav.stepOf", { n: current + 1, total: STEPS.length })}</span>
-          <span className="font-head text-sm font-semibold text-butter">{t(STEPS[current].label)}</span>
+        <div className="gutter flex items-center justify-between gap-3 border-t border-line bg-well/80 py-1.5 lg:hidden">
+          <span className="font-label text-[10px] uppercase text-ink-soft">{t("nav.stepOf", { n: current + 1, total: STEPS.length })}</span>
+          <span className="font-head text-sm font-semibold text-label">{t(STEPS[current].label)}</span>
           <span className="flex gap-1" aria-hidden>
             {STEPS.map((s, i) => (
-              <span key={s.href} className={`block h-2 w-5 ${i === current ? "bg-butter" : i < current ? "bg-mint" : "bg-plum-600"}`} />
+              <span key={s.href} className={`block h-2 w-5 ${i === current ? "bg-label" : i < current ? "bg-mint" : "bg-line"}`} />
             ))}
           </span>
         </div>

@@ -38,7 +38,7 @@
     "load": "Load Game",
     "settings": "Settings",
     "pressStart": "Press start",
-    "version": "v0.2 · prototype",
+    "version": "v0.3 · prototype",
     "menu": "Main menu"
   },
   "nav": {
@@ -56,6 +56,7 @@
     "heading": "Where does it all go wrong?",
     "intro": "Pick the world your characters live in. You can change it later.",
     "group": "Worlds",
+    "featured": "Featured",
     "badge": "World",
     "selected": "Selected",
     "selectedLabel": "Selected:",
