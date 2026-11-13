@@ -1,36 +1,16 @@
 /**
- * Scripted placeholder interactions for Play Mode (no AI).
- * Lines are built from what the player wrote in the Character Studio and
- * stored as translation keys, so every predefined phrase exists in English
- * and Chinese while the player's own words stay untouched.
+ * Story line rendering for Play Mode. Lines are stored as translation keys
+ * (built-in writer) or finished text (AI writer / player text), so every
+ * predefined phrase exists in English and Chinese while the player's own
+ * words stay untouched. What happens each turn is decided by
+ * src/lib/story/engine.ts; built-in wording comes from src/lib/story/localWriter.ts.
  */
 import type { Character, EnvironmentTypeId, LogEntry, StoryLine } from "./types";
-import { createBlankCharacter } from "./gameStore";
+import { createBlankCharacter } from "./character/model";
 import { translate, translateList, type Locale } from "@/i18n";
 
-export type Action = "talk" | "observe" | "wait";
-
-const TOPICS = ["goals", "fears", "relationships", "background"] as const;
 const clean = (s: string) => s.trim().replace(/\s+/g, " ");
 const pickIndex = (len: number, n: number) => ((n % len) + len) % len;
-
-export function lineFor(action: Action, c: Character, turn: number, place: EnvironmentTypeId): StoryLine {
-  const name = clean(c.name);
-  const character = { kind: "character" as const, name };
-  const narrator = { kind: "narrator" as const };
-  if (action === "talk") {
-    const topics = TOPICS.filter((f) => clean(c[f]));
-    if (topics.length === 0) return { speaker: character, key: "scene.silent", params: {} };
-    const topic = topics[pickIndex(topics.length, turn)];
-    return { speaker: character, key: "scene.talk", params: { topic, text: clean(c[topic]) } };
-  }
-  if (action === "observe") {
-    const details = [c.appearance, c.habits, c.personality].map(clean).filter(Boolean);
-    if (details.length === 0) return { speaker: narrator, key: "scene.observeEmpty", params: { name } };
-    return { speaker: narrator, key: "scene.observe", params: { name, detail: details[pickIndex(details.length, turn)] } };
-  }
-  return { speaker: narrator, key: "scene.wait", index: turn, params: { place, name } };
-}
 
 export function introLine(description: string, place: EnvironmentTypeId): StoryLine {
   const text = clean(description);
@@ -48,9 +28,18 @@ export function renderLine(line: StoryLine | LogEntry, locale: Locale): { speake
   if (p.name !== undefined) p.name = p.name || unnamed;
   if (p.place) p.place = translate(locale, `environments.${p.place}.name`);
   if (p.topic) p.topic = translate(locale, `scene.topics.${p.topic}`);
+  if (p.other !== undefined) p.other = p.other || unnamed;
+  if (p.with !== undefined) p.with = p.with || translate(locale, "common.someone");
+  // Params named "<x>Key" hold a translation key: render it into <x> in the active language.
+  for (const [k, v] of Object.entries(l.params)) if (k.endsWith("Key") && v) p[k.slice(0, -3)] = translate(locale, v, p);
   const speaker = l.speaker.kind === "narrator" ? translate(locale, "scene.narrator") : l.speaker.name || unnamed;
+  const fill = (s: string) => s.replace(/\{(\w+)\}/g, (_, k) => p[k] ?? "");
   let text: string;
   if (l.key === "custom") text = p.text ?? "";
+  else if (l.key === "tpl") {
+    const list = translateList(locale, l.tpl ?? "");
+    text = list.length ? fill(list[pickIndex(list.length, l.index ?? 0)]) : translate(locale, l.tpl ?? "", p);
+  }
   else if (l.key === "scene.wait") {
     const list = translateList(locale, "scene.wait");
     text = list[pickIndex(list.length, l.index ?? 0)].replace(/\{(\w+)\}/g, (_, k) => p[k] ?? "");

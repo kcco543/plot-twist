@@ -6,7 +6,8 @@ import { LoadingState } from "@/components/ui/LoadingDots";
 import { Panel } from "@/components/ui/Panel";
 import { PixelLink } from "@/components/ui/PixelButton";
 import { PixelIcon } from "@/components/ui/PixelIcon";
-import { getCharacterArt, worldArt } from "@/assets/manifest";
+import { worldArt } from "@/assets/manifest";
+import { artFor } from "@/lib/character/art";
 import { nextStepFor, useSave } from "@/lib/gameStore";
 import { useHydrated } from "@/lib/persistentStore";
 import { getWorld } from "@/lib/worlds";
@@ -56,7 +57,7 @@ export default function LoadGamePage() {
               {count > 0 && (
                 <div className="mt-2 flex gap-1">
                   {save.characters.slice(0, 6).map((c) => (
-                    <ArtImage key={c.id} art={getCharacterArt(c.portrait).sprite} alt={c.name} showTag={false} className="w-8" />
+                    <ArtImage key={c.id} art={artFor(c).sprite} alt={c.name} showTag={false} className="w-8" />
                   ))}
                 </div>
               )}

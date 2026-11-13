@@ -104,13 +104,15 @@ Scale (px): 10 · 12 label, 14 · 15 small, 17 · 18 body, 20 lead, 22 · 24 car
 | **Field** | Label in butter caps with a character counter. The input uses the sunken `inset` frame. It is a plain controlled input, so Chinese IME composition works. |
 | **Choice / Toggle** | Segmented radio and on/off switch built from candy buttons. |
 | **ArtImage** | Shows pixel art with nearest-neighbor scaling, keeping the art's own aspect ratio. `contain` letterboxes, `cover` crops, and `native` draws at 1 art pixel per CSS pixel cropped around `focus` (used for crisp thumbnails); it never stretches. Placeholder art gets a small tag. |
-| **PixelStage** (`components/game`) | The game screen. It scales a 320×192 room by a **whole number** (1×, 2×, 3×), so pixels stay square. On screens narrower than the art it falls back to a uniform scale. Readable labels sit in an unscaled overlay. |
+| **PixelStage** (`components/game`) | The game screen. It scales a 320×192 room by a **whole number of device pixels**, so pixels stay square (on a retina screen 2.5× CSS is still 5× device). `maxHeight` keeps it inside the viewport. On screens narrower than the art it falls back to a uniform scale. Readable labels sit in an unscaled overlay. |
+| **Tabs / TabPanel** | Candy-button tab strip with ← → Home End keyboard support. `sm` tabs wrap instead of scrolling (used in narrow sidebars). |
+| **Range slider** (`.px-range`) | Pixel track and square thumb for the personality sliders. An unset slider shows a dashed track and "Not set". |
 | **LoadingDots / LoadingState** | Stepped "..." with a status label. |
 | **Deco** | `Sparkle`, `Gem`, `PixelDivider` and `CornerSparkles`: small ornaments, all `aria-hidden`, all tinted by `currentColor`. |
 | **ScreenHeader / ActionBar** | Kicker pill + title with a soft lavender shadow + pixel divider. The bottom bar is cream with a scalloped top edge. |
 | **PixelIcon** | 7×7 pixel icons drawn in `currentColor`. No emoji anywhere. |
 
-Game pieces (`src/components/game`): WorldCard, CharacterRoster, CharacterEditor, PortraitSlot, PixelStage, SceneSprites / SceneLabels, DialogueBox, ControlPad, CharacterInfoPanel.
+Game pieces (`src/components/game`): WorldCard, CharacterRoster, CharacterEditor, PersonalitySliders, AnalysisPanel, SpriteStudio, PixelEditor, PortraitSlot, PixelStage, SceneSprites / SceneLabels, DialogueBox, ControlPad, CharacterInfoPanel.
 
 ## 6. Layout and spacing
 
@@ -118,7 +120,8 @@ Game pieces (`src/components/game`): WorldCard, CharacterRoster, CharacterEditor
 - Side gutters are `max(16px, safe-area-inset)`. The top bar, bottom action bar, modals and title screen all clear the notch and home indicator.
 - Breakpoints: phones up to 639px, tablets 640–1023px, desktop 1024px and up. The step navigation in the top bar appears from 1024px. Below that, a compact step strip is shown.
 - When a text field is focused on a phone or tablet, the sticky bottom bar becomes static so the keyboard never hides the field.
-- Content max width is 1152px. Running text stays under about 65 characters.
+- Content max width is 1152px (Play Mode: 1600px). Running text stays under about 65 characters.
+- **Play Mode on desktop (1024px+):** the stage takes about 79% of the width and the character sidebar about 21% (at least 232px). Dialogue and actions sit side by side from 1280px. On phones and tablets the sidebar becomes a bottom sheet opened from the control pad, and the four actions form a 2×2 grid below 640px.
 
 ## 7. Motion
 

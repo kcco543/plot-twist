@@ -5,7 +5,7 @@
 
 A pixel-art storytelling sandbox for original character creators. Pick a world, build a cast, set the scene, and watch personality-driven stories unfold. It runs in English and Simplified Chinese, works on phones and desktop, and can be installed as an app.
 
-**v0.3 · prototype**: a lighter pastel restyle with Otherworld as the fully illustrated hero world, on top of v0.2's bilingual UI (Settings → Language: English / 简体中文), mobile-first layout and PWA support.
+**v0.4 · prototype**: a deeper Character Studio (written profile + 10 personality sliders), personality-driven events with memory and bonds, optional Claude-written dialogue, a Sprite Studio that turns an uploaded image into a pixel character, and a wider Play Mode layout. Built on v0.3's pastel design, the bilingual UI (English / 简体中文), mobile-first layout and PWA support.
 
 Where things live:
 
@@ -29,6 +29,25 @@ npm run build
 npm run start        # http://localhost:3000
 ```
 
+### AI features (optional)
+
+Everything works without keys: the game uses its built-in analysis and story writer. To turn on the AI parts, copy `.env.example` to `.env.local` and fill in:
+
+| Variable | Used for | Where to get it |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | Personality analysis and AI-written dialogue/events (Claude) | console.anthropic.com → API Keys |
+| `OPENAI_API_KEY` | "Generate Pixel Character" in the Sprite Studio (OpenAI Images) | platform.openai.com → API keys |
+
+Restart `npm run dev` afterwards. Settings → AI services shows what is connected. Keys are read only by the server routes in `src/app/api/ai/`, never sent to the browser. On Vercel, add the same variables under Project → Settings → Environment Variables.
+
+### Tests
+
+```bash
+npm test             # unit tests (character model, behavior, story engine, API routes, pixel conversion)
+npm run typecheck
+npm run lint
+```
+
 To try it on your phone, connect it to the same Wi-Fi and open `http://<your-computer's-ip>:3000`. Offline caching and the install prompt need HTTPS (or localhost), so test those on a deployed copy, for example on Vercel.
 
 ## Screens
@@ -38,15 +57,15 @@ To try it on your phone, connect it to the same Wi-Fi and open `http://<your-com
 | Title screen | `/` | Start Game, Load Game, Settings, language switch |
 | Load game | `/load` | Save slot summary and Continue |
 | World select | `/worlds` | Four worlds, each with its own accent and art |
-| Character studio | `/studio` | Create, edit and delete characters (10 fields + portrait picker) |
+| Character studio | `/studio` | Tabs: **Profile** (14 written fields, lock any as canon) · **Personality** (10 sliders, conflict review) · **Behavior** (AI or built-in analysis, approve before use) · **Look** (Sprite Studio) |
 | World builder | `/builder` | Description, 5 environment types, live preview per world |
-| Play mode | `/play` | Game stage, character panel, dialogue (Talk / Observe / Wait), story log, pause menu, touch pad, keyboard controls |
+| Play mode | `/play` | Wide stage + sidebar (About / Mood & bonds / Memories), dialogue (Talk / Observe / Wait / Twist!), story log, pause menu, touch pad, keyboard controls. On phones the character info opens as a bottom sheet. |
 
 Saves live in the browser's `localStorage` and survive refreshes, language switches and going offline.
 
 ### Controls in Play Mode
-- **Keyboard:** ← → (or A / D) choose a character · Z / Enter / Space talk · X observe · C wait · L story log · Esc / P pause
-- **Touch:** the ◀ ▶ pad chooses a character, **A** talks, and the three big dialogue buttons do the rest. You can also tap a character in the scene.
+- **Keyboard:** ← → (or A / D) choose a character · Z / Enter / Space talk · X observe · C wait · V twist · L story log · Esc / P pause
+- **Touch:** the ◀ ▶ pad chooses a character, **A** talks, and the four big dialogue buttons do the rest. You can also tap a character in the scene.
 
 ## Design system
 
@@ -72,14 +91,14 @@ src/i18n/
 - Switching language never reloads the page or touches save data.
 - **Your own writing is never translated.** Character names, bios and descriptions stay in the language you wrote them in.
 - Predefined story lines (Play Mode narration, demo characters) exist in both languages. The story log stores lines as keys, so it re-renders when you switch.
-- Future AI generation receives `locale` (see `src/lib/ai/storyRequest.ts` and `src/lib/mapGenerator.ts`).
+- AI analysis and dialogue are written in the active language. Text already written stays as it was written; only built-in lines re-render on a language switch.
 
 ## Installable app (PWA)
 
 - Manifest: `src/app/manifest.ts`. Name, colors, standalone display and icons.
 - Service worker: `public/sw.js`, registered in production builds only.
 - **Works offline after one online visit:** every screen, all art, fonts and your saves.
-- **Needs internet:** nothing in this version. Future AI features (story events, map and portrait generation) will.
+- **Needs internet:** the AI features (analysis, AI dialogue, sprite generation). Offline, the game falls back to its built-in writer.
 - Icons in `public/icons/` are placeholders.
 
 ## Art: what to replace
@@ -96,9 +115,15 @@ All art is **placeholder**, generated by `scripts/generate-placeholders.mjs`, ta
 
 Replace a file with the same name and size, or point the manifest at a new one, then set `placeholder: false`.
 
+## How the story works
+
+- **Game rules decide, the writer words it.** `src/lib/story/engine.ts` picks the event (15 types), who reacts and how, and updates moods, bonds (affinity/trust, capped per step) and memories. The choice is weighted by the approved behavior profile, so an impulsive extrovert and a guarded introvert react differently to the same moment.
+- **Variety:** cooldowns per event, penalties for recently used events, reactions, approaches and topics, rotating template variants, and a near-duplicate check on AI lines. Settings → Event frequency sets how often waiting turns into an event.
+- **Writers:** the built-in writer (`src/lib/story/localWriter.ts`) always works. With a Claude key, the AI writer gets the same outcome and only writes the lines; its output is validated against a schema and falls back to the built-in writer on any error.
+- **Canon:** locked fields, world rules and written relationships are sent as fixed and the AI never edits character fields. Bond numbers change; your written relationships text does not.
+
 ## Not built yet
 
-These are on purpose, to keep v0.2 and v0.3 redesigns with no new gameplay:
-- **Pixel portrait editor.** The portrait frame in the Character Studio is ready for one. For now you pick from placeholder portraits.
-- **Free movement and map collision.** Play Mode has no walking yet. The touch pad and arrow keys choose characters instead.
-- **AI story, map and portrait generation.** The interfaces are in place but nothing calls an AI.
+- **Walking animations and free movement.** Sprites are single standing frames. The touch pad and arrow keys choose characters.
+- **AI map generation.** Environments still use the built-in art.
+- **Cloud saves.** Everything (including custom sprites) lives in this browser's `localStorage`, which holds about 5 MB.

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ActionBar, ScreenHeader } from "@/components/ScreenHeader";
-import { CharacterEditor } from "@/components/game/CharacterEditor";
+import { CharacterEditor, type StudioTab } from "@/components/game/CharacterEditor";
 import { CharacterRoster } from "@/components/game/CharacterRoster";
 import { LoadingState } from "@/components/ui/LoadingDots";
 import { Modal } from "@/components/ui/Modal";
@@ -24,6 +24,7 @@ export default function CharacterStudioPage() {
   const world = getWorld(save.worldId);
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [tab, setTab] = useState<StudioTab>("profile");
 
   const selected = save.characters.find((c) => c.id === pickedId) ?? save.characters[0] ?? null;
 
@@ -76,7 +77,7 @@ export default function CharacterStudioPage() {
                     {t("common.delete")}
                   </PixelButton>
                 </div>
-                <CharacterEditor key={selected.id} character={selected} onChange={(patch) => gameActions.updateCharacter(selected.id, patch)} />
+                <CharacterEditor key={selected.id} character={selected} tab={tab} onTab={setTab} onChange={(patch) => gameActions.updateCharacter(selected.id, patch)} />
               </section>
             )}
           </div>

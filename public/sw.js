@@ -1,11 +1,11 @@
 /* PLOT TWIST! service worker
  * What works offline (after one online visit): every screen, saves (localStorage),
- * all art and fonts. What needs internet: nothing yet. Future AI features will.
+ * all art and fonts. What needs internet: the AI features (/api/ai/*), which are never cached.
  * Strategy: precache the app routes + their JS/CSS; cache-first for static files;
  * network-first for pages, falling back to the cached copy when offline.
  * Bump VERSION to force clients to refresh their cache.
  */
-const VERSION = "plot-twist-v0.3.0";
+const VERSION = "plot-twist-v0.4.0";
 const ROUTES = ["/", "/worlds", "/studio", "/builder", "/play", "/load"];
 const STATIC = ["/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
@@ -47,6 +47,8 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  // AI routes are live, per-request answers: never serve them from the cache.
+  if (url.pathname.startsWith("/api/")) return;
 
   // Pages: network first, cached copy when offline.
   if (req.mode === "navigate") {
