@@ -5,6 +5,7 @@ import { bubbleMaxWidth, placeBubble, type BubblePlacement } from "@/lib/dialogu
 import { splitTrailingSpace } from "@/lib/dialogue/typewriter";
 import type { Typewriter } from "@/lib/useTypewriter";
 import { useI18n } from "@/i18n";
+import { useStageView } from "./PixelStage";
 
 /** Line height of bubble text, in em. The text window is exactly two lines tall. */
 const LINE = 1.4;
@@ -43,6 +44,10 @@ export function SpeechBubble({
   const scroller = useRef<HTMLDivElement>(null);
   const caret = useRef<HTMLSpanElement>(null);
   const [stage, setStage] = useState<{ w: number; h: number } | null>(null);
+  // The part of the stage on screen (phones pan a camera across a wider stage).
+  const view = useStageView();
+  const offsetX = view?.offsetX ?? 0;
+  const viewW = view?.viewW ?? stage?.w ?? 0;
   const [place, setPlace] = useState<BubblePlacement | null>(null);
   const [edges, setEdges] = useState({ up: false, down: false });
 
@@ -64,9 +69,11 @@ export function SpeechBubble({
   useLayoutEffect(() => {
     const b = body.current;
     if (!b || !stage) return;
-    const next = placeBubble({ stageW: stage.w, stageH: stage.h, anchorX: anchor.x * stage.w, anchorY: anchor.y * stage.h, width: b.offsetWidth, height: b.offsetHeight });
+    // Place inside the visible part of the stage, then convert back to stage coordinates.
+    const inView = placeBubble({ stageW: viewW, stageH: stage.h, anchorX: anchor.x * stage.w - offsetX, anchorY: anchor.y * stage.h, width: b.offsetWidth, height: b.offsetHeight });
+    const next = { ...inView, left: inView.left + offsetX };
     setPlace((p) => (p && p.left === next.left && p.top === next.top && p.tailX === next.tailX && p.flipped === next.flipped ? p : next));
-  }, [stage, anchor.x, anchor.y, lineId, typer.shown, typer.rest, speaker]);
+  }, [stage, viewW, offsetX, anchor.x, anchor.y, lineId, typer.shown, typer.rest, speaker]);
 
   // ---- scrolling
   /** Bottom (px, inside the scroller) of the text revealed so far. */
@@ -154,7 +161,7 @@ export function SpeechBubble({
           {
             left: place?.left ?? 0,
             top: place?.top ?? 0,
-            maxWidth: stage ? bubbleMaxWidth(stage.w) : 250,
+            maxWidth: viewW ? bubbleMaxWidth(viewW) : 250,
             visibility: place ? "visible" : "hidden",
             touchAction: "manipulation",
           } as CSSProperties

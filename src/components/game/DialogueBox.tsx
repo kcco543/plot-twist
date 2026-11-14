@@ -48,20 +48,20 @@ export function DialogueBox({
 
   return (
     <section aria-label={t("play.dialogue")} className="mt-5 grid gap-3 xl:grid-cols-[minmax(0,1fr)_16rem] xl:items-start xl:gap-4">
-      <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex min-w-0 flex-col gap-2 px-4 sm:px-0">
         <div className="px-frame px-shadow relative" style={{ "--frame": "var(--frame-cream)" } as React.CSSProperties}>
           <span className="px-tab absolute -top-7 left-1 sm:-top-8" style={{ borderImageSource: "var(--frame-pink)" }}>
             {speaker}
           </span>
           {total > 1 && <span className="absolute right-1 -top-6 bg-surface px-1 font-label text-[10px] text-ink-soft tabular-nums sm:-top-7">{t("play.lineCount", { n: index + 1, total })}</span>}
-          <button onClick={onAdvance} className="block w-full cursor-pointer px-1 pt-3 pb-1 text-left" aria-label={done && more ? t("play.nextLine") : t("play.showFullLine")}>
+          <button onClick={onAdvance} className="block w-full cursor-pointer px-1 pt-2 pb-0.5 text-left" aria-label={done && more ? t("play.nextLine") : t("play.showFullLine")}>
             {/* Screen readers get the whole line once, not every typed character. */}
             {!busy && (
               <span className="sr-only" aria-live="polite">
                 {speaker}: {text}
               </span>
             )}
-            <p className="min-h-[4.5rem] whitespace-pre-wrap break-words text-lg leading-snug text-ink sm:text-xl" aria-hidden={!busy}>
+            <p className="min-h-[2.75rem] whitespace-pre-wrap break-words text-[15px] leading-snug text-ink sm:min-h-[3.5rem] sm:text-lg" aria-hidden={!busy}>
               {busy ? (
                 <span className="flex items-center gap-2 font-label text-xs uppercase text-ink-soft">
                   {t("play.writing")} <LoadingDots className="text-label" />

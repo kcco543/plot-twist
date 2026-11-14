@@ -6,7 +6,7 @@ import { CharacterInfoPanel } from "@/components/game/CharacterInfoPanel";
 import { ControlPad } from "@/components/game/ControlPad";
 import { DialogueBox } from "@/components/game/DialogueBox";
 import { PixelStage } from "@/components/game/PixelStage";
-import { characterAnchor, SceneLabels, SceneSprites } from "@/components/game/SceneSprites";
+import { characterAnchor, SceneLabels, SceneSprites, STAGE } from "@/components/game/SceneSprites";
 import { SpeechBubble } from "@/components/game/SpeechBubble";
 import { SettingsModal } from "@/components/SettingsModal";
 import { LoadingState } from "@/components/ui/LoadingDots";
@@ -234,6 +234,9 @@ export default function PlayPage() {
   const sp = !busy && current?.speaker.kind === "character" ? current.speaker : null;
   const speakerId = sp ? (sp.id && cast.some((c) => c.id === sp.id) ? sp.id : (cast.find((c) => c.name.trim() === sp.name)?.id ?? null)) : null;
   const speakerAnchor = characterAnchor(cast, speakerId);
+  // On phones the view is nearly square and pans to whoever is speaking (or selected).
+  const focusAnchor = speakerAnchor ?? characterAnchor(cast, selected?.id ?? null);
+  const cameraFocus = focusAnchor ? focusAnchor.x * STAGE.width : undefined;
 
   return (
     <main className="gutter mx-auto w-full max-w-[1600px] flex-1 pt-3 sm:pt-4" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
@@ -276,6 +279,8 @@ export default function PlayPage() {
             tag={t("common.placeholder")}
             fit="device"
             maxHeight={stageMax}
+            squareOnPhones={0.92}
+            focusX={cameraFocus}
             overlay={
               <>
                 <SceneLabels characters={cast} selectedId={selected?.id ?? null} speakingId={speakerAnchor ? speakerId : null} />
