@@ -333,7 +333,89 @@
       "behaviorNone": "按滑块和文字设定演出",
       "open": "角色信息",
       "close": "关闭角色信息",
-      "more": "关于{name}的更多信息"
+      "more": "关于{name}的更多信息",
+      "feeling": "情绪"
+    },
+    "test": {
+      "open": "测试面板",
+      "title": "情绪与移动测试",
+      "intro": "先在场景中选一个角色（◀ ▶ 或直接点角色），再按按钮。这里的操作和剧情走同一套规则，被拒绝时会告诉你原因。",
+      "who": "角色",
+      "target": "靠近 / 远离谁",
+      "nobody": "无",
+      "emotionsTitle": "1 · 情绪",
+      "level": "强度",
+      "levels": {
+        "1": "轻微",
+        "2": "明显",
+        "3": "强烈"
+      },
+      "react": "带动作反应",
+      "reactDesc": "由性格、关系和情绪决定怎么动。关闭：只显示特效。",
+      "movesTitle": "2 · 移动",
+      "approach": "走近",
+      "retreat": "后退",
+      "face": "转向对方",
+      "idle": "待机动作",
+      "stop": "停下",
+      "resume": "继续走",
+      "freeze": "全员定格",
+      "unfreeze": "取消定格",
+      "scenariosTitle": "3 · 快速测试",
+      "meet": "两人互相走近",
+      "walkTalk": "边走边说",
+      "rapid": "快速切换情绪",
+      "interrupt": "打断后继续",
+      "crowd": "全员聚拢（碰撞）",
+      "corner": "退到墙边",
+      "status": "实时状态",
+      "colName": "名字",
+      "colState": "状态",
+      "colFeeling": "情绪",
+      "colSpot": "脚下 (x, y)",
+      "paused": "已定格",
+      "suspended": "行走暂停",
+      "needTwo": "再添加一个角色，才能测试走向别人。",
+      "result": {
+        "ok": "{name} · {action}：{note}",
+        "refused": "{name} · {action}：被拒绝，{reason}"
+      },
+      "actions": {
+        "approach": "走近",
+        "retreat": "后退",
+        "face_target": "转向对方",
+        "idle_reaction": "待机动作",
+        "show_emotion": "显示情绪"
+      },
+      "reasons": {
+        "invalid": "请求无效",
+        "unknown_actor": "这个角色不在场景中",
+        "unknown_target": "对方不在场景中",
+        "self_target": "不能以自己为目标",
+        "busy": "正忙（正在说话或行走）",
+        "no_room": "对方身边没有空位",
+        "no_path": "路被挡住了",
+        "cornered": "已经无路可退，于是转过身去",
+        "paused": "全员已定格"
+      },
+      "notes": {
+        "moving": "出发了",
+        "already_close": "已经很近，只是转向对方",
+        "facing": "转向了对方",
+        "emoting": "显示情绪中",
+        "idle": "播放待机动作",
+        "shortened": "只能退一小步"
+      },
+      "idleKinds": {
+        "look_around": "东张西望",
+        "shift": "挪动脚步",
+        "hop": "小跳",
+        "stretch": "伸懒腰",
+        "shiver": "发抖",
+        "stomp": "跺脚",
+        "sigh": "叹气"
+      },
+      "close": "隐藏测试面板"
     }
   },
   "scene": {
@@ -431,7 +513,9 @@
     "aiImage": "像素形象生成",
     "aiReady": "可用",
     "aiMissing": "未配置",
-    "aiChecking": "检查中"
+    "aiChecking": "检查中",
+    "testPanel": "情绪与移动测试面板",
+    "testPanelDesc": "在游戏画面的对话框下方显示按钮，可以手动触发每种情绪和移动。"
   },
   "traits": {
     "extroversion": {
@@ -529,6 +613,26 @@
     "excited": "跃跃欲试",
     "suspicious": "多疑",
     "embarrassed": "难为情"
+  },
+  "emotions": {
+    "neutral": "平静",
+    "happy": "开心",
+    "excited": "兴奋",
+    "affectionate": "亲昵",
+    "embarrassed": "害羞",
+    "angry": "生气",
+    "frustrated": "烦躁",
+    "sad": "难过",
+    "anxious": "不安",
+    "surprised": "惊讶",
+    "confused": "困惑"
+  },
+  "stageStates": {
+    "idle": "待机",
+    "moving": "移动中",
+    "interacting": "互动中",
+    "speaking": "说话中",
+    "reacting": "反应中"
   },
   "events": {
     "confide": "倾诉",

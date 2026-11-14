@@ -67,6 +67,14 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
               onLabel={t("settings.on")}
               offLabel={t("settings.off")}
             />
+            <Toggle
+              label={t("settings.testPanel")}
+              description={t("settings.testPanelDesc")}
+              checked={settings.testPanel ?? false}
+              onChange={(testPanel) => updateSettings({ testPanel })}
+              onLabel={t("settings.on")}
+              offLabel={t("settings.off")}
+            />
           </div>
         </Section>
         <Section>

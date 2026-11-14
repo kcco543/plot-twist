@@ -333,7 +333,89 @@
       "behaviorNone": "Playing from sliders + text",
       "open": "Character info",
       "close": "Close character info",
-      "more": "More about {name}"
+      "more": "More about {name}",
+      "feeling": "Feeling"
+    },
+    "test": {
+      "open": "Test panel",
+      "title": "Emotion & movement test",
+      "intro": "Pick a character in the scene (◀ ▶ or tap them), then press a button. Everything here goes through the same rules as the story, so a refused action tells you why.",
+      "who": "Character",
+      "target": "Toward / away from",
+      "nobody": "Nobody",
+      "emotionsTitle": "1 · Emotions",
+      "level": "Strength",
+      "levels": {
+        "1": "Mild",
+        "2": "Clear",
+        "3": "Strong"
+      },
+      "react": "React with movement",
+      "reactDesc": "Personality, bond and feeling decide how they move. Off: effect only.",
+      "movesTitle": "2 · Movement",
+      "approach": "Walk closer",
+      "retreat": "Step back",
+      "face": "Turn to face",
+      "idle": "Idle animation",
+      "stop": "Stop",
+      "resume": "Resume walk",
+      "freeze": "Freeze everyone",
+      "unfreeze": "Unfreeze",
+      "scenariosTitle": "3 · Quick tests",
+      "meet": "Both walk to each other",
+      "walkTalk": "Talk while walking",
+      "rapid": "Rapid emotion changes",
+      "interrupt": "Interrupt, then resume",
+      "crowd": "Everyone gathers (collision)",
+      "corner": "Back into the wall",
+      "status": "Live status",
+      "colName": "Name",
+      "colState": "State",
+      "colFeeling": "Feeling",
+      "colSpot": "Feet (x, y)",
+      "paused": "Frozen",
+      "suspended": "walk paused",
+      "needTwo": "Add a second character to try walking toward someone.",
+      "result": {
+        "ok": "{name} · {action}: {note}",
+        "refused": "{name} · {action}: refused, {reason}"
+      },
+      "actions": {
+        "approach": "Walk closer",
+        "retreat": "Step back",
+        "face_target": "Turn to face",
+        "idle_reaction": "Idle animation",
+        "show_emotion": "Show emotion"
+      },
+      "reasons": {
+        "invalid": "the request wasn't valid",
+        "unknown_actor": "that character isn't on stage",
+        "unknown_target": "the other character isn't on stage",
+        "self_target": "they can't target themselves",
+        "busy": "they're busy (mid-sentence or walking)",
+        "no_room": "there's no free spot next to them",
+        "no_path": "the way is blocked",
+        "cornered": "there's nowhere to back away to, so they turned away instead",
+        "paused": "everyone is frozen"
+      },
+      "notes": {
+        "moving": "on the way",
+        "already_close": "already close, so they just turned to face them",
+        "facing": "turned to face them",
+        "emoting": "showing the feeling",
+        "idle": "playing an idle animation",
+        "shortened": "only a short step was possible"
+      },
+      "idleKinds": {
+        "look_around": "Look around",
+        "shift": "Shift weight",
+        "hop": "Hop",
+        "stretch": "Stretch",
+        "shiver": "Shiver",
+        "stomp": "Stomp",
+        "sigh": "Sigh"
+      },
+      "close": "Hide test panel"
     }
   },
   "scene": {
@@ -431,7 +513,9 @@
     "aiImage": "Pixel character generation",
     "aiReady": "Ready",
     "aiMissing": "Not configured",
-    "aiChecking": "Checking"
+    "aiChecking": "Checking",
+    "testPanel": "Emotion & movement test panel",
+    "testPanelDesc": "Shows buttons under the dialogue in Play Mode to trigger every emotion and movement by hand."
   },
   "traits": {
     "extroversion": {
@@ -529,6 +613,26 @@
     "excited": "fired up",
     "suspicious": "suspicious",
     "embarrassed": "embarrassed"
+  },
+  "emotions": {
+    "neutral": "Neutral",
+    "happy": "Happy",
+    "excited": "Excited",
+    "affectionate": "Affectionate",
+    "embarrassed": "Embarrassed",
+    "angry": "Angry",
+    "frustrated": "Frustrated",
+    "sad": "Sad",
+    "anxious": "Anxious",
+    "surprised": "Surprised",
+    "confused": "Confused"
+  },
+  "stageStates": {
+    "idle": "Idle",
+    "moving": "Moving",
+    "interacting": "Interacting",
+    "speaking": "Speaking",
+    "reacting": "Reacting"
   },
   "events": {
     "confide": "Confide",

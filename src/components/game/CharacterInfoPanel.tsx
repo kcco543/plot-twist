@@ -9,6 +9,7 @@ import { TabPanel, Tabs } from "@/components/ui/Tabs";
 import { artFor } from "@/lib/character/art";
 import { approvedBehavior } from "@/lib/character/model";
 import { bondKey, neutralState } from "@/lib/story/engine";
+import { emotionOf } from "@/lib/emotion/emotions";
 import type { Character, Mood, StoryState } from "@/lib/types";
 import { useI18n } from "@/i18n";
 
@@ -65,9 +66,17 @@ export function CharacterInfoPanel({ character, cast, story, isDemo, framed = tr
           <p className="truncate text-sm text-ink-soft">{character.age.trim() ? t("common.ageValue", { age: character.age.trim() }) : t("common.ageUnknown")}</p>
           {(() => {
             const s = story.characters[character.id] ?? neutralState();
+            const feel = emotionOf(s);
             return (
-              <p className={`mt-1 inline-block px-1.5 py-0.5 text-sm ${MOOD_COLOR[s.mood]}`}>
-                <span className="font-label text-[9px] uppercase text-ink-soft">{t("play.sidebar.mood")}</span> {tx(`moods.${s.mood}`)}
+              <p className="mt-1 flex flex-wrap gap-1">
+                <span className={`inline-block px-1.5 py-0.5 text-sm ${MOOD_COLOR[s.mood]}`}>
+                  <span className="font-label text-[9px] uppercase text-ink-soft">{t("play.sidebar.mood")}</span> {tx(`moods.${s.mood}`)}
+                </span>
+                {feel.emotion !== "neutral" && (
+                  <span className="inline-block bg-lavender-hi px-1.5 py-0.5 text-sm" data-feeling={feel.emotion}>
+                    <span className="font-label text-[9px] uppercase text-ink-soft">{t("play.sidebar.feeling")}</span> {tx(`emotions.${feel.emotion}`)}
+                  </span>
+                )}
               </p>
             );
           })()}
