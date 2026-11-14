@@ -199,11 +199,11 @@ export function StageTestPanel({
         {/* 1 · Emotions */}
         <section className="flex flex-col gap-3 border-t-[3px] border-dashed border-line pt-4">
           <p className="font-label text-xs uppercase tracking-wide text-label">{t("play.test.emotionsTitle")}</p>
-          <div className={`grid grid-cols-2 gap-2 ${compact ? "" : "min-[480px]:grid-cols-3 lg:grid-cols-4"}`}>
+          <div className={`grid gap-2 ${compact ? "grid-cols-1" : "grid-cols-2 min-[480px]:grid-cols-3 lg:grid-cols-4"}`}>
             {EMOTIONS.map((e) => {
               const fx = effectFor(e);
               return (
-                <PixelButton key={e} size="sm" variant={e === "neutral" ? "ghost" : "calm"} disabled={!actor} onClick={() => actor && emote(actor.id, e)} className="justify-start">
+                <PixelButton key={e} size="sm" variant={e === "neutral" ? "ghost" : "calm"} disabled={!actor} onClick={() => actor && emote(actor.id, e)} className="min-w-0 justify-start">
                   <span className="flex items-center gap-2">
                     <span className="grid size-6 shrink-0 place-items-center">{fx ? <GlyphSvg id={fx.icon} scale={2} /> : <span className="block size-2 bg-ink-mute" />}</span>
                     {tx(`emotions.${e}`)}
