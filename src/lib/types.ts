@@ -130,7 +130,20 @@ export type Memory = {
   at: number;
 };
 
-export type CharacterState = { mood: Mood; intensity: number; memories: Memory[] };
+export type CharacterState = {
+  mood: Mood;
+  intensity: number;
+  memories: Memory[];
+  /**
+   * Current emotion (see src/lib/emotion/emotions.ts). Separate from the
+   * permanent personality in Character.traits. Missing in older saves = neutral.
+   */
+  emotion?: import("./emotion/emotions").Emotion;
+  /** 0 (none) to 3 (strong). Fades by one each turn the character isn't involved. */
+  emotionLevel?: number;
+  /** When the emotion was last set (ms), so effects replay on a repeat of the same emotion. */
+  emotionAt?: number;
+};
 
 /** Rule-controlled numbers between two characters. The written relationships text is never changed. */
 export type Bond = { affinity: number; trust: number };
@@ -210,4 +223,6 @@ export type Settings = {
   eventFrequency: EventFrequency;
   /** Use the AI writer for dialogue when it is configured. */
   aiStory: boolean;
+  /** Show the emotion & movement test panel under the dialogue in Play Mode. */
+  testPanel?: boolean;
 };

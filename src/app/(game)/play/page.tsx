@@ -6,8 +6,9 @@ import { CharacterInfoPanel } from "@/components/game/CharacterInfoPanel";
 import { ControlPad } from "@/components/game/ControlPad";
 import { DialogueBox } from "@/components/game/DialogueBox";
 import { PixelStage } from "@/components/game/PixelStage";
-import { characterAnchor, SceneLabels, SceneSprites, STAGE } from "@/components/game/SceneSprites";
-import { SpeechBubble } from "@/components/game/SpeechBubble";
+import { MAX_ON_STAGE } from "@/components/game/SceneSprites";
+import { StageActors, StageOverlay } from "@/components/game/StageLayers";
+import { StageTestPanel } from "@/components/game/StageTestPanel";
 import { SettingsModal } from "@/components/SettingsModal";
 import { LoadingState } from "@/components/ui/LoadingDots";
 import { Modal } from "@/components/ui/Modal";
@@ -20,10 +21,14 @@ import { gameActions, getSave, useSave } from "@/lib/gameStore";
 import { useHydrated } from "@/lib/persistentStore";
 import { useTypewriter } from "@/lib/useTypewriter";
 import { demoCast, introLine, renderLine } from "@/lib/scenes";
-import { TEXT_SPEED_MS, useSettings } from "@/lib/settingsStore";
+import { TEXT_SPEED_MS, updateSettings, useSettings } from "@/lib/settingsStore";
 import { neutralState, plan, type Action, type Beat } from "@/lib/story/engine";
 import { beatToLines } from "@/lib/story/localWriter";
 import { getWorld } from "@/lib/worlds";
+import { emotionOf } from "@/lib/emotion/emotions";
+import { bondBetween, choreographBeat } from "@/lib/stage/behavior";
+import { roomFor } from "@/lib/stage/room";
+import { useReducedMotion, useStagePoint, useStageSim } from "@/lib/stage/useStage";
 import type { Character, StoryLine } from "@/lib/types";
 import { useI18n } from "@/i18n";
 
@@ -64,6 +69,34 @@ export default function PlayPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [resetDone, setResetDone] = useState(false);
   const anyModal = logOpen || pauseOpen || settingsOpen || sheetOpen;
+
+  // Desktop layout (sidebar) vs phone / tablet, and the sticky header's height (to pin the stage under it).
+  const [wide, setWide] = useState(false);
+  const [headerH, setHeaderH] = useState(0);
+  useEffect(() => {
+    const update = () => {
+      setWide(window.innerWidth >= 1024);
+      setHeaderH(document.querySelector("header")?.getBoundingClientRect().height ?? 0);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // ---- Stage: positions, movement, emotions (Step 2). Paused with the game.
+  const [frozen, setFrozen] = useState(false);
+  const reducedMotion = useReducedMotion(settings.reduceMotion);
+  const onStage = useMemo(() => cast.slice(0, MAX_ON_STAGE), [cast]);
+  const room = useMemo(() => roomFor(world?.id ?? "otherworld", envType), [world?.id, envType]);
+  const bondOf = useCallback((a: string, b: string) => bondBetween(getSave().story, a, b), []);
+  const stage = useStageSim({ cast: onStage, room, paused: anyModal || frozen, reducedMotion, bondOf });
+  // Show each character's current emotion (story state is the source of truth; also covers loading a save).
+  useEffect(() => {
+    for (const c of onStage) {
+      const e = emotionOf(save.story.characters[c.id]);
+      stage.syncEmotion(c.id, e.emotion, e.level, e.at);
+    }
+  }, [stage, onStage, save.story]);
 
   // One typewriter for the current line, shared by the speech bubble and the dialogue panel.
   const lineId = `${beatNo}:${lineIndex}`;
@@ -149,6 +182,15 @@ export default function PlayPage() {
         frequency: settings.eventFrequency,
       });
       gameActions.setStory(story);
+      // 1b. The same rules decide how everyone moves: face each other, show feelings, approach / step back.
+      const choreo = choreographBeat(beat, cast, story, (id) => stage.nearest(id));
+      stage.beginConversation(choreo.participants);
+      for (const a of choreo.actions) {
+        if (a.type === "show_emotion") {
+          const e = emotionOf(story.characters[a.actor]);
+          stage.syncEmotion(a.actor, e.emotion, e.level, e.at);
+        } else stage.request(a, beat.kind === "event" ? "event" : "conversation");
+      }
       const other = beat.otherId ? (cast.find((c) => c.id === beat.otherId) ?? null) : null;
       // 2. A writer puts it into words: the AI if available, otherwise built-in templates.
       let lines: StoryLine[] | null = null;
@@ -163,7 +205,7 @@ export default function PlayPage() {
       setLineIndex(0);
       gameActions.appendLines(lines);
     },
-    [selected, world, busy, cast, envType, settings.eventFrequency, useAi, writeWithAi],
+    [selected, world, busy, cast, envType, settings.eventFrequency, useAi, writeWithAi, stage],
   );
   const cycle = useCallback(
     (dir: 1 | -1) => {
@@ -207,6 +249,19 @@ export default function PlayPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [anyModal, act, cycle, advance, lineInProgress]);
 
+  // Who is speaking right now (narration has no bubble; it stays in the panel).
+  const sp = !busy && current?.speaker.kind === "character" ? current.speaker : null;
+  const speakerId = sp ? (sp.id && cast.some((c) => c.id === sp.id) ? sp.id : (cast.find((c) => c.name.trim() === sp.name)?.id ?? null)) : null;
+  // SPEAKING lasts while their line is being read; when the conversation is over everyone relaxes.
+  const speakingNow = lineInProgress ? speakerId : null;
+  useEffect(() => stage.setSpeaker(speakingNow), [stage, speakingNow]);
+  useEffect(() => {
+    if (!lineInProgress) stage.endConversation();
+  }, [stage, lineInProgress]);
+  // On phones the view is nearly square and pans to whoever is speaking (or selected), following them as they walk.
+  const focusPoint = useStagePoint(stage, speakerId ?? selected?.id ?? null, 8);
+  const cameraFocus = focusPoint?.x;
+
   if (!hydrated) return <LoadingState label={t("common.loadingSave")} />;
 
   if (!world) {
@@ -230,13 +285,24 @@ export default function PlayPage() {
   const envName = t(`environments.${envType}.name` as const);
   const selectedName = selected ? selected.name.trim() || t("common.unnamed") : null;
 
-  // Who is speaking right now (narration has no bubble; it stays in the panel).
-  const sp = !busy && current?.speaker.kind === "character" ? current.speaker : null;
-  const speakerId = sp ? (sp.id && cast.some((c) => c.id === sp.id) ? sp.id : (cast.find((c) => c.name.trim() === sp.name)?.id ?? null)) : null;
-  const speakerAnchor = characterAnchor(cast, speakerId);
-  // On phones the view is nearly square and pans to whoever is speaking (or selected).
-  const focusAnchor = speakerAnchor ?? characterAnchor(cast, selected?.id ?? null);
-  const cameraFocus = focusAnchor ? focusAnchor.x * STAGE.width : undefined;
+
+  // Emotion & movement test panel: beside the stage on desktop, under the dialogue on phones
+  // (where the stage then stays pinned at the top so you can watch while you tap).
+  const testPanel = settings.testPanel ? (
+    <StageTestPanel
+      stage={stage}
+      cast={onStage}
+      selectedId={selected?.id ?? null}
+      frozen={frozen}
+      onFreeze={setFrozen}
+      onTalk={() => act("talk")}
+      compact={wide}
+      onClose={() => {
+        setFrozen(false);
+        updateSettings({ testPanel: false });
+      }}
+    />
+  ) : null;
 
   return (
     <main data-layout="wide" className="content-grid flex-1 pt-3 sm:pt-4" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
@@ -272,6 +338,7 @@ export default function PlayPage() {
       {/* Desktop: viewport ≈78% / character sidebar ≈21%. Phones: viewport first, character sheet in a bottom drawer. */}
       <div className="content-block grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(14.5rem,21%)] xl:gap-5">
         <div className="content-stack">
+          <div className={testPanel && !wide ? "sticky z-30" : undefined} style={testPanel && !wide ? { top: headerH } : undefined}>
           <PixelStage
             art={environmentArt[world.id][envType]}
             label={t("play.viewportAlt", { place: envName, world: worldName })}
@@ -282,16 +349,18 @@ export default function PlayPage() {
             squareOnPhones={0.92}
             focusX={cameraFocus}
             overlay={
-              <>
-                <SceneLabels characters={cast} selectedId={selected?.id ?? null} speakingId={speakerAnchor ? speakerId : null} />
-                {speakerAnchor && (
-                  <SpeechBubble lineId={lineId} speaker={shownLine.speaker} anchor={speakerAnchor} typer={typer} more={more} onAdvance={advance} />
-                )}
-              </>
+              <StageOverlay
+                stage={stage}
+                characters={cast}
+                selectedId={selected?.id ?? null}
+                speakerId={speakerId}
+                bubble={{ lineId, speaker: shownLine.speaker, typer, more, onAdvance: advance }}
+              />
             }
           >
-            <SceneSprites characters={cast} selectedId={selected?.id ?? null} onSelect={setPickedId} />
+            <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={setPickedId} reducedMotion={reducedMotion} />
           </PixelStage>
+          </div>
           <ControlPad
             name={selectedName}
             mood={selected ? tx(`moods.${(save.story.characters[selected.id] ?? neutralState()).mood}`) : null}
@@ -314,9 +383,11 @@ export default function PlayPage() {
             note={note}
           />
           <p className="hidden font-label text-[10px] uppercase text-ink-mute lg:block">{t("play.keyboardHint")}</p>
+          {testPanel && !wide && testPanel}
         </div>
         <div className="hidden min-w-0 lg:block">
-          <div className="lg:sticky lg:top-20">
+          <div className={`lg:sticky lg:top-20 ${testPanel ? "flex max-h-[calc(100dvh-6rem)] flex-col gap-4 overflow-y-auto overscroll-contain pb-2" : ""}`}>
+            {testPanel && wide && testPanel}
             <CharacterInfoPanel character={selected} cast={cast} story={save.story} isDemo={isDemo} />
           </div>
         </div>

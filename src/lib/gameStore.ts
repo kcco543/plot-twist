@@ -3,7 +3,8 @@
 import { createPersistentStore } from "./persistentStore";
 import { makeId } from "./id";
 import { createBlankCharacter, normalizeCharacter } from "./character/model";
-import { emptyStory, withMemoryNote } from "./story/engine";
+import { emptyStory, neutralState, withMemoryNote } from "./story/engine";
+import { withEmotion, type Emotion } from "./emotion/emotions";
 import type { Character, CharacterArt, EnvironmentDraft, SaveData, SpriteAsset, StoryLine, StoryState, WorldId } from "./types";
 
 /** Same key as v0.1–v0.3, so existing saves load. Older saves are upgraded in place without losing anything. */
@@ -94,6 +95,13 @@ export const gameActions = {
   },
   setMemoryNote(actorId: string, memoryId: string, note: string) {
     touch((s) => ({ ...s, story: withMemoryNote(s.story, actorId, memoryId, note) }));
+  },
+  /** Set a character's current emotion (test panel, or later an AI event via the stage action check). Personality is untouched. */
+  setEmotion(characterId: string, emotion: Emotion, level: number, at = Date.now()) {
+    touch((s) => ({
+      ...s,
+      story: { ...s.story, characters: { ...s.story.characters, [characterId]: withEmotion(s.story.characters[characterId] ?? neutralState(), emotion, level, at) } },
+    }));
   },
   resetStory() {
     touch((s) => ({ ...s, story: emptyStory(), log: [] }));

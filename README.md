@@ -67,6 +67,18 @@ Saves live in the browser's `localStorage` and survive refreshes, language switc
 - **Keyboard:** ← → (or A / D) choose a character · Z / Enter / Space talk · X observe · C wait · V twist · L story log · Esc / P pause
 - **Touch:** the ◀ ▶ pad chooses a character, **A** talks, and the four big dialogue buttons do the rest. You can also tap a character in the scene.
 
+## Emotions and movement (Step 2)
+
+Characters have a **current emotion** (neutral, happy, excited, affectionate, embarrassed, angry, frustrated, sad, anxious, surprised, confused) stored in the story state, separate from their permanent personality. Story events change it; small pixel effects show it above the character, and characters walk, turn, step back and fidget according to personality, emotion, bond and context.
+
+- Emotions + rules: `src/lib/emotion/emotions.ts` · effect library (add new emotions here): `src/lib/emotion/effects.ts`
+- Rooms (floor + furniture footprints): `src/lib/stage/room.ts` · pathfinding: `src/lib/stage/path.ts`
+- State machine (idle → moving → interacting → speaking → reacting): `src/lib/stage/sim.ts`
+- Movement rules: `src/lib/stage/behavior.ts`
+- Action interface for future AI events (`approach`, `retreat`, `face_target`, `idle_reaction`, `show_emotion`), validated before anything moves: `src/lib/stage/actions.ts`
+
+**Test panel:** Settings → *Emotion & movement test panel* → On. In Play Mode it appears beside the stage on desktop and under the dialogue on phones (the stage stays pinned at the top while you scroll it).
+
 ## Design system
 
 See **[docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** for the palette, fonts, frames, components, motion and pixel-art standards.
