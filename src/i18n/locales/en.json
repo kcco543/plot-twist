@@ -310,6 +310,11 @@
     },
     "nextLine": "Next line",
     "lineCount": "{n} / {total}",
+    "bubble": {
+      "finish": "{name} is speaking. Show the full line",
+      "next": "{name} said this. Next line",
+      "said": "{name} said this"
+    },
     "resetStory": "Reset moods, bonds & memories",
     "resetStoryDone": "Story state reset.",
     "sidebar": {
@@ -390,7 +395,8 @@
   },
   "settings": {
     "title": "Settings",
-    "textSpeed": "Text speed",
+    "textSpeed": "Dialogue speed",
+    "textSpeedDesc": "How fast lines type out in speech bubbles and the dialogue panel. Click or tap a line to show it all at once.",
     "speeds": {
       "slow": "Slow",
       "normal": "Normal",

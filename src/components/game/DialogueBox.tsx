@@ -2,41 +2,47 @@
 
 import { PixelButton } from "@/components/ui/PixelButton";
 import { LoadingDots } from "@/components/ui/LoadingDots";
-import { useTypewriter } from "@/lib/useTypewriter";
+import { splitTrailingSpace } from "@/lib/dialogue/typewriter";
+import type { Typewriter } from "@/lib/useTypewriter";
 import { useI18n } from "@/i18n";
 import type { Action } from "@/lib/story/engine";
 
 /**
- * Cream speech window with a speaker nameplate, typewriter text and big
- * tap-friendly choices. A beat can have several lines: tap to skip the
- * typing, tap again for the next line.
+ * Cream dialogue panel with a speaker nameplate, typewriter text and big
+ * tap-friendly choices. Lines also appear in speech bubbles above the speaker
+ * on stage; this panel mirrors the same line (same typewriter, no second
+ * timer) for narration, accessibility and players who prefer reading here.
+ * Tap to finish the typing, tap again for the next line.
  */
 export function DialogueBox({
   speaker,
   text,
-  msPerChar,
+  typer,
+  onAdvance,
   targetName,
   onAction,
   index,
   total,
-  onNext,
   busy,
   note,
 }: {
   speaker: string;
   text: string;
-  msPerChar: number;
+  /** Shared typewriter state (owned by the play screen). */
+  typer: Typewriter;
+  /** Finish typing, or go to the next line. */
+  onAdvance: () => void;
   targetName: string | null;
   onAction: (a: Action) => void;
   index: number;
   total: number;
-  onNext: () => void;
   busy: boolean;
   /** Small status under the box (e.g. "AI writing didn't work"). */
   note?: string | null;
 }) {
   const { t } = useI18n();
-  const { shown, done, skip } = useTypewriter(text, msPerChar);
+  const { shown, rest, done } = typer;
+  const [head, space] = splitTrailingSpace(shown);
   const disabled = !targetName || busy;
   const more = index < total - 1;
 
@@ -48,16 +54,24 @@ export function DialogueBox({
             {speaker}
           </span>
           {total > 1 && <span className="absolute right-1 -top-6 bg-surface px-1 font-label text-[10px] text-ink-soft tabular-nums sm:-top-7">{t("play.lineCount", { n: index + 1, total })}</span>}
-          <button onClick={() => (done ? more && onNext() : skip())} className="block w-full cursor-pointer px-1 pt-3 pb-1 text-left" aria-label={done && more ? t("play.nextLine") : t("play.showFullLine")}>
-            <p className="min-h-[4.5rem] text-lg leading-snug text-ink sm:text-xl" aria-live="polite">
+          <button onClick={onAdvance} className="block w-full cursor-pointer px-1 pt-3 pb-1 text-left" aria-label={done && more ? t("play.nextLine") : t("play.showFullLine")}>
+            {/* Screen readers get the whole line once, not every typed character. */}
+            {!busy && (
+              <span className="sr-only" aria-live="polite">
+                {speaker}: {text}
+              </span>
+            )}
+            <p className="min-h-[4.5rem] whitespace-pre-wrap break-words text-lg leading-snug text-ink sm:text-xl" aria-hidden={!busy}>
               {busy ? (
                 <span className="flex items-center gap-2 font-label text-xs uppercase text-ink-soft">
                   {t("play.writing")} <LoadingDots className="text-label" />
                 </span>
               ) : (
                 <>
-                  {shown}
-                  {!done && <span className="animate-cursor text-rose">▌</span>}
+                  {head}
+                  {!done && <span className="bubble-caret" />}
+                  {space}
+                  {rest && <span className="invisible">{rest}</span>}
                   {done && (
                     <span className="ml-1 inline-block animate-bob text-rose" aria-hidden>
                       {more ? "▼" : "■"}

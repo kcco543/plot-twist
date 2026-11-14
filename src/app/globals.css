@@ -214,6 +214,31 @@ html[data-crt="on"] body::after {
     image-rendering: pixelated;
   }
 
+  /* In-world speech bubble: cream body, thin pixel outline with notched corners, soft lavender shadow. */
+  .bubble {
+    --bubble-fill: var(--color-surface);
+    --bubble-line: var(--color-lavender-lo);
+    filter: drop-shadow(0 3px 0 rgba(91, 74, 134, 0.16));
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (min-width: 640px) { .bubble { font-size: 1.0625rem; } }
+  .bubble-body {
+    background: var(--bubble-fill);
+    box-shadow: 0 -2px 0 0 var(--bubble-line), 0 2px 0 0 var(--bubble-line), -2px 0 0 0 var(--bubble-line), 2px 0 0 0 var(--bubble-line),
+      inset 0 -2px 0 0 var(--color-pink-hi);
+  }
+  .bubble:focus-visible { outline: 2px dashed var(--color-label); outline-offset: 5px; }
+  .bubble-scroll { scrollbar-width: none; }
+  .bubble-scroll::-webkit-scrollbar { display: none; }
+  /* Zero-width caret: an empty inline, so it never adds a line-break opportunity mid-word. */
+  .bubble-caret { position: relative; }
+  .bubble-caret::after {
+    content: ""; position: absolute; left: 1px; bottom: 0.2em; width: 5px; height: 0.95em;
+    background: var(--color-rose); animation: var(--animate-cursor);
+  }
+
   /* Checkerboard behind pixel art and the game stage. */
   .px-checker {
     background-color: var(--color-well);

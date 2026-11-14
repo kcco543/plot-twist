@@ -46,12 +46,15 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
           <p className="text-sm text-ink-soft">{t("language.note")}</p>
         </div>
         <Section>
-          <Choice<TextSpeed>
-            label={t("settings.textSpeed")}
-            value={settings.textSpeed}
-            onChange={(textSpeed) => updateSettings({ textSpeed })}
-            options={(["slow", "normal", "fast", "instant"] as const).map((v) => ({ value: v, label: t(`settings.speeds.${v}`) }))}
-          />
+          <div className="flex flex-col gap-1">
+            <Choice<TextSpeed>
+              label={t("settings.textSpeed")}
+              value={settings.textSpeed}
+              onChange={(textSpeed) => updateSettings({ textSpeed })}
+              options={(["slow", "normal", "fast", "instant"] as const).map((v) => ({ value: v, label: t(`settings.speeds.${v}`) }))}
+            />
+            <p className="text-sm text-ink-soft">{t("settings.textSpeedDesc")}</p>
+          </div>
         </Section>
         <Section>
           <div className="flex flex-col gap-5">

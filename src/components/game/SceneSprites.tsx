@@ -5,16 +5,33 @@ import { useI18n } from "@/i18n";
 import type { Character } from "@/lib/types";
 
 /** Sprite slots along the floor of a 320×192 room, in art pixels. */
-export const STAGE = { width: 320, floorY: 176, left: 56, right: 264, sprite: 32 };
+export const STAGE = { width: 320, height: 192, floorY: 176, left: 56, right: 264, sprite: 32 };
+
+/** Max characters drawn in the scene. */
+export const MAX_ON_STAGE = 6;
 
 export function spriteX(i: number, count: number) {
   return count === 1 ? STAGE.width / 2 : STAGE.left + ((STAGE.right - STAGE.left) / (count - 1)) * i;
 }
 
+/**
+ * Top-of-head point of a character on stage, as fractions (0–1) of the stage
+ * size, or null if they aren't drawn. Sprites, name tags and speech bubbles
+ * all read positions from here, so anything anchored to a character follows
+ * it when the stage is resized (or, later, when characters move).
+ */
+export function characterAnchor(characters: Character[], id: string | null): { x: number; y: number } | null {
+  if (!id) return null;
+  const shown = characters.slice(0, MAX_ON_STAGE);
+  const i = shown.findIndex((c) => c.id === id);
+  if (i < 0) return null;
+  return { x: spriteX(i, shown.length) / STAGE.width, y: (STAGE.floorY - STAGE.sprite) / STAGE.height };
+}
+
 /** Sprites, drawn inside the scaled stage (crisp art). Click/tap to select. */
 export function SceneSprites({ characters, selectedId, onSelect }: { characters: Character[]; selectedId: string | null; onSelect: (id: string) => void }) {
   const { t } = useI18n();
-  const shown = characters.slice(0, 6);
+  const shown = characters.slice(0, MAX_ON_STAGE);
   return (
     <>
       {shown.map((c, i) => {
@@ -40,20 +57,28 @@ export function SceneSprites({ characters, selectedId, onSelect }: { characters:
 }
 
 /** Name tags + selection marker, drawn in the unscaled overlay so text stays readable. */
-export function SceneLabels({ characters, selectedId }: { characters: Character[]; selectedId: string | null }) {
+export function SceneLabels({ characters, selectedId, speakingId = null }: { characters: Character[]; selectedId: string | null; speakingId?: string | null }) {
   const { t } = useI18n();
-  const shown = characters.slice(0, 6);
+  const shown = characters.slice(0, MAX_ON_STAGE);
   return (
     <>
       {shown.map((c, i) => {
         const active = c.id === selectedId;
+        const speaking = c.id === speakingId;
         const leftPct = (spriteX(i, shown.length) / STAGE.width) * 100;
         return (
-          <span key={c.id} className="absolute -translate-x-1/2" style={{ left: `${leftPct}%`, top: `${((STAGE.floorY + 2) / 192) * 100}%` }}>
+          <span key={c.id} className="absolute -translate-x-1/2" style={{ left: `${leftPct}%`, top: `${((STAGE.floorY + 2) / STAGE.height) * 100}%` }}>
             <span
-              className={`block max-w-24 truncate px-1 py-[1px] font-head text-[11px] font-bold leading-tight sm:text-xs ${active ? "bg-butter text-ink" : "bg-white/90 text-ink"}`}
+              className={`flex max-w-24 items-center gap-1 px-1 py-[1px] font-head text-[11px] font-bold leading-tight sm:text-xs ${
+                speaking ? "bg-pink-hi text-ink shadow-[inset_0_-2px_0_var(--color-pink)]" : active ? "bg-butter text-ink" : "bg-white/90 text-ink"
+              }`}
             >
-              {c.name.trim() || t("common.unnamed")}
+              {speaking && (
+                <svg width="8" height="7" viewBox="0 0 4 4" shapeRendering="crispEdges" className="shrink-0 animate-blink text-rose" aria-hidden>
+                  <path d="M0 0h4v2H2L1 3V2H0z" fill="currentColor" />
+                </svg>
+              )}
+              <span className="truncate">{c.name.trim() || t("common.unnamed")}</span>
             </span>
           </span>
         );
@@ -64,7 +89,7 @@ export function SceneLabels({ characters, selectedId }: { characters: Character[
             key="marker"
             aria-hidden
             className="absolute -translate-x-1/2 animate-bob text-label"
-            style={{ left: `${(spriteX(i, shown.length) / STAGE.width) * 100}%`, top: `calc(${((STAGE.floorY - STAGE.sprite) / 192) * 100}% - 16px)` }}
+            style={{ left: `${(spriteX(i, shown.length) / STAGE.width) * 100}%`, top: `calc(${((STAGE.floorY - STAGE.sprite) / STAGE.height) * 100}% - 16px)` }}
           >
             <svg width="12" height="10" viewBox="0 0 6 5" shapeRendering="crispEdges" fill="currentColor">
               <rect x="0" y="0" width="6" height="1" fill="var(--color-ink)" />

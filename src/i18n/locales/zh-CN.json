@@ -310,6 +310,11 @@
     },
     "nextLine": "下一句",
     "lineCount": "{n} / {total}",
+    "bubble": {
+      "finish": "{name} 正在说话。显示全文",
+      "next": "{name} 说完了。下一句",
+      "said": "{name} 说的话"
+    },
     "resetStory": "重置心情、关系和记忆",
     "resetStoryDone": "故事状态已重置。",
     "sidebar": {
@@ -390,7 +395,8 @@
   },
   "settings": {
     "title": "设置",
-    "textSpeed": "文字速度",
+    "textSpeed": "对话速度",
+    "textSpeedDesc": "对话气泡和对话框中文字逐字出现的速度。点击对话即可立即显示全文。",
     "speeds": {
       "slow": "慢",
       "normal": "普通",

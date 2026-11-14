@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CharacterInfoPanel } from "@/components/game/CharacterInfoPanel";
 import { ControlPad } from "@/components/game/ControlPad";
 import { DialogueBox } from "@/components/game/DialogueBox";
 import { PixelStage } from "@/components/game/PixelStage";
-import { SceneLabels, SceneSprites } from "@/components/game/SceneSprites";
+import { characterAnchor, SceneLabels, SceneSprites } from "@/components/game/SceneSprites";
+import { SpeechBubble } from "@/components/game/SpeechBubble";
 import { SettingsModal } from "@/components/SettingsModal";
 import { LoadingState } from "@/components/ui/LoadingDots";
 import { Modal } from "@/components/ui/Modal";
@@ -17,6 +18,7 @@ import { environmentArt } from "@/assets/manifest";
 import { AiRequestError, briefFor, memoryBrief, requestTurn, useAiStatus } from "@/lib/ai/client";
 import { gameActions, getSave, useSave } from "@/lib/gameStore";
 import { useHydrated } from "@/lib/persistentStore";
+import { useTypewriter } from "@/lib/useTypewriter";
 import { demoCast, introLine, renderLine } from "@/lib/scenes";
 import { TEXT_SPEED_MS, useSettings } from "@/lib/settingsStore";
 import { neutralState, plan, type Action, type Beat } from "@/lib/story/engine";
@@ -26,6 +28,8 @@ import type { Character, StoryLine } from "@/lib/types";
 import { useI18n } from "@/i18n";
 
 const isTyping = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+/** Ignore a second "advance" this soon after the last one (double-clicks / key bounce never skip two lines). */
+const ADVANCE_GUARD_MS = 250;
 
 export default function PlayPage() {
   const { t, tx, locale } = useI18n();
@@ -44,6 +48,8 @@ export default function PlayPage() {
 
   // The current beat's lines are stored as data, so switching language re-renders built-in lines.
   const [queue, setQueue] = useState<StoryLine[]>([]);
+  /** Bumped for every new beat, so a repeated line still counts as a new line. */
+  const [beatNo, setBeatNo] = useState(0);
   const [lineIndex, setLineIndex] = useState(0);
   const current = queue[lineIndex] ?? null;
   const shownLine = renderLine(current ?? introLine(save.environment.description, envType), locale);
@@ -58,6 +64,21 @@ export default function PlayPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [resetDone, setResetDone] = useState(false);
   const anyModal = logOpen || pauseOpen || settingsOpen || sheetOpen;
+
+  // One typewriter for the current line, shared by the speech bubble and the dialogue panel.
+  const lineId = `${beatNo}:${lineIndex}`;
+  const typer = useTypewriter(busy ? "" : shownLine.text, TEXT_SPEED_MS[settings.textSpeed], { id: lineId, paused: anyModal });
+  const more = lineIndex < queue.length - 1;
+  const lastAdvance = useRef(0);
+  /** Finish the typing; if it's already finished, go to the next line. One step per call. */
+  const advance = useCallback(() => {
+    const now = performance.now();
+    if (now - lastAdvance.current < ADVANCE_GUARD_MS) return;
+    lastAdvance.current = now;
+    if (!typer.done) typer.skip();
+    else if (more) setLineIndex((i) => Math.min(queue.length - 1, i + 1));
+  }, [typer, more, queue.length]);
+  const lineInProgress = !busy && (!typer.done || more);
 
   // Keep the stage + dialogue on screen: the stage may use the window height minus the HUD and dialogue.
   const [stageMax, setStageMax] = useState<number | undefined>(undefined);
@@ -138,6 +159,7 @@ export default function PlayPage() {
       }
       lines ??= beatToLines(beat, cast, envType, world.id);
       setQueue(lines);
+      setBeatNo((n) => n + 1);
       setLineIndex(0);
       gameActions.appendLines(lines);
     },
@@ -154,7 +176,7 @@ export default function PlayPage() {
   // Desktop keyboard controls. Ignored while typing (incl. IME composition) or when a menu is open.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (anyModal || e.isComposing || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      if (anyModal || e.isComposing || (e.target instanceof Element && e.target.closest("[data-speech-bubble]")) || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
       const onButton = e.target instanceof HTMLButtonElement || e.target instanceof HTMLAnchorElement;
       const k = e.key.toLowerCase();
       const map: Record<string, () => void> = {
@@ -171,8 +193,10 @@ export default function PlayPage() {
         p: () => setPauseOpen(true),
       };
       if (!onButton) {
-        map.enter = () => act("talk");
-        map[" "] = () => act("talk");
+        // Enter / Space read through the current conversation first, then start a new one.
+        const next = () => (lineInProgress ? advance() : act("talk"));
+        map.enter = next;
+        map[" "] = next;
       }
       if (map[k]) {
         e.preventDefault();
@@ -181,7 +205,7 @@ export default function PlayPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [anyModal, act, cycle]);
+  }, [anyModal, act, cycle, advance, lineInProgress]);
 
   if (!hydrated) return <LoadingState label={t("common.loadingSave")} />;
 
@@ -205,6 +229,11 @@ export default function PlayPage() {
   const worldName = t(`worlds.list.${world.id}.name` as const);
   const envName = t(`environments.${envType}.name` as const);
   const selectedName = selected ? selected.name.trim() || t("common.unnamed") : null;
+
+  // Who is speaking right now (narration has no bubble; it stays in the panel).
+  const sp = !busy && current?.speaker.kind === "character" ? current.speaker : null;
+  const speakerId = sp ? (sp.id && cast.some((c) => c.id === sp.id) ? sp.id : (cast.find((c) => c.name.trim() === sp.name)?.id ?? null)) : null;
+  const speakerAnchor = characterAnchor(cast, speakerId);
 
   return (
     <main className="gutter mx-auto w-full max-w-[1600px] flex-1 pt-3 sm:pt-4" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
@@ -247,7 +276,14 @@ export default function PlayPage() {
             tag={t("common.placeholder")}
             fit="device"
             maxHeight={stageMax}
-            overlay={<SceneLabels characters={cast} selectedId={selected?.id ?? null} />}
+            overlay={
+              <>
+                <SceneLabels characters={cast} selectedId={selected?.id ?? null} speakingId={speakerAnchor ? speakerId : null} />
+                {speakerAnchor && (
+                  <SpeechBubble lineId={lineId} speaker={shownLine.speaker} anchor={speakerAnchor} typer={typer} more={more} onAdvance={advance} />
+                )}
+              </>
+            }
           >
             <SceneSprites characters={cast} selectedId={selected?.id ?? null} onSelect={setPickedId} />
           </PixelStage>
@@ -263,12 +299,12 @@ export default function PlayPage() {
           <DialogueBox
             speaker={busy ? t("scene.narrator") : shownLine.speaker}
             text={busy ? "" : shownLine.text}
-            msPerChar={TEXT_SPEED_MS[settings.textSpeed]}
+            typer={typer}
+            onAdvance={advance}
             targetName={selectedName}
             onAction={act}
             index={lineIndex}
             total={Math.max(1, queue.length)}
-            onNext={() => setLineIndex((i) => Math.min(queue.length - 1, i + 1))}
             busy={busy}
             note={note}
           />
