@@ -84,12 +84,11 @@ export default function PlayPage() {
   }, []);
 
   // ---- Stage: positions, movement, emotions (Step 2). Paused with the game.
-  const [frozen, setFrozen] = useState(false);
   const reducedMotion = useReducedMotion(settings.reduceMotion);
   const onStage = useMemo(() => cast.slice(0, MAX_ON_STAGE), [cast]);
   const room = useMemo(() => roomFor(world?.id ?? "otherworld", envType), [world?.id, envType]);
   const bondOf = useCallback((a: string, b: string) => bondBetween(getSave().story, a, b), []);
-  const stage = useStageSim({ cast: onStage, room, paused: anyModal || frozen, reducedMotion, bondOf });
+  const stage = useStageSim({ cast: onStage, room, paused: anyModal, reducedMotion, bondOf });
   // Show each character's current emotion (story state is the source of truth; also covers loading a save).
   useEffect(() => {
     for (const c of onStage) {
@@ -293,12 +292,8 @@ export default function PlayPage() {
       stage={stage}
       cast={onStage}
       selectedId={selected?.id ?? null}
-      frozen={frozen}
-      onFreeze={setFrozen}
-      onTalk={() => act("talk")}
       compact={wide}
       onClose={() => {
-        setFrozen(false);
         updateSettings({ testPanel: false });
       }}
     />

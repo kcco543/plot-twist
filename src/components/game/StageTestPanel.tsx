@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Panel } from "@/components/ui/Panel";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { Choice, Toggle } from "@/components/ui/Choice";
 import { EMOTIONS, type Emotion, type EmotionLevel } from "@/lib/emotion/emotions";
 import { effectFor } from "@/lib/emotion/effects";
 import { gameActions } from "@/lib/gameStore";
-import { IDLE_KINDS, type ActionResult, type StageAction } from "@/lib/stage/actions";
+import type { ActionResult, StageAction } from "@/lib/stage/actions";
 import type { StageSim } from "@/lib/stage/sim";
 import { useStageSnapshot } from "@/lib/stage/useStage";
 import type { Character } from "@/lib/types";
@@ -23,9 +23,6 @@ export function StageTestPanel({
   stage,
   cast,
   selectedId,
-  frozen,
-  onFreeze,
-  onTalk,
   onClose,
   compact = false,
 }: {
@@ -34,10 +31,6 @@ export function StageTestPanel({
   stage: StageSim;
   cast: Character[];
   selectedId: string | null;
-  frozen: boolean;
-  onFreeze: (v: boolean) => void;
-  /** Start a story "Talk" for the selected character. */
-  onTalk: () => void;
   onClose: () => void;
 }) {
   const { t, tx } = useI18n();
@@ -46,11 +39,6 @@ export function StageTestPanel({
   const [react, setReact] = useState(true);
   const [targetPick, setTargetPick] = useState<string>("");
   const [message, setMessage] = useState<string | null>(null);
-  const idleIndex = useRef(0);
-  const timers = useRef<number[]>([]);
-  useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), []);
-  // Scripted steps skip themselves while the game is paused / frozen.
-  const later = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(() => !stage.paused && fn(), ms));
 
   const nameOf = (id: string | null | undefined) => {
     const c = cast.find((x) => x.id === id);
@@ -84,82 +72,6 @@ export function StageTestPanel({
     const r = send({ type: "show_emotion", actor: id, emotion, level: lvl, react: withMove, target: target && target !== id ? target : undefined }, tx(`emotions.${emotion}`));
     if (r.ok) gameActions.setEmotion(id, emotion, lvl, at);
   };
-
-  const needTarget = () => {
-    if (targetId) return false;
-    setMessage(t("play.test.needTwo"));
-    return true;
-  };
-
-  const scenarios: { key: string; label: string; run: () => void }[] = [
-    {
-      key: "meet",
-      label: t("play.test.meet"),
-      run: () => {
-        if (!actor || needTarget()) return;
-        send({ type: "approach", actor: actor.id, target: targetId!, distance: 26 });
-        stage.request({ type: "approach", actor: targetId!, target: actor.id, distance: 26 }, "test");
-      },
-    },
-    {
-      key: "walkTalk",
-      label: t("play.test.walkTalk"),
-      run: () => {
-        if (!actor || needTarget()) return;
-        // The other character walks off while the selected one follows and starts talking on the way.
-        stage.request({ type: "retreat", actor: targetId!, from: actor.id, distance: 60 }, "test");
-        send({ type: "approach", actor: actor.id, target: targetId!, distance: 28 });
-        later(500, onTalk);
-      },
-    },
-    {
-      key: "rapid",
-      label: t("play.test.rapid"),
-      run: () => {
-        if (!actor) return;
-        const list = EMOTIONS.filter((e) => e !== "neutral");
-        list.forEach((e, i) => later(i * 160, () => emote(actor.id, e, 2, true)));
-      },
-    },
-    {
-      key: "interrupt",
-      label: t("play.test.interrupt"),
-      run: () => {
-        if (!actor) return;
-        const r = targetId ? send({ type: "approach", actor: actor.id, target: targetId, distance: 24 }) : send({ type: "retreat", actor: actor.id, distance: 60 });
-        if (!r.ok || r.note !== "moving") {
-          // Already next to them: walk away instead so there's something to interrupt.
-          send({ type: "retreat", actor: actor.id, from: targetId ?? undefined, distance: 60 });
-        }
-        later(450, () => {
-          stage.stop(actor.id);
-          setMessage(`${nameOf(actor.id)} · ${t("play.test.stop")}`);
-        });
-        later(1600, () => {
-          stage.resume(actor.id);
-          setMessage(`${nameOf(actor.id)} · ${t("play.test.resume")}`);
-        });
-      },
-    },
-    {
-      key: "crowd",
-      label: t("play.test.crowd"),
-      run: () => {
-        if (!actor || needTarget()) return;
-        others.forEach((c) => stage.request({ type: "approach", actor: c.id, target: actor.id, distance: 24 }, "test"));
-        setMessage(t("play.test.crowd"));
-      },
-    },
-    {
-      key: "corner",
-      label: t("play.test.corner"),
-      run: () => {
-        if (!actor) return;
-        send({ type: "retreat", actor: actor.id, from: targetId ?? undefined, distance: 80 });
-        later(2600, () => send({ type: "retreat", actor: actor.id, from: targetId ?? undefined, distance: 80 }));
-      },
-    },
-  ];
 
   return (
     <Panel className="w-full" aria-label={t("play.test.title")}>
@@ -199,11 +111,11 @@ export function StageTestPanel({
         {/* 1 · Emotions */}
         <section className="flex flex-col gap-3 border-t-[3px] border-dashed border-line pt-4">
           <p className="font-label text-xs uppercase tracking-wide text-label">{t("play.test.emotionsTitle")}</p>
-          <div className={`grid grid-cols-2 gap-2 ${compact ? "" : "min-[480px]:grid-cols-3 lg:grid-cols-4"}`}>
+          <div className={`grid gap-2 ${compact ? "grid-cols-1" : "grid-cols-2 min-[480px]:grid-cols-3 lg:grid-cols-4"}`}>
             {EMOTIONS.map((e) => {
               const fx = effectFor(e);
               return (
-                <PixelButton key={e} size="sm" variant={e === "neutral" ? "ghost" : "calm"} disabled={!actor} onClick={() => actor && emote(actor.id, e)} className="justify-start">
+                <PixelButton key={e} size="sm" variant={e === "neutral" ? "ghost" : "calm"} disabled={!actor} onClick={() => actor && emote(actor.id, e)} className="min-w-0 justify-start">
                   <span className="flex items-center gap-2">
                     <span className="grid size-6 shrink-0 place-items-center">{fx ? <GlyphSvg id={fx.icon} scale={2} /> : <span className="block size-2 bg-ink-mute" />}</span>
                     {tx(`emotions.${e}`)}
@@ -219,55 +131,6 @@ export function StageTestPanel({
             options={(["1", "2", "3"] as const).map((v) => ({ value: v, label: t(`play.test.levels.${v}`) }))}
           />
           <Toggle label={t("play.test.react")} description={t("play.test.reactDesc")} checked={react} onChange={setReact} onLabel={t("settings.on")} offLabel={t("settings.off")} />
-        </section>
-
-        {/* 2 · Movement */}
-        <section className="flex flex-col gap-3 border-t-[3px] border-dashed border-line pt-4">
-          <p className="font-label text-xs uppercase tracking-wide text-label">{t("play.test.movesTitle")}</p>
-          <div className="flex flex-wrap gap-2">
-            <PixelButton size="sm" variant="success" disabled={!actor} onClick={() => actor && !needTarget() && send({ type: "approach", actor: actor.id, target: targetId! })}>
-              {t("play.test.approach")}
-            </PixelButton>
-            <PixelButton size="sm" variant="success" disabled={!actor} onClick={() => actor && send({ type: "retreat", actor: actor.id, from: targetId ?? undefined, distance: 30 })}>
-              {t("play.test.retreat")}
-            </PixelButton>
-            <PixelButton size="sm" variant="success" disabled={!actor} onClick={() => actor && !needTarget() && send({ type: "face_target", actor: actor.id, target: targetId! })}>
-              {t("play.test.face")}
-            </PixelButton>
-            <PixelButton
-              size="sm"
-              variant="magic"
-              disabled={!actor}
-              onClick={() => {
-                if (!actor) return;
-                const kind = IDLE_KINDS[idleIndex.current++ % IDLE_KINDS.length];
-                send({ type: "idle_reaction", actor: actor.id, kind }, tx(`play.test.idleKinds.${kind}`));
-              }}
-            >
-              {t("play.test.idle")}
-            </PixelButton>
-            <PixelButton size="sm" variant="accent" disabled={!actor} onClick={() => actor && (stage.stop(actor.id), setMessage(`${nameOf(actor.id)} · ${t("play.test.stop")}`))}>
-              {t("play.test.stop")}
-            </PixelButton>
-            <PixelButton size="sm" variant="accent" disabled={!actor} onClick={() => actor && (stage.resume(actor.id), setMessage(`${nameOf(actor.id)} · ${t("play.test.resume")}`))}>
-              {t("play.test.resume")}
-            </PixelButton>
-            <PixelButton size="sm" variant={frozen ? "primary" : "ghost"} icon={frozen ? "play" : "pause"} onClick={() => onFreeze(!frozen)}>
-              {frozen ? t("play.test.unfreeze") : t("play.test.freeze")}
-            </PixelButton>
-          </div>
-        </section>
-
-        {/* 3 · Quick tests */}
-        <section className="flex flex-col gap-3 border-t-[3px] border-dashed border-line pt-4">
-          <p className="font-label text-xs uppercase tracking-wide text-label">{t("play.test.scenariosTitle")}</p>
-          <div className={`grid gap-2 ${compact ? "" : "min-[480px]:grid-cols-2 lg:grid-cols-3"}`}>
-            {scenarios.map((s) => (
-              <PixelButton key={s.key} size="sm" variant="secondary" disabled={!actor} onClick={s.run} data-scenario={s.key}>
-                {s.label}
-              </PixelButton>
-            ))}
-          </div>
         </section>
 
         {message && (
