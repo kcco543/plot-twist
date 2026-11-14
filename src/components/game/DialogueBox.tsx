@@ -47,13 +47,13 @@ export function DialogueBox({
   const more = index < total - 1;
 
   return (
-    <section aria-label={t("play.dialogue")} className="mt-5 grid gap-3 xl:grid-cols-[minmax(0,1fr)_16rem] xl:items-start xl:gap-4">
-      <div className="flex min-w-0 flex-col gap-2 px-4 sm:px-0">
-        <div className="px-frame px-shadow relative" style={{ "--frame": "var(--frame-cream)" } as React.CSSProperties}>
-          <span className="px-tab absolute -top-7 left-1 sm:-top-8" style={{ borderImageSource: "var(--frame-pink)" }}>
+    <section aria-label={t("play.dialogue")} className="mt-5 grid gap-[var(--stack-gap)] xl:grid-cols-[minmax(0,1fr)_16rem] xl:items-start xl:gap-4">
+      <div className="flex min-w-0 flex-col gap-2">
+        <div className="content-block px-frame px-shadow relative" style={{ "--frame": "var(--frame-cream)" } as React.CSSProperties}>
+          <span className="px-tab absolute -top-7 left-[calc(var(--u)*-4)] sm:-top-8" style={{ borderImageSource: "var(--frame-pink)" }}>
             {speaker}
           </span>
-          {total > 1 && <span className="absolute right-1 -top-6 bg-surface px-1 font-label text-[10px] text-ink-soft tabular-nums sm:-top-7">{t("play.lineCount", { n: index + 1, total })}</span>}
+          {total > 1 && <span className="absolute right-[calc(var(--u)*-4)] -top-6 bg-surface px-1 font-label text-[10px] text-ink-soft tabular-nums sm:-top-7">{t("play.lineCount", { n: index + 1, total })}</span>}
           <button onClick={onAdvance} className="block w-full cursor-pointer px-1 pt-2 pb-0.5 text-left" aria-label={done && more ? t("play.nextLine") : t("play.showFullLine")}>
             {/* Screen readers get the whole line once, not every typed character. */}
             {!busy && (
@@ -91,7 +91,7 @@ export function DialogueBox({
           )}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-2">
+      <div className="content-block grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-2">
         <PixelButton variant="accent" icon="chat" disabled={disabled} onClick={() => onAction("talk")} className="px-1">
           {t("play.actions.talk")}
         </PixelButton>

@@ -78,6 +78,9 @@
   --u: 2px;
   --gutter-l: max(16px, env(safe-area-inset-left, 0px));
   --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+  /* Shared content grid: one set of left/right edges for every block on a screen. */
+  --content-max: 72rem;
+  --stack-gap: 12px;
 }
 @media (min-width: 640px) {
   :root { --u: 3px; }
@@ -250,6 +253,23 @@ html[data-crt="on"] body::after {
   }
 
   .gutter { padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+
+  /*
+   * Content grid. The container owns the side gutters; every direct block
+   * (and anything marked .content-block) spans its full width, so all outer
+   * edges line up. Blocks never add their own side margins.
+   */
+  .content-grid {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
+    padding-left: var(--gutter-l);
+    padding-right: var(--gutter-r);
+  }
+  .content-block { box-sizing: border-box; width: 100%; margin-inline: 0; }
+  .content-stack { display: flex; flex-direction: column; gap: var(--stack-gap); min-width: 0; }
+  .content-stack > * { box-sizing: border-box; width: 100%; margin-inline: 0; }
 
   /* Scalloped top edge (bottom action bar, footers). */
   .px-scallop { position: relative; }

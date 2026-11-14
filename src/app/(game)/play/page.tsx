@@ -239,9 +239,9 @@ export default function PlayPage() {
   const cameraFocus = focusAnchor ? focusAnchor.x * STAGE.width : undefined;
 
   return (
-    <main className="gutter mx-auto w-full max-w-[1600px] flex-1 pt-3 sm:pt-4" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
+    <main className="content-grid flex-1 pt-3 sm:pt-4" style={{ "--content-max": "1600px", paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" } as React.CSSProperties}>
       {/* HUD */}
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="content-block mb-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-label text-[10px] uppercase" style={{ color: world.accent }}>
             {worldName}
@@ -263,15 +263,15 @@ export default function PlayPage() {
       </div>
 
       {isDemo && (
-        <p className="mb-4 flex items-center gap-2 bg-butter-hi px-3 py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
+        <p className="content-block mb-4 flex items-center gap-2 bg-butter-hi px-3 py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
           <PixelIcon name="star" size={12} className="shrink-0 text-label" />
           {t("play.demoNotice")}
         </p>
       )}
 
       {/* Desktop: viewport ≈78% / character sidebar ≈21%. Phones: viewport first, character sheet in a bottom drawer. */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(14.5rem,21%)] xl:gap-5">
-        <div className="flex min-w-0 flex-col gap-3">
+      <div className="content-block grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(14.5rem,21%)] xl:gap-5">
+        <div className="content-stack">
           <PixelStage
             art={environmentArt[world.id][envType]}
             label={t("play.viewportAlt", { place: envName, world: worldName })}
