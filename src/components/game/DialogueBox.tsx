@@ -54,7 +54,7 @@ export function DialogueBox({
             {speaker}
           </span>
           {total > 1 && <span className="absolute right-[calc(var(--u)*-4)] -top-6 bg-surface px-1 font-label text-[10px] text-ink-soft tabular-nums sm:-top-7">{t("play.lineCount", { n: index + 1, total })}</span>}
-          <button onClick={onAdvance} className="block w-full cursor-pointer px-1 pt-2 pb-0.5 text-left" aria-label={done && more ? t("play.nextLine") : t("play.showFullLine")}>
+          <button onClick={onAdvance} className="panel-pad-x block w-full cursor-pointer pt-2 pb-0.5 text-left" aria-label={done && more ? t("play.nextLine") : t("play.showFullLine")}>
             {/* Screen readers get the whole line once, not every typed character. */}
             {!busy && (
               <span className="sr-only" aria-live="polite">
@@ -82,7 +82,7 @@ export function DialogueBox({
             </p>
           </button>
         </div>
-        <div className="flex min-h-5 items-center justify-between gap-2">
+        <div className="plain-pad-x flex min-h-5 items-center justify-between gap-2">
           <span className="min-w-0 truncate font-label text-[10px] uppercase text-ink-soft">{targetName ? t("play.with", { name: targetName }) : t("play.selectSomeone")}</span>
           {note && (
             <span role="status" className="min-w-0 truncate text-sm text-coral-deep">

@@ -239,7 +239,7 @@ export default function PlayPage() {
   const cameraFocus = focusAnchor ? focusAnchor.x * STAGE.width : undefined;
 
   return (
-    <main className="content-grid flex-1 pt-3 sm:pt-4" style={{ "--content-max": "1600px", paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" } as React.CSSProperties}>
+    <main data-layout="wide" className="content-grid flex-1 pt-3 sm:pt-4" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
       {/* HUD */}
       <div className="content-block mb-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
@@ -263,7 +263,7 @@ export default function PlayPage() {
       </div>
 
       {isDemo && (
-        <p className="content-block mb-4 flex items-center gap-2 bg-butter-hi px-3 py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
+        <p className="content-block plain-pad-x mb-4 flex items-center gap-2 bg-butter-hi py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
           <PixelIcon name="star" size={12} className="shrink-0 text-label" />
           {t("play.demoNotice")}
         </p>
