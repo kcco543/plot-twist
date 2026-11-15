@@ -3,7 +3,8 @@
 import { createActiveWorldStore, eraseAllWorlds } from "./saves/worldSaves";
 import { makeId } from "./id";
 import { createBlankCharacter, normalizeCharacter } from "./character/model";
-import { emptyStory, withMemoryNote } from "./story/engine";
+import { emptyStory, neutralState, withMemoryNote } from "./story/engine";
+import { withEmotion, type Emotion } from "./emotion/emotions";
 import type { Character, CharacterArt, EnvironmentDraft, SaveData, SpriteAsset, StoryLine, StoryState, WorldId } from "./types";
 
 /**
@@ -30,6 +31,9 @@ function normalizeStory(raw: unknown): StoryState {
     characters: r.characters && typeof r.characters === "object" ? r.characters : {},
     bonds: r.bonds && typeof r.bonds === "object" ? r.bonds : {},
     events: Array.isArray(r.events) ? r.events : [],
+    // Behavior engine state (relationships, recent decisions) must survive a reload too.
+    ...(r.relations && typeof r.relations === "object" ? { relations: r.relations } : {}),
+    ...(Array.isArray(r.decisions) ? { decisions: r.decisions } : {}),
   };
 }
 
@@ -55,6 +59,7 @@ export const getSave = store.get;
 
 const touch = (fn: (s: SaveData) => SaveData) => store.set((s) => ({ ...fn(s), updatedAt: Date.now() }));
 
+import { sampleCharacter } from "./mind/scenarios";
 export { CHARACTER_TEXT_FIELDS, createBlankCharacter } from "./character/model";
 
 export const gameActions = {
@@ -75,6 +80,14 @@ export const gameActions = {
       ...s,
       characters: s.characters.map((c) => (c.id === id ? { ...c, ...patch, updatedAt: Date.now() } : c)),
     }));
+  },
+  /** Add the sample cast (Mira, Wren, Tobi: very different personalities, a friendship and a rivalry) for trying conversations. */
+  addSampleCast(locale: "en" | "zh-CN") {
+    touch((s) => {
+      const have = new Set(s.characters.map((c) => c.id));
+      const add = (["mira", "wren", "tobi"] as const).map((id) => sampleCharacter(id, locale)).filter((c) => !have.has(c.id));
+      return { ...s, worldId: s.worldId ?? "otherworld", characters: [...s.characters, ...add] };
+    });
   },
   deleteCharacter(id: string) {
     touch((s) => ({ ...s, characters: s.characters.filter((c) => c.id !== id) }));
@@ -98,6 +111,13 @@ export const gameActions = {
   },
   setMemoryNote(actorId: string, memoryId: string, note: string) {
     touch((s) => ({ ...s, story: withMemoryNote(s.story, actorId, memoryId, note) }));
+  },
+  /** Set a character's current emotion (test panel, or later an AI event via the stage action check). Personality is untouched. */
+  setEmotion(characterId: string, emotion: Emotion, level: number, at = Date.now()) {
+    touch((s) => ({
+      ...s,
+      story: { ...s.story, characters: { ...s.story.characters, [characterId]: withEmotion(s.story.characters[characterId] ?? neutralState(), emotion, level, at) } },
+    }));
   },
   resetStory() {
     touch((s) => ({ ...s, story: emptyStory(), log: [] }));

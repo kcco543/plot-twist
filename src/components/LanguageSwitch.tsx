@@ -11,7 +11,7 @@ import { PixelIcon } from "./ui/PixelIcon";
 export function LanguageSwitch({ full = false }: { full?: boolean }) {
   const { locale, setLocale, t } = useI18n();
   return (
-    <div role="radiogroup" aria-label={t("language.label")} className="flex items-center gap-1.5">
+    <div role="radiogroup" aria-label={t("language.label")} className="flex items-center gap-1 min-[360px]:gap-1.5">
       {!full && <PixelIcon name="globe" size={14} className="mr-0.5 hidden text-ink-soft sm:block" />}
       {LOCALES.map((l) => {
         const active = l === locale;

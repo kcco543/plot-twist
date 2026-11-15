@@ -329,6 +329,11 @@
     },
     "nextLine": "下一句",
     "lineCount": "{n} / {total}",
+    "bubble": {
+      "finish": "{name} 正在说话。显示全文",
+      "next": "{name} 说完了。下一句",
+      "said": "{name} 说的话"
+    },
     "resetStory": "重置心情、关系和记忆",
     "resetStoryDone": "故事状态已重置。",
     "sidebar": {
@@ -347,8 +352,93 @@
       "behaviorNone": "按滑块和文字设定演出",
       "open": "角色信息",
       "close": "关闭角色信息",
-      "more": "关于{name}的更多信息"
-    }
+      "more": "关于{name}的更多信息",
+      "feeling": "情绪"
+    },
+    "test": {
+      "open": "测试面板",
+      "title": "情绪与移动测试",
+      "intro": "先在场景中选一个角色（◀ ▶ 或直接点角色），再按按钮。这里的操作和剧情走同一套规则，被拒绝时会告诉你原因。",
+      "who": "角色",
+      "target": "靠近 / 远离谁",
+      "nobody": "无",
+      "emotionsTitle": "1 · 情绪",
+      "level": "强度",
+      "levels": {
+        "1": "轻微",
+        "2": "明显",
+        "3": "强烈"
+      },
+      "react": "带动作反应",
+      "reactDesc": "由性格、关系和情绪决定怎么动。关闭：只显示特效。",
+      "movesTitle": "2 · 移动",
+      "approach": "走近",
+      "retreat": "后退",
+      "face": "转向对方",
+      "idle": "待机动作",
+      "stop": "停下",
+      "resume": "继续走",
+      "freeze": "全员定格",
+      "unfreeze": "取消定格",
+      "scenariosTitle": "3 · 快速测试",
+      "meet": "两人互相走近",
+      "walkTalk": "边走边说",
+      "rapid": "快速切换情绪",
+      "interrupt": "打断后继续",
+      "crowd": "全员聚拢（碰撞）",
+      "corner": "退到墙边",
+      "status": "实时状态",
+      "colName": "名字",
+      "colState": "状态",
+      "colFeeling": "情绪",
+      "colSpot": "脚下 (x, y)",
+      "paused": "已定格",
+      "suspended": "行走暂停",
+      "needTwo": "再添加一个角色，才能测试走向别人。",
+      "result": {
+        "ok": "{name} · {action}：{note}",
+        "refused": "{name} · {action}：被拒绝，{reason}"
+      },
+      "actions": {
+        "approach": "走近",
+        "retreat": "后退",
+        "face_target": "转向对方",
+        "idle_reaction": "待机动作",
+        "show_emotion": "显示情绪"
+      },
+      "reasons": {
+        "invalid": "请求无效",
+        "unknown_actor": "这个角色不在场景中",
+        "unknown_target": "对方不在场景中",
+        "self_target": "不能以自己为目标",
+        "busy": "正忙（正在说话或行走）",
+        "no_room": "对方身边没有空位",
+        "no_path": "路被挡住了",
+        "cornered": "已经无路可退，于是转过身去",
+        "paused": "全员已定格",
+        "player_command": "你正在操控他们，所以他们自己的反应会先等等",
+        "outranked": "他们正忙着更重要的事（你的指令或剧情）"
+      },
+      "notes": {
+        "moving": "出发了",
+        "already_close": "已经很近，只是转向对方",
+        "facing": "转向了对方",
+        "emoting": "显示情绪中",
+        "idle": "播放待机动作",
+        "shortened": "只能退一小步"
+      },
+      "idleKinds": {
+        "look_around": "东张西望",
+        "shift": "挪动脚步",
+        "hop": "小跳",
+        "stretch": "伸懒腰",
+        "shiver": "发抖",
+        "stomp": "跺脚",
+        "sigh": "叹气"
+      },
+      "close": "隐藏测试面板"
+    },
+    "sampleCast": "加入示例角色（米拉、雯雯、托比）"
   },
   "scene": {
     "narrator": "旁白",
@@ -456,7 +546,8 @@
   },
   "settings": {
     "title": "设置",
-    "textSpeed": "文字速度",
+    "textSpeed": "对话速度",
+    "textSpeedDesc": "对话气泡和对话框中文字逐字出现的速度。点击对话即可立即显示全文。",
     "speeds": {
       "slow": "慢",
       "normal": "普通",
@@ -485,13 +576,17 @@
       "chaotic": "混乱"
     },
     "aiStory": "AI 书写故事",
-    "aiStoryDesc": "配置好之后，由 AI 书写对话。关闭则只使用内置台词。",
+    "aiStoryDesc": "配置好之后，由 AI 书写对话和角色之间的对话回复。关闭则只使用内置台词。",
     "aiTitle": "AI 服务",
     "aiText": "性格分析与对话",
     "aiImage": "像素形象与地图生成",
     "aiReady": "可用",
     "aiMissing": "未配置",
-    "aiChecking": "检查中"
+    "aiChecking": "检查中",
+    "testPanel": "情绪与移动测试面板",
+    "testPanelDesc": "在游戏画面的对话框下方显示按钮，可以手动触发每种情绪和移动。",
+    "behaviorDebug": "行为调试面板（开发者）",
+    "behaviorDebugDesc": "显示每个角色为什么这样做：性格、情绪、关系、记忆，以及每个选项的权重。玩家看不到。"
   },
   "traits": {
     "extroversion": {
@@ -589,6 +684,26 @@
     "excited": "跃跃欲试",
     "suspicious": "多疑",
     "embarrassed": "难为情"
+  },
+  "emotions": {
+    "neutral": "平静",
+    "happy": "开心",
+    "excited": "兴奋",
+    "affectionate": "亲昵",
+    "embarrassed": "害羞",
+    "angry": "生气",
+    "frustrated": "烦躁",
+    "sad": "难过",
+    "anxious": "不安",
+    "surprised": "惊讶",
+    "confused": "困惑"
+  },
+  "stageStates": {
+    "idle": "待机",
+    "moving": "移动中",
+    "interacting": "互动中",
+    "speaking": "说话中",
+    "reacting": "反应中"
   },
   "events": {
     "confide": "倾诉",
@@ -729,7 +844,11 @@
       "offline": "你现在离线",
       "bad_request": "请求无效",
       "too_large": "图片超过 8 MB",
-      "bad_type": "只支持 PNG、JPG 或 WebP 图片"
+      "bad_type": "只支持 PNG、JPG 或 WebP 图片",
+      "timeout": "回答时间太长",
+      "busy": "上一个回复还在写",
+      "limit": "已达到对话次数上限，请稍后再试",
+      "cancelled": "对话已结束"
     },
     "errorTitle": "没有成功：{reason}。"
   },
@@ -1102,6 +1221,841 @@
         "{name}和{other}之间冷淡了一些。",
         "{name}和{other}之间出现了一道小小的裂痕。"
       ]
+    }
+  },
+  "behave": {
+    "pre": "……",
+    "addr": "{other}，",
+    "say": {
+      "greet": {
+        "terse": [
+          "啊，嗨。",
+          "嘿。",
+          "……你好。"
+        ],
+        "short": [
+          "嗨！刚才没看见你。",
+          "啊，你好。见到你真好。",
+          "嘿，你来得真早。"
+        ],
+        "full": [
+          "嘿！我正希望今天能碰到你呢。",
+          "你在这儿！我一直想跟你说件事。",
+          "嗨！快过来，看看我路上捡到了什么。"
+        ]
+      },
+      "initiate_conversation": {
+        "terse": [
+          "有空吗？",
+          "嘿，听我说。",
+          "等等，能问你件事吗？"
+        ],
+        "short": [
+          "嘿，我能跟你说件事吗？",
+          "你有空吗？我有个主意。",
+          "陪我走一会儿？"
+        ],
+        "full": [
+          "好啦，这事我必须告诉你，它在我脑子里转了一早上了。",
+          "来得正好！在我说服自己放弃之前，得有人听听这个计划。",
+          "过来过来，你绝对想不到我刚想通了什么。"
+        ]
+      },
+      "avoid_conversation": {
+        "terse": [
+          "现在不行。",
+          "……忙。",
+          "回头再说。"
+        ],
+        "short": [
+          "抱歉，我正要走。",
+          "能晚点说吗？我手上有事。",
+          "现在……还是算了吧。"
+        ],
+        "full": [
+          "我现在不太想说话，可以吗？",
+          "今天就别谈了吧。我想透透气。",
+          "我知道这很重要，但我现在真的不行。"
+        ]
+      },
+      "express_surprise": {
+        "terse": [
+          "啊！",
+          "等等，什么？",
+          "咦！"
+        ],
+        "short": [
+          "啊！没想到会这样。",
+          "等等，真的吗？",
+          "你吓我一跳！"
+        ],
+        "full": [
+          "啊！这个我是真的完全没料到。",
+          "等等等等，你再说一遍，我好像听错了。",
+          "哇。好吧。这可不是我以为你会说的话。"
+        ]
+      },
+      "show_affection": {
+        "terse": [
+          "你来了真好。",
+          "想你了。",
+          "嘿，是你呀。"
+        ],
+        "short": [
+          "你能来我真的很高兴。",
+          "有你在，这里都变得舒服多了。",
+          "我给你留了位子。当然啦。"
+        ],
+        "full": [
+          "说真的？你一出现，今天就变好多了。",
+          "我刚还在想你，你就来了。",
+          "多待一会儿吧？有你在什么都容易些。"
+        ]
+      },
+      "express_frustration": {
+        "terse": [
+          "不是吧？",
+          "唉。",
+          "又来？"
+        ],
+        "short": [
+          "你就不能消停一次吗？",
+          "这真的让我很烦。",
+          "我第一次就听到了。"
+        ],
+        "full": [
+          "我在很努力地保持冷静，而你一点忙都没帮上。",
+          "每次都这样。你听得见自己在说什么吗？",
+          "好了，够了。我不想再假装没事了。"
+        ]
+      },
+      "ask_question": {
+        "terse": [
+          "为什么？",
+          "什么意思？",
+          "……你想干嘛？"
+        ],
+        "short": [
+          "你这话是什么意思？",
+          "你为什么要告诉我这个？",
+          "等等，这是怎么回事？"
+        ],
+        "full": [
+          "抱歉，我得先弄明白。你到底想问我什么？",
+          "等一下。为什么是现在，为什么是我？",
+          "回答之前，你能先告诉我到底发生了什么吗？"
+        ]
+      },
+      "respond_cautiously": {
+        "terse": [
+          "……好。",
+          "也许吧。",
+          "嗯。行。"
+        ],
+        "short": [
+          "我考虑一下。",
+          "好……什么事？",
+          "那要看情况。"
+        ],
+        "full": [
+          "我在听。只是想先确认自己听懂了。",
+          "如果你不介意，我们慢慢来。",
+          "也许吧。我想先多了解一点再决定。"
+        ]
+      },
+      "respond_playfully": {
+        "terse": [
+          "哈！想得美。",
+          "哦？是吗？",
+          "胆子不小嘛。"
+        ],
+        "short": [
+          "哈！你想得美。",
+          "小心点，我可能会开始喜欢你。",
+          "这是贿赂吗？因为挺管用的。"
+        ],
+        "full": [
+          "当然啦。接下来你是不是要说，岛会飘是因为它们心情好？",
+          "哈！再说一遍，慢一点，我要记一辈子。",
+          "好好好，这一局算你赢。好好享受吧，不会太久的。"
+        ]
+      },
+      "respond_defensively": {
+        "terse": [
+          "我知道自己在干什么。",
+          "这不公平。",
+          "你说的。"
+        ],
+        "short": [
+          "我心里有数。",
+          "事情不是那样的。",
+          "你不知道全部经过。"
+        ],
+        "full": [
+          "换了任何一个明白人都会这么做，别装作不是这样。",
+          "教训我之前，不如先问问我为什么这么做。",
+          "我的工作怎么做，用不着你来教。"
+        ],
+        "praise": {
+          "terse": [
+            "……这话什么意思？",
+            "是吗。",
+            "哼。"
+          ],
+          "short": [
+            "你想从我这里得到什么？",
+            "别以为这样就能改变什么。",
+            "我不需要你的认可。"
+          ],
+          "full": [
+            "你突然这么客气，肯定有所图。说吧，是什么？",
+            "如果你打算靠奉承讨好我，那就省省吧。",
+            "省省吧。我不在的时候你怎么说我，我清楚得很。"
+          ]
+        }
+      },
+      "change_subject": {
+        "terse": [
+          "总之。",
+          "所以……天气不错。",
+          "……看，有只鸟。"
+        ],
+        "short": [
+          "对了，你今天看到天空了吗？",
+          "我们聊点别的吧。",
+          "那个！地图怎么样了？"
+        ],
+        "full": [
+          "好，下一个话题。有人去看过那座桥还飘着没？",
+          "好啦，别说我了。你最近在忙什么？",
+          "你这么说挺有意思。不过跟这无关，你吃饭了吗？"
+        ]
+      },
+      "challenge": {
+        "terse": [
+          "证明给我看。",
+          "来啊。",
+          "是吗？"
+        ],
+        "short": [
+          "有本事当面说。",
+          "要不要好好比一场？",
+          "你真觉得你赢得了我？"
+        ],
+        "full": [
+          "行。跟我比到灯塔，看看谁说得对。",
+          "既然你那么有把握，那就现在比一比。",
+          "你一直在说。我更想看你真的做到。"
+        ]
+      },
+      "acknowledge": {
+        "terse": [
+          "……有道理。",
+          "好，记下了。",
+          "行。"
+        ],
+        "short": [
+          "你说得对。我会改。",
+          "说得有理。我没想到这点。",
+          "好，这次按你的方法来。"
+        ],
+        "full": [
+          "虽然不太想听，但你说得对。我会做得更好。",
+          "这话公道。我有点冲动了。谢谢你直说。",
+          "好吧。我们一起好好做，吵架的事以后再说。"
+        ],
+        "praise": {
+          "terse": [
+            "……谢谢。",
+            "啊，谢谢。",
+            "多谢。"
+          ],
+          "short": [
+            "你真好。谢谢。",
+            "谢谢，这对我很重要。",
+            "啊，没想到。谢谢。"
+          ],
+          "full": [
+            "真的谢谢你。我还以为没人注意到。",
+            "这话说得真暖。我会记住的。",
+            "谢谢。从你嘴里说出来，这真的很重要。"
+          ]
+        }
+      }
+    },
+    "narr": {
+      "approach": [
+        "{name}朝{other}走近了一点。",
+        "{name}慢慢走到{other}身边。"
+      ],
+      "retreat": [
+        "{name}从{other}身边退后一步。",
+        "{name}悄悄往后挪，和{other}拉开一点距离。"
+      ],
+      "stay_still": [
+        "{name}站在原地，一动不动。",
+        "{name}没有动。"
+      ],
+      "face_target": [
+        "{name}转身面向{other}。",
+        "{name}仔细打量着{other}。"
+      ],
+      "stay_silent": [
+        "{name}什么也没说。",
+        "{name}抿着嘴，一言不发。"
+      ]
+    },
+    "hidden": {
+      "affection": [
+        "{name}的耳朵有点红了。",
+        "{name}移开视线的速度有点太快了。"
+      ],
+      "fear": [
+        "{name}的手不太稳。",
+        "{name}努力让声音保持平稳。差不多做到了。"
+      ],
+      "sadness": [
+        "{name}的表情黯淡了一瞬。",
+        "{name}眨了几下眼，什么也没提。"
+      ]
+    },
+    "triggers": {
+      "approached": "被走近：",
+      "spoken_to": "被搭话：",
+      "criticized": "被批评：",
+      "complimented": "被夸奖：",
+      "provoked": "被挑衅：",
+      "forced_cooperation": "被迫合作：",
+      "helped": "被帮助：",
+      "teased": "被调侃：",
+      "brushed_off": "被冷落："
+    },
+    "actions": {
+      "approach": "走近",
+      "retreat": "后退",
+      "stay_still": "原地不动",
+      "face_target": "转身面对",
+      "greet": "打招呼",
+      "initiate_conversation": "主动搭话",
+      "avoid_conversation": "回避谈话",
+      "express_surprise": "表现惊讶",
+      "show_affection": "表达好感",
+      "express_frustration": "表现不满",
+      "ask_question": "提问",
+      "respond_cautiously": "谨慎回应",
+      "respond_playfully": "俏皮回应",
+      "respond_defensively": "辩解",
+      "stay_silent": "沉默",
+      "change_subject": "转移话题",
+      "challenge": "挑战对方",
+      "acknowledge": "承认"
+    }
+  },
+  "debug": {
+    "title": "行为调试",
+    "intro": "角色为什么这样做。选一个事件，触发它，看每个选项的权重。仅供开发者。",
+    "close": "隐藏行为调试面板",
+    "scenario": "场景",
+    "liveCast": "你自己的角色（正式游戏）",
+    "sandboxNotice": "示例场景，运行在真实舞台上。只用示例角色：这里的一切都不会存进你的故事。",
+    "reactor": "谁来反应",
+    "trigger": "事件",
+    "by": "由谁引起",
+    "seed": "随机种子（可选）",
+    "seedPlaceholder": "例如 42 —— 相同种子 + 相同状态 = 相同结果",
+    "seedNote": "已固定种子：从相同状态再次触发会得到相同结果。状态变化（情绪、冷却）仍会让之后的结果不同。",
+    "run": "触发事件",
+    "preview": "运行 {n} 次看概率",
+    "passTime": "让时间流逝",
+    "resetScenario": "重置场景",
+    "distribution": "预览：{n} 次运行，不改变任何状态",
+    "log": "最近的决定（点按查看）",
+    "empty": "还没有决定。触发一个事件，或者直接玩：游戏里的每个反应都会显示在这里。",
+    "selected": "选中的行为",
+    "because": "原因：",
+    "noStrongReason": "没有特别突出的原因；在相近的选项里挑了一个",
+    "chance": "以 {p}% 的概率选中（温度 {temp}）",
+    "shows": "表现为{emotion}（{level}）",
+    "showsNothing": "外表看不出来",
+    "masked": "刻意压住了",
+    "pause": "停顿 {ms} 毫秒",
+    "subtle": "轻微",
+    "moderate": "明显",
+    "strong": "强烈",
+    "style": "说话风格",
+    "directness": "直接",
+    "humor": "幽默",
+    "formality": "正式",
+    "disclosure": "坦露",
+    "hesitant": "先犹豫",
+    "movement": "动作",
+    "candidates": "可选行为（已排除硬性限制）",
+    "score": "分数",
+    "repeatPenalty": "重复惩罚 ×{x}",
+    "rejected": "被硬性限制排除（在掷骰之前）",
+    "noneRejected": "无。",
+    "canonRules": "找到的设定规则：{rules}",
+    "notApplicable": "另有 {n} 个行为不适用于这类事件。",
+    "reasons": {
+      "canon": "锁定设定 / 规则（{detail}）",
+      "busy": "正在说话",
+      "player_command": "玩家正在操控",
+      "unreachable": "走不到对方身边",
+      "already_close": "已经站得很近",
+      "no_room": "没有后退的空间",
+      "cooldown": "刚用过（冷却 {detail}）"
+    },
+    "feelings": "{name} 的情绪（第一反应前 → 后）",
+    "calm": "没有强烈的情绪。",
+    "relation": "关系（两个方向分别计算）",
+    "labelNote": "标签只作参考；行为读取的是数值。",
+    "rel": {
+      "trust": "信任",
+      "affection": "好感",
+      "respect": "尊重",
+      "familiarity": "熟悉",
+      "rivalry": "竞争",
+      "tension": "紧张",
+      "fear": "畏惧",
+      "label": "标签"
+    },
+    "labels": {
+      "stranger": "陌生人",
+      "acquaintance": "认识",
+      "friend": "朋友",
+      "family": "家人",
+      "partner": "恋人",
+      "rival": "对手",
+      "enemy": "敌人"
+    },
+    "memories": "和对方的记忆",
+    "noMemories": "暂无。",
+    "turn": "第 {n} 回合",
+    "memoryKinds": {
+      "helped": "被帮助",
+      "argument": "争吵",
+      "rejected": "被冷落",
+      "complimented": "被夸奖",
+      "criticized": "被批评",
+      "promise": "约定",
+      "secret": "分享秘密",
+      "reunion": "重逢",
+      "betrayed": "被背叛",
+      "provoked": "被挑衅",
+      "cooperated": "一起合作",
+      "teased": "被调侃",
+      "met": "初次见面",
+      "approached": "被走近",
+      "spoken_to": "被搭话",
+      "forced_cooperation": "一起合作",
+      "brushed_off": "被冷落"
+    },
+    "personality": "性格因子（0–1）",
+    "legend": "p = 性格，e = 情绪，r = 关系，m = 记忆，c = 场所与距离，pref = 角色自己的倾向。× 表示两者同时成立才算。",
+    "triggers": {
+      "approached": "被走近：",
+      "spoken_to": "被搭话：",
+      "criticized": "被批评：",
+      "complimented": "被夸奖：",
+      "provoked": "被挑衅：",
+      "forced_cooperation": "被迫合作：",
+      "helped": "被帮助：",
+      "teased": "被调侃：",
+      "brushed_off": "被冷落："
+    },
+    "feelingNames": {
+      "happiness": "开心",
+      "anger": "愤怒",
+      "sadness": "难过",
+      "fear": "恐惧",
+      "anxiety": "焦虑",
+      "excitement": "兴奋",
+      "embarrassment": "害羞",
+      "affection": "喜爱",
+      "frustration": "挫败",
+      "surprise": "惊讶",
+      "confusion": "困惑"
+    },
+    "scenarios": {
+      "introStranger": "内向的人被陌生人走近",
+      "introFriend": "同一个内向的人被好友走近",
+      "extroFearedRival": "外向的人被畏惧的对手走近",
+      "impulsiveCriticized": "冲动的人突然被批评",
+      "proudComplimentedByEnemy": "骄傲的人被敌人夸奖",
+      "rivalsCooperate": "两个对手被迫合作",
+      "calmTurnsAngry": "冷静的人被逼到生气",
+      "betrayedBefore": "再见背叛过自己的人",
+      "sameTraitsDifferentPast": "滑块相同，过去不同",
+      "hiddenAffection": "藏起强烈的喜欢"
+    }
+  },
+  "talk": {
+    "hint": "把一个角色拖到另一个角色身上，就会走过去聊天。",
+    "hintTouch": "长按一个角色，然后拖到另一个角色身上。",
+    "orTap": "或者：",
+    "chooseButton": "找人聊天…",
+    "chooseNeedsSelection": "请先选择一个角色",
+    "chooseFor": "让{name}和谁聊天？",
+    "chooseHelp": "在场景里点一下对方，或选择名字：",
+    "cancel": "取消",
+    "walking": "{name}正走向{other}…",
+    "drag": {
+      "talk": "和{other}聊天",
+      "noRoute": "走不到{other}那里",
+      "empty": "放到某个角色身上才能聊天",
+      "self": "松手即取消"
+    },
+    "notices": {
+      "unreachable": "{name}找不到去{other}那里的路，有东西挡住了。",
+      "blocked": "有人挡在路上，{name}过不去，走不到{other}那里。可以先让挡路的人走开，或选一个近一点的人。",
+      "noRoom": "{other}旁边没有空位可以站。",
+      "busy": "{name}正忙着呢，稍后再试。",
+      "targetLeft": "{other}已经不在这里了。",
+      "lostTarget": "{name}没能追上{other}。",
+      "tooLong": "{name}放弃了走向{other}。",
+      "cancelled": "已取消，没有人移动。",
+      "emptySpace": "要开始对话，请把{name}放到另一个角色身上。",
+      "ended": "{name}和{other}聊完了。"
+    },
+    "dismiss": "关闭",
+    "panel": {
+      "title": "对话",
+      "pair": "{name}和{other}聊天",
+      "relationship": "关系",
+      "relationshipOf": "{name}眼中的{other}",
+      "mood": "{other}的情绪",
+      "hardToRead": "看不出来",
+      "suggested": "推荐话题",
+      "askElse": "问问其他的事",
+      "end": "结束对话",
+      "speaking": "点一下对话框，听听{other}怎么回答。",
+      "answering": "{other}正在回答…",
+      "continue": "继续聊，或者结束对话。"
+    },
+    "relation": {
+      "labels": {
+        "stranger": "陌生人",
+        "acquaintance": "点头之交",
+        "friend": "朋友",
+        "family": "家人",
+        "partner": "伴侣",
+        "rival": "对手",
+        "enemy": "敌人"
+      },
+      "warm": "亲近",
+      "cold": "冷淡",
+      "trusting": "信任",
+      "wary": "戒备",
+      "tense": "紧张",
+      "competitive": "较劲",
+      "neutral": "还没有明显的感情"
+    },
+    "composer": {
+      "label": "{name}要对{other}说什么？",
+      "placeholder": "可以输入中文或 English…",
+      "send": "发送",
+      "cancel": "取消",
+      "count": "{n} / {max}",
+      "hint": "回车发送 · Shift+回车换行 · Esc 关闭（草稿会保留）",
+      "empty": "请先输入内容。"
+    },
+    "listens": [
+      "{other}静静地听着。",
+      "{other}把这话听进去了。",
+      "{other}慢慢点了点头。"
+    ],
+    "topics": {
+      "howFeeling": "问问{other}感觉怎么样",
+      "cheerUp": "试着让{other}开心起来",
+      "worries": "问问{other}在担心什么",
+      "recentDisagreement": "聊聊最近的分歧",
+      "apologize": "向{other}道歉",
+      "betrayal": "问{other}为什么辜负你的信任",
+      "challenge": "向{other}发起挑战",
+      "sharedMemory": "聊起{memory}",
+      "compliment": "夸夸{other}",
+      "tease": "逗逗{other}",
+      "confide": "向{other}说说心里话",
+      "askHelp": "请{other}帮你实现目标",
+      "theirGoal": "问问{other}的目标",
+      "introduce": "介绍一下自己",
+      "place": "聊聊这个地方",
+      "rumor": "分享一些当地传闻"
+    },
+    "reasons": {
+      "looks": "看得出的情绪：{emotion}",
+      "argued": "你们最近起过冲突",
+      "tension": "气氛有点紧张",
+      "betrayed": "{other}曾辜负你的信任",
+      "rivals": "你们是对手",
+      "memory": "共同的回忆",
+      "close": "你们关系亲近",
+      "playful": "{name}爱开玩笑",
+      "trust": "你们彼此信任",
+      "yourGoal": "{name}的目标",
+      "theirGoal": "{other}有自己的目标",
+      "stranger": "你们还不太熟",
+      "place": "地点：{place}",
+      "world": "世界：{world}",
+      "smallTalk": "闲聊"
+    },
+    "memory": {
+      "helped": "我们互相帮忙的那次",
+      "cooperated": "我们一起合作的那次",
+      "reunion": "我们重逢的那天",
+      "promise": "我们许下的约定",
+      "secret": "我们分享的秘密",
+      "complimented": "我们互相夸奖的那次",
+      "teased": "我们互相打趣的那些时候",
+      "met": "我们初次见面的那天"
+    },
+    "say": {
+      "howFeeling": {
+        "soft": [
+          "{other}……你还好吗？",
+          "{other}，你现在感觉怎么样？说真的。"
+        ],
+        "bold": [
+          "嘿，{other}！最近还撑得住吗？",
+          "{other}，今天过得怎么样？"
+        ]
+      },
+      "cheerUp": {
+        "soft": [
+          "{other}，你看起来有点低落。要不要陪我坐一会儿？",
+          "不管是什么事，{other}，你都不用一个人扛。"
+        ],
+        "bold": [
+          "好啦，别愁眉苦脸了，{other}。我们来找找今天的好事吧。",
+          "打起精神，{other}！需要的话我这儿有个超冷的笑话。"
+        ]
+      },
+      "worries": {
+        "soft": [
+          "{other}，你是不是在担心什么？",
+          "{other}，想说的话可以告诉我。你愿意的话。"
+        ],
+        "bold": [
+          "{other}，什么事让你这么烦？说出来吧。",
+          "{other}，你明显有心事。到底怎么了？"
+        ]
+      },
+      "recentDisagreement": {
+        "soft": [
+          "关于我们之间的事……{other}，我们能聊聊吗？",
+          "{other}，我一直在想我们之前的分歧。"
+        ],
+        "bold": [
+          "{other}，我们得好好谈谈之前的事。",
+          "{other}，把话说开吧。那次吵架我还放不下。"
+        ]
+      },
+      "apologize": {
+        "soft": [
+          "{other}，之前的事对不起。是我没处理好。",
+          "{other}，我欠你一句道歉。"
+        ],
+        "bold": [
+          "听着，{other}，是我太过分了。对不起。",
+          "好吧，是我搞砸了，{other}。对不起。"
+        ]
+      },
+      "betrayal": {
+        "soft": [
+          "{other}，你为什么要那样做？我想弄明白。",
+          "{other}，你做过的事我还没忘。"
+        ],
+        "bold": [
+          "{other}，给我个解释。你为什么背叛我？",
+          "{other}，你以为我会就这么忘了吗？"
+        ]
+      },
+      "challenge": {
+        "soft": [
+          "{other}，我觉得这次我能赢你。",
+          "{other}，要不要比比看谁更厉害？"
+        ],
+        "bold": [
+          "{other}，我赌你跟不上我！",
+          "{other}，再比一场。就现在。"
+        ]
+      },
+      "sharedMemory": {
+        "soft": [
+          "{other}，你还记得{memory}吗？",
+          "{other}，我刚才想起了{memory}。"
+        ],
+        "bold": [
+          "{other}！我到现在还会想起{memory}。",
+          "{other}，还记得{memory}吗？那时候真好。"
+        ]
+      },
+      "compliment": {
+        "soft": [
+          "{other}，我喜欢你看待事情的方式。",
+          "{other}，你真的很擅长这个。我是认真的。"
+        ],
+        "bold": [
+          "{other}，说真的，你有点厉害。",
+          "{other}，这事没人比你做得更好！"
+        ]
+      },
+      "tease": {
+        "soft": [
+          "{other}，这是你的思考脸吗？好严肃哦。",
+          "{other}，你昨晚睡了吗？你的头发说没有。"
+        ],
+        "bold": [
+          "哇，{other}，你是摸黑穿的衣服吗？",
+          "{other}，你还是比我慢吧？"
+        ]
+      },
+      "confide": {
+        "soft": [
+          "{other}，我能告诉你一件事吗？只有我们俩知道。",
+          "{other}，有件事我从没告诉过别人。"
+        ],
+        "bold": [
+          "{other}，我信得过你，所以我就直说了。",
+          "好，{other}，秘密时间到了。不许笑。"
+        ]
+      },
+      "askHelp": {
+        "soft": [
+          "{other}，你能帮我一个忙吗？这件事对我很重要。",
+          "{other}，我卡在一件重要的事上了。你愿意帮我吗？"
+        ],
+        "bold": [
+          "{other}，我需要帮手。你来不来？",
+          "{other}，帮我个忙好吗？这对我来说是大事。"
+        ]
+      },
+      "theirGoal": {
+        "soft": [
+          "{other}，你在期待什么？你最想要的是什么？",
+          "{other}，你有正在努力的目标吗？"
+        ],
+        "bold": [
+          "{other}，你的大计划是什么？",
+          "说说看，{other}，你真正想要的是什么？"
+        ]
+      },
+      "introduce": {
+        "soft": [
+          "嗯……你好。我是{name}。我们好像还没好好认识过。",
+          "你好，我是{name}。你是{other}，对吧？"
+        ],
+        "bold": [
+          "嗨！我是{name}。你是{other}吧？",
+          "嘿，我们还没正式认识呢。我是{name}！"
+        ]
+      },
+      "place": {
+        "interior": [
+          "这里挺温馨的，对吧，{other}？",
+          "{other}，你有没有发现这个房间有时候特别安静？",
+          "真该有人来收拾一下这里了。"
+        ],
+        "street": [
+          "{other}，今天外面好热闹。",
+          "{other}，你看到街角那个小摊了吗？",
+          "我喜欢看来来往往的人。你呢，{other}？"
+        ],
+        "wilderness": [
+          "{other}，外面好开阔。听到风声了吗？",
+          "{other}，走路小心点，这里的植物长得飞快。",
+          "我能在这里待上一整天。"
+        ],
+        "ruins": [
+          "{other}，这地方让我浑身发冷。",
+          "{other}，你觉得这些是谁建的？",
+          "{other}，跟紧点。我信不过这些墙。"
+        ],
+        "dreamscape": [
+          "{other}，这些都是真的吗？",
+          "天空的颜色一直在变。只有我这么觉得吗？",
+          "{other}，我总觉得以前来过这里。"
+        ]
+      },
+      "rumor": {
+        "western-fantasy": [
+          "你听说了吗？公会贴出了屠龙悬赏。",
+          "{other}，听说老巫师的塔昨晚又亮起来了。"
+        ],
+        "modern": [
+          "{other}，你看今天早上的新闻了吗？",
+          "听说街角那家咖啡馆要关门了。你敢信吗？"
+        ],
+        "ancient-china": [
+          "听说今天有位游侠从城门经过。",
+          "{other}，听说知府要办一场诗会。"
+        ],
+        "otherworld": [
+          "{other}，听说浮空群岛昨晚又漂近了一些。",
+          "有人在水晶原那边看到一只戴帽子的史莱姆。"
+        ]
+      }
+    },
+    "ai": {
+      "testTag": "开发者测试回复：没有使用 AI",
+      "thinking": "{other}正在想……",
+      "slow": "{other}还在想……（网络有点慢？）",
+      "modeAi": "AI 回复",
+      "modeAiDesc": "回复由 Claude 根据角色设定、心情、关系和记忆写出。",
+      "modeMock": "测试回复",
+      "modeMockDesc": "开发者测试模式：固定回复，没有使用 AI。添加 Anthropic API 密钥后才是真正的回复。",
+      "modeOff": "内置回复",
+      "modeOffDesc": "AI 对话已关闭或未设置，由游戏自带的规则回答。",
+      "offTyped": "{other}听到了，但回应你自己写的话需要 AI 对话。在设置里打开“AI 书写故事”（服务器上需要 Anthropic API 密钥）。这里不会用预设台词冒充回答。",
+      "failed": "{other}的 AI 回复没有送达：",
+      "usedBuiltin": "改为显示内置反应。",
+      "retry": "再试一次",
+      "intents": {
+        "warm": "温暖",
+        "curious": "好奇",
+        "playful": "俏皮",
+        "serious": "认真",
+        "challenging": "挑战",
+        "supportive": "支持",
+        "apologetic": "道歉",
+        "honest": "坦白"
+      }
+    }
+  },
+  "memoryEditor": {
+    "help": "记忆会影响角色的行为和说的话。你可以更正、标记为已解决或让角色忘掉。",
+    "edited": "已修改",
+    "textLabel": "记住的内容",
+    "save": "保存",
+    "cancel": "取消",
+    "edit": "更正",
+    "forget": "忘掉",
+    "forgetConfirm": "确定忘掉",
+    "markResolved": "标记为已解决",
+    "reopen": "重新打开",
+    "resolved": "已解决",
+    "open": "未解决",
+    "threads": {
+      "conflict": "矛盾",
+      "promise": "约定",
+      "discovery": "发现",
+      "secret": "秘密"
+    },
+    "kinds": {
+      "note": "谈话",
+      "helped": "帮助",
+      "argument": "争吵",
+      "rejected": "被拒绝",
+      "complimented": "称赞",
+      "criticized": "批评",
+      "promise": "约定",
+      "secret": "秘密",
+      "reunion": "重逢",
+      "betrayed": "背叛",
+      "provoked": "挑衅",
+      "cooperated": "合作",
+      "teased": "打趣",
+      "met": "初次见面"
     }
   }
 }

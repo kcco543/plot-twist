@@ -10,8 +10,8 @@ import { finishProfile } from "../behavior/schema";
 import { CHARACTER_TEXT_FIELDS, type BehaviorProfile, type Character, type Memory } from "../types";
 import type { AnalyzeRequest, CharacterBrief, TurnRequest } from "./contracts";
 
-export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null };
-export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type";
+export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null; talk?: "ai" | "mock" | null };
+export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "timeout" | "busy" | "limit";
 
 export class AiRequestError extends Error {
   constructor(public code: AiErrorCode, message: string) {

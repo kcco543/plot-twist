@@ -15,6 +15,8 @@
 import { makeId } from "../id";
 import { approvedBehavior } from "../character/model";
 import { approachScores, reactionTendencies, traitVector } from "../behavior/tendencies";
+import { actorEmotion, fadeEmotion, otherEmotion, withEmotion } from "../emotion/emotions";
+import { syncRelationsFromBond } from "../mind/relations";
 import { EVENTS, MOOD_BIAS, REACTION_EFFECTS, type EventContext, type EventDef } from "./events";
 import type {
   Approach,
@@ -162,10 +164,11 @@ const capStep = (v: number) => Math.max(-BOND_STEP_CAP, Math.min(BOND_STEP_CAP, 
 function decayMoods(states: Record<string, CharacterState>, except: Set<string>): Record<string, CharacterState> {
   const out: Record<string, CharacterState> = {};
   for (const [id, s] of Object.entries(states)) {
-    if (except.has(id) || s.mood === "calm") out[id] = s;
+    if (except.has(id)) out[id] = s;
+    else if (s.mood === "calm") out[id] = fadeEmotion(s);
     else {
       const intensity = s.intensity - 1;
-      out[id] = intensity <= 0 ? { ...s, mood: "calm", intensity: 0 } : { ...s, intensity };
+      out[id] = fadeEmotion(intensity <= 0 ? { ...s, mood: "calm", intensity: 0 } : { ...s, intensity });
     }
   }
   return out;
@@ -245,7 +248,7 @@ export function plan(input: PlanInput): PlanResult {
     turn,
   } satisfies Partial<Beat>;
 
-  const finish = (beat: Beat, nextStates: Record<string, CharacterState>, bonds = story.bonds): PlanResult => {
+  const finish = (beat: Beat, nextStates: Record<string, CharacterState>, bonds = story.bonds, relations = story.relations): PlanResult => {
     const record: EventRecord = {
       id: makeId("evt"),
       turn,
@@ -260,7 +263,8 @@ export function plan(input: PlanInput): PlanResult {
     const involved = new Set([beat.actorId, ...(beat.otherId ? [beat.otherId] : [])]);
     return {
       beat,
-      story: { turn, characters: decayMoods(nextStates, involved), bonds, events: [...story.events, record].slice(-MAX_EVENTS) },
+      // Keep the behavior engine's state (relations, decisions) that this engine doesn't manage itself.
+      story: { ...story, turn, characters: decayMoods(nextStates, involved), bonds, relations, events: [...story.events, record].slice(-MAX_EVENTS) },
     };
   };
 
@@ -333,7 +337,13 @@ export function plan(input: PlanInput): PlanResult {
       : null;
 
   const nextStates = { ...states };
-  let actorNext: CharacterState = { ...actorState, mood: moodAfter, intensity: importance >= 3 ? 3 : 2 };
+  const now = Date.now();
+  let actorNext: CharacterState = withEmotion(
+    { ...actorState, mood: moodAfter, intensity: importance >= 3 ? 3 : 2 },
+    actorEmotion({ kind: "event", type: def.type, reaction, moodAfter, importance }, actor, bondAfter ?? bondBefore),
+    importance >= 3 ? 3 : 2,
+    now,
+  );
   let memoryId: string | null = null;
   if (importance >= 2) {
     memoryId = makeId("mem");
@@ -351,6 +361,11 @@ export function plan(input: PlanInput): PlanResult {
     });
   }
   nextStates[actor.id] = actorNext;
+  if (other) {
+    // The other person reacts to how the actor treated them (their own personality decides how).
+    const os = nextStates[other.id] ?? neutralState();
+    nextStates[other.id] = withEmotion(os, otherEmotion(reaction, other, bondAfter), importance >= 3 ? 2 : 1, now);
+  }
   if (other && importance >= 2) {
     // The other person remembers it too, from their side.
     const os = nextStates[other.id] ?? neutralState();
@@ -368,6 +383,8 @@ export function plan(input: PlanInput): PlanResult {
     });
   }
 
+  // The shared bond moved: mirror it into both directions of the behavior engine's relationships.
+  const relations = other && bondBefore && bondAfter ? syncRelationsFromBond(story, actor, other, bondBefore, bondAfter).relations : story.relations;
   const variant = pickVariant(3, lastVariant(def.type), rng);
   return finish(
     {
@@ -388,6 +405,7 @@ export function plan(input: PlanInput): PlanResult {
     },
     nextStates,
     bonds,
+    relations,
   );
 }
 

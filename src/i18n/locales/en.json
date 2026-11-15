@@ -329,6 +329,11 @@
     },
     "nextLine": "Next line",
     "lineCount": "{n} / {total}",
+    "bubble": {
+      "finish": "{name} is speaking. Show the full line",
+      "next": "{name} said this. Next line",
+      "said": "{name} said this"
+    },
     "resetStory": "Reset moods, bonds & memories",
     "resetStoryDone": "Story state reset.",
     "sidebar": {
@@ -347,8 +352,93 @@
       "behaviorNone": "Playing from sliders + text",
       "open": "Character info",
       "close": "Close character info",
-      "more": "More about {name}"
-    }
+      "more": "More about {name}",
+      "feeling": "Feeling"
+    },
+    "test": {
+      "open": "Test panel",
+      "title": "Emotion & movement test",
+      "intro": "Pick a character in the scene (◀ ▶ or tap them), then press a button. Everything here goes through the same rules as the story, so a refused action tells you why.",
+      "who": "Character",
+      "target": "Toward / away from",
+      "nobody": "Nobody",
+      "emotionsTitle": "1 · Emotions",
+      "level": "Strength",
+      "levels": {
+        "1": "Mild",
+        "2": "Clear",
+        "3": "Strong"
+      },
+      "react": "React with movement",
+      "reactDesc": "Personality, bond and feeling decide how they move. Off: effect only.",
+      "movesTitle": "2 · Movement",
+      "approach": "Walk closer",
+      "retreat": "Step back",
+      "face": "Turn to face",
+      "idle": "Idle animation",
+      "stop": "Stop",
+      "resume": "Resume walk",
+      "freeze": "Freeze everyone",
+      "unfreeze": "Unfreeze",
+      "scenariosTitle": "3 · Quick tests",
+      "meet": "Both walk to each other",
+      "walkTalk": "Talk while walking",
+      "rapid": "Rapid emotion changes",
+      "interrupt": "Interrupt, then resume",
+      "crowd": "Everyone gathers (collision)",
+      "corner": "Back into the wall",
+      "status": "Live status",
+      "colName": "Name",
+      "colState": "State",
+      "colFeeling": "Feeling",
+      "colSpot": "Feet (x, y)",
+      "paused": "Frozen",
+      "suspended": "walk paused",
+      "needTwo": "Add a second character to try walking toward someone.",
+      "result": {
+        "ok": "{name} · {action}: {note}",
+        "refused": "{name} · {action}: refused, {reason}"
+      },
+      "actions": {
+        "approach": "Walk closer",
+        "retreat": "Step back",
+        "face_target": "Turn to face",
+        "idle_reaction": "Idle animation",
+        "show_emotion": "Show emotion"
+      },
+      "reasons": {
+        "invalid": "the request wasn't valid",
+        "unknown_actor": "that character isn't on stage",
+        "unknown_target": "the other character isn't on stage",
+        "self_target": "they can't target themselves",
+        "busy": "they're busy (mid-sentence or walking)",
+        "no_room": "there's no free spot next to them",
+        "no_path": "the way is blocked",
+        "cornered": "there's nowhere to back away to, so they turned away instead",
+        "paused": "everyone is frozen",
+        "player_command": "you're steering them right now, so their own reaction waits",
+        "outranked": "they're busy with something more important (your command or the story)"
+      },
+      "notes": {
+        "moving": "on the way",
+        "already_close": "already close, so they just turned to face them",
+        "facing": "turned to face them",
+        "emoting": "showing the feeling",
+        "idle": "playing an idle animation",
+        "shortened": "only a short step was possible"
+      },
+      "idleKinds": {
+        "look_around": "Look around",
+        "shift": "Shift weight",
+        "hop": "Hop",
+        "stretch": "Stretch",
+        "shiver": "Shiver",
+        "stomp": "Stomp",
+        "sigh": "Sigh"
+      },
+      "close": "Hide test panel"
+    },
+    "sampleCast": "Add the sample cast (Mira, Wren, Tobi)"
   },
   "scene": {
     "narrator": "Narrator",
@@ -456,7 +546,8 @@
   },
   "settings": {
     "title": "Settings",
-    "textSpeed": "Text speed",
+    "textSpeed": "Dialogue speed",
+    "textSpeedDesc": "How fast lines type out in speech bubbles and the dialogue panel. Click or tap a line to show it all at once.",
     "speeds": {
       "slow": "Slow",
       "normal": "Normal",
@@ -485,13 +576,17 @@
       "chaotic": "Chaotic"
     },
     "aiStory": "AI story writing",
-    "aiStoryDesc": "Let the AI write dialogue when it's set up. Off means built-in lines only.",
+    "aiStoryDesc": "Let the AI write dialogue and conversation replies when it's set up. Off means built-in lines only.",
     "aiTitle": "AI services",
     "aiText": "Personality analysis & dialogue",
     "aiImage": "Pixel character & map generation",
     "aiReady": "Ready",
     "aiMissing": "Not configured",
-    "aiChecking": "Checking"
+    "aiChecking": "Checking",
+    "testPanel": "Emotion & movement test panel",
+    "testPanelDesc": "Shows buttons under the dialogue in Play Mode to trigger every emotion and movement by hand.",
+    "behaviorDebug": "Behavior debug panel (developers)",
+    "behaviorDebugDesc": "Shows why each character chose what they did: personality, feelings, relationship, memories and every option's weight. Hidden from players."
   },
   "traits": {
     "extroversion": {
@@ -589,6 +684,26 @@
     "excited": "fired up",
     "suspicious": "suspicious",
     "embarrassed": "embarrassed"
+  },
+  "emotions": {
+    "neutral": "Neutral",
+    "happy": "Happy",
+    "excited": "Excited",
+    "affectionate": "Affectionate",
+    "embarrassed": "Embarrassed",
+    "angry": "Angry",
+    "frustrated": "Frustrated",
+    "sad": "Sad",
+    "anxious": "Anxious",
+    "surprised": "Surprised",
+    "confused": "Confused"
+  },
+  "stageStates": {
+    "idle": "Idle",
+    "moving": "Moving",
+    "interacting": "Interacting",
+    "speaking": "Speaking",
+    "reacting": "Reacting"
   },
   "events": {
     "confide": "Confide",
@@ -729,7 +844,11 @@
       "offline": "you're offline",
       "bad_request": "the request was invalid",
       "too_large": "the image is larger than 8 MB",
-      "bad_type": "only PNG, JPG or WebP images work"
+      "bad_type": "only PNG, JPG or WebP images work",
+      "timeout": "it took too long to answer",
+      "busy": "a reply is already being written",
+      "limit": "the conversation limit was reached, try again later",
+      "cancelled": "the conversation ended"
     },
     "errorTitle": "That didn't work: {reason}."
   },
@@ -1102,6 +1221,841 @@
         "Things between {name} and {other} get a little colder.",
         "A small crack appears between {name} and {other}."
       ]
+    }
+  },
+  "behave": {
+    "pre": "… ",
+    "addr": "{other}, ",
+    "say": {
+      "greet": {
+        "terse": [
+          "Oh. Hi.",
+          "Hey.",
+          "…Hello."
+        ],
+        "short": [
+          "Hi! I didn't see you there.",
+          "Oh, hello. Good to see you.",
+          "Hey, you're here early."
+        ],
+        "full": [
+          "Hey! I was hoping I'd run into you today.",
+          "There you are! I've been wanting to tell you something.",
+          "Hi! Come here, look what I found on the way over."
+        ]
+      },
+      "initiate_conversation": {
+        "terse": [
+          "Got a minute?",
+          "Hey. Listen.",
+          "Wait. Can I ask you something?"
+        ],
+        "short": [
+          "Hey, can I tell you something?",
+          "Do you have a minute? I had an idea.",
+          "Walk with me for a bit?"
+        ],
+        "full": [
+          "Okay, I have to tell you about this, it's been stuck in my head all morning.",
+          "Perfect timing! I need someone to hear this plan before I talk myself out of it.",
+          "Come here, come here. You won't believe what I just figured out."
+        ]
+      },
+      "avoid_conversation": {
+        "terse": [
+          "Not now.",
+          "…Busy.",
+          "Later."
+        ],
+        "short": [
+          "Sorry, I was just leaving.",
+          "Can this wait? I'm in the middle of something.",
+          "I'd rather not, right now."
+        ],
+        "full": [
+          "I don't really feel like talking at the moment, if that's okay.",
+          "Let's not do this today. I need some air.",
+          "I'm sure it's important, but I can't right now. Really."
+        ]
+      },
+      "express_surprise": {
+        "terse": [
+          "Oh!",
+          "Wait, what?",
+          "Huh!"
+        ],
+        "short": [
+          "Oh! I didn't expect that.",
+          "Wait, really?",
+          "You scared me!"
+        ],
+        "full": [
+          "Oh! I genuinely did not see that coming.",
+          "Wait, wait. Say that again, I think I misheard.",
+          "Whoa. Okay. That's not what I thought you'd say."
+        ]
+      },
+      "show_affection": {
+        "terse": [
+          "Glad you're here.",
+          "Missed you.",
+          "Hey, you."
+        ],
+        "short": [
+          "I'm really glad you came.",
+          "You always make this place feel nicer.",
+          "I saved you a seat. Obviously."
+        ],
+        "full": [
+          "Honestly? Today got a lot better the second you showed up.",
+          "I was just thinking about you, and here you are.",
+          "Stay a bit? Everything's easier with you around."
+        ]
+      },
+      "express_frustration": {
+        "terse": [
+          "Seriously?",
+          "Ugh.",
+          "Again?"
+        ],
+        "short": [
+          "Can you not, just for once?",
+          "That's really getting on my nerves.",
+          "I heard you the first time."
+        ],
+        "full": [
+          "I'm trying very hard to stay calm right now, and you are not helping.",
+          "Every single time. Do you even hear yourself?",
+          "Okay, that's enough. I'm done pretending this is fine."
+        ]
+      },
+      "ask_question": {
+        "terse": [
+          "Why?",
+          "Meaning?",
+          "…What do you want?"
+        ],
+        "short": [
+          "What do you mean by that?",
+          "Why are you telling me this?",
+          "Wait, what's this about?"
+        ],
+        "full": [
+          "Sorry, I need to understand this first. What exactly are you asking me?",
+          "Hang on. Why now, and why me?",
+          "Before I answer, can you tell me what's really going on?"
+        ]
+      },
+      "respond_cautiously": {
+        "terse": [
+          "…Okay.",
+          "Maybe.",
+          "Hm. Fine."
+        ],
+        "short": [
+          "I'll think about it.",
+          "Okay… what is it?",
+          "That depends."
+        ],
+        "full": [
+          "I'm listening. I just want to be sure I understand first.",
+          "Let's go slowly, if that's alright with you.",
+          "Maybe. I'd like to know a bit more before I decide."
+        ]
+      },
+      "respond_playfully": {
+        "terse": [
+          "Ha! Nice try.",
+          "Oh, is that so?",
+          "Bold of you."
+        ],
+        "short": [
+          "Ha! You wish.",
+          "Careful, I might start liking you.",
+          "Is this a bribe? Because it's working."
+        ],
+        "full": [
+          "Oh, absolutely. And next you'll tell me the islands float because they're happy.",
+          "Ha! Say that again, slower, so I can remember it forever.",
+          "Alright, alright, you win this round. Enjoy it while it lasts."
+        ]
+      },
+      "respond_defensively": {
+        "terse": [
+          "I know what I'm doing.",
+          "That's not fair.",
+          "Says you."
+        ],
+        "short": [
+          "I had it under control.",
+          "That's not what happened.",
+          "You don't know the whole story."
+        ],
+        "full": [
+          "I did exactly what anyone sensible would have done, so let's not pretend otherwise.",
+          "Before you lecture me, maybe ask why I did it.",
+          "I don't need you to tell me how to do my job."
+        ],
+        "praise": {
+          "terse": [
+            "…What's that supposed to mean?",
+            "Sure.",
+            "Hm."
+          ],
+          "short": [
+            "What do you want from me?",
+            "Don't think that changes anything.",
+            "I don't need your approval."
+          ],
+          "full": [
+            "If you're being nice, you want something. So what is it?",
+            "Flattery won't get you anywhere, if that's the plan.",
+            "Save it. I know exactly how you talk about me when I'm not around."
+          ]
+        }
+      },
+      "change_subject": {
+        "terse": [
+          "Anyway.",
+          "So. Weather.",
+          "…Look, a bird."
+        ],
+        "short": [
+          "Anyway, did you see the sky today?",
+          "Let's talk about something else.",
+          "So! How about that map?"
+        ],
+        "full": [
+          "Right, moving on. Has anyone checked whether the bridge is still floating?",
+          "Okay, enough about me. What have you been up to?",
+          "Funny you say that. Unrelated, but have you eaten yet?"
+        ]
+      },
+      "challenge": {
+        "terse": [
+          "Prove it.",
+          "Try me.",
+          "Oh yeah?"
+        ],
+        "short": [
+          "Say that to my face.",
+          "Want to settle this properly?",
+          "You really think you can beat me?"
+        ],
+        "full": [
+          "Fine. Race me to the lighthouse and we'll see who's right.",
+          "If you're so sure, let's put it to the test. Right now.",
+          "You keep talking. I'd rather see you actually do it."
+        ]
+      },
+      "acknowledge": {
+        "terse": [
+          "…Fair.",
+          "Okay. Noted.",
+          "Fine."
+        ],
+        "short": [
+          "You're right. I'll fix it.",
+          "Fair point. I didn't think of that.",
+          "Okay. Let's do it your way this time."
+        ],
+        "full": [
+          "I don't love hearing it, but you're right. I'll do better.",
+          "That's fair. I got carried away. Thanks for saying it.",
+          "Alright. We do this together, properly, and we argue about it later."
+        ],
+        "praise": {
+          "terse": [
+            "…Thanks.",
+            "Oh. Thank you.",
+            "Appreciated."
+          ],
+          "short": [
+            "That's kind of you. Thank you.",
+            "Thanks. That means a lot.",
+            "Oh. I didn't expect that. Thanks."
+          ],
+          "full": [
+            "Thank you, really. I wasn't sure anyone noticed.",
+            "That's a kind thing to say. I'll remember it.",
+            "Thanks. Coming from you, that actually matters."
+          ]
+        }
+      }
+    },
+    "narr": {
+      "approach": [
+        "{name} steps a little closer to {other}.",
+        "{name} drifts over to {other}'s side."
+      ],
+      "retreat": [
+        "{name} takes a step back from {other}.",
+        "{name} edges away, putting a little space between themself and {other}."
+      ],
+      "stay_still": [
+        "{name} stays exactly where they are.",
+        "{name} doesn't move."
+      ],
+      "face_target": [
+        "{name} turns to face {other}.",
+        "{name} watches {other} carefully."
+      ],
+      "stay_silent": [
+        "{name} says nothing.",
+        "{name} presses their lips together and stays quiet."
+      ]
+    },
+    "hidden": {
+      "affection": [
+        "{name}'s ears go a little pink.",
+        "{name} looks away from {other} a moment too quickly."
+      ],
+      "fear": [
+        "{name}'s hands aren't quite steady.",
+        "{name} keeps their voice level. Mostly."
+      ],
+      "sadness": [
+        "Something in {name}'s face closes, just for a second.",
+        "{name} blinks a few times and says nothing about it."
+      ]
+    },
+    "triggers": {
+      "approached": "is approached by",
+      "spoken_to": "is spoken to by",
+      "criticized": "is criticized by",
+      "complimented": "is complimented by",
+      "provoked": "is provoked by",
+      "forced_cooperation": "has to work with",
+      "helped": "is helped by",
+      "teased": "is teased by",
+      "brushed_off": "is brushed off by"
+    },
+    "actions": {
+      "approach": "Approach",
+      "retreat": "Step back",
+      "stay_still": "Stay still",
+      "face_target": "Face them",
+      "greet": "Greet",
+      "initiate_conversation": "Start a conversation",
+      "avoid_conversation": "Avoid the conversation",
+      "express_surprise": "Show surprise",
+      "show_affection": "Show affection",
+      "express_frustration": "Show frustration",
+      "ask_question": "Ask a question",
+      "respond_cautiously": "Answer cautiously",
+      "respond_playfully": "Answer playfully",
+      "respond_defensively": "Get defensive",
+      "stay_silent": "Stay silent",
+      "change_subject": "Change the subject",
+      "challenge": "Challenge them",
+      "acknowledge": "Acknowledge it"
+    }
+  },
+  "debug": {
+    "title": "Behavior debug",
+    "intro": "Why characters do what they do. Pick an event, fire it, and read every option's weight. Developers only.",
+    "close": "Hide behavior debug panel",
+    "scenario": "Scenario",
+    "liveCast": "Your own cast (live game)",
+    "sandboxNotice": "Sample scenario on the real stage. Sample characters only: nothing here is saved to your story.",
+    "reactor": "Who reacts",
+    "trigger": "Event",
+    "by": "Caused by",
+    "seed": "Random seed (optional)",
+    "seedPlaceholder": "e.g. 42 — same seed + same state = same result",
+    "seedNote": "Fixed seed: firing again from the same state repeats the result. State changes (feelings, cooldowns) still make later results differ.",
+    "run": "Fire event",
+    "preview": "Odds over {n} runs",
+    "passTime": "Let time pass",
+    "resetScenario": "Reset scenario",
+    "distribution": "Preview: {n} runs, nothing changed",
+    "log": "Recent decisions (tap to inspect)",
+    "empty": "No decision yet. Fire an event, or play: every reaction in the game shows up here.",
+    "selected": "Selected action",
+    "because": "Because:",
+    "noStrongReason": "no single strong reason; picked among close options",
+    "chance": "Chosen with {p}% chance (temperature {temp})",
+    "shows": "shows {emotion} ({level})",
+    "showsNothing": "shows nothing on the outside",
+    "masked": "held back",
+    "pause": "pause {ms} ms",
+    "subtle": "subtle",
+    "moderate": "moderate",
+    "strong": "strong",
+    "style": "Dialogue style",
+    "directness": "directness",
+    "humor": "humor",
+    "formality": "formality",
+    "disclosure": "reveals",
+    "hesitant": "hesitates",
+    "movement": "Movement",
+    "candidates": "Possible actions (after hard limits)",
+    "score": "score",
+    "repeatPenalty": "repeat penalty ×{x}",
+    "rejected": "Rejected by hard limits (before any dice)",
+    "noneRejected": "None.",
+    "canonRules": "Canon rules found: {rules}",
+    "notApplicable": "{n} other actions don't apply to this kind of event.",
+    "reasons": {
+      "canon": "locked canon / rules ({detail})",
+      "busy": "busy mid-sentence",
+      "player_command": "the player is steering them",
+      "unreachable": "can't reach the other character",
+      "already_close": "already standing close",
+      "no_room": "no room to step back",
+      "cooldown": "used too recently (cooldown {detail})"
+    },
+    "feelings": "{name}'s feelings (before → after first impression)",
+    "calm": "Nothing strong.",
+    "relation": "Relationship (each direction separately)",
+    "labelNote": "The label is context only; behavior reads the numbers.",
+    "rel": {
+      "trust": "Trust",
+      "affection": "Affection",
+      "respect": "Respect",
+      "familiarity": "Familiarity",
+      "rivalry": "Rivalry",
+      "tension": "Tension",
+      "fear": "Fear",
+      "label": "Label"
+    },
+    "labels": {
+      "stranger": "stranger",
+      "acquaintance": "acquaintance",
+      "friend": "friend",
+      "family": "family",
+      "partner": "partner",
+      "rival": "rival",
+      "enemy": "enemy"
+    },
+    "memories": "Memories with them",
+    "noMemories": "None yet.",
+    "turn": "turn {n}",
+    "memoryKinds": {
+      "helped": "Was helped",
+      "argument": "Argument",
+      "rejected": "Was brushed off",
+      "complimented": "Was complimented",
+      "criticized": "Was criticized",
+      "promise": "Promise",
+      "secret": "Shared a secret",
+      "reunion": "Reunion",
+      "betrayed": "Was betrayed",
+      "provoked": "Was provoked",
+      "cooperated": "Worked together",
+      "teased": "Was teased",
+      "met": "First meeting",
+      "approached": "Approached",
+      "spoken_to": "Spoken to",
+      "forced_cooperation": "Worked together",
+      "brushed_off": "Was brushed off"
+    },
+    "personality": "Personality factors (0–1)",
+    "legend": "p = personality, e = feelings, r = relationship, m = memories, c = place & distance, pref = the character's own tendencies. × means both must be true.",
+    "triggers": {
+      "approached": "is approached by",
+      "spoken_to": "is spoken to by",
+      "criticized": "is criticized by",
+      "complimented": "is complimented by",
+      "provoked": "is provoked by",
+      "forced_cooperation": "has to work with",
+      "helped": "is helped by",
+      "teased": "is teased by",
+      "brushed_off": "is brushed off by"
+    },
+    "feelingNames": {
+      "happiness": "Happiness",
+      "anger": "Anger",
+      "sadness": "Sadness",
+      "fear": "Fear",
+      "anxiety": "Anxiety",
+      "excitement": "Excitement",
+      "embarrassment": "Embarrassment",
+      "affection": "Affection",
+      "frustration": "Frustration",
+      "surprise": "Surprise",
+      "confusion": "Confusion"
+    },
+    "scenarios": {
+      "introStranger": "Introvert approached by a stranger",
+      "introFriend": "Same introvert approached by a close friend",
+      "extroFearedRival": "Extrovert approached by a feared rival",
+      "impulsiveCriticized": "Impulsive character, unexpected criticism",
+      "proudComplimentedByEnemy": "Proud character complimented by an enemy",
+      "rivalsCooperate": "Two rivals forced to cooperate",
+      "calmTurnsAngry": "Calm character pushed to anger",
+      "betrayedBefore": "Meeting someone who betrayed them",
+      "sameTraitsDifferentPast": "Same sliders, different past",
+      "hiddenAffection": "Hiding strong affection"
+    }
+  },
+  "talk": {
+    "hint": "Drag a character onto someone to walk over and talk.",
+    "hintTouch": "Touch and hold a character, then drag onto someone.",
+    "orTap": "Or:",
+    "chooseButton": "Talk to…",
+    "chooseNeedsSelection": "Select a character first",
+    "chooseFor": "Who should {name} talk to?",
+    "chooseHelp": "Tap someone on the stage, or pick a name:",
+    "cancel": "Cancel",
+    "walking": "{name} is walking over to {other}…",
+    "drag": {
+      "talk": "Talk to {other}",
+      "noRoute": "Can't reach {other}",
+      "empty": "Drop on someone to talk",
+      "self": "Release to cancel"
+    },
+    "notices": {
+      "unreachable": "{name} can't find a way to {other}. Something is in the way.",
+      "blocked": "{name} can't get past someone standing in the way to {other}. Try moving them first, or pick someone closer.",
+      "noRoom": "There's no free space to stand next to {other}.",
+      "busy": "{name} is in the middle of something. Try again in a moment.",
+      "targetLeft": "{other} isn't here any more.",
+      "lostTarget": "{name} couldn't catch up with {other}.",
+      "tooLong": "{name} gave up trying to reach {other}.",
+      "cancelled": "Cancelled. Nobody moved.",
+      "emptySpace": "To start a conversation, drop {name} onto another character.",
+      "ended": "{name} and {other} finished talking."
+    },
+    "dismiss": "Dismiss",
+    "panel": {
+      "title": "Conversation",
+      "pair": "{name} talks to {other}",
+      "relationship": "Relationship",
+      "relationshipOf": "How {name} sees {other}",
+      "mood": "{other}'s mood",
+      "hardToRead": "Hard to read",
+      "suggested": "Suggested topics",
+      "askElse": "Ask Something Else",
+      "end": "End conversation",
+      "speaking": "Tap the dialogue to hear {other}'s answer.",
+      "answering": "{other} is answering…",
+      "continue": "Keep talking, or end the conversation."
+    },
+    "relation": {
+      "labels": {
+        "stranger": "Strangers",
+        "acquaintance": "Acquaintances",
+        "friend": "Friends",
+        "family": "Family",
+        "partner": "Partners",
+        "rival": "Rivals",
+        "enemy": "Enemies"
+      },
+      "warm": "warm",
+      "cold": "cold",
+      "trusting": "trusting",
+      "wary": "wary",
+      "tense": "tense",
+      "competitive": "competitive",
+      "neutral": "no strong feelings yet"
+    },
+    "composer": {
+      "label": "What should {name} say to {other}?",
+      "placeholder": "Type in English or 中文…",
+      "send": "Send",
+      "cancel": "Cancel",
+      "count": "{n} / {max}",
+      "hint": "Enter sends · Shift+Enter new line · Esc closes (your draft is kept)",
+      "empty": "Type something first."
+    },
+    "listens": [
+      "{other} listens quietly.",
+      "{other} takes that in.",
+      "{other} nods slowly."
+    ],
+    "topics": {
+      "howFeeling": "Ask how {other} is feeling",
+      "cheerUp": "Try to cheer {other} up",
+      "worries": "Ask what's worrying {other}",
+      "recentDisagreement": "Talk about the recent disagreement",
+      "apologize": "Apologize to {other}",
+      "betrayal": "Ask {other} why they broke your trust",
+      "challenge": "Challenge {other}",
+      "sharedMemory": "Bring up {memory}",
+      "compliment": "Compliment {other}",
+      "tease": "Tease {other} a little",
+      "confide": "Confide in {other}",
+      "askHelp": "Ask {other} for help with your goal",
+      "theirGoal": "Ask about {other}'s goals",
+      "introduce": "Introduce yourself",
+      "place": "Talk about this place",
+      "rumor": "Share some local news"
+    },
+    "reasons": {
+      "looks": "Visible mood: {emotion}",
+      "argued": "You clashed recently",
+      "tension": "Things feel tense",
+      "betrayed": "{other} broke your trust",
+      "rivals": "You're rivals",
+      "memory": "A memory you share",
+      "close": "You're close",
+      "playful": "{name} likes to joke",
+      "trust": "You trust each other",
+      "yourGoal": "{name}'s goal",
+      "theirGoal": "{other} has a goal",
+      "stranger": "You barely know each other",
+      "place": "Here: {place}",
+      "world": "World: {world}",
+      "smallTalk": "Small talk"
+    },
+    "memory": {
+      "helped": "the time we helped each other",
+      "cooperated": "the time we worked together",
+      "reunion": "the day we met again",
+      "promise": "the promise we made",
+      "secret": "the secret we shared",
+      "complimented": "the nice things we said",
+      "teased": "all our teasing",
+      "met": "the day we first met"
+    },
+    "say": {
+      "howFeeling": {
+        "soft": [
+          "{other}… are you doing okay?",
+          "How are you feeling, {other}? Really?"
+        ],
+        "bold": [
+          "Hey {other}! How are you holding up?",
+          "So, {other}, how's your day going?"
+        ]
+      },
+      "cheerUp": {
+        "soft": [
+          "You seem down, {other}. Want to sit with me for a bit?",
+          "Whatever it is, {other}, you don't have to carry it alone."
+        ],
+        "bold": [
+          "Okay, enough gloom, {other}. Let's find something good about today.",
+          "Chin up, {other}! I've got a terrible joke ready if you need it."
+        ]
+      },
+      "worries": {
+        "soft": [
+          "Is something worrying you, {other}?",
+          "You can tell me what's on your mind, {other}. Only if you want to."
+        ],
+        "bold": [
+          "What's eating at you, {other}? Out with it.",
+          "Something's bugging you, {other}. What is it?"
+        ]
+      },
+      "recentDisagreement": {
+        "soft": [
+          "About what happened between us… can we talk about it, {other}?",
+          "I keep thinking about our disagreement, {other}."
+        ],
+        "bold": [
+          "We need to talk about what happened, {other}.",
+          "Let's clear the air, {other}. That fight's still bugging me."
+        ]
+      },
+      "apologize": {
+        "soft": [
+          "{other}, I'm sorry about before. I didn't handle it well.",
+          "I owe you an apology, {other}."
+        ],
+        "bold": [
+          "Look, {other}, I was out of line. Sorry.",
+          "Okay. I messed up, {other}. I'm sorry."
+        ]
+      },
+      "betrayal": {
+        "soft": [
+          "Why did you do it, {other}? I need to understand.",
+          "I haven't forgotten what you did, {other}."
+        ],
+        "bold": [
+          "Explain yourself, {other}. Why did you betray me?",
+          "Did you think I'd just forget, {other}?"
+        ]
+      },
+      "challenge": {
+        "soft": [
+          "I think I could beat you this time, {other}.",
+          "Want to see who's better at this, {other}?"
+        ],
+        "bold": [
+          "Bet you can't keep up with me, {other}!",
+          "Rematch, {other}. Right now."
+        ]
+      },
+      "sharedMemory": {
+        "soft": [
+          "Do you remember {memory}, {other}?",
+          "I was thinking about {memory}, {other}."
+        ],
+        "bold": [
+          "{other}! I still think about {memory}.",
+          "Remember {memory}, {other}? Good times."
+        ]
+      },
+      "compliment": {
+        "soft": [
+          "I like how you see things, {other}.",
+          "You're really good at this, {other}. I mean it."
+        ],
+        "bold": [
+          "{other}, you're honestly kind of amazing.",
+          "Nobody does it like you, {other}!"
+        ]
+      },
+      "tease": {
+        "soft": [
+          "Is that your thinking face, {other}? It's very serious.",
+          "Did you sleep at all, {other}? Your hair says no."
+        ],
+        "bold": [
+          "Wow, {other}, did you get dressed in the dark?",
+          "Still slower than me, {other}?"
+        ]
+      },
+      "confide": {
+        "soft": [
+          "Can I tell you something, {other}? Just between us.",
+          "{other}, there's something I haven't told anyone."
+        ],
+        "bold": [
+          "{other}, I trust you, so here goes.",
+          "Okay, secret time, {other}. Don't laugh."
+        ]
+      },
+      "askHelp": {
+        "soft": [
+          "{other}, could you help me with something? It matters to me.",
+          "I'm stuck on something important, {other}. Would you help?"
+        ],
+        "bold": [
+          "{other}, I need a hand. You in?",
+          "Help me out with something, {other}? It's a big deal for me."
+        ]
+      },
+      "theirGoal": {
+        "soft": [
+          "What are you hoping for, {other}? What do you want most?",
+          "Do you have something you're working toward, {other}?"
+        ],
+        "bold": [
+          "So what's your big plan, {other}?",
+          "Tell me, {other}: what are you really after?"
+        ]
+      },
+      "introduce": {
+        "soft": [
+          "Um, hi. I'm {name}. I don't think we've really met.",
+          "Hello. I'm {name}. You're {other}, right?"
+        ],
+        "bold": [
+          "Hi! I'm {name}. And you're {other}, right?",
+          "Hey, we haven't met properly. I'm {name}!"
+        ]
+      },
+      "place": {
+        "interior": [
+          "It's cozy in here, isn't it, {other}?",
+          "Have you noticed how quiet this room gets, {other}?",
+          "Someone should really tidy this place up."
+        ],
+        "street": [
+          "It's busy out here today, {other}.",
+          "Did you see that stall on the corner, {other}?",
+          "I like watching people go by. Don't you, {other}?"
+        ],
+        "wilderness": [
+          "It's so open out here, {other}. Hear that wind?",
+          "Careful where you step, {other}. Things grow fast out here.",
+          "I could stay out here all day."
+        ],
+        "ruins": [
+          "This place gives me chills, {other}.",
+          "Who do you think built all this, {other}?",
+          "Stay close, {other}. I don't trust these walls."
+        ],
+        "dreamscape": [
+          "Is any of this real, {other}?",
+          "The sky keeps changing color. Is it just me?",
+          "I feel like I've been here before, {other}."
+        ]
+      },
+      "rumor": {
+        "western-fantasy": [
+          "Did you hear? The guild posted a dragon bounty.",
+          "They say the old wizard's tower lit up again last night, {other}."
+        ],
+        "modern": [
+          "Did you see the news this morning, {other}?",
+          "Apparently the café on the corner is closing. Can you believe it?"
+        ],
+        "ancient-china": [
+          "I heard a wandering swordsman passed through the city gate today.",
+          "They say the magistrate is holding a poetry contest, {other}."
+        ],
+        "otherworld": [
+          "Word is the floating islands drifted closer overnight, {other}.",
+          "Someone saw a slime wearing a hat by the crystal fields."
+        ]
+      }
+    },
+    "ai": {
+      "testTag": "Developer TEST reply: no AI was used",
+      "thinking": "{other} is thinking…",
+      "slow": "{other} is still thinking… (slow connection?)",
+      "modeAi": "AI replies",
+      "modeAiDesc": "Replies are written by Claude from the characters' profiles, mood, relationship and memories.",
+      "modeMock": "TEST replies",
+      "modeMockDesc": "Developer test mode: canned replies, no AI. Add an Anthropic API key for real replies.",
+      "modeOff": "Built-in replies",
+      "modeOffDesc": "AI conversations are off or not set up, so the game's own rules answer.",
+      "offTyped": "{other} heard you, but answering your own words needs AI conversations. Turn on AI story writing in Settings (it needs an Anthropic API key on the server). Nothing scripted is shown in its place.",
+      "failed": "{other}'s AI reply didn't arrive:",
+      "usedBuiltin": "Showing the built-in reaction instead.",
+      "retry": "Try again",
+      "intents": {
+        "warm": "warm",
+        "curious": "curious",
+        "playful": "playful",
+        "serious": "serious",
+        "challenging": "challenging",
+        "supportive": "supportive",
+        "apologetic": "apologetic",
+        "honest": "honest"
+      }
+    }
+  },
+  "memoryEditor": {
+    "help": "Memories shape how characters act and what they say. You can correct, resolve or forget them.",
+    "edited": "edited",
+    "textLabel": "What they remember",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Correct",
+    "forget": "Forget",
+    "forgetConfirm": "Yes, forget it",
+    "markResolved": "Mark resolved",
+    "reopen": "Reopen",
+    "resolved": "resolved",
+    "open": "unresolved",
+    "threads": {
+      "conflict": "Conflict",
+      "promise": "Promise",
+      "discovery": "Discovery",
+      "secret": "Secret"
+    },
+    "kinds": {
+      "note": "Talk",
+      "helped": "Helped",
+      "argument": "Argument",
+      "rejected": "Rejected",
+      "complimented": "Compliment",
+      "criticized": "Criticism",
+      "promise": "Promise",
+      "secret": "Secret",
+      "reunion": "Reunion",
+      "betrayed": "Betrayal",
+      "provoked": "Provoked",
+      "cooperated": "Teamwork",
+      "teased": "Teasing",
+      "met": "First meeting"
     }
   }
 }

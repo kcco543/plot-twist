@@ -67,6 +67,45 @@ Saves live in the browser's `localStorage` and survive refreshes, language switc
 - **Keyboard:** ← → (or A / D) choose a character · Z / Enter / Space talk · X observe · C wait · V twist · L story log · Esc / P pause
 - **Touch:** the ◀ ▶ pad chooses a character, **A** talks, and the four big dialogue buttons do the rest. You can also tap a character in the scene.
 
+## Emotions and movement (Step 2)
+
+Characters have a **current emotion** (neutral, happy, excited, affectionate, embarrassed, angry, frustrated, sad, anxious, surprised, confused) stored in the story state, separate from their permanent personality. Story events change it; small pixel effects show it above the character, and characters walk, turn, step back and fidget according to personality, emotion, bond and context.
+
+- Emotions + rules: `src/lib/emotion/emotions.ts` · effect library (add new emotions here): `src/lib/emotion/effects.ts`
+- Rooms (floor + furniture footprints): `src/lib/stage/room.ts` · pathfinding: `src/lib/stage/path.ts`
+- State machine (idle → moving → interacting → speaking → reacting): `src/lib/stage/sim.ts`
+- Movement rules: `src/lib/stage/behavior.ts`
+- Action interface for future AI events (`approach`, `retreat`, `face_target`, `idle_reaction`, `show_emotion`), validated before anything moves: `src/lib/stage/actions.ts`
+
+## Behavior engine (Step 3)
+
+Characters choose reactions from personality (sliders + written profile), several feelings at once, directional relationships (A→B differs from B→A), memories, place and distance. Hard limits (locked canon, player control, unreachable targets) are applied before a weighted random choice; the result drives movement, the pixel emotion effect (which can be hidden by reserved characters) and the reply, built-in or AI-written. Details, data shapes and how to tune: `docs/BEHAVIOR_ENGINE.md`. Code: `src/lib/mind/`.
+
+**Behavior debug panel (developers):** run `npm run dev`, or open `/play?dev=1` once on a deployed copy, then Settings → *Behavior debug panel*.
+
+**Test panel:** Settings → *Emotion & movement test panel* → On. In Play Mode it appears beside the stage on desktop and under the dialogue on phones (the stage stays pinned at the top while you scroll it).
+
+## Walk & talk (drag-to-interact)
+
+Drag a character onto another one (phones: touch and hold, then drag). While dragging, a dotted route and a green frame show who they'd talk to; red means there's no way there. Let go and they **walk** over (same pathfinding and collision as everything else), stop at a comfortable distance, face each other, and a conversation panel opens with the relationship, the listener's visible mood, 2–3 suggested topics and **Ask Something Else**. A plain click / tap still selects. Without dragging: select someone, press **Talk to…** and tap a name or a character. Esc or Cancel stops a walk or ends a conversation.
+
+- Flow (SELECT_TARGET → MOVE_TO_TARGET → FACE_TARGET → SHOW_OPTIONS → SPEAK → WAIT_FOR_RESPONSE → CONTINUE_OR_EXIT): `src/lib/talk/flow.ts`, driven by `src/lib/talk/useTalk.ts`
+- Click vs drag rules and hit-testing: `src/lib/talk/drag.ts` · pointer handling + preview: `src/components/game/CharacterDrag.tsx`
+- Topic library (16 rule-based topics, no AI): `src/lib/talk/topics.ts`, wording under `talk.*` in both locale files. The listener's answer comes from the behavior engine with the topic's trigger.
+- Custom messages: `src/lib/talk/customReply.ts` (length limit + cleanup). With AI conversations on, the listener answers them (below); with AI off the game says plainly that nobody can answer typed messages.
+- Tests: `tests/talk.test.ts`
+
+## AI conversations (Step 4)
+
+With an `ANTHROPIC_API_KEY` set and **AI story writing** on (Settings), the listener in a walk-and-talk answers suggested topics, AI suggestions and typed messages in character, written by Claude from their profile, sliders, mood, relationship, memories and the recent exchange. The reply also proposes an emotion, a movement, small relationship changes, a memory and 2–3 next lines for the speaker; the game validates all of it before anything changes. Full design: `docs/AI_CONVERSATIONS.md`.
+
+- Contract (request + structured reply): `src/lib/talk/ai/contract.ts` · server route: `src/app/api/ai/talk/route.ts` · prompt: `src/lib/ai/server/talk.ts`
+- Server checks (character, language, repeats, one retry): `src/lib/talk/ai/checks.ts` · usage limits: `src/lib/ai/server/limits.ts`
+- Game-engine validation + memory: `src/lib/talk/ai/apply.ts` · request building: `src/lib/talk/ai/request.ts` · flow: `src/lib/talk/useTalk.ts`
+- Memory inspector: Play Mode → character → **Memories** (correct, resolve, forget)
+- No characters yet? **Add the sample cast** on the Play screen (Mira, Wren, Tobi).
+- Tests: `tests/aiTalk.test.ts`; live model checks (cost a few cents): `RUN_LIVE_AI=1 npx vitest run tests/live`
+
 ## Design system
 
 See **[docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** for the palette, fonts, frames, components, motion and pixel-art standards.
