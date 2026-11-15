@@ -69,6 +69,9 @@ export default function TitleScreen() {
                 {t("title.start")}
               </PixelButton>
             )}
+            <PixelLink href="/library" variant="accent" size="md" icon="book">
+              {t("library.menu")}
+            </PixelLink>
             <PixelButton size="md" variant="secondary" icon="gear" onClick={() => setSettingsOpen(true)}>
               {t("title.settings")}
             </PixelButton>

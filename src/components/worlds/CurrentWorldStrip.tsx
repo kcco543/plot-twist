@@ -26,10 +26,17 @@ export function CurrentWorldStrip() {
             {nameOf(world)}
           </span>
         </p>
-        <Link href="/#my-worlds" className="px-focus flex min-h-9 shrink-0 items-center gap-1 px-1 font-label text-[10px] uppercase text-label hover:bg-well">
-          <PixelIcon name="globe" size={10} />
-          {t("myWorlds.switch")}
-        </Link>
+        <span className="flex shrink-0 items-center gap-1">
+          <Link href="/library" className="px-focus flex min-h-9 items-center gap-1 px-1 font-label text-[10px] uppercase text-label hover:bg-well">
+            <PixelIcon name="book" size={10} />
+            <span className="hidden sm:inline">{t("library.menu")}</span>
+            <span className="sr-only sm:hidden">{t("library.menu")}</span>
+          </Link>
+          <Link href="/#my-worlds" className="px-focus flex min-h-9 items-center gap-1 px-1 font-label text-[10px] uppercase text-label hover:bg-well">
+            <PixelIcon name="globe" size={10} />
+            {t("myWorlds.switch")}
+          </Link>
+        </span>
       </div>
     </div>
   );

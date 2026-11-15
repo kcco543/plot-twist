@@ -9,6 +9,7 @@ import { approvedBehavior } from "../character/model";
 import { finishProfile } from "../behavior/schema";
 import { CHARACTER_TEXT_FIELDS, type BehaviorProfile, type Character, type Memory } from "../types";
 import type { AnalyzeRequest, CharacterBrief, TurnRequest } from "./contracts";
+import { activeWorldId } from "../saves/worldSaves";
 
 export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null };
 export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type";
@@ -53,10 +54,21 @@ export function useAiStatus(): AiStatus | null {
   return status;
 }
 
+/**
+ * Every AI call says which world save it is for. The request bodies are built
+ * from the ACTIVE world's characters (their own ids, personality, emotions,
+ * relationships and memories), never from Character Library originals, and
+ * replies are saved through gameStore, which only writes the active world.
+ */
+const worldHeader = (): Record<string, string> => {
+  const id = activeWorldId();
+  return id ? { "X-Plot-Twist-World": id } : {};
+};
+
 async function post<T>(url: string, body: unknown): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", ...worldHeader() }, body: JSON.stringify(body) });
   } catch {
     throw new AiRequestError("offline", "Network error");
   }
@@ -113,7 +125,7 @@ export async function requestSprite(image: Blob, opts: { appearance: string; wor
   if (opts.world) form.set("world", opts.world);
   let res: Response;
   try {
-    res = await fetch("/api/ai/sprite", { method: "POST", body: form });
+    res = await fetch("/api/ai/sprite", { method: "POST", body: form, headers: worldHeader() });
   } catch {
     throw new AiRequestError("offline", "Network error");
   }

@@ -12,7 +12,18 @@ import { useI18n } from "@/i18n";
  * Portrait frame (96×96 art shown at 2×). Shows the character's custom pixel
  * art when they have some, otherwise cycles placeholder portraits.
  */
-export function PortraitSlot({ character, onChange, onMakeSprite }: { character: Character; onChange: (i: number) => void; onMakeSprite: () => void }) {
+export function PortraitSlot({
+  character,
+  onChange,
+  onMakeSprite,
+  onClearArt = () => gameActions.applySprite(character.id, null),
+}: {
+  character: Character;
+  onChange: (i: number) => void;
+  /** Hidden when not given (Character Library originals have no sprite maker). */
+  onMakeSprite?: () => void;
+  onClearArt?: () => void;
+}) {
   const { t } = useI18n();
   const total = characterArt.length;
   const index = character.portrait;
@@ -29,7 +40,7 @@ export function PortraitSlot({ character, onChange, onMakeSprite }: { character:
       {art.custom ? (
         <div className="flex flex-col items-center gap-2">
           <span className="bg-butter-hi px-2 py-0.5 font-label text-[10px] uppercase text-label">{t("studio.portrait.custom")}</span>
-          <PixelButton size="sm" variant="ghost" onClick={() => gameActions.applySprite(character.id, null)}>
+          <PixelButton size="sm" variant="ghost" onClick={onClearArt}>
             {t("sprite.usePlaceholder")}
           </PixelButton>
         </div>
@@ -42,9 +53,11 @@ export function PortraitSlot({ character, onChange, onMakeSprite }: { character:
           <PixelButton size="sm" variant="ghost" icon="right" aria-label={t("studio.portrait.next")} onClick={() => onChange(shown + 1)} className="min-w-11" />
         </div>
       )}
-      <PixelButton size="sm" variant="magic" icon="sparkle" onClick={onMakeSprite}>
-        {t("studio.portrait.makeSprite")}
-      </PixelButton>
+      {onMakeSprite && (
+        <PixelButton size="sm" variant="magic" icon="sparkle" onClick={onMakeSprite}>
+          {t("studio.portrait.makeSprite")}
+        </PixelButton>
+      )}
     </div>
   );
 }
