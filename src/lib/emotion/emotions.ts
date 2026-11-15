@@ -11,6 +11,7 @@
  * give the same emotion. No AI is involved.
  */
 import { traitVector } from "../behavior/tendencies";
+import { addFeelings, decayFeelings, EMOTION_TO_FEELING } from "../mind/feelings";
 import type { Bond, Character, CharacterState, Mood, Reaction } from "../types";
 
 export const EMOTIONS = [
@@ -41,15 +42,32 @@ export function emotionOf(state: CharacterState | undefined): EmotionReading {
   return { emotion: state.emotion, level: clampLevel(state.emotionLevel), at: state.emotionAt ?? 0 };
 }
 
-export function withEmotion(state: CharacterState, emotion: Emotion, level: number, at = Date.now()): CharacterState {
-  return emotion === "neutral" ? { ...state, emotion: "neutral", emotionLevel: 0, emotionAt: at } : { ...state, emotion, emotionLevel: clampLevel(level), emotionAt: at };
+/**
+ * Show an emotion. The matching inner feeling (behavior engine) is raised to
+ * at least the shown strength, so what a character visibly feels also
+ * affects how they behave next. `feel: false` = show only (the behavior
+ * engine already set the feelings itself).
+ */
+export function withEmotion(state: CharacterState, emotion: Emotion, level: number, at = Date.now(), feel = true): CharacterState {
+  if (emotion === "neutral") return { ...state, emotion: "neutral", emotionLevel: 0, emotionAt: at };
+  const lvl = clampLevel(level);
+  const dim = EMOTION_TO_FEELING[emotion];
+  let feelings = state.feelings;
+  if (feel && dim) {
+    const target = 10 + lvl * 25;
+    const now = feelings?.[dim] ?? 0;
+    if (now < target) feelings = addFeelings(feelings ?? {}, { [dim]: target - now });
+  }
+  return { ...state, emotion, emotionLevel: lvl, emotionAt: at, ...(feelings ? { feelings } : {}) };
 }
 
-/** One turn passes without this character being involved: the feeling fades a step. */
+/** One turn passes without this character being involved: the shown feeling fades a step, inner feelings fade too. */
 export function fadeEmotion(state: CharacterState): CharacterState {
-  if (!state.emotion || state.emotion === "neutral" || !state.emotionLevel) return state;
-  const level = state.emotionLevel - 1;
-  return level <= 0 ? { ...state, emotion: "neutral", emotionLevel: 0 } : { ...state, emotionLevel: level };
+  const feelings = decayFeelings(state.feelings);
+  const s = feelings ? { ...state, feelings } : state;
+  if (!s.emotion || s.emotion === "neutral" || !s.emotionLevel) return s;
+  const level = s.emotionLevel - 1;
+  return level <= 0 ? { ...s, emotion: "neutral", emotionLevel: 0 } : { ...s, emotionLevel: level };
 }
 
 const hi = (v: number) => v >= 60;

@@ -40,11 +40,23 @@ export function renderLine(line: StoryLine | LogEntry, locale: Locale): { speake
     const list = translateList(locale, l.tpl ?? "");
     text = list.length ? fill(list[pickIndex(list.length, l.index ?? 0)]) : translate(locale, l.tpl ?? "", p);
   }
+  else if (l.key === "behave") text = behaveText(l, p, locale);
   else if (l.key === "scene.wait") {
     const list = translateList(locale, "scene.wait");
     text = list[pickIndex(list.length, l.index ?? 0)].replace(/\{(\w+)\}/g, (_, k) => p[k] ?? "");
   } else text = translate(locale, l.key, p);
   return { speaker, text };
+}
+
+/** A behavior-engine reply: trigger-specific wording if there is one, then length, hesitation and address. */
+function behaveText(l: StoryLine, p: Record<string, string>, locale: Locale): string {
+  const base = l.tpl ?? "";
+  const list = translateList(locale, `${base}.${p.group}.${p.len}`).length ? translateList(locale, `${base}.${p.group}.${p.len}`) : translateList(locale, `${base}.${p.len}`);
+  if (!list.length) return "";
+  let text = list[pickIndex(list.length, l.index ?? 0)].replace(/\{(\w+)\}/g, (_, k) => p[k] ?? "");
+  if (p.addr && p.other) text = translate(locale, "behave.addr", { other: p.other }) + (locale === "en" && !/^I\b/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text);
+  if (p.pre && !text.startsWith("…")) text = translate(locale, "behave.pre") + text;
+  return text;
 }
 
 /** Shown in Play Mode when the player hasn't created anyone yet (predefined, so it's translated). */

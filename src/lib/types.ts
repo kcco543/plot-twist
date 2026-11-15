@@ -115,10 +115,18 @@ export type BehaviorRecord = {
 
 // ---------------------------------------------------------------- story state
 
+/** What kind of moment a memory is (behavior engine). Older memories have none; see memoryKindOf(). */
+export const MEMORY_KINDS = ["helped", "argument", "rejected", "complimented", "criticized", "promise", "secret", "reunion", "betrayed", "provoked", "cooperated", "teased", "met"] as const;
+export type MemoryKind = (typeof MEMORY_KINDS)[number];
+
 export type Memory = {
   id: string;
   turn: number;
   eventType: string;
+  /** Behavior-engine category. Repeats of the same kind with the same person are merged (see count). */
+  kind?: MemoryKind;
+  /** How many times this has happened (merged repeats). */
+  count?: number;
   reaction: Reaction | null;
   withId: string | null;
   withName: string;
@@ -143,7 +151,45 @@ export type CharacterState = {
   emotionLevel?: number;
   /** When the emotion was last set (ms), so effects replay on a repeat of the same emotion. */
   emotionAt?: number;
+  /**
+   * Behavior engine: everything the character feels right now, 0–100 per
+   * dimension. Several can be high at once (affection + embarrassment).
+   * `emotion` above is only what SHOWS; this is what is felt.
+   */
+  feelings?: Feelings;
 };
+
+// ---------------------------------------------------------------- behavior engine state
+
+/** Temporary feelings. Kept apart from personality (Character.traits), which never changes by itself. */
+export const FEELINGS = ["happiness", "anger", "sadness", "fear", "anxiety", "excitement", "embarrassment", "affection", "frustration", "surprise", "confusion"] as const;
+export type Feeling = (typeof FEELINGS)[number];
+export type Feelings = Partial<Record<Feeling, number>>;
+
+/** Directional: how one character feels about ANOTHER. A→B can differ from B→A. */
+export type Relation = {
+  /** −100…100 */
+  trust: number;
+  /** −100…100 */
+  affection: number;
+  /** −100…100 */
+  respect: number;
+  /** 0…100 (0 = stranger) */
+  familiarity: number;
+  /** 0…100 */
+  rivalry: number;
+  /** 0…100 */
+  tension: number;
+  /** 0…100: how much they fear the other. */
+  fear: number;
+  /** Label read from the written relationships text (friend, rival…). Context only: it never decides a reaction by itself. */
+  label?: RelationLabel;
+};
+export const RELATION_LABELS = ["stranger", "acquaintance", "friend", "family", "partner", "rival", "enemy"] as const;
+export type RelationLabel = (typeof RELATION_LABELS)[number];
+
+/** One behavior decision, kept for repetition penalties and cooldowns. */
+export type DecisionRecord = { turn: number; actorId: string; otherId: string | null; trigger: string; action: string; at: number };
 
 /** Rule-controlled numbers between two characters. The written relationships text is never changed. */
 export type Bond = { affinity: number; trust: number };
@@ -168,6 +214,10 @@ export type StoryState = {
   bonds: Record<string, Bond>;
   /** Most recent last, capped. */
   events: EventRecord[];
+  /** Behavior engine: directional relationships, keyed "fromId>toId". Missing = read from the written relationships text. */
+  relations?: Record<string, Relation>;
+  /** Behavior engine: recent decisions (most recent last, capped). */
+  decisions?: DecisionRecord[];
 };
 
 // ---------------------------------------------------------------- save
@@ -185,10 +235,12 @@ export type Speaker = { kind: "narrator" } | { kind: "character"; name: string; 
  * `tpl` lines name any translation key (a string or a list picked by `index`).
  * `custom` lines carry finished text (player-written, or AI-written in the
  * language that was active when it was generated).
+ * `behave` lines are behavior-engine replies: `tpl` = behave.say.<action>,
+ * params len / group / pre (hesitation) / addr (use the listener's name).
  */
 export type StoryLine = {
   speaker: Speaker;
-  key: "scene.talk" | "scene.silent" | "scene.observe" | "scene.observeEmpty" | "scene.wait" | "scene.intro" | "custom" | "tpl";
+  key: "scene.talk" | "scene.silent" | "scene.observe" | "scene.observeEmpty" | "scene.wait" | "scene.intro" | "custom" | "tpl" | "behave";
   tpl?: string;
   /** For list messages. */
   index?: number;
@@ -225,4 +277,6 @@ export type Settings = {
   aiStory: boolean;
   /** Show the emotion & movement test panel under the dialogue in Play Mode. */
   testPanel?: boolean;
+  /** Developer-only Behavior Debug Panel (only offered in development builds or after opening /play?dev=1). */
+  behaviorDebug?: boolean;
 };

@@ -9,6 +9,7 @@ import { PixelStage } from "@/components/game/PixelStage";
 import { MAX_ON_STAGE } from "@/components/game/SceneSprites";
 import { StageActors, StageOverlay } from "@/components/game/StageLayers";
 import { StageTestPanel } from "@/components/game/StageTestPanel";
+import { BehaviorDebugPanel } from "@/components/game/BehaviorDebugPanel";
 import { SettingsModal } from "@/components/SettingsModal";
 import { LoadingState } from "@/components/ui/LoadingDots";
 import { Modal } from "@/components/ui/Modal";
@@ -25,11 +26,14 @@ import { TEXT_SPEED_MS, updateSettings, useSettings } from "@/lib/settingsStore"
 import { neutralState, plan, type Action, type Beat } from "@/lib/story/engine";
 import { beatToLines } from "@/lib/story/localWriter";
 import { getWorld } from "@/lib/worlds";
-import { emotionOf } from "@/lib/emotion/emotions";
-import { bondBetween, choreographBeat } from "@/lib/stage/behavior";
+import { emotionOf, fadeEmotion } from "@/lib/emotion/emotions";
+import { bondBetween, choreographBeat, rngFrom, talkDistance } from "@/lib/stage/behavior";
+import { applyDecision, behaviorBrief, buildScenario, decide, decisionLines, scenarioByKey, triggerForBeat, type BehaviorEvent, type Decision, type Rng } from "@/lib/mind";
+import type { Priority } from "@/lib/stage/actions";
+import { applyDevParam, useDevMode } from "@/lib/devMode";
 import { roomFor } from "@/lib/stage/room";
 import { useReducedMotion, useStagePoint, useStageSim } from "@/lib/stage/useStage";
-import type { Character, StoryLine } from "@/lib/types";
+import type { Character, StoryLine, StoryState } from "@/lib/types";
 import { useI18n } from "@/i18n";
 
 const isTyping = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
@@ -46,7 +50,33 @@ export default function PlayPage() {
   const envType = save.environment.type;
 
   const isDemo = save.characters.length === 0;
-  const cast = useMemo(() => (isDemo ? demoCast(locale) : save.characters), [isDemo, save.characters, locale]);
+  const baseCast = useMemo(() => (isDemo ? demoCast(locale) : save.characters), [isDemo, save.characters, locale]);
+  // Behavior Debug Panel scenarios run on this stage with their own sample cast + story, never touching the save.
+  const [sandbox, setSandboxState] = useState<{ key: string; cast: Character[]; story: StoryState } | null>(null);
+  const sandboxRef = useRef(sandbox);
+  const setSandbox = useCallback((sb: typeof sandbox) => {
+    sandboxRef.current = sb;
+    setSandboxState(sb);
+  }, []);
+  const cast = sandbox?.cast ?? baseCast;
+  const story = sandbox?.story ?? save.story;
+  const castRef = useRef(cast);
+  castRef.current = cast;
+  /** Story state the rules read from / write to (the sandbox's while a debug scenario is loaded). */
+  const getStory = useCallback(() => sandboxRef.current?.story ?? getSave().story, []);
+  const setStoryState = useCallback(
+    (next: StoryState) => {
+      if (sandboxRef.current) setSandbox({ ...sandboxRef.current, story: next });
+      else gameActions.setStory(next);
+    },
+    [setSandbox],
+  );
+  const logLines = useCallback((lines: StoryLine[]) => {
+    if (!sandboxRef.current) gameActions.appendLines(lines);
+  }, []);
+  const devMode = useDevMode();
+  useEffect(() => applyDevParam(), []);
+  const [decisions, setDecisions] = useState<Decision[]>([]);
   const [pickedId, setPickedId] = useState<string | null>(null);
   const selectedIndex = Math.max(0, cast.findIndex((c) => c.id === pickedId));
   const selected = cast[selectedIndex] ?? null;
@@ -88,15 +118,59 @@ export default function PlayPage() {
   const reducedMotion = useReducedMotion(settings.reduceMotion);
   const onStage = useMemo(() => cast.slice(0, MAX_ON_STAGE), [cast]);
   const room = useMemo(() => roomFor(world?.id ?? "otherworld", envType), [world?.id, envType]);
-  const bondOf = useCallback((a: string, b: string) => bondBetween(getSave().story, a, b), []);
+  const bondOf = useCallback((a: string, b: string) => bondBetween(getStory(), a, b), [getStory]);
   const stage = useStageSim({ cast: onStage, room, paused: anyModal || frozen, reducedMotion, bondOf });
   // Show each character's current emotion (story state is the source of truth; also covers loading a save).
   useEffect(() => {
     for (const c of onStage) {
-      const e = emotionOf(save.story.characters[c.id]);
+      const e = emotionOf(story.characters[c.id]);
       stage.syncEmotion(c.id, e.emotion, e.level, e.at);
     }
-  }, [stage, onStage, save.story]);
+  }, [stage, onStage, story]);
+
+  /**
+   * BEHAVIOR ENGINE: one character reacts to an event. Reads the live stage
+   * (distance, who's busy, whether the player is steering them, whether the
+   * other can be reached), decides, writes the result to story state, and
+   * plays it through the validated stage actions. Returns the lines to show.
+   */
+  const behave = useCallback(
+    (event: BehaviorEvent, priority: Priority, opts: { rng?: Rng; apply?: boolean } = {}): { decision: Decision; lines: StoryLine[] } | null => {
+      const s = getStory();
+      const castNow = castRef.current;
+      const me = castNow.find((c) => c.id === event.reactorId);
+      if (!me) return null;
+      const otherId = event.otherId;
+      const decision = decide({
+        story: s,
+        cast: castNow,
+        event,
+        place: envType,
+        stage: {
+          gap: otherId ? stage.gapBetween(me.id, otherId) : null,
+          talkDistance: otherId ? talkDistance(me, bondBetween(s, me.id, otherId), emotionOf(s.characters[me.id]).emotion) : 32,
+          state: stage.stateOf(me.id),
+          commanded: stage.isCommanded(me.id),
+          canReach: otherId ? stage.canReach(me.id, otherId) : true,
+        },
+        rng: opts.rng ?? rngFrom(`${s.turn}:${me.id}:${event.trigger}:${Date.now()}`),
+      });
+      if (opts.apply === false) return { decision, lines: [] };
+      const next = applyDecision(s, decision, castNow);
+      setStoryState(next);
+      const e = emotionOf(next.characters[me.id]);
+      stage.syncEmotion(me.id, e.emotion, e.level, e.at);
+      // Walks start now: if the character's own line begins first, the walk pauses while they speak and resumes
+      // afterwards (the stage's normal rule). Small gestures wait for the hesitation pause.
+      for (const m of decision.movement) {
+        const travels = m.action.type === "approach" || m.action.type === "retreat";
+        stage.schedule(travels ? 0 : m.delay, m.action, "event", priority);
+      }
+      setDecisions((list) => [decision, ...list].slice(0, 12));
+      return { decision, lines: decisionLines(decision, castNow, (next.decisions?.length ?? 0) + s.turn) };
+    },
+    [getStory, setStoryState, stage, envType],
+  );
 
   // One typewriter for the current line, shared by the speech bubble and the dialogue panel.
   const lineId = `${beatNo}:${lineIndex}`;
@@ -112,6 +186,39 @@ export default function PlayPage() {
     else if (more) setLineIndex((i) => Math.min(queue.length - 1, i + 1));
   }, [typer, more, queue.length]);
   const lineInProgress = !busy && (!typer.done || more);
+  const lineInProgressRef = useRef(lineInProgress);
+  lineInProgressRef.current = lineInProgress || busy;
+
+  /** Show a reaction's lines right away (bubble + panel). */
+  const showLines = useCallback(
+    (lines: StoryLine[]) => {
+      if (!lines.length) return;
+      setQueue(lines);
+      setBeatNo((n) => n + 1);
+      setLineIndex(0);
+      logLines(lines);
+    },
+    [logLines],
+  );
+
+  // Autonomous reaction: when someone walks up to a character outside a conversation (e.g. the test
+  // panel's "Walk closer"), the approached character decides how to respond. Story conversations
+  // already handle their own reactions, and each pair has a short cooldown so nobody loops.
+  const lastArrive = useRef(new Map<string, number>());
+  useEffect(() => {
+    stage.onArrive = (actorId, targetId) => {
+      if (lineInProgressRef.current) return;
+      const key = `${actorId}>${targetId}`;
+      const now = performance.now();
+      if (now - (lastArrive.current.get(key) ?? -1e9) < 6000) return;
+      lastArrive.current.set(key, now);
+      const r = behave({ trigger: "approached", reactorId: targetId, otherId: actorId }, "auto");
+      if (r) showLines(r.lines);
+    };
+    return () => {
+      stage.onArrive = null;
+    };
+  }, [stage, behave, showLines]);
 
   // Keep the stage + dialogue on screen: the stage may use the window height minus the HUD and dialogue.
   const [stageMax, setStageMax] = useState<number | undefined>(undefined);
@@ -124,7 +231,7 @@ export default function PlayPage() {
 
   /** Ask the AI to word a beat. Returns null if it can't, so the built-in lines are used instead. */
   const writeWithAi = useCallback(
-    async (beat: Beat, actor: Character, other: Character | null): Promise<StoryLine[] | null> => {
+    async (beat: Beat, actor: Character, other: Character | null, behaviors: Decision[] = []): Promise<StoryLine[] | null> => {
       if (!world) return null;
       const save = getSave();
       const recentLines = save.log.slice(-8).map((e) => renderLine(e, locale).text).filter(Boolean);
@@ -150,10 +257,11 @@ export default function PlayPage() {
           actor: briefFor(actor),
           other: other ? briefFor(other) : null,
           bond: beat.bondAfter,
-          memories: (save.story.characters[actor.id]?.memories ?? []).slice(-6).map(memoryBrief),
+          memories: (getStory().characters[actor.id]?.memories ?? []).slice(-6).map(memoryBrief),
           recentLines: recentLines.map((l) => l.slice(0, 400)),
+          behaviors: behaviors.map(behaviorBrief),
         });
-        if (beat.memoryId && out.memoryNote) gameActions.setMemoryNote(actor.id, beat.memoryId, out.memoryNote);
+        if (beat.memoryId && out.memoryNote && !sandboxRef.current) gameActions.setMemoryNote(actor.id, beat.memoryId, out.memoryNote);
         const who = (id: string): StoryLine["speaker"] => {
           const c = id === actor.id ? actor : id === other?.id ? other : null;
           return c ? { kind: "character", name: c.name.trim(), id: c.id } : { kind: "narrator" };
@@ -164,7 +272,7 @@ export default function PlayPage() {
         return null;
       }
     },
-    [world, envType, locale, t],
+    [world, envType, locale, t, getStory],
   );
 
   const act = useCallback(
@@ -173,7 +281,7 @@ export default function PlayPage() {
       setNote(null);
       // 1. Game rules decide what happens and update state (mood, bonds, memories).
       const { beat, story } = plan({
-        story: getSave().story,
+        story: getStory(),
         cast,
         actorId: selected.id,
         action,
@@ -181,9 +289,9 @@ export default function PlayPage() {
         place: envType,
         frequency: settings.eventFrequency,
       });
-      gameActions.setStory(story);
-      // 1b. The same rules decide how everyone moves: face each other, show feelings, approach / step back.
-      const choreo = choreographBeat(beat, cast, story, (id) => stage.nearest(id));
+      setStoryState(story);
+      // 1b. The same rules decide how the actor moves: face the other, show the feeling, approach / step back.
+      const choreo = choreographBeat(beat, cast, story, (id) => stage.nearest(id), { otherByEngine: true });
       stage.beginConversation(choreo.participants);
       for (const a of choreo.actions) {
         if (a.type === "show_emotion") {
@@ -191,21 +299,26 @@ export default function PlayPage() {
           stage.syncEmotion(a.actor, e.emotion, e.level, e.at);
         } else stage.request(a, beat.kind === "event" ? "event" : "conversation");
       }
-      const other = beat.otherId ? (cast.find((c) => c.id === beat.otherId) ?? null) : null;
-      // 2. A writer puts it into words: the AI if available, otherwise built-in templates.
+      // 1c. The behavior engine decides how the OTHER person (or the listener) responds:
+      //     movement, what shows on their face, and the intention behind their reply.
+      const listenerId = beat.kind === "talk" ? (choreo.participants[1] ?? null) : beat.otherId;
+      const walkedUp = choreo.actions.some((a) => a.type === "approach" && a.actor === selected.id);
+      const response = listenerId ? behave({ trigger: triggerForBeat(beat, walkedUp), reactorId: listenerId, otherId: selected.id }, "story") : null;
+      const other = listenerId ? (cast.find((c) => c.id === listenerId) ?? null) : null;
+      // 2. A writer puts it into words: the AI if available (told what the engine decided), otherwise built-in templates.
       let lines: StoryLine[] | null = null;
       if (useAi) {
         setBusy(true);
-        lines = await writeWithAi(beat, selected, other);
+        lines = await writeWithAi(beat, selected, other, response ? [response.decision] : []);
         setBusy(false);
       }
-      lines ??= beatToLines(beat, cast, envType, world.id);
+      lines ??= [...beatToLines(beat, cast, envType, world.id), ...(response?.lines ?? [])];
       setQueue(lines);
       setBeatNo((n) => n + 1);
       setLineIndex(0);
-      gameActions.appendLines(lines);
+      logLines(lines);
     },
-    [selected, world, busy, cast, envType, settings.eventFrequency, useAi, writeWithAi, stage],
+    [selected, world, busy, cast, envType, settings.eventFrequency, useAi, writeWithAi, stage, getStory, setStoryState, behave, logLines],
   );
   const cycle = useCallback(
     (dir: 1 | -1) => {
@@ -304,6 +417,54 @@ export default function PlayPage() {
     />
   ) : null;
 
+  // Behavior Debug Panel (developers only): same column as the test panel.
+  const debugPanel =
+    devMode && settings.behaviorDebug ? (
+      <BehaviorDebugPanel
+        cast={onStage}
+        story={story}
+        selectedId={selected?.id ?? null}
+        decisions={decisions}
+        sandboxKey={sandbox?.key ?? null}
+        compact={wide}
+        onRun={(event, rng) => {
+          const r = behave(event, "story", { rng });
+          if (r) showLines(r.lines);
+          return r?.decision ?? null;
+        }}
+        onPreview={(event, rng) => behave(event, "story", { rng, apply: false })?.decision ?? null}
+        onLoadScenario={(key) => {
+          const sc = scenarioByKey(key);
+          if (!sc) return;
+          const built = buildScenario(sc, locale);
+          stage.cancelAll();
+          setDecisions([]);
+          setQueue([]);
+          setSandbox({ key, cast: built.cast, story: built.story });
+          setPickedId(built.reactorId);
+          return { reactorId: built.reactorId, otherId: built.otherId, trigger: sc.trigger };
+        }}
+        onExitScenario={() => {
+          stage.cancelAll();
+          setDecisions([]);
+          setQueue([]);
+          setSandbox(null);
+          setPickedId(null);
+        }}
+        onPassTime={() => {
+          const s = getStory();
+          setStoryState({ ...s, turn: s.turn + 1, characters: Object.fromEntries(Object.entries(s.characters).map(([id, st]) => [id, fadeEmotion(st)])) });
+        }}
+        onClose={() => updateSettings({ behaviorDebug: false })}
+      />
+    ) : null;
+  const sidePanels = testPanel || debugPanel ? (
+    <>
+      {debugPanel}
+      {testPanel}
+    </>
+  ) : null;
+
   return (
     <main data-layout="wide" className="content-grid flex-1 pt-3 sm:pt-4" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
       {/* HUD */}
@@ -328,7 +489,7 @@ export default function PlayPage() {
         </div>
       </div>
 
-      {isDemo && (
+      {isDemo && !sandbox && (
         <p className="content-block plain-pad-x mb-4 flex items-center gap-2 bg-butter-hi py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
           <PixelIcon name="star" size={12} className="shrink-0 text-label" />
           {t("play.demoNotice")}
@@ -338,7 +499,7 @@ export default function PlayPage() {
       {/* Desktop: viewport ≈78% / character sidebar ≈21%. Phones: viewport first, character sheet in a bottom drawer. */}
       <div className="content-block grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(14.5rem,21%)] xl:gap-5">
         <div className="content-stack">
-          <div className={testPanel && !wide ? "sticky z-30" : undefined} style={testPanel && !wide ? { top: headerH } : undefined}>
+          <div className={sidePanels && !wide ? "sticky z-30" : undefined} style={sidePanels && !wide ? { top: headerH } : undefined}>
           <PixelStage
             art={environmentArt[world.id][envType]}
             label={t("play.viewportAlt", { place: envName, world: worldName })}
@@ -363,7 +524,7 @@ export default function PlayPage() {
           </div>
           <ControlPad
             name={selectedName}
-            mood={selected ? tx(`moods.${(save.story.characters[selected.id] ?? neutralState()).mood}`) : null}
+            mood={selected ? tx(`moods.${(story.characters[selected.id] ?? neutralState()).mood}`) : null}
             onPrev={() => cycle(-1)}
             onNext={() => cycle(1)}
             onInteract={() => act("talk")}
@@ -383,19 +544,19 @@ export default function PlayPage() {
             note={note}
           />
           <p className="hidden font-label text-[10px] uppercase text-ink-mute lg:block">{t("play.keyboardHint")}</p>
-          {testPanel && !wide && testPanel}
+          {sidePanels && !wide && sidePanels}
         </div>
         <div className="hidden min-w-0 lg:block">
-          <div className={`lg:sticky lg:top-20 ${testPanel ? "flex max-h-[calc(100dvh-6rem)] flex-col gap-4 overflow-y-auto overscroll-contain pb-2" : ""}`}>
-            {testPanel && wide && testPanel}
-            <CharacterInfoPanel character={selected} cast={cast} story={save.story} isDemo={isDemo} />
+          <div className={`lg:sticky lg:top-20 ${sidePanels ? "flex max-h-[calc(100dvh-6rem)] flex-col gap-4 overflow-y-auto overscroll-contain pb-2" : ""}`}>
+            {sidePanels && wide && sidePanels}
+            <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} />
           </div>
         </div>
       </div>
 
       {/* Phone / tablet character sheet */}
       <Modal open={sheetOpen} onClose={() => setSheetOpen(false)} title={t("play.character")} closeLabel={t("play.sidebar.close")}>
-        <CharacterInfoPanel character={selected} cast={cast} story={save.story} isDemo={isDemo} framed={false} />
+        <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} framed={false} />
       </Modal>
 
       {/* Story log */}

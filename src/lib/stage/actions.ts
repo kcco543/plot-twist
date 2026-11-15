@@ -48,8 +48,21 @@ export const REFUSALS = [
   "no_path",
   "cornered",
   "paused",
+  "player_command",
+  "outranked",
 ] as const;
 export type Refusal = (typeof REFUSALS)[number];
+
+/**
+ * Who asked. A request can't interrupt a walk started by a higher priority,
+ * and for a moment after the player directly moves someone, autonomous
+ * behavior leaves that character's position alone.
+ *   player — the player's direct command (test panel buttons)
+ *   story  — the story the player just triggered (Talk, Twist…)
+ *   auto   — the character's own autonomous reaction (behavior engine)
+ */
+export const PRIORITIES = { auto: 1, story: 2, player: 3 } as const;
+export type Priority = keyof typeof PRIORITIES;
 
 /** Extra detail on an accepted request. */
 export const NOTES = ["moving", "already_close", "facing", "emoting", "idle", "shortened"] as const;

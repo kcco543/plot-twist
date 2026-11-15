@@ -201,7 +201,14 @@ export type BeatChoreography = {
  * (so emotions are the new ones). `nearestTo` gives the closest other
  * character on stage (for talk beats, which have no named listener).
  */
-export function choreographBeat(beat: Beat, cast: Character[], story: StoryState, nearestTo: (id: string) => string | null): BeatChoreography {
+export function choreographBeat(
+  beat: Beat,
+  cast: Character[],
+  story: StoryState,
+  nearestTo: (id: string) => string | null,
+  /** The behavior engine decides how the other character / listener reacts (their feeling + movement), so skip the simple rules for them. */
+  opts: { otherByEngine?: boolean } = {},
+): BeatChoreography {
   const actor = cast.find((c) => c.id === beat.actorId);
   if (!actor) return { participants: [], actions: [] };
   const rng = rngFrom(`${beat.turn}:${beat.type}:${actor.id}`);
@@ -220,7 +227,7 @@ export function choreographBeat(beat: Beat, cast: Character[], story: StoryState
     if (greeting && approachWillingness(actor, bond, actorFeel.emotion) >= 45 + rng() * 20) {
       actions.push({ type: "approach", actor: actor.id, target: listener.id, distance: talkDistance(actor, bond, actorFeel.emotion) });
     }
-    actions.push({ type: "face_target", actor: listener.id, target: actor.id });
+    if (!opts.otherByEngine) actions.push({ type: "face_target", actor: listener.id, target: actor.id });
     return { participants: [actor.id, listener.id], actions };
   }
 
@@ -235,7 +242,7 @@ export function choreographBeat(beat: Beat, cast: Character[], story: StoryState
   if (actorFeel.emotion !== "neutral") actions.push({ type: "show_emotion", actor: actor.id, emotion: actorFeel.emotion, level: actorFeel.level });
   const move = reactionAction(actor, actorFeel.emotion, actorFeel.level, other, bond, other ? "event" : "solo", rng);
   if (move) actions.push(move);
-  if (other) {
+  if (other && !opts.otherByEngine) {
     const otherFeel = emotionOf(story.characters[other.id]);
     if (otherFeel.emotion !== "neutral") actions.push({ type: "show_emotion", actor: other.id, emotion: otherFeel.emotion, level: otherFeel.level });
     // Only one of the two walks at a time, so they don't both charge at each other.

@@ -16,6 +16,7 @@ import { makeId } from "../id";
 import { approvedBehavior } from "../character/model";
 import { approachScores, reactionTendencies, traitVector } from "../behavior/tendencies";
 import { actorEmotion, fadeEmotion, otherEmotion, withEmotion } from "../emotion/emotions";
+import { syncRelationsFromBond } from "../mind/relations";
 import { EVENTS, MOOD_BIAS, REACTION_EFFECTS, type EventContext, type EventDef } from "./events";
 import type {
   Approach,
@@ -247,7 +248,7 @@ export function plan(input: PlanInput): PlanResult {
     turn,
   } satisfies Partial<Beat>;
 
-  const finish = (beat: Beat, nextStates: Record<string, CharacterState>, bonds = story.bonds): PlanResult => {
+  const finish = (beat: Beat, nextStates: Record<string, CharacterState>, bonds = story.bonds, relations = story.relations): PlanResult => {
     const record: EventRecord = {
       id: makeId("evt"),
       turn,
@@ -262,7 +263,8 @@ export function plan(input: PlanInput): PlanResult {
     const involved = new Set([beat.actorId, ...(beat.otherId ? [beat.otherId] : [])]);
     return {
       beat,
-      story: { turn, characters: decayMoods(nextStates, involved), bonds, events: [...story.events, record].slice(-MAX_EVENTS) },
+      // Keep the behavior engine's state (relations, decisions) that this engine doesn't manage itself.
+      story: { ...story, turn, characters: decayMoods(nextStates, involved), bonds, relations, events: [...story.events, record].slice(-MAX_EVENTS) },
     };
   };
 
@@ -381,6 +383,8 @@ export function plan(input: PlanInput): PlanResult {
     });
   }
 
+  // The shared bond moved: mirror it into both directions of the behavior engine's relationships.
+  const relations = other && bondBefore && bondAfter ? syncRelationsFromBond(story, actor, other, bondBefore, bondAfter).relations : story.relations;
   const variant = pickVariant(3, lastVariant(def.type), rng);
   return finish(
     {
@@ -401,6 +405,7 @@ export function plan(input: PlanInput): PlanResult {
     },
     nextStates,
     bonds,
+    relations,
   );
 }
 
