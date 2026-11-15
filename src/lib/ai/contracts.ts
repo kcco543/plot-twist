@@ -17,6 +17,8 @@ export const CharacterBriefSchema = z.object({
   lockedFields: z.array(z.enum(CHARACTER_TEXT_FIELDS)).max(CHARACTER_TEXT_FIELDS.length),
   /** Personal boundaries from the Character Studio (hard never change in play; soft may, for one person). */
   boundaries: z.array(z.object({ strength: z.enum(["hard", "soft"]), kind: z.enum(["secret", "topic", "principle"]), text: text(240) })).max(12).optional(),
+  /** Gender and pronouns the player chose (absent = not specified: don't assume). */
+  identity: z.object({ gender: text(80), pronouns: text(80) }).optional(),
   /** Approved behavioral profile (summary + speech), if any. */
   profile: z
     .object({

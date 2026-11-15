@@ -8,6 +8,7 @@
 import type { Character, EnvironmentTypeId, LogEntry, StoryLine } from "./types";
 import { createBlankCharacter } from "./character/model";
 import { translate, translateList, type Locale } from "@/i18n";
+import { englishPronouns, type EnglishPronouns } from "./character/gender";
 
 const clean = (s: string) => s.trim().replace(/\s+/g, " ");
 const pickIndex = (len: number, n: number) => ((n % len) + len) % len;
@@ -20,6 +21,17 @@ export function introLine(description: string, place: EnvironmentTypeId): StoryL
 }
 
 /** Turn a stored line into display text in the active language. */
+/**
+ * Pronouns for built-in English narration: templates may use {their}, {them},
+ * {they}, {theyAre} and {theyre} for the character in {name}. The play screen
+ * registers a lookup (name → pronouns) for the current cast; without one, or
+ * for an unspecified character, singular "they" is used.
+ */
+let pronounLookup: ((name: string) => EnglishPronouns | null) | null = null;
+export function setPronounLookup(fn: ((name: string) => EnglishPronouns | null) | null) {
+  pronounLookup = fn;
+}
+
 export function renderLine(line: StoryLine | LogEntry, locale: Locale): { speaker: string; text: string } {
   if (typeof line.speaker === "string" && "text" in line) return { speaker: line.speaker, text: line.text }; // v0.1 save
   const l = line as StoryLine;
@@ -30,6 +42,8 @@ export function renderLine(line: StoryLine | LogEntry, locale: Locale): { speake
   if (p.topic) p.topic = translate(locale, `scene.topics.${p.topic}`);
   if (p.other !== undefined) p.other = p.other || unnamed;
   if (p.with !== undefined) p.with = p.with || translate(locale, "common.someone");
+  const pr = (p.name && pronounLookup?.(l.params.name ?? "")) || englishPronouns(undefined);
+  for (const [k, v] of Object.entries(pr)) if (p[k] === undefined) p[k] = v;
   // Params named "<x>Key" hold a translation key: render it into <x> in the active language.
   for (const [k, v] of Object.entries(l.params)) if (k.endsWith("Key") && v) p[k.slice(0, -3)] = translate(locale, v, p);
   const speaker = l.speaker.kind === "narrator" ? translate(locale, "scene.narrator") : l.speaker.name || unnamed;

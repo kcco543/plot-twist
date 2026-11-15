@@ -23,7 +23,8 @@ import { AiRequestError, briefFor, memoryBrief, requestTurn, useAiStatus } from 
 import { gameActions, getSave, useSave } from "@/lib/gameStore";
 import { useHydrated } from "@/lib/persistentStore";
 import { useTypewriter } from "@/lib/useTypewriter";
-import { demoCast, introLine, renderLine } from "@/lib/scenes";
+import { demoCast, introLine, renderLine, setPronounLookup } from "@/lib/scenes";
+import { englishPronouns } from "@/lib/character/gender";
 import { TEXT_SPEED_MS, updateSettings, useSettings } from "@/lib/settingsStore";
 import { neutralState, plan, type Action, type Beat } from "@/lib/story/engine";
 import { beatToLines } from "@/lib/story/localWriter";
@@ -82,6 +83,14 @@ export default function PlayPage() {
   const story = sandbox?.story ?? save.story;
   const castRef = useRef(cast);
   castRef.current = cast;
+  // Built-in English narration uses each character's chosen pronouns (unspecified: singular "they").
+  useEffect(() => {
+    setPronounLookup((name) => {
+      const c = castRef.current.find((x) => x.name.trim() === name.trim());
+      return c ? englishPronouns(c.gender) : null;
+    });
+    return () => setPronounLookup(null);
+  }, []);
   /** Story state the rules read from / write to (the sandbox's while a debug scenario is loaded). */
   const getStory = useCallback(() => sandboxRef.current?.story ?? getSave().story, []);
   const setStoryState = useCallback(

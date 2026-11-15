@@ -248,6 +248,31 @@
       "lockField": "Lock {field}",
       "unlockField": "Unlock {field}",
       "hint": "Locked details are canon. The AI must keep them exactly as written."
+    },
+    "gender": {
+      "label": "Gender",
+      "options": {
+        "unspecified": "Unspecified",
+        "female": "Female",
+        "male": "Male",
+        "nonbinary": "Non-binary",
+        "custom": "Self-describe"
+      },
+      "customLabel": "In your words",
+      "customPlaceholder": "e.g. genderfluid, a sentient cloud",
+      "note": "Optional. Only used to refer to the character correctly. It never changes their personality, interests or behavior. Saved for this version of the character only."
+    },
+    "pronouns": {
+      "label": "Pronouns",
+      "options": {
+        "unspecified": "Unspecified",
+        "she": "she/her",
+        "he": "he/him",
+        "they": "they/them",
+        "custom": "Custom"
+      },
+      "customLabel": "Custom pronouns",
+      "customPlaceholder": "e.g. xe/xem/xyr"
     }
   },
   "builder": {
@@ -1055,12 +1080,12 @@
         "{name} seems settled for now. {detail}"
       ],
       "happy": [
-        "{name} is humming under their breath. {detail}",
+        "{name} is humming under {their} breath. {detail}",
         "Something has put {name} in a good mood. {detail}"
       ],
       "anxious": [
         "{name} keeps glancing at the door. {detail}",
-        "{name} looks like they're bracing for something. {detail}"
+        "{name} looks like {theyre} bracing for something. {detail}"
       ],
       "irritated": [
         "{name}'s jaw is set. Best tread lightly. {detail}",
@@ -1076,7 +1101,7 @@
       ],
       "suspicious": [
         "{name} is watching everyone a little too carefully. {detail}",
-        "{name} narrows their eyes at nothing. {detail}"
+        "{name} narrows {their} eyes at nothing. {detail}"
       ],
       "embarrassed": [
         "{name} is pretending very hard that nothing happened. {detail}",
@@ -1126,7 +1151,7 @@
       ],
       "temptation": [
         "An easy shortcut appears, but it would mean going against this: ‘{text}’.",
-        "Someone offers {name} exactly what they want, if they bend ‘{text}’. Just once.",
+        "Someone offers {name} exactly what {name} has always wanted, on one condition: bend ‘{text}’. Just once.",
         "No one is watching. {name} could ignore ‘{text}’ and nobody would know."
       ],
       "goalStep": [
@@ -1145,7 +1170,7 @@
         "A smell, a sound, and {name} is back in {memory}."
       ],
       "quietMoment": [
-        "A quiet moment. {name} does what they always do: ‘{text}’.",
+        "A quiet moment. {name} does the usual: ‘{text}’.",
         "Nothing happens, and {name} slips into an old habit: ‘{text}’.",
         "The {place} goes quiet. You notice something about {name}: ‘{text}’."
       ],
@@ -1188,7 +1213,7 @@
           "{name} finds a ribbon tied around a tree, very deliberately."
         ],
         "ruins": [
-          "{name} uncovers a mural of someone who looks a lot like them.",
+          "{name} uncovers a mural of someone who looks a lot like {them}.",
           "{name} finds a lantern that's still warm.",
           "A loose stone reveals a hollow with a sealed letter inside."
         ],
@@ -1580,7 +1605,7 @@
         "{name} edges away, putting a little space between themself and {other}."
       ],
       "stay_still": [
-        "{name} stays exactly where they are.",
+        "{name} stays right where {theyAre}.",
         "{name} doesn't move."
       ],
       "face_target": [
@@ -1589,7 +1614,7 @@
       ],
       "stay_silent": [
         "{name} says nothing.",
-        "{name} presses their lips together and stays quiet."
+        "{name} presses {their} lips together and stays quiet."
       ]
     },
     "hidden": {
@@ -1599,7 +1624,7 @@
       ],
       "fear": [
         "{name}'s hands aren't quite steady.",
-        "{name} keeps their voice level. Mostly."
+        "{name} keeps {their} voice level. Mostly."
       ],
       "sadness": [
         "Something in {name}'s face closes, just for a second.",
@@ -1806,11 +1831,11 @@
       "listenerEnded": "{other} ended the conversation.",
       "unreachablePlace": "{name} can't get there. Something is in the way.",
       "unreachableObject": "{name} can't reach the {other}.",
-      "nearby": "That spot is blocked, so {name} is going as close as they can.",
+      "nearby": "That spot is blocked, so {name} is going as close as possible.",
       "refused": "{other} doesn't want to talk to {name} right now.",
       "walkedAway": "{other} walked away from {name}.",
-      "goingTo": "{name} is heading to the {other}, as they said they would.",
-      "noSuchPlace": "{name} meant to go to {other}, but there's no such place here, so they stay put."
+      "goingTo": "{name} is heading to the {other}, as promised.",
+      "noSuchPlace": "{name} meant to go to {other}, but there's no such place here, so {name} stays put."
     },
     "dismiss": "Dismiss",
     "panel": {
@@ -2301,7 +2326,7 @@
       "giftMoved": {
         "displayed": "{name} put the {gift} on display.",
         "carried": "{name} started carrying the {gift} around.",
-        "private": "{name} tucked the {gift} away among their things.",
+        "private": "{name} tucked the {gift} away among {their} things.",
         "hidden": "{name} hid the {gift} where no one will find it.",
         "stored": "{name} put the {gift} away in storage."
       }
@@ -2667,7 +2692,7 @@
     "notice": {
       "unreachablePlace": "{actor} can't get there. Something is in the way.",
       "unreachableObject": "{actor} can't reach the {object}.",
-      "nearby": "That spot is blocked, so {actor} went as close as they could."
+      "nearby": "That spot is blocked, so {actor} went as close as possible."
     }
   }
 }

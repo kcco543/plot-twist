@@ -248,6 +248,31 @@
       "lockField": "锁定{field}",
       "unlockField": "解锁{field}",
       "hint": "锁定的内容是固定设定，AI 必须原样保留。"
+    },
+    "gender": {
+      "label": "性别",
+      "options": {
+        "unspecified": "未指定",
+        "female": "女性",
+        "male": "男性",
+        "nonbinary": "非二元",
+        "custom": "自我描述"
+      },
+      "customLabel": "用你的话描述",
+      "customPlaceholder": "例如：性别流动、一朵有意识的云",
+      "note": "可选。只用于正确称呼角色，绝不会改变角色的性格、兴趣或行为。只保存在这个版本的角色上。"
+    },
+    "pronouns": {
+      "label": "代词",
+      "options": {
+        "unspecified": "未指定",
+        "she": "她（she/her）",
+        "he": "他（he/him）",
+        "they": "TA（they/them）",
+        "custom": "自定义"
+      },
+      "customLabel": "自定义代词",
+      "customPlaceholder": "例如：xe/xem/xyr"
     }
   },
   "builder": {

@@ -86,6 +86,11 @@ export type Character = Record<CharacterTextField, string> & {
    * Missing in older saves = none written (locked canon still counts).
    */
   boundaries?: CharacterBoundary[];
+  /**
+   * Gender and pronouns (src/lib/character/gender.ts). Missing in older saves
+   * = unspecified (never guessed). Each world's copy has its own value.
+   */
+  gender?: import("./character/gender").GenderInfo;
 };
 
 export const BOUNDARY_KINDS = ["secret", "topic", "principle"] as const;

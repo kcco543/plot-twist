@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import { approvedBehavior } from "../character/model";
+import { genderForPrompt } from "../character/gender";
 import { finishProfile } from "../behavior/schema";
 import { CHARACTER_TEXT_FIELDS, type BehaviorProfile, type Character, type Memory } from "../types";
 import type { AnalyzeRequest, CharacterBrief, TurnRequest } from "./contracts";
@@ -88,6 +89,7 @@ export function briefFor(c: Character): CharacterBrief {
     fields,
     traits: { ...c.traits },
     lockedFields: c.lockedFields,
+    ...(genderForPrompt(c.gender) ? { identity: genderForPrompt(c.gender)! } : {}),
     ...(c.boundaries?.length ? { boundaries: c.boundaries.filter((b) => b.text.trim()).slice(0, 12).map((b) => ({ strength: b.strength, kind: b.kind, text: b.text.slice(0, 240) })) } : {}),
     profile: approved
       ? {
