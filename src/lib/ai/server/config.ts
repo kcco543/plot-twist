@@ -4,7 +4,7 @@ import "server-only";
  * AI configuration. Keys are read from server environment variables only
  * (.env.local in development) and never sent to the browser.
  *   ANTHROPIC_API_KEY   personality analysis + story writing (Claude)
- *   OPENAI_API_KEY      pixel character generation (OpenAI image model)
+ *   OPENAI_API_KEY      pixel character + map generation (OpenAI image model)
  * Optional: ANTHROPIC_MODEL, OPENAI_IMAGE_MODEL, IMAGE_PROVIDER, AI_DISABLED=1
  */
 export const TEXT_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-5-5";

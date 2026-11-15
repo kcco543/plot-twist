@@ -224,11 +224,11 @@
   "builder": {
     "kicker": "第 3 步 · 世界构建",
     "heading": "布置场景",
-    "intro": "描述故事开始的地方，并选择场所类型。目前预览使用的是占位图。",
+    "intro": "描述故事开始的地方，选择场所类型，然后生成地图。修改文字再生成一次，直到满意为止。",
     "description": "描述",
     "describeLabel": "描述这个环境",
     "describePlaceholder": "面馆楼上一间挤得满满的书店。这里总有雨的味道，后门却是从里面锁上的……",
-    "describeHint": "自动保存。之后这段文字将用于 AI 生成地图。",
+    "describeHint": "自动保存。中文或英文都可以。",
     "type": "环境类型",
     "preview": "预览",
     "previewAlt": "{title}预览",
@@ -237,7 +237,26 @@
     "generating": "正在绘制预览",
     "quoteEmpty": "还没有描述。你写的文字会显示在这里。",
     "backToCast": "角色",
-    "play": "开始"
+    "play": "开始",
+    "map": {
+      "generate": "生成地图",
+      "generating": "正在生成地图",
+      "drawing": "正在绘制地图",
+      "drawingHint": "最多可能需要一分钟。",
+      "iterateHint": "修改描述后再次生成，就会得到新版本。",
+      "needDescription": "先写一段描述，再生成地图。",
+      "unavailable": "地图生成尚未设置",
+      "unavailableHint": "在 .env.local 中添加 OPENAI_API_KEY 并重启应用即可开启。在此之前，预览显示内置图片。",
+      "failed": "地图生成失败：{reason}。",
+      "outdated": "这张地图生成后，你修改了描述或场所类型。再次生成即可查看新版本。",
+      "version": "第 {n} 版",
+      "history": "你的地图",
+      "showVersion": "查看第 {n} 版",
+      "download": "下载",
+      "remove": "删除",
+      "usePlaceholder": "使用内置图片",
+      "keepHint": "新地图完成前，当前地图会一直保留。"
+    }
   },
   "environments": {
     "interior": {
@@ -422,7 +441,7 @@
     "aiStoryDesc": "配置好之后，由 AI 书写对话。关闭则只使用内置台词。",
     "aiTitle": "AI 服务",
     "aiText": "性格分析与对话",
-    "aiImage": "像素形象生成",
+    "aiImage": "像素形象与地图生成",
     "aiReady": "可用",
     "aiMissing": "未配置",
     "aiChecking": "检查中"

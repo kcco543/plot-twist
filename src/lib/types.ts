@@ -162,6 +162,8 @@ export type StoryState = {
 export type EnvironmentDraft = {
   description: string;
   type: EnvironmentTypeId;
+  /** The generated map in use (stored in the browser's map library), or null for the built-in art. */
+  mapId?: string | null;
 };
 
 export type Speaker = { kind: "narrator" } | { kind: "character"; name: string; id?: string };

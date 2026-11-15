@@ -11,6 +11,7 @@ import { gameActions } from "@/lib/gameStore";
 import { useI18n } from "@/i18n";
 import type { EventFrequency, TextSpeed } from "@/lib/types";
 import { useAiStatus } from "@/lib/ai/client";
+import { eraseMaps } from "@/lib/mapGenerator";
 
 const Section = ({ children }: { children: React.ReactNode }) => <div className="border-t-[3px] border-dashed border-line pt-5">{children}</div>;
 
@@ -135,6 +136,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 icon="trash"
                 onClick={() => {
                   gameActions.eraseAll();
+                  void eraseMaps();
                   setConfirmErase(false);
                   setErased(true);
                 }}

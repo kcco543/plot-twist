@@ -121,3 +121,10 @@ export async function requestSprite(image: Blob, opts: { appearance: string; wor
   if (!res.ok) throw new AiRequestError((data.error as AiErrorCode) ?? "failed", data.message ?? `HTTP ${res.status}`);
   return data;
 }
+
+export type MapRequestBody = { description: string; type: string; world: string | null };
+
+/** Description → generated map (data URL). Takes up to a minute or two. */
+export async function requestMap(body: MapRequestBody): Promise<{ image: string; model: string }> {
+  return post<{ image: string; model: string }>("/api/ai/map", body);
+}

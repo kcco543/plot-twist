@@ -36,7 +36,7 @@ Everything works without keys: the game uses its built-in analysis and story wri
 | Variable | Used for | Where to get it |
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | Personality analysis and AI-written dialogue/events (Claude) | console.anthropic.com → API Keys |
-| `OPENAI_API_KEY` | "Generate Pixel Character" in the Sprite Studio (OpenAI Images) | platform.openai.com → API keys |
+| `OPENAI_API_KEY` | "Generate Pixel Character" in the Sprite Studio and "Generate Map" in the World Builder (OpenAI Images) | platform.openai.com → API keys |
 
 Restart `npm run dev` afterwards. Settings → AI services shows what is connected. Keys are read only by the server routes in `src/app/api/ai/`, never sent to the browser. On Vercel, add the same variables under Project → Settings → Environment Variables.
 
@@ -58,7 +58,7 @@ To try it on your phone, connect it to the same Wi-Fi and open `http://<your-com
 | Load game | `/load` | Save slot summary and Continue |
 | World select | `/worlds` | Four worlds, each with its own accent and art |
 | Character studio | `/studio` | Tabs: **Profile** (14 written fields, lock any as canon) · **Personality** (10 sliders, conflict review) · **Behavior** (AI or built-in analysis, approve before use) · **Look** (Sprite Studio) |
-| World builder | `/builder` | Description, 5 environment types, live preview per world |
+| World builder | `/builder` | Description, 5 environment types, **Generate Map** (AI map in one fixed cozy pixel-art style, edit and regenerate, version history, download). Built-in art until a map is generated. |
 | Play mode | `/play` | Wide stage + sidebar (About / Mood & bonds / Memories), dialogue (Talk / Observe / Wait / Twist!), story log, pause menu, touch pad, keyboard controls. On phones the character info opens as a bottom sheet. |
 
 Saves live in the browser's `localStorage` and survive refreshes, language switches and going offline.
@@ -122,8 +122,14 @@ Replace a file with the same name and size, or point the manifest at a new one, 
 - **Writers:** the built-in writer (`src/lib/story/localWriter.ts`) always works. With a Claude key, the AI writer gets the same outcome and only writes the lines; its output is validated against a schema and falls back to the built-in writer on any error.
 - **Canon:** locked fields, world rules and written relationships are sent as fixed and the AI never edits character fields. Bond numbers change; your written relationships text does not.
 
+## Map generation
+
+- **Flow:** World Builder button → `src/lib/mapGenerator.ts` (browser: one job at a time, history) → `POST /api/ai/map` (`src/app/api/ai/map/route.ts`, validates input, max 2 at once) → `src/lib/ai/server/mapPrompt.ts` (adds the fixed art style, environment layout and world flavor) → `src/lib/ai/server/image.ts` (OpenAI Images, 1536×1024 WebP).
+- **Style:** edit `MAP_STYLE` in `mapPrompt.ts` to change how every future map looks. The player's text decides the content, never the style.
+- **Storage:** maps are kept in the browser's IndexedDB (last 12), not in the save, so they don't fill `localStorage`. The save remembers which map is in use.
+
 ## Not built yet
 
 - **Walking animations and free movement.** Sprites are single standing frames. The touch pad and arrow keys choose characters.
-- **AI map generation.** Environments still use the built-in art.
+- **Generated maps in Play Mode.** Generated maps are saved (World Builder history + download), but Play Mode still uses the built-in side-view scenes.
 - **Cloud saves.** Everything (including custom sprites) lives in this browser's `localStorage`, which holds about 5 MB.

@@ -224,11 +224,11 @@
   "builder": {
     "kicker": "Step 3 · World builder",
     "heading": "Set the scene",
-    "intro": "Describe where your story begins and pick a type of place. The preview uses placeholder art for now.",
+    "intro": "Describe where your story begins, pick a type of place, then generate a map. Edit the words and generate again until it feels right.",
     "description": "Description",
     "describeLabel": "Describe the environment",
     "describePlaceholder": "A cramped bookshop above a noodle stand. It always smells like rain, and the back door is locked from the inside...",
-    "describeHint": "Saved automatically. Later, this text will drive AI map generation.",
+    "describeHint": "Saved automatically. Chinese or English both work.",
     "type": "Environment type",
     "preview": "Preview",
     "previewAlt": "{title} preview",
@@ -237,7 +237,26 @@
     "generating": "Drawing preview",
     "quoteEmpty": "No description yet. Your words will appear here.",
     "backToCast": "Cast",
-    "play": "Play"
+    "play": "Play",
+    "map": {
+      "generate": "Generate Map",
+      "generating": "Generating map",
+      "drawing": "Drawing your map",
+      "drawingHint": "This can take up to a minute.",
+      "iterateHint": "Change the description and generate again for a new version.",
+      "needDescription": "Write a description first, then generate a map.",
+      "unavailable": "Map generation is not set up yet",
+      "unavailableHint": "Add OPENAI_API_KEY to .env.local and restart the app to turn it on. Until then the preview shows built-in art.",
+      "failed": "The map couldn't be generated: {reason}.",
+      "outdated": "You changed the description or place type since this map. Generate again to see the new version.",
+      "version": "Version {n}",
+      "history": "Your maps",
+      "showVersion": "Show version {n}",
+      "download": "Download",
+      "remove": "Remove",
+      "usePlaceholder": "Use built-in art",
+      "keepHint": "Your current map stays until the new one is ready."
+    }
   },
   "environments": {
     "interior": {
@@ -422,7 +441,7 @@
     "aiStoryDesc": "Let the AI write dialogue when it's set up. Off means built-in lines only.",
     "aiTitle": "AI services",
     "aiText": "Personality analysis & dialogue",
-    "aiImage": "Pixel character generation",
+    "aiImage": "Pixel character & map generation",
     "aiReady": "Ready",
     "aiMissing": "Not configured",
     "aiChecking": "Checking"

@@ -5,22 +5,37 @@ import { AiError } from "./claude";
 
 /**
  * IMAGE GENERATION ADAPTER
- * The sprite route only talks to `ImageProvider`. Today the OpenAI image
- * model is used (it accepts a reference image). Another provider can be added
- * by implementing the same interface and selecting it with IMAGE_PROVIDER.
+ * The sprite and map routes only talk to `ImageProvider`. Today the OpenAI
+ * image model is used (it accepts a reference image for sprites and plain text
+ * for maps). Another provider can be added by implementing the same interface
+ * and selecting it with IMAGE_PROVIDER.
  */
 export interface ImageProvider {
   id: string;
   model: string;
   /** Turn a reference picture into a full-body pixel-art character on a transparent background. Returns PNG bytes. */
   generateSprite(input: { image: Buffer; mime: string; prompt: string }): Promise<Buffer>;
+  /** Text prompt → landscape (3:2) environment map. Returns WebP bytes. */
+  generateMap(input: { prompt: string }): Promise<Buffer>;
 }
+
+/** Turn SDK errors into the app's error codes (the route turns those into HTTP statuses). */
+function imageError(err: unknown, refusedMessage: string): AiError {
+  if (err instanceof AiError) return err;
+  if (err instanceof OpenAI.AuthenticationError || err instanceof OpenAI.PermissionDeniedError) return new AiError("auth", "The OpenAI API key was rejected");
+  if (err instanceof OpenAI.RateLimitError) return new AiError("rate_limited", "Rate limited, try again in a moment");
+  if (err instanceof OpenAI.BadRequestError) return new AiError("refused", refusedMessage);
+  if (err instanceof OpenAI.APIError) return new AiError("failed", `Image service error ${err.status ?? ""}`.trim());
+  return new AiError("failed", "Could not reach the image service");
+}
+
+const openai = () => new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 150_000, maxRetries: 1 });
 
 const openaiProvider: ImageProvider = {
   id: "openai",
   model: IMAGE_MODEL,
   async generateSprite({ image, mime, prompt }) {
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 150_000, maxRetries: 1 });
+    const client = openai();
     const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
     try {
       const res = await client.images.edit({
@@ -37,12 +52,26 @@ const openaiProvider: ImageProvider = {
       if (!b64) throw new AiError("invalid_output", "The image service returned no image");
       return Buffer.from(b64, "base64");
     } catch (err) {
-      if (err instanceof AiError) throw err;
-      if (err instanceof OpenAI.AuthenticationError || err instanceof OpenAI.PermissionDeniedError) throw new AiError("auth", "The OpenAI API key was rejected");
-      if (err instanceof OpenAI.RateLimitError) throw new AiError("rate_limited", "Rate limited, try again in a moment");
-      if (err instanceof OpenAI.BadRequestError) throw new AiError("refused", "The image service could not use this picture");
-      if (err instanceof OpenAI.APIError) throw new AiError("failed", `Image service error ${err.status ?? ""}`.trim());
-      throw new AiError("failed", "Could not reach the image service");
+      throw imageError(err, "The image service could not use this picture");
+    }
+  },
+  async generateMap({ prompt }) {
+    try {
+      const res = await openai().images.generate({
+        model: IMAGE_MODEL,
+        prompt,
+        size: "1536x1024",
+        background: "opaque",
+        output_format: "webp",
+        output_compression: 92,
+        quality: "high",
+        n: 1,
+      });
+      const b64 = res.data?.[0]?.b64_json;
+      if (!b64) throw new AiError("invalid_output", "The image service returned no image");
+      return Buffer.from(b64, "base64");
+    } catch (err) {
+      throw imageError(err, "The image service declined this description");
     }
   },
 };
