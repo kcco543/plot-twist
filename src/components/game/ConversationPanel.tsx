@@ -12,7 +12,7 @@
  *
  * The lines themselves play in the speech bubbles and the dialogue box above.
  */
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { PixelIcon } from "@/components/ui/PixelIcon";
 import { useI18n } from "@/i18n";
@@ -121,15 +121,27 @@ export function ConversationPanel({
   cast,
   story,
   lineInProgress,
+  aiMode,
 }: {
   talk: TalkController;
   cast: Character[];
   story: StoryState;
   lineInProgress: boolean;
+  /** Who answers: Claude, developer TEST replies, or the built-in rules. */
+  aiMode: "ai" | "mock" | null;
 }) {
   const { t, tx, locale } = useI18n();
   const s = talk.session;
   const box = useRef<HTMLElement>(null);
+  // A reply taking a while: say so (slow connection), so the wait never looks like a freeze.
+  const waiting = s?.phase === "WAIT_FOR_RESPONSE" && !!aiMode;
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    setSlow(false);
+    if (!waiting) return;
+    const timer = window.setTimeout(() => setSlow(true), 8000);
+    return () => window.clearTimeout(timer);
+  }, [waiting, s?.round]);
   const open = !!s && (s.phase === "FACE_TARGET" || s.phase === "SHOW_OPTIONS");
   // Phones: the panel opens below the dialogue; bring it into view once.
   useEffect(() => {
@@ -151,7 +163,19 @@ export function ConversationPanel({
   const unreadable = mood.emotion === "neutral" && (q.hides > 0 || q.reserved >= 0.7);
   const choosing = CHOOSING_PHASES.includes(s.phase) && !lineInProgress;
   const status =
-    s.phase === "FACE_TARGET" ? null : s.phase === "SPEAK" ? t("talk.panel.speaking", { other: theirName }) : s.phase === "WAIT_FOR_RESPONSE" ? t("talk.panel.answering", { other: theirName }) : s.phase === "CONTINUE_OR_EXIT" && s.round > 0 ? t("talk.panel.continue") : null;
+    s.phase === "FACE_TARGET"
+      ? null
+      : s.phase === "SPEAK"
+        ? t("talk.panel.speaking", { other: theirName })
+        : s.phase === "WAIT_FOR_RESPONSE"
+          ? aiMode
+            ? slow
+              ? t("talk.ai.slow", { other: theirName })
+              : t("talk.ai.thinking", { other: theirName })
+            : t("talk.panel.answering", { other: theirName })
+          : s.phase === "CONTINUE_OR_EXIT" && s.round > 0
+            ? t("talk.panel.continue")
+            : null;
 
   return (
     <section ref={box} aria-label={t("talk.panel.title")} className="content-block px-frame px-shadow relative mt-6" style={{ "--frame": "var(--frame-card)" } as CSSProperties} data-conversation-panel>
@@ -162,7 +186,16 @@ export function ConversationPanel({
         {/* Who, relationship, mood */}
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">
-            <p className="font-head text-lg font-bold leading-tight">{t("talk.panel.pair", { name: myName, other: theirName })}</p>
+            <p className="flex flex-wrap items-center gap-x-2 font-head text-lg font-bold leading-tight">
+              {t("talk.panel.pair", { name: myName, other: theirName })}
+              <span
+                data-reply-mode={aiMode ?? "builtin"}
+                title={t(aiMode === "ai" ? "talk.ai.modeAiDesc" : aiMode === "mock" ? "talk.ai.modeMockDesc" : "talk.ai.modeOffDesc")}
+                className={`px-1.5 py-0.5 font-label text-[9px] font-normal uppercase ${aiMode === "ai" ? "bg-lavender-hi text-label" : aiMode === "mock" ? "bg-butter-hi text-ink" : "bg-well text-ink-soft"}`}
+              >
+                {t(aiMode === "ai" ? "talk.ai.modeAi" : aiMode === "mock" ? "talk.ai.modeMock" : "talk.ai.modeOff")}
+              </span>
+            </p>
             <dl className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-sm">
               <dt className="font-label text-[10px] uppercase leading-5 text-ink-mute">{t("talk.panel.relationship")}</dt>
               <dd className="min-w-0" title={t("talk.panel.relationshipOf", { name: myName, other: theirName })}>
@@ -183,8 +216,22 @@ export function ConversationPanel({
         {s.customPending && (
           <p role="status" className="flex items-start gap-2 bg-lavender-hi px-3 py-2 text-sm shadow-[inset_4px_0_0_var(--color-lavender)]" data-ai-pending>
             <PixelIcon name="sparkle" size={12} className="mt-1 shrink-0 text-label" />
-            <span>{t("talk.panel.aiPending", { other: theirName })}</span>
+            <span>{t("talk.ai.offTyped", { other: theirName })}</span>
           </p>
+        )}
+
+        {s.aiError && (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-2 bg-peach-hi px-3 py-2 text-sm shadow-[inset_4px_0_0_var(--color-coral)]" data-ai-error={s.aiError}>
+            <p className="min-w-0 flex-1 basis-56">
+              <span className="font-bold">{t("talk.ai.failed", { other: theirName })}</span> {tx(`ai.errors.${s.aiError}`)}
+              {s.replySource === "builtin" && <> {t("talk.ai.usedBuiltin")}</>}
+            </p>
+            {s.canRetry && (
+              <PixelButton size="sm" variant="calm" icon="chat" disabled={!choosing} onClick={talk.retry} className="shrink-0 px-2" data-ai-retry>
+                {t("talk.ai.retry")}
+              </PixelButton>
+            )}
+          </div>
         )}
 
         {status && (
@@ -199,6 +246,26 @@ export function ConversationPanel({
           <div>
             <p className="mb-1.5 font-label text-[10px] uppercase text-ink-mute">{t("talk.panel.suggested")}</p>
             <ul className="grid gap-2 sm:grid-cols-2" aria-busy={!choosing}>
+              {s.aiTopics.map((sug, i) => (
+                <li key={`ai-${s.round}-${i}`}>
+                  <button
+                    type="button"
+                    disabled={!choosing}
+                    onClick={() => talk.chooseSuggestion(sug)}
+                    data-topic="ai"
+                    data-intent={sug.intent}
+                    title={sug.line}
+                    className="px-focus group flex min-h-12 w-full flex-col items-start justify-center bg-surface px-3 py-1.5 text-left shadow-[inset_0_0_0_2px_var(--color-lavender),inset_0_-4px_0_var(--color-lavender)] transition-colors enabled:hover:bg-lavender-hi enabled:active:translate-y-px disabled:opacity-50"
+                  >
+                    <span className="text-[15px] font-bold leading-snug text-ink sm:text-base">{sug.label}</span>
+                    <span className="flex items-center gap-1 text-xs text-ink-soft">
+                      <PixelIcon name="sparkle" size={8} className="shrink-0 text-label" />
+                      {tx(`talk.ai.intents.${sug.intent}`)}
+                      {s.replySource === "mock" ? " · TEST" : ""}
+                    </span>
+                  </button>
+                </li>
+              ))}
               {s.topics.map((topic) => {
                 const vars = talkVars({ ...topic.vars, other: theirName, name: myName }, locale);
                 return (

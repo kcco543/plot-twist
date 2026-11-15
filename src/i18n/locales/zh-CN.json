@@ -418,7 +418,8 @@
         "sigh": "叹气"
       },
       "close": "隐藏测试面板"
-    }
+    },
+    "sampleCast": "加入示例角色（米拉、雯雯、托比）"
   },
   "scene": {
     "narrator": "旁白",
@@ -509,7 +510,7 @@
       "chaotic": "混乱"
     },
     "aiStory": "AI 书写故事",
-    "aiStoryDesc": "配置好之后，由 AI 书写对话。关闭则只使用内置台词。",
+    "aiStoryDesc": "配置好之后，由 AI 书写对话和角色之间的对话回复。关闭则只使用内置台词。",
     "aiTitle": "AI 服务",
     "aiText": "性格分析与对话",
     "aiImage": "像素形象生成",
@@ -777,7 +778,11 @@
       "offline": "你现在离线",
       "bad_request": "请求无效",
       "too_large": "图片超过 8 MB",
-      "bad_type": "只支持 PNG、JPG 或 WebP 图片"
+      "bad_type": "只支持 PNG、JPG 或 WebP 图片",
+      "timeout": "回答时间太长",
+      "busy": "上一个回复还在写",
+      "limit": "已达到对话次数上限，请稍后再试",
+      "cancelled": "对话已结束"
     },
     "errorTitle": "没有成功：{reason}。"
   },
@@ -1659,8 +1664,7 @@
       "end": "结束对话",
       "speaking": "点一下对话框，听听{other}怎么回答。",
       "answering": "{other}正在回答…",
-      "continue": "继续聊，或者结束对话。",
-      "aiPending": "{other}听到了。要回应你自己写的话需要AI功能，会在下一阶段加入，所以现在还没有回答。这里不会用预设台词冒充回答。"
+      "continue": "继续聊，或者结束对话。"
     },
     "relation": {
       "labels": {
@@ -1925,6 +1929,67 @@
           "有人在水晶原那边看到一只戴帽子的史莱姆。"
         ]
       }
+    },
+    "ai": {
+      "testTag": "开发者测试回复：没有使用 AI",
+      "thinking": "{other}正在想……",
+      "slow": "{other}还在想……（网络有点慢？）",
+      "modeAi": "AI 回复",
+      "modeAiDesc": "回复由 Claude 根据角色设定、心情、关系和记忆写出。",
+      "modeMock": "测试回复",
+      "modeMockDesc": "开发者测试模式：固定回复，没有使用 AI。添加 Anthropic API 密钥后才是真正的回复。",
+      "modeOff": "内置回复",
+      "modeOffDesc": "AI 对话已关闭或未设置，由游戏自带的规则回答。",
+      "offTyped": "{other}听到了，但回应你自己写的话需要 AI 对话。在设置里打开“AI 书写故事”（服务器上需要 Anthropic API 密钥）。这里不会用预设台词冒充回答。",
+      "failed": "{other}的 AI 回复没有送达：",
+      "usedBuiltin": "改为显示内置反应。",
+      "retry": "再试一次",
+      "intents": {
+        "warm": "温暖",
+        "curious": "好奇",
+        "playful": "俏皮",
+        "serious": "认真",
+        "challenging": "挑战",
+        "supportive": "支持",
+        "apologetic": "道歉",
+        "honest": "坦白"
+      }
+    }
+  },
+  "memoryEditor": {
+    "help": "记忆会影响角色的行为和说的话。你可以更正、标记为已解决或让角色忘掉。",
+    "edited": "已修改",
+    "textLabel": "记住的内容",
+    "save": "保存",
+    "cancel": "取消",
+    "edit": "更正",
+    "forget": "忘掉",
+    "forgetConfirm": "确定忘掉",
+    "markResolved": "标记为已解决",
+    "reopen": "重新打开",
+    "resolved": "已解决",
+    "open": "未解决",
+    "threads": {
+      "conflict": "矛盾",
+      "promise": "约定",
+      "discovery": "发现",
+      "secret": "秘密"
+    },
+    "kinds": {
+      "note": "谈话",
+      "helped": "帮助",
+      "argument": "争吵",
+      "rejected": "被拒绝",
+      "complimented": "称赞",
+      "criticized": "批评",
+      "promise": "约定",
+      "secret": "秘密",
+      "reunion": "重逢",
+      "betrayed": "背叛",
+      "provoked": "挑衅",
+      "cooperated": "合作",
+      "teased": "打趣",
+      "met": "初次见面"
     }
   }
 }

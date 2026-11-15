@@ -133,10 +133,24 @@ export type Memory = {
   mood: Mood;
   /** 1 (minor) to 3 (unforgettable). */
   importance: number;
-  /** Short AI-written note, in the language it was written in. */
+  /** Short AI-written note, in the language it was written in (the player can correct it). */
   note: string | null;
   at: number;
+  /** Unfinished business this memory carries (AI conversations). */
+  thread?: MemoryThread;
+  /** The thread was settled later (by a conversation, or by the player). */
+  resolved?: boolean;
+  /** Written by an AI conversation; "player" once the player has edited it. */
+  source?: "ai" | "mock" | "player";
 };
+
+export type MemoryThread = "conflict" | "promise" | "discovery" | "secret";
+
+/** One spoken line in a conversation between two characters (AI conversations keep the last few per pair). */
+export type TalkLine = { from: string; text: string; turn: number; at: number; source: "ai" | "mock" | "builtin" | "player" };
+
+/** A relationship shift from an AI conversation, kept so later replies know how things have moved. */
+export type RelationShift = { turn: number; from: string; to: string; delta: Partial<Record<"trust" | "affection" | "respect" | "tension", number>>; why: string };
 
 export type CharacterState = {
   mood: Mood;
@@ -218,6 +232,10 @@ export type StoryState = {
   relations?: Record<string, Relation>;
   /** Behavior engine: recent decisions (most recent last, capped). */
   decisions?: DecisionRecord[];
+  /** AI conversations: recent lines per pair (keyed by bondKey), most recent last, capped. */
+  talk?: Record<string, TalkLine[]>;
+  /** AI conversations: recent relationship shifts per direction (keyed "fromId>toId"), capped. */
+  relationLog?: Record<string, RelationShift[]>;
 };
 
 // ---------------------------------------------------------------- save
@@ -245,8 +263,8 @@ export type StoryLine = {
   /** For list messages. */
   index?: number;
   params: Record<string, string>;
-  /** Where the line came from, shown as a tiny tag in the log. */
-  source?: "ai" | "builtin";
+  /** Where the line came from, shown as a tiny tag in the log ("mock" = developer TEST reply, never real AI). */
+  source?: "ai" | "builtin" | "mock";
 };
 
 /** v0.2 entries are StoryLines. v0.1 saves stored plain `speaker` + `text`; both still render. */

@@ -418,7 +418,8 @@
         "sigh": "Sigh"
       },
       "close": "Hide test panel"
-    }
+    },
+    "sampleCast": "Add the sample cast (Mira, Wren, Tobi)"
   },
   "scene": {
     "narrator": "Narrator",
@@ -509,7 +510,7 @@
       "chaotic": "Chaotic"
     },
     "aiStory": "AI story writing",
-    "aiStoryDesc": "Let the AI write dialogue when it's set up. Off means built-in lines only.",
+    "aiStoryDesc": "Let the AI write dialogue and conversation replies when it's set up. Off means built-in lines only.",
     "aiTitle": "AI services",
     "aiText": "Personality analysis & dialogue",
     "aiImage": "Pixel character generation",
@@ -777,7 +778,11 @@
       "offline": "you're offline",
       "bad_request": "the request was invalid",
       "too_large": "the image is larger than 8 MB",
-      "bad_type": "only PNG, JPG or WebP images work"
+      "bad_type": "only PNG, JPG or WebP images work",
+      "timeout": "it took too long to answer",
+      "busy": "a reply is already being written",
+      "limit": "the conversation limit was reached, try again later",
+      "cancelled": "the conversation ended"
     },
     "errorTitle": "That didn't work: {reason}."
   },
@@ -1659,8 +1664,7 @@
       "end": "End conversation",
       "speaking": "Tap the dialogue to hear {other}'s answer.",
       "answering": "{other} is answering…",
-      "continue": "Keep talking, or end the conversation.",
-      "aiPending": "{other} heard you. Replies to your own words need the AI stage, which comes in the next update, so there is no answer yet. Nothing scripted is shown in its place."
+      "continue": "Keep talking, or end the conversation."
     },
     "relation": {
       "labels": {
@@ -1925,6 +1929,67 @@
           "Someone saw a slime wearing a hat by the crystal fields."
         ]
       }
+    },
+    "ai": {
+      "testTag": "Developer TEST reply: no AI was used",
+      "thinking": "{other} is thinking…",
+      "slow": "{other} is still thinking… (slow connection?)",
+      "modeAi": "AI replies",
+      "modeAiDesc": "Replies are written by Claude from the characters' profiles, mood, relationship and memories.",
+      "modeMock": "TEST replies",
+      "modeMockDesc": "Developer test mode: canned replies, no AI. Add an Anthropic API key for real replies.",
+      "modeOff": "Built-in replies",
+      "modeOffDesc": "AI conversations are off or not set up, so the game's own rules answer.",
+      "offTyped": "{other} heard you, but answering your own words needs AI conversations. Turn on AI story writing in Settings (it needs an Anthropic API key on the server). Nothing scripted is shown in its place.",
+      "failed": "{other}'s AI reply didn't arrive:",
+      "usedBuiltin": "Showing the built-in reaction instead.",
+      "retry": "Try again",
+      "intents": {
+        "warm": "warm",
+        "curious": "curious",
+        "playful": "playful",
+        "serious": "serious",
+        "challenging": "challenging",
+        "supportive": "supportive",
+        "apologetic": "apologetic",
+        "honest": "honest"
+      }
+    }
+  },
+  "memoryEditor": {
+    "help": "Memories shape how characters act and what they say. You can correct, resolve or forget them.",
+    "edited": "edited",
+    "textLabel": "What they remember",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Correct",
+    "forget": "Forget",
+    "forgetConfirm": "Yes, forget it",
+    "markResolved": "Mark resolved",
+    "reopen": "Reopen",
+    "resolved": "resolved",
+    "open": "unresolved",
+    "threads": {
+      "conflict": "Conflict",
+      "promise": "Promise",
+      "discovery": "Discovery",
+      "secret": "Secret"
+    },
+    "kinds": {
+      "note": "Talk",
+      "helped": "Helped",
+      "argument": "Argument",
+      "rejected": "Rejected",
+      "complimented": "Compliment",
+      "criticized": "Criticism",
+      "promise": "Promise",
+      "secret": "Secret",
+      "reunion": "Reunion",
+      "betrayed": "Betrayal",
+      "provoked": "Provoked",
+      "cooperated": "Teamwork",
+      "teased": "Teasing",
+      "met": "First meeting"
     }
   }
 }

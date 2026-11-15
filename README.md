@@ -92,8 +92,19 @@ Drag a character onto another one (phones: touch and hold, then drag). While dra
 - Flow (SELECT_TARGET → MOVE_TO_TARGET → FACE_TARGET → SHOW_OPTIONS → SPEAK → WAIT_FOR_RESPONSE → CONTINUE_OR_EXIT): `src/lib/talk/flow.ts`, driven by `src/lib/talk/useTalk.ts`
 - Click vs drag rules and hit-testing: `src/lib/talk/drag.ts` · pointer handling + preview: `src/components/game/CharacterDrag.tsx`
 - Topic library (16 rule-based topics, no AI): `src/lib/talk/topics.ts`, wording under `talk.*` in both locale files. The listener's answer comes from the behavior engine with the topic's trigger.
-- Custom messages: `src/lib/talk/customReply.ts` holds the request/response shape for the future AI reply. Until then the game says plainly that replies to your own words need the next stage.
+- Custom messages: `src/lib/talk/customReply.ts` (length limit + cleanup). With AI conversations on, the listener answers them (below); with AI off the game says plainly that nobody can answer typed messages.
 - Tests: `tests/talk.test.ts`
+
+## AI conversations (Step 4)
+
+With an `ANTHROPIC_API_KEY` set and **AI story writing** on (Settings), the listener in a walk-and-talk answers suggested topics, AI suggestions and typed messages in character, written by Claude from their profile, sliders, mood, relationship, memories and the recent exchange. The reply also proposes an emotion, a movement, small relationship changes, a memory and 2–3 next lines for the speaker; the game validates all of it before anything changes. Full design: `docs/AI_CONVERSATIONS.md`.
+
+- Contract (request + structured reply): `src/lib/talk/ai/contract.ts` · server route: `src/app/api/ai/talk/route.ts` · prompt: `src/lib/ai/server/talk.ts`
+- Server checks (character, language, repeats, one retry): `src/lib/talk/ai/checks.ts` · usage limits: `src/lib/ai/server/limits.ts`
+- Game-engine validation + memory: `src/lib/talk/ai/apply.ts` · request building: `src/lib/talk/ai/request.ts` · flow: `src/lib/talk/useTalk.ts`
+- Memory inspector: Play Mode → character → **Memories** (correct, resolve, forget)
+- No characters yet? **Add the sample cast** on the Play screen (Mira, Wren, Tobi).
+- Tests: `tests/aiTalk.test.ts`; live model checks (cost a few cents): `RUN_LIVE_AI=1 npx vitest run tests/live`
 
 ## Design system
 

@@ -11,6 +11,8 @@
  * (no second topic while a reply is still playing, no options while walking).
  */
 import type { TopicChoice } from "./topics";
+import type { TalkSuggestion } from "./ai/contract";
+import type { TalkErrorCode } from "./ai/request";
 
 export const TALK_PHASES = ["SELECT_TARGET", "MOVE_TO_TARGET", "FACE_TARGET", "SHOW_OPTIONS", "SPEAK", "WAIT_FOR_RESPONSE", "CONTINUE_OR_EXIT"] as const;
 export type TalkPhase = (typeof TALK_PHASES)[number];
@@ -22,7 +24,8 @@ export const TALK_TRANSITIONS: Record<TalkPhase, readonly TalkPhase[]> = {
   SHOW_OPTIONS: ["SPEAK"],
   SPEAK: ["WAIT_FOR_RESPONSE"],
   WAIT_FOR_RESPONSE: ["CONTINUE_OR_EXIT"],
-  CONTINUE_OR_EXIT: ["SPEAK"],
+  // WAIT_FOR_RESPONSE again = "Try again" after an AI reply failed.
+  CONTINUE_OR_EXIT: ["SPEAK", "WAIT_FOR_RESPONSE"],
 };
 export const canTalkTransition = (from: TalkPhase, to: TalkPhase) => TALK_TRANSITIONS[from].includes(to);
 
@@ -48,12 +51,20 @@ export type TalkSession = {
   /** The "Ask something else" composer. The draft survives closing it until it is sent. */
   composing: boolean;
   draft: string;
-  /** What the last custom message was waiting on (no AI reply service yet). */
+  /** The last typed message got no reply because AI conversations aren't connected. */
   customPending: boolean;
+  /** AI-written next lines for the speaker (shown before the rule-based topics). */
+  aiTopics: TalkSuggestion[];
+  /** The last AI reply failed (shown with the reason; typed messages can be retried). */
+  aiError: TalkErrorCode | null;
+  /** Whether the last failed reply can be retried. */
+  canRetry: boolean;
+  /** Where the listener's last reply came from. */
+  replySource: "ai" | "mock" | "builtin" | null;
 };
 
 export function newSession(id: number, actorId: string, via: TalkSession["via"]): TalkSession {
-  return { id, phase: "SELECT_TARGET", actorId, targetId: null, via, round: 0, topics: [], offered: [], composing: false, draft: "", customPending: false };
+  return { id, phase: "SELECT_TARGET", actorId, targetId: null, via, round: 0, topics: [], offered: [], composing: false, draft: "", customPending: false, aiTopics: [], aiError: null, canRetry: false, replySource: null };
 }
 
 /** Move to `to` if allowed; otherwise the session is returned unchanged. */
