@@ -656,12 +656,13 @@
       "openai": "OpenAI 图像（角色、地图）"
     },
     "aiResult": {
-      "ok": "已连接",
+      "ok": "密钥有效",
       "missing": "没有密钥",
       "auth": "密钥被拒绝",
       "model_missing": "模型不可用",
       "unreachable": "无法连接"
-    }
+    },
+    "aiCheckNote": "这里只检查密钥和模型，不会生成任何内容。余额不足只有在实际生成时才会显示。"
   },
   "traits": {
     "extroversion": {
@@ -924,7 +925,8 @@
       "busy": "上一个回复还在写",
       "limit": "已达到对话次数上限，请稍后再试",
       "cancelled": "对话已结束",
-      "unsupported": "当前的图像服务不支持局部修改"
+      "unsupported": "当前的图像服务不支持局部修改",
+      "billing": "AI 账户余额不足或已达到消费上限（请在服务商的账单页面充值后再试）"
     },
     "errorTitle": "没有成功：{reason}。"
   },
@@ -2199,7 +2201,8 @@
         "bad_request": "照片没能发出去。换一张试试。",
         "bad_image": "照片读不出来。换一张试试。",
         "too_large": "这张照片太复杂，发不出去。换一张试试。",
-        "cancelled": "已停止。"
+        "cancelled": "已停止。",
+        "billing": "AI 账户余额不足。充值后再试。"
       }
     },
     "gift": {
@@ -2230,7 +2233,8 @@
         "offline": "你已离线，请联网后再试。",
         "rate_limited": "已经在画一张图了，请稍后再试。",
         "refused": "图像服务拒绝了这个描述，换个说法试试。",
-        "failed": "图案没能生成，请再试一次。"
+        "failed": "图案没能生成，请再试一次。",
+        "billing": "图像服务账户余额不足，没有生成图片。请到 platform.openai.com → Billing 充值。"
       },
       "needName": "请先给礼物起个名字。",
       "preview": "物品预览",
@@ -2269,7 +2273,8 @@
         "bad_request": "礼物没能送出去。",
         "bad_image": "礼物图片读不出来。",
         "too_large": "这份礼物太复杂，发不出去。换一张试试。",
-        "cancelled": "已停止。"
+        "cancelled": "已停止。",
+        "billing": "AI 账户余额不足。充值后再试。"
       }
     },
     "log": {

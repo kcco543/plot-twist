@@ -45,6 +45,7 @@ export function AiConnectionCheck() {
               <span className={`font-label text-[10px] uppercase ${c.result === "ok" ? "text-mint-deep" : "text-coral-deep"}`}>{t(`settings.aiResult.${c.result}`)}</span>
             </li>
           ))}
+          <li className="text-ink-mute">{t("settings.aiCheckNote")}</li>
         </ul>
       )}
     </div>

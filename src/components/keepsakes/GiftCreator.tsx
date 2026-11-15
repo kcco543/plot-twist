@@ -128,7 +128,7 @@ export function GiftCreator({
       setNotice(null);
     } catch (err) {
       const code = err instanceof AiRequestError ? err.code : "failed";
-      setAiError(t(`keepsakes.gift.aiError.${code === "not_configured" || code === "offline" || code === "rate_limited" || code === "refused" ? code : "failed"}`));
+      setAiError(t(`keepsakes.gift.aiError.${code === "not_configured" || code === "offline" || code === "rate_limited" || code === "refused" || code === "billing" ? code : "failed"}`));
     } finally {
       setBusy(null);
     }

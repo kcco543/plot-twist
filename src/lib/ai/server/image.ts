@@ -35,10 +35,21 @@ const OPENAI_SIZES = new Set(["1024x1024", "1536x1024", "1024x1536"]);
 function imageError(err: unknown, refusedMessage: string): AiError {
   if (err instanceof AiError) return err;
   if (err instanceof OpenAI.AuthenticationError || err instanceof OpenAI.PermissionDeniedError) return new AiError("auth", "The OpenAI API key was rejected");
+  if (err instanceof OpenAI.APIError && isBillingError(err)) return new AiError("billing", "The OpenAI account has no credits or has hit its spending limit");
   if (err instanceof OpenAI.RateLimitError) return new AiError("rate_limited", "Rate limited, try again in a moment");
   if (err instanceof OpenAI.BadRequestError) return new AiError("refused", refusedMessage);
   if (err instanceof OpenAI.APIError) return new AiError("failed", `Image service error ${err.status ?? ""}`.trim());
   return new AiError("failed", "Could not reach the image service");
+}
+
+/**
+ * Out of credits / over the spending limit. OpenAI sends these as 429s too, but
+ * waiting won't help, so they get their own code ("billing") and message.
+ */
+export function isBillingError(err: { status?: number; code?: string | null; type?: string | null; message?: string }): boolean {
+  if (err.status === 402) return true;
+  const text = `${err.code ?? ""} ${err.type ?? ""} ${err.message ?? ""}`.toLowerCase();
+  return /insufficient_quota|credit_balance|billing_hard_limit|billing|exceeded your current quota|quota/.test(text);
 }
 
 const openai = () => new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 150_000, maxRetries: 1 });

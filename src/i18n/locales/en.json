@@ -656,12 +656,13 @@
       "openai": "OpenAI images (characters, maps)"
     },
     "aiResult": {
-      "ok": "Connected",
+      "ok": "Key works",
       "missing": "No key",
       "auth": "Key rejected",
       "model_missing": "Model not available",
       "unreachable": "Couldn't reach"
-    }
+    },
+    "aiCheckNote": "This checks the key and model without making anything. Running out of credits only shows up when something is generated."
   },
   "traits": {
     "extroversion": {
@@ -924,7 +925,8 @@
       "busy": "a reply is already being written",
       "limit": "the conversation limit was reached, try again later",
       "cancelled": "the conversation ended",
-      "unsupported": "this image service can't edit part of a map"
+      "unsupported": "this image service can't edit part of a map",
+      "billing": "the AI account has run out of credits or hit its spending limit (add credits in the provider's billing page, then try again)"
     },
     "errorTitle": "That didn't work: {reason}."
   },
@@ -2199,7 +2201,8 @@
         "bad_request": "The photo couldn't be sent. Try another one.",
         "bad_image": "The photo couldn't be read. Try another one.",
         "too_large": "That photo is too detailed to send. Try another one.",
-        "cancelled": "Stopped."
+        "cancelled": "Stopped.",
+        "billing": "The AI account is out of credits. Add credits, then try again."
       }
     },
     "gift": {
@@ -2230,7 +2233,8 @@
         "offline": "You're offline. Connect and try again.",
         "rate_limited": "A picture is already being drawn. Try again in a moment.",
         "refused": "The image service declined this description. Try different words.",
-        "failed": "The picture couldn't be made. Try again."
+        "failed": "The picture couldn't be made. Try again.",
+        "billing": "The image account is out of credits, so no picture was made. Add credits on platform.openai.com → Billing."
       },
       "needName": "Give the gift a name first.",
       "preview": "Item preview",
@@ -2269,7 +2273,8 @@
         "bad_request": "The gift couldn't be sent. Try another one.",
         "bad_image": "The gift picture couldn't be read. Try another one.",
         "too_large": "That gift picture is too big to send.",
-        "cancelled": "Stopped."
+        "cancelled": "Stopped.",
+        "billing": "The AI account is out of credits. Add credits, then try again."
       }
     },
     "log": {

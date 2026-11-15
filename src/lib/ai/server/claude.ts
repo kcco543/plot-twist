@@ -7,7 +7,7 @@ import { TEXT_MODEL, textConfigured } from "./config";
 
 export class AiError extends Error {
   constructor(
-    public code: "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "timeout" | "unsupported",
+    public code: "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "timeout" | "unsupported" | "billing",
     message: string,
   ) {
     super(message);
@@ -59,6 +59,7 @@ export async function structuredCall<S extends z.ZodType>(opts: {
     if (err instanceof AiError) throw err;
     if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) throw new AiError("auth", "The Anthropic API key was rejected");
     if (err instanceof Anthropic.APIConnectionTimeoutError) throw new AiError("timeout", "The AI took too long to answer");
+    if (err instanceof Anthropic.APIError && /credit balance|billing|quota/i.test(err.message)) throw new AiError("billing", "The Anthropic account has no credits left");
     if (err instanceof Anthropic.RateLimitError) throw new AiError("rate_limited", "Rate limited, try again in a moment");
     if (err instanceof Anthropic.APIError) throw new AiError("failed", `Anthropic API error ${err.status ?? ""}`.trim());
     if (err instanceof Anthropic.AnthropicError) throw new AiError("invalid_output", err.message.slice(0, 200));
@@ -68,7 +69,7 @@ export async function structuredCall<S extends z.ZodType>(opts: {
 
 export function aiErrorResponse(err: unknown) {
   const e = err instanceof AiError ? err : new AiError("failed", "Unexpected error");
-  const status = e.code === "not_configured" || e.code === "unsupported" ? 503 : e.code === "rate_limited" ? 429 : e.code === "timeout" ? 504 : e.code === "refused" || e.code === "invalid_output" ? 422 : 502;
+  const status = e.code === "not_configured" || e.code === "unsupported" ? 503 : e.code === "rate_limited" ? 429 : e.code === "billing" ? 402 : e.code === "timeout" ? 504 : e.code === "refused" || e.code === "invalid_output" ? 422 : 502;
   if (!(err instanceof AiError)) console.error("[ai]", err);
   return Response.json({ error: e.code, message: e.message }, { status });
 }
