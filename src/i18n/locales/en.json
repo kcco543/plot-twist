@@ -464,7 +464,11 @@
         "retreat": "Step back",
         "face_target": "Turn to face",
         "idle_reaction": "Idle animation",
-        "show_emotion": "Show emotion"
+        "show_emotion": "Show emotion",
+        "walk_to": "Walk to a spot",
+        "use_object": "Use an object",
+        "turn_away": "Turn away",
+        "stand_up": "Stand up"
       },
       "reasons": {
         "invalid": "the request wasn't valid",
@@ -477,7 +481,9 @@
         "cornered": "there's nowhere to back away to, so they turned away instead",
         "paused": "everyone is frozen",
         "player_command": "you're steering them right now, so their own reaction waits",
-        "outranked": "they're busy with something more important (your command or the story)"
+        "outranked": "they're busy with something more important (your command or the story)",
+        "unknown_object": "there's no such object here",
+        "not_allowed": "that isn't something they can do with it"
       },
       "notes": {
         "moving": "on the way",
@@ -485,7 +491,9 @@
         "facing": "turned to face them",
         "emoting": "showing the feeling",
         "idle": "playing an idle animation",
-        "shortened": "only a short step was possible"
+        "shortened": "only a short step was possible",
+        "nearby": "that exact spot was blocked, so they're going to the nearest reachable spot",
+        "arrived": "already there"
       },
       "idleKinds": {
         "look_around": "Look around",
@@ -1769,8 +1777,8 @@
     }
   },
   "talk": {
-    "hint": "Drag a character onto someone to walk over and talk.",
-    "hintTouch": "Touch and hold a character, then drag onto someone.",
+    "hint": "Drag a character onto someone to talk, onto an object to use it, or onto the floor to walk there.",
+    "hintTouch": "Touch and hold a character, then drag onto someone, an object, or the floor.",
     "orTap": "Or:",
     "chooseButton": "Talk to…",
     "chooseNeedsSelection": "Select a character first",
@@ -1795,7 +1803,14 @@
       "cancelled": "Cancelled. Nobody moved.",
       "emptySpace": "To start a conversation, drop {name} onto another character.",
       "ended": "{name} and {other} finished talking.",
-      "listenerEnded": "{other} ended the conversation."
+      "listenerEnded": "{other} ended the conversation.",
+      "unreachablePlace": "{name} can't get there. Something is in the way.",
+      "unreachableObject": "{name} can't reach the {other}.",
+      "nearby": "That spot is blocked, so {name} is going as close as they can.",
+      "refused": "{other} doesn't want to talk to {name} right now.",
+      "walkedAway": "{other} walked away from {name}.",
+      "goingTo": "{name} is heading to the {other}, as they said they would.",
+      "noSuchPlace": "{name} meant to go to {other}, but there's no such place here, so they stay put."
     },
     "dismiss": "Dismiss",
     "panel": {
@@ -2592,5 +2607,67 @@
     "runSimulation": "20-interaction simulation",
     "passed": "{n} of {total} passed",
     "simSummary": "Mira's view of Tobi: {start} → {end}; label {from} → {to}."
+  },
+  "objects": {
+    "names": {
+      "window": "window",
+      "bookshelf": "bookshelf",
+      "wallArt": "picture on the wall",
+      "door": "door",
+      "tableNote": "note on the table",
+      "rug": "rug",
+      "plant": "potted plant",
+      "shopSign": "shop sign",
+      "shopDoor": "shop door",
+      "lamp": "street lamp",
+      "mushroom": "mushroom",
+      "bigMushroom": "big mushroom",
+      "rubble": "pile of rubble",
+      "oldStone": "old stone",
+      "roundWindow": "round window",
+      "potionShelf": "potion shelf",
+      "cushion": "cushion",
+      "lantern": "lantern",
+      "crystals": "crystals",
+      "slime": "slime",
+      "tinyHouse": "tiny house",
+      "pond": "pond",
+      "steps": "old steps",
+      "potion": "potion",
+      "gift": "gift"
+    },
+    "actions": {
+      "read": "Read",
+      "examine": "Examine",
+      "sit": "Sit",
+      "open": "Open",
+      "inspect": "Inspect",
+      "pick_up": "Pick up",
+      "look_out": "Look out",
+      "admire": "Admire"
+    },
+    "do": {
+      "read": "{name} pulls something from the {object} and reads a few lines.",
+      "examine": "{name} takes a closer look at the {object}.",
+      "sit": "{name} sits down on the {object}.",
+      "open": "{name} opens the {object} a crack and looks out.",
+      "inspect": "{name} inspects the {object}.",
+      "pick_up": "{name} picks up the {object} and keeps it close.",
+      "look_out": "{name} looks out of the {object} for a while.",
+      "admire": "{name} stops to admire the {object}."
+    },
+    "drag": {
+      "use": "{action}: {object}",
+      "walkHere": "Walk here",
+      "nearby": "Blocked, will stop as close as possible",
+      "noWay": "Can't get there",
+      "objectNoWay": "Can't reach the {object}",
+      "busy": "Busy"
+    },
+    "notice": {
+      "unreachablePlace": "{actor} can't get there. Something is in the way.",
+      "unreachableObject": "{actor} can't reach the {object}.",
+      "nearby": "That spot is blocked, so {actor} went as close as they could."
+    }
   }
 }

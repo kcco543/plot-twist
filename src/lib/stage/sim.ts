@@ -17,7 +17,8 @@
 import type { Character } from "../types";
 import { type Emotion, type EmotionLevel } from "../emotion/emotions";
 import { burstMs, effectFor, type BodyMotion } from "../emotion/effects";
-import { PRIORITIES, validateStageAction, type ActionResult, type IdleKind, type Priority, type StageAction } from "./actions";
+import { PRIORITIES, travels, validateStageAction, type ActionResult, type IdleKind, type Priority, type StageAction } from "./actions";
+import { actionAllowed, defaultAction, validAnchors, type ObjectAction, type WorldObject } from "./objects";
 import { idleChoice, idleDelay, reactionAction, rngFrom, walkSpeed, type MoveContext } from "./behavior";
 import { clampToWalk, gap, PERSONAL_SPACE, STAND_DEPTH, standGap, type Point, type RoomLayout } from "./room";
 import { findPath, isFree, nearestFree, PASSING_SPACE, spawnPoints, type Blocker } from "./path";
@@ -52,7 +53,10 @@ const RETARGET_MS = 500;
 export const COMMAND_GRACE_MS = 2500;
 
 type Move = {
-  kind: "approach" | "retreat" | "shift" | "makeRoom";
+  kind: "approach" | "retreat" | "shift" | "makeRoom" | "goto" | "object";
+  /** kind "object": what to use and how. */
+  objectId?: string;
+  action?: ObjectAction;
   targetId: string | null;
   /** For approach: stop this far from the target. For retreat: how far to get away. */
   distance: number;
@@ -98,6 +102,10 @@ type Actor = {
   movePriority: number;
   /** Until when autonomous movement must leave this character alone (player command). */
   commandUntil: number;
+  /** Sitting on something (cleared when they walk again). */
+  pose: "sit" | null;
+  /** The object they're using right now, if any. */
+  usingObject: string | null;
 };
 
 export type ActorView = {
@@ -118,7 +126,12 @@ export type ActorView = {
   /** Paused walk waiting to resume. */
   suspended: boolean;
   lookAt: string | null;
+  pose: "sit" | null;
+  usingObject: string | null;
 };
+
+/** Where a character stands, saved with the world so a reload puts everyone back. */
+export type SavedSpot = { x: number; y: number; facing: 1 | -1; pose?: "sit" | null; object?: string | null };
 
 export type StageSnapshot = { actors: ActorView[]; paused: boolean; time: number };
 
@@ -133,6 +146,10 @@ export type SimOptions = {
 
 /** Called when someone finishes walking up to someone else (the behavior engine reacts to it). */
 export type ArriveListener = (actorId: string, targetId: string, priority: Priority) => void;
+/** Called when someone reaches an object and uses it. */
+export type ObjectListener = (actorId: string, objectId: string, action: ObjectAction, priority: Priority) => void;
+/** Called when any walk ends: arrived, gave up (blocked), or was cancelled / replaced. */
+export type WalkEndListener = (actorId: string, outcome: "arrived" | "failed" | "cancelled", kind: string, priority: Priority) => void;
 
 export class StageSim {
   private actors = new Map<string, Actor>();
@@ -153,6 +170,12 @@ export class StageSim {
   /** Requests waiting for a delay (game time, so pausing freezes them too). */
   private scheduled: { at: number; raw: unknown; context: MoveContext; priority: Priority }[] = [];
   onArrive: ArriveListener | null = null;
+  onObject: ObjectListener | null = null;
+  onWalkEnd: WalkEndListener | null = null;
+  /** Interactive objects in this room (objects.ts). */
+  objects: WorldObject[] = [];
+  /** Saved spots to put characters back on when they're (re)added. */
+  private savedSpots: Record<string, SavedSpot> = {};
   private pendingPriority: number = PRIORITIES.story;
 
   /** Run a request after `delayMs` of game time (a hesitation before reacting). */
@@ -201,19 +224,22 @@ export class StageSim {
   }
 
   /** The walk a character is on (or has paused), if any. */
-  walkOf(id: string): { kind: Move["kind"]; targetId: string | null; paused: boolean } | null {
+  walkOf(id: string): { kind: Move["kind"]; targetId: string | null; objectId: string | null; goal: Point; paused: boolean; priority: Priority } | null {
     const a = this.actors.get(id);
     const m = a?.move ?? a?.suspended;
-    return a && m ? { kind: m.kind, targetId: m.targetId, paused: !a.move } : null;
+    return a && m ? { kind: m.kind, targetId: m.targetId, objectId: m.objectId ?? null, goal: m.goal, paused: !a.move, priority: this.priorityName(a.movePriority) } : null;
   }
 
   /** Drop one character's walk for good (the player cancelled it). Unlike stop(), it won't resume. */
   cancelWalk(id: string): boolean {
     const a = this.actors.get(id);
     if (!a || (!a.move && !a.suspended)) return false;
+    const m = a.move ?? a.suspended;
+    const priority = this.priorityName(a.movePriority);
     a.move = null;
     a.suspended = null;
     this.endCommand(a);
+    if (m) this.onWalkEnd?.(a.id, "cancelled", m.kind, priority);
     if (a.state === "moving") this.setState(a, this.convo.has(a.id) ? "interacting" : "idle");
     this.emit();
     return true;
@@ -238,14 +264,16 @@ export class StageSim {
       cast.forEach((c, i) => {
         if (this.actors.has(c.id)) return;
         const others = [...this.actors.values()].map((a) => ({ x: a.x, y: a.y, depth: STAND_DEPTH }));
-        const p = isFree(this.room, spots[i], others, PERSONAL_SPACE) ? spots[i] : (nearestFree(this.room, spots[i], others, PERSONAL_SPACE, 160) ?? spots[i]);
+        const saved = this.savedSpots[c.id];
+        const want = saved && isFree(this.room, saved, others, PERSONAL_SPACE - 2) ? { x: saved.x, y: saved.y } : spots[i];
+        const p = isFree(this.room, want, others, PERSONAL_SPACE - 2) ? want : (nearestFree(this.room, want, others, PERSONAL_SPACE, 160) ?? want);
         const rng = rngFrom(`idle:${c.id}`);
         this.actors.set(c.id, {
           id: c.id,
           c,
           x: p.x,
           y: p.y,
-          facing: p.x > 160 ? -1 : 1,
+          facing: saved && p.x === saved.x && p.y === saved.y ? saved.facing : p.x > 160 ? -1 : 1,
           state: "idle",
           since: this.time,
           move: null,
@@ -267,6 +295,8 @@ export class StageSim {
           glanceUntil: 0,
           movePriority: 0,
           commandUntil: 0,
+          pose: saved && p.x === saved.x && p.y === saved.y ? (saved.pose ?? null) : null,
+          usingObject: saved && p.x === saved.x && p.y === saved.y ? (saved.object ?? null) : null,
         });
       });
     }
@@ -275,10 +305,32 @@ export class StageSim {
     this.emit(true);
   }
 
+  /** Saved positions (from the world save) used for characters added from now on. */
+  setSavedSpots(spots: Record<string, SavedSpot>) {
+    this.savedSpots = spots;
+  }
+
+  /** Everyone's current spot (for saving). Walkers are saved where they stand now. */
+  spots(): Record<string, SavedSpot> {
+    const out: Record<string, SavedSpot> = {};
+    for (const a of this.actors.values()) out[a.id] = { x: Math.round(a.x), y: Math.round(a.y), facing: a.facing, pose: a.pose, object: a.usingObject };
+    return out;
+  }
+
+  setObjects(objects: WorldObject[]) {
+    this.objects = objects;
+    for (const a of this.actors.values()) if (a.usingObject && !objects.some((o) => o.id === a.usingObject)) a.usingObject = null;
+    this.emit(true);
+  }
+  objectById(id: string) {
+    return this.objects.find((o) => o.id === id) ?? null;
+  }
+
   /** New room (different place): everyone goes back to a starting spot. */
   setRoom(room: RoomLayout) {
     if (room === this.room) return;
     this.room = room;
+    this.savedSpots = {};
     const cast = this.order.map((id) => this.actors.get(id)!.c);
     this.actors.clear();
     this.setCast(cast);
@@ -311,6 +363,8 @@ export class StageSim {
         walking: a.state === "moving",
         suspended: !!a.suspended,
         lookAt: a.lookAt,
+        pose: a.pose,
+        usingObject: a.usingObject,
       }));
     const key = JSON.stringify(actors) + this.paused;
     if (!force && key === this.snapKey) return;
@@ -334,6 +388,9 @@ export class StageSim {
   emotionOf(id: string): { emotion: Emotion; level: EmotionLevel } | null {
     const a = this.actors.get(id);
     return a ? { emotion: a.emotion, level: a.level } : null;
+  }
+  poseOf(id: string) {
+    return this.actors.get(id)?.pose ?? null;
   }
   isSuspended(id: string) {
     return !!this.actors.get(id)?.suspended;
@@ -380,20 +437,29 @@ export class StageSim {
    */
   request(raw: unknown, context: MoveContext = "test", priority: Priority = context === "test" ? "player" : "story"): ActionResult {
     if (this.paused) return { ok: false, reason: "paused" };
-    const v = validateStageAction(raw, { onStage: (id) => this.actors.has(id), stateOf: (id) => this.stateOf(id) });
+    const v = validateStageAction(raw, {
+      onStage: (id) => this.actors.has(id),
+      stateOf: (id) => this.stateOf(id),
+      objectOk: (actor, objectId, action) => {
+        const o = this.objectById(objectId);
+        if (!o) return "unknown_object";
+        const act = (action as ObjectAction | undefined) ?? defaultAction(o, actor);
+        return act && actionAllowed(o, act, actor) ? "ok" : "not_allowed";
+      },
+    });
     if (!v.ok) {
       if (v.action) this.lastResult.set(v.action.actor, v);
       return v;
     }
     const a0 = this.actors.get(v.action.actor)!;
     const rank = PRIORITIES[priority];
-    const travels = v.action.type === "approach" || v.action.type === "retreat" || (v.action.type === "idle_reaction" && v.action.kind === "shift");
-    if (travels && rank < PRIORITIES.player && this.time < a0.commandUntil) {
+    const moves = travels(v.action);
+    if (moves && rank < PRIORITIES.player && this.time < a0.commandUntil) {
       const r: ActionResult = { ok: false, reason: "player_command", action: v.action };
       this.lastResult.set(v.action.actor, r);
       return r;
     }
-    if (travels && (a0.move || a0.suspended) && rank < a0.movePriority) {
+    if (moves && (a0.move || a0.suspended) && rank < a0.movePriority) {
       const r: ActionResult = { ok: false, reason: "outranked", action: v.action };
       this.lastResult.set(v.action.actor, r);
       return r;
@@ -435,6 +501,23 @@ export class StageSim {
         return this.startApproach(a, act.target, act.distance ?? 30, act);
       case "retreat":
         return this.startRetreat(a, act.from ?? null, act.distance ?? 24, act);
+      case "walk_to":
+        return this.startGoto(a, { x: act.x, y: act.y }, act);
+      case "use_object": {
+        const o = this.objectById(act.object)!;
+        return this.startObject(a, o, act.action ?? defaultAction(o, a.id)!, act);
+      }
+      case "turn_away": {
+        const from = this.actors.get(act.from)!;
+        a.lookAt = null;
+        a.facing = from.x > a.x ? -1 : 1;
+        a.glanceUntil = 0;
+        return { ok: true, action: act, note: "facing" };
+      }
+      case "stand_up":
+        a.pose = null;
+        a.usingObject = null;
+        return { ok: true, action: act, note: "idle" };
     }
   }
 
@@ -484,6 +567,10 @@ export class StageSim {
   }
 
   private beginMove(a: Actor, m: Move): boolean {
+    const replaced = a.move ?? a.suspended;
+    if (replaced && replaced !== m) this.onWalkEnd?.(a.id, "cancelled", replaced.kind, this.priorityName(a.movePriority));
+    a.pose = null;
+    a.usingObject = null;
     if (a.state === "reacting") {
       // Finish the reaction first, then walk.
       a.suspended = m;
@@ -498,6 +585,98 @@ export class StageSim {
     a.movePriority = this.pendingPriority;
     if (this.pendingPriority >= PRIORITIES.player) a.commandUntil = Infinity;
     return true;
+  }
+
+  private priorityName(rank: number): Priority {
+    return rank >= PRIORITIES.player ? "player" : rank === PRIORITIES.auto ? "auto" : "story";
+  }
+
+  /**
+   * Where to stand to reach `want`: the spot itself if it's free and has a path,
+   * otherwise the nearest reachable free spot (ring search). null = no way at all.
+   */
+  private reachableNear(a: Actor, want: Point, maxRadius = 48): { goal: Point; path: Point[]; adjusted: boolean } | null {
+    const others = this.standBlockers(a);
+    const clamped = clampToWalk(this.room, want);
+    if (isFree(this.room, clamped, others, PERSONAL_SPACE)) {
+      const path = this.plan(a, clamped);
+      if (path) return { goal: clamped, path, adjusted: Math.hypot(clamped.x - want.x, clamped.y - want.y) > 2 };
+    }
+    // Rings of candidates around the wanted spot, nearest first; the first one with a path wins.
+    const cands: Point[] = [];
+    for (let r = 4; r <= maxRadius; r += 4)
+      for (let k = 0; k < 16; k++) {
+        const ang = (k / 16) * Math.PI * 2;
+        cands.push({ x: Math.round(clamped.x + Math.cos(ang) * r), y: Math.round(clamped.y + Math.sin(ang) * r * 0.5) });
+      }
+    let tries = 0;
+    for (const c of cands) {
+      if (!isFree(this.room, c, others, PERSONAL_SPACE)) continue;
+      if (++tries > 24) break;
+      const path = this.plan(a, c);
+      if (path) return { goal: c, path, adjusted: true };
+    }
+    return null;
+  }
+
+  /** Walk-to-point preview (drag): route + whether the spot had to be moved. null = can't get there. */
+  previewGoto(actorId: string, p: Point): { path: Point[]; goal: Point; adjusted: boolean } | null {
+    const a = this.actors.get(actorId);
+    return a ? this.reachableNear(a, p) : null;
+  }
+
+  /** Object preview (drag): the anchor the actor would use and the route there. */
+  previewObject(actorId: string, objectId: string): { path: Point[]; goal: Point; adjusted: boolean } | null {
+    const a = this.actors.get(actorId);
+    const o = this.objectById(objectId);
+    return a && o ? this.objectGoal(a, o) : null;
+  }
+
+  private objectGoal(a: Actor, o: WorldObject): { path: Point[]; goal: Point; adjusted: boolean } | null {
+    let best: { path: Point[]; goal: Point; adjusted: boolean; len: number } | null = null;
+    for (const anchor of validAnchors(this.room, o)) {
+      if (Math.hypot(a.x - anchor.x, a.y - anchor.y) <= o.radius) return { path: [], goal: { x: a.x, y: a.y }, adjusted: false };
+      const r = this.reachableNear(a, anchor, 16);
+      if (!r) continue;
+      let len = 0;
+      let prev: Point = a;
+      for (const q of r.path) {
+        len += Math.hypot(q.x - prev.x, q.y - prev.y);
+        prev = q;
+      }
+      if (!best || len < best.len) best = { ...r, len };
+    }
+    return best ? { path: best.path, goal: best.goal, adjusted: best.adjusted } : null;
+  }
+
+  private startGoto(a: Actor, want: Point, act: StageAction): ActionResult {
+    const r = this.reachableNear(a, want);
+    if (!r) return { ok: false, reason: "no_path", action: act };
+    if (!r.path.length) return { ok: true, action: act, note: "arrived" };
+    const m: Move = { kind: "goto", targetId: null, distance: 0, goal: r.goal, path: r.path, speed: walkSpeed(a.c, a.emotion), blockedMs: 0, replans: 0, aimedAt: null, aimedMs: this.time };
+    if (!this.beginMove(a, m)) return { ok: false, reason: "busy", action: act };
+    a.lookAt = null;
+    return { ok: true, action: act, note: r.adjusted ? "nearby" : "moving" };
+  }
+
+  private startObject(a: Actor, o: WorldObject, action: ObjectAction, act: StageAction): ActionResult {
+    const r = this.objectGoal(a, o);
+    if (!r) return { ok: false, reason: "no_path", action: act };
+    const m: Move = { kind: "object", objectId: o.id, action, targetId: null, distance: 0, goal: r.goal, path: r.path, speed: walkSpeed(a.c, a.emotion), blockedMs: 0, replans: 0, aimedAt: null, aimedMs: this.time };
+    if (!r.path.length) {
+      // Already there: use it now.
+      a.move = m;
+      this.pendingMovePriority(a);
+      this.arrive(a);
+      return { ok: true, action: act, note: "arrived" };
+    }
+    if (!this.beginMove(a, m)) return { ok: false, reason: "busy", action: act };
+    a.lookAt = null;
+    return { ok: true, action: act, note: r.adjusted ? "nearby" : "moving" };
+  }
+
+  private pendingMovePriority(a: Actor) {
+    a.movePriority = this.pendingPriority;
   }
 
   /** A walk ended (arrived, gave up or stopped): a player command keeps autonomy away a little longer. */
@@ -707,6 +886,11 @@ export class StageSim {
     if (!m) return false;
     a.suspended = null;
     this.pendingPriority = Math.max(a.movePriority, PRIORITIES.story);
+    if (m.kind === "object" && m.objectId) {
+      const o = this.objectById(m.objectId);
+      if (!o || !m.action) return false;
+      return this.startObject(a, o, m.action, { type: "use_object", actor: a.id, object: o.id, action: m.action }).ok;
+    }
     if (m.kind === "approach" && m.targetId && this.actors.has(m.targetId)) {
       const res = this.startApproach(a, m.targetId, m.distance, { type: "approach", actor: a.id, target: m.targetId, distance: m.distance });
       return res.ok;
@@ -842,12 +1026,21 @@ export class StageSim {
       if (t) this.faceToward(a, t);
     }
     const social = m?.kind === "approach" || (m?.kind === "makeRoom" && !!m.targetId);
-    if (social) a.interactUntil = this.time + INTERACT_MS;
-    this.setState(a, social || this.convo.has(a.id) ? "interacting" : "idle");
-    const priority = a.movePriority >= PRIORITIES.player ? "player" : a.movePriority === PRIORITIES.auto ? "auto" : "story";
+    const obj = m?.kind === "object" && m.objectId ? this.objectById(m.objectId) : null;
+    if (social || obj) a.interactUntil = this.time + INTERACT_MS;
+    if (obj) {
+      const cx = (obj.bounds.x0 + obj.bounds.x1) / 2;
+      if (Math.abs(cx - a.x) >= 2) a.facing = cx > a.x ? 1 : -1;
+      a.usingObject = obj.id;
+      if (m!.action === "sit") a.pose = "sit";
+    }
+    this.setState(a, social || obj || this.convo.has(a.id) ? "interacting" : "idle");
+    const priority = this.priorityName(a.movePriority);
     this.endCommand(a);
+    if (m) this.onWalkEnd?.(a.id, "arrived", m.kind, priority);
+    if (obj && m?.action) this.onObject?.(a.id, obj.id, m.action, priority);
     // Ended up in someone's personal space (they moved too)? Take one small step to make room.
-    if (m && m.kind !== "makeRoom" && this.crowding(a)) this.makeRoom(a, m.targetId);
+    if (m && m.kind !== "makeRoom" && m.kind !== "object" && this.crowding(a)) this.makeRoom(a, m.targetId);
     if (m?.kind === "approach" && m.targetId && this.actors.has(m.targetId)) this.onArrive?.(a.id, m.targetId, priority);
   }
 
@@ -866,10 +1059,19 @@ export class StageSim {
   private giveUp(a: Actor) {
     const m = a.move;
     a.move = null;
+    const priority = this.priorityName(a.movePriority);
     this.endCommand(a);
+    if (m) this.onWalkEnd?.(a.id, "failed", m.kind, priority);
     this.setState(a, this.convo.has(a.id) ? "interacting" : "idle");
     if (m) {
-      const action: StageAction = m.kind === "approach" && m.targetId ? { type: "approach", actor: a.id, target: m.targetId } : { type: "retreat", actor: a.id, from: m.targetId ?? undefined };
+      const action: StageAction =
+        m.kind === "approach" && m.targetId
+          ? { type: "approach", actor: a.id, target: m.targetId }
+          : m.kind === "object" && m.objectId
+            ? { type: "use_object", actor: a.id, object: m.objectId, action: m.action }
+            : m.kind === "goto"
+              ? { type: "walk_to", actor: a.id, x: m.goal.x, y: m.goal.y }
+              : { type: "retreat", actor: a.id, from: m.targetId ?? undefined };
       this.lastResult.set(a.id, { ok: false, reason: "no_path", action });
     }
   }

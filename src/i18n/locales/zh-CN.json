@@ -464,7 +464,11 @@
         "retreat": "后退",
         "face_target": "转向对方",
         "idle_reaction": "待机动作",
-        "show_emotion": "显示情绪"
+        "show_emotion": "显示情绪",
+        "walk_to": "走到某处",
+        "use_object": "使用物品",
+        "turn_away": "转过身去",
+        "stand_up": "站起来"
       },
       "reasons": {
         "invalid": "请求无效",
@@ -477,7 +481,9 @@
         "cornered": "已经无路可退，于是转过身去",
         "paused": "全员已定格",
         "player_command": "你正在操控他们，所以他们自己的反应会先等等",
-        "outranked": "他们正忙着更重要的事（你的指令或剧情）"
+        "outranked": "他们正忙着更重要的事（你的指令或剧情）",
+        "unknown_object": "这里没有这个物品",
+        "not_allowed": "不能对它这样做"
       },
       "notes": {
         "moving": "出发了",
@@ -485,7 +491,9 @@
         "facing": "转向了对方",
         "emoting": "显示情绪中",
         "idle": "播放待机动作",
-        "shortened": "只能退一小步"
+        "shortened": "只能退一小步",
+        "nearby": "那个位置走不过去，改去最近能到的地方",
+        "arrived": "已经在那里了"
       },
       "idleKinds": {
         "look_around": "东张西望",
@@ -1769,8 +1777,8 @@
     }
   },
   "talk": {
-    "hint": "把一个角色拖到另一个角色身上，就会走过去聊天。",
-    "hintTouch": "长按一个角色，然后拖到另一个角色身上。",
+    "hint": "把角色拖到别人身上会去聊天，拖到物品上会去使用它，拖到地面上会走过去。",
+    "hintTouch": "长按角色，然后拖到别人、物品或地面上。",
     "orTap": "或者：",
     "chooseButton": "找人聊天…",
     "chooseNeedsSelection": "请先选择一个角色",
@@ -1795,7 +1803,14 @@
       "cancelled": "已取消，没有人移动。",
       "emptySpace": "要开始对话，请把{name}放到另一个角色身上。",
       "ended": "{name}和{other}聊完了。",
-      "listenerEnded": "{other}结束了这次对话。"
+      "listenerEnded": "{other}结束了这次对话。",
+      "unreachablePlace": "{name}到不了那里，有东西挡住了。",
+      "unreachableObject": "{name}够不到{other}。",
+      "nearby": "那个位置被挡住了，{name}会走到最近能到的地方。",
+      "refused": "{other}现在不想和{name}说话。",
+      "walkedAway": "{other}从{name}身边走开了。",
+      "goingTo": "{name}照自己说的，往{other}那边走去。",
+      "noSuchPlace": "{name}本想去{other}，但这里没有那个地方，所以留在原地。"
     },
     "dismiss": "关闭",
     "panel": {
@@ -2592,5 +2607,67 @@
     "runSimulation": "20 次互动模拟",
     "passed": "通过 {n}/{total}",
     "simSummary": "米拉对托比的看法：{start} → {end}；关系 {from} → {to}。"
+  },
+  "objects": {
+    "names": {
+      "window": "窗户",
+      "bookshelf": "书架",
+      "wallArt": "墙上的画",
+      "door": "门",
+      "tableNote": "桌上的纸条",
+      "rug": "地毯",
+      "plant": "盆栽",
+      "shopSign": "店铺招牌",
+      "shopDoor": "店门",
+      "lamp": "路灯",
+      "mushroom": "蘑菇",
+      "bigMushroom": "大蘑菇",
+      "rubble": "碎石堆",
+      "oldStone": "古老的石头",
+      "roundWindow": "圆窗",
+      "potionShelf": "药水架",
+      "cushion": "坐垫",
+      "lantern": "灯笼",
+      "crystals": "水晶",
+      "slime": "史莱姆",
+      "tinyHouse": "小房子",
+      "pond": "池塘",
+      "steps": "旧台阶",
+      "potion": "药水",
+      "gift": "礼物"
+    },
+    "actions": {
+      "read": "阅读",
+      "examine": "查看",
+      "sit": "坐下",
+      "open": "打开",
+      "inspect": "观察",
+      "pick_up": "拿起",
+      "look_out": "向外看",
+      "admire": "欣赏"
+    },
+    "do": {
+      "read": "{name}从{object}上取下一本，读了几行。",
+      "examine": "{name}凑近仔细看了看{object}。",
+      "sit": "{name}在{object}上坐了下来。",
+      "open": "{name}把{object}推开一条缝，向外望去。",
+      "inspect": "{name}仔细观察着{object}。",
+      "pick_up": "{name}拿起{object}，小心地带在身边。",
+      "look_out": "{name}在{object}边望了好一会儿。",
+      "admire": "{name}停下来欣赏{object}。"
+    },
+    "drag": {
+      "use": "{action}：{object}",
+      "walkHere": "走到这里",
+      "nearby": "被挡住了，会停在最近的地方",
+      "noWay": "到不了那里",
+      "objectNoWay": "够不到{object}",
+      "busy": "正忙"
+    },
+    "notice": {
+      "unreachablePlace": "{actor}到不了那里，有东西挡住了。",
+      "unreachableObject": "{actor}够不到{object}。",
+      "nearby": "那个位置被挡住了，{actor}走到了最近的地方。"
+    }
   }
 }

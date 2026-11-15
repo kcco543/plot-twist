@@ -599,6 +599,8 @@ export function useTalk(d: TalkDeps) {
     notice,
     dismissNotice: useCallback(() => setNotice(null), []),
     tell,
+    /** A notice with names already written out (objects, places). */
+    tellNames: useCallback((kind: TalkNoticeKind, actor: string, other: string) => setNotice({ kind, actor, target: other, at: Date.now() }), []),
     beginSelect,
     startWalk,
     /** Cancel the target choice or the walk, or end the conversation. */

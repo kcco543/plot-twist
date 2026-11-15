@@ -102,7 +102,7 @@ export function TalkStrip({
 
 function Notice({ notice, onDismiss }: { notice: TalkNotice; onDismiss: () => void }) {
   const { t } = useI18n();
-  const soft = notice.kind === "ended" || notice.kind === "cancelled" || notice.kind === "emptySpace";
+  const soft = notice.kind === "ended" || notice.kind === "cancelled" || notice.kind === "emptySpace" || notice.kind === "nearby" || notice.kind === "goingTo" || notice.kind === "walkedAway";
   return (
     <p
       role="status"

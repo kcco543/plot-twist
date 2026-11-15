@@ -14,6 +14,7 @@
  */
 import { useCallback, useEffect, useRef, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from "react";
 import { DRAG, hitCharacter, pressState, toStagePoint, type PointerKind, type PressState } from "@/lib/talk/drag";
+import { defaultAction, hitObject, type WorldObject } from "@/lib/stage/objects";
 import type { Point } from "@/lib/stage/room";
 import type { ActorView, StageSim } from "@/lib/stage/sim";
 import type { Character } from "@/lib/types";
@@ -27,6 +28,10 @@ export type DragView = {
   /** Route preview to the target: points, [] already close, null = can't get there. */
   route: Point[] | null;
   kind: PointerKind;
+  /** Dropping on an object (when no character is under the pointer). */
+  objectId: string | null;
+  /** Ground / object: the spot had to be moved (blocked), they'll stop as close as possible. */
+  adjusted: boolean;
 } | null;
 
 class DragStore {
@@ -55,6 +60,9 @@ type Press = {
   hold: number;
   lastTarget: string | null;
   route: Point[] | null;
+  adjusted: boolean;
+  /** Last ground point a route was planned for (re-planned when the pointer moves on). */
+  planned: Point | null;
 };
 
 export function useCharacterDrag({
@@ -63,6 +71,8 @@ export function useCharacterDrag({
   distanceFor,
   onDrop,
   onDropEmpty,
+  onDropObject,
+  onDropGround,
 }: {
   stage: StageSim;
   /** False while a menu is open, the player is typing, etc. */
@@ -71,12 +81,16 @@ export function useCharacterDrag({
   distanceFor: (actorId: string, targetId: string) => number;
   onDrop: (actorId: string, targetId: string) => void;
   onDropEmpty: (actorId: string) => void;
+  /** Released on an object: walk over and use it. */
+  onDropObject?: (actorId: string, objectId: string) => void;
+  /** Released on plain ground: walk there (no conversation, no object). */
+  onDropGround?: (actorId: string, point: Point) => void;
 }) {
   const store = useRef(new DragStore()).current;
   const press = useRef<Press | null>(null);
   const swallowClickUntil = useRef(0);
-  const cbs = useRef({ canDrag, distanceFor, onDrop, onDropEmpty });
-  cbs.current = { canDrag, distanceFor, onDrop, onDropEmpty };
+  const cbs = useRef({ canDrag, distanceFor, onDrop, onDropEmpty, onDropObject, onDropGround });
+  cbs.current = { canDrag, distanceFor, onDrop, onDropEmpty, onDropObject, onDropGround };
 
   const clear = useCallback(
     (swallow: boolean) => {
@@ -96,11 +110,28 @@ export function useCharacterDrag({
       if (!p || p.state !== "drag") return;
       const pt = toStagePoint(clientX, clientY, p.box, STAGE);
       const target = hitCharacter(stage.getSnapshot().actors, pt, p.id, p.kind);
-      if (target !== p.lastTarget) {
-        p.lastTarget = target;
-        p.route = target ? stage.previewApproach(p.id, target, cbs.current.distanceFor(p.id, target)) : null;
+      const onSelf = !target && hitCharacter(stage.getSnapshot().actors, pt, null, p.kind) === p.id;
+      const obj = !target && !onSelf && cbs.current.onDropObject ? hitObject(stage.objects, pt, p.kind === "touch" ? 4 : 2) : null;
+      const key = target ? `c:${target}` : obj ? `o:${obj.id}` : onSelf ? "self" : "ground";
+      if (key !== p.lastTarget) {
+        p.lastTarget = key;
+        p.planned = null;
+        p.adjusted = false;
+        if (target) p.route = stage.previewApproach(p.id, target, cbs.current.distanceFor(p.id, target));
+        else if (obj) {
+          const r = stage.previewObject(p.id, obj.id);
+          p.route = r?.path ?? null;
+          p.adjusted = !!r?.adjusted;
+        } else p.route = null;
       }
-      store.set({ actorId: p.id, point: pt, targetId: target, route: target ? p.route : null, kind: p.kind });
+      if (key === "ground" && cbs.current.onDropGround && (!p.planned || Math.hypot(pt.x - p.planned.x, pt.y - p.planned.y) > 4)) {
+        // Plain ground: plan a walk to the spot (or the nearest reachable one); throttled to 4 art px.
+        p.planned = pt;
+        const r = stage.previewGoto(p.id, pt);
+        p.route = r?.path ?? null;
+        p.adjusted = !!r?.adjusted;
+      }
+      store.set({ actorId: p.id, point: pt, targetId: target, objectId: obj?.id ?? null, route: target || obj || key === "ground" ? p.route : null, adjusted: p.adjusted, kind: p.kind });
     },
     [stage, store],
   );
@@ -138,7 +169,10 @@ export function useCharacterDrag({
       clear(true);
       if (!v) return;
       if (v.targetId) cbs.current.onDrop(p.id, v.targetId);
-      else if (hitCharacter(stage.getSnapshot().actors, v.point, null, p.kind) !== p.id) cbs.current.onDropEmpty(p.id);
+      else if (hitCharacter(stage.getSnapshot().actors, v.point, null, p.kind) === p.id) return; // dropped back on itself: cancel
+      else if (v.objectId && cbs.current.onDropObject) cbs.current.onDropObject(p.id, v.objectId);
+      else if (cbs.current.onDropGround) cbs.current.onDropGround(p.id, v.point);
+      else cbs.current.onDropEmpty(p.id);
       // Dropped back on itself: just cancel.
     };
     const cancel = (e: PointerEvent) => {
@@ -179,7 +213,7 @@ export function useCharacterDrag({
       const layer = e.currentTarget.parentElement;
       if (!layer) return;
       const kind: PointerKind = e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse";
-      const p: Press = { id, pointerId: e.pointerId, kind, x0: e.clientX, y0: e.clientY, t0: performance.now(), state: "pending", box: layer.getBoundingClientRect(), hold: 0, lastTarget: null, route: null };
+      const p: Press = { id, pointerId: e.pointerId, kind, x0: e.clientX, y0: e.clientY, t0: performance.now(), state: "pending", box: layer.getBoundingClientRect(), hold: 0, lastTarget: null, route: null, adjusted: false, planned: null };
       press.current = p;
       if (kind === "touch") {
         const { clientX, clientY } = e;
@@ -234,11 +268,13 @@ export function DragOverlay({
   actors,
   characters,
   chooser,
+  objects = [],
 }: {
   view: DragView;
   actors: ActorView[];
   characters: Character[];
   chooser: { actorId: string; choices: string[] } | null;
+  objects?: WorldObject[];
 }) {
   const { t } = useI18n();
   const byId = new Map(actors.map((a) => [a.id, a]));
@@ -264,10 +300,27 @@ export function DragOverlay({
   const me = byId.get(view.actorId);
   if (!me) return null;
   const target = view.targetId ? byId.get(view.targetId) : null;
-  const reachable = !!target && view.route !== null;
+  const obj = !target && view.objectId ? (objects.find((o) => o.id === view.objectId) ?? null) : null;
+  const ground = !target && !obj;
+  const reachable = view.route !== null && (!!target || !!obj || ground);
   const from = { x: me.x, y: me.y - 12 };
-  const to = target ? { x: target.x, y: target.y - 12 } : view.point;
-  const label = target ? (reachable ? t("talk.drag.talk", { other: name(target.id) }) : t("talk.drag.noRoute", { other: name(target.id) })) : t("talk.drag.empty");
+  const to = target ? { x: target.x, y: target.y - 12 } : obj ? { x: (obj.bounds.x0 + obj.bounds.x1) / 2, y: (obj.bounds.y0 + obj.bounds.y1) / 2 } : view.point;
+  const objName = obj ? (obj.type === "gift" ? obj.tags[0] || t("objects.names.gift") : t(`objects.names.${obj.name}` as "objects.names.door")) : "";
+  const objAction = obj ? defaultAction(obj, view.actorId) : null;
+  const label = target
+    ? reachable
+      ? t("talk.drag.talk", { other: name(target.id) })
+      : t("talk.drag.noRoute", { other: name(target.id) })
+    : obj
+      ? reachable && objAction
+        ? t("objects.drag.use", { action: t(`objects.actions.${objAction}`), object: objName })
+        : t("objects.drag.objectNoWay", { object: objName })
+      : !reachable
+        ? t("objects.drag.noWay")
+        : view.adjusted
+          ? t("objects.drag.nearby")
+          : t("objects.drag.walkHere");
+  const tone = reachable ? (view.adjusted && !target ? "warn" : "ok") : "bad";
   // Label above the pointer (touch: well above the finger), kept inside the stage.
   const lift = view.kind === "touch" ? 46 : 18;
   const lx = Math.min(STAGE.width - 40, Math.max(40, view.point.x));
@@ -277,9 +330,23 @@ export function DragOverlay({
     <>
       <Ring a={me} tone="self" />
       {target && <Ring a={target} tone={reachable ? "ok" : "bad"} />}
+      {obj && (
+        <span
+          aria-hidden
+          className="absolute"
+          style={{
+            left: pct(obj.bounds.x0, STAGE.width),
+            top: pct(obj.bounds.y0, STAGE.height),
+            width: pct(obj.bounds.x1 - obj.bounds.x0, STAGE.width),
+            height: pct(obj.bounds.y1 - obj.bounds.y0, STAGE.height),
+            border: `2px solid ${reachable ? "var(--color-mint-deep)" : "var(--color-coral-deep)"}`,
+            boxShadow: "0 0 0 2px rgb(255 255 255 / 0.7)",
+          }}
+        />
+      )}
       <svg className="absolute inset-0 size-full overflow-visible" viewBox={`0 0 ${STAGE.width} ${STAGE.height}`} preserveAspectRatio="none" aria-hidden>
         {/* Walking route (feet level) when the target can be reached. */}
-        {reachable && view.route && view.route.length > 0 && (
+        {reachable && view.route && view.route.length > 0 && (target || obj || ground) && (
           <polyline
             points={[{ x: me.x, y: me.y }, ...view.route].map((p) => `${p.x},${p.y}`).join(" ")}
             fill="none"
@@ -295,7 +362,7 @@ export function DragOverlay({
           y1={from.y}
           x2={to.x}
           y2={to.y}
-          stroke={target ? (reachable ? "var(--color-mint-deep)" : "var(--color-coral-deep)") : "var(--color-label)"}
+          stroke={reachable ? (tone === "warn" ? "var(--color-label)" : "var(--color-mint-deep)") : "var(--color-coral-deep)"}
           strokeWidth={2}
           strokeDasharray="6 4"
           vectorEffect="non-scaling-stroke"
@@ -306,7 +373,7 @@ export function DragOverlay({
       <span
         role="status"
         className={`absolute -translate-x-1/2 -translate-y-full whitespace-nowrap px-1.5 py-0.5 font-head text-[11px] font-bold sm:text-xs ${
-          target ? (reachable ? "bg-mint-hi text-ink" : "bg-peach-hi text-coral-deep") : "bg-white/90 text-ink-soft"
+          tone === "ok" ? "bg-mint-hi text-ink" : tone === "bad" ? "bg-peach-hi text-coral-deep" : "bg-butter-hi text-ink"
         }`}
         style={{ left: pct(lx, STAGE.width), top: pct(ly, STAGE.height), zIndex: 20 }}
       >
