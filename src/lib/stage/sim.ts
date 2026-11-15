@@ -17,7 +17,7 @@
 import type { Character } from "../types";
 import { type Emotion, type EmotionLevel } from "../emotion/emotions";
 import { burstMs, effectFor, type BodyMotion } from "../emotion/effects";
-import { validateStageAction, type ActionResult, type IdleKind, type StageAction } from "./actions";
+import { PRIORITIES, validateStageAction, type ActionResult, type IdleKind, type Priority, type StageAction } from "./actions";
 import { idleChoice, idleDelay, reactionAction, rngFrom, walkSpeed, type MoveContext } from "./behavior";
 import { clampToWalk, gap, PERSONAL_SPACE, STAND_DEPTH, standGap, type Point, type RoomLayout } from "./room";
 import { findPath, isFree, nearestFree, PASSING_SPACE, spawnPoints, type Blocker } from "./path";
@@ -48,6 +48,8 @@ const MAX_REPLANS = 4;
 export const REACT_MOVE_COOLDOWN = 1500;
 /** Approaching a moving target re-aims at most this often. */
 const RETARGET_MS = 500;
+/** After a player-commanded walk ends, autonomous behavior leaves that character's position alone this long. */
+export const COMMAND_GRACE_MS = 2500;
 
 type Move = {
   kind: "approach" | "retreat" | "shift" | "makeRoom";
@@ -92,6 +94,10 @@ type Actor = {
   idleSeq: number;
   /** Turn head the other way briefly (look around). */
   glanceUntil: number;
+  /** Priority of the current / paused walk. */
+  movePriority: number;
+  /** Until when autonomous movement must leave this character alone (player command). */
+  commandUntil: number;
 };
 
 export type ActorView = {
@@ -125,6 +131,9 @@ export type SimOptions = {
   bondOf?: (a: string, b: string) => Bond;
 };
 
+/** Called when someone finishes walking up to someone else (the behavior engine reacts to it). */
+export type ArriveListener = (actorId: string, targetId: string, priority: Priority) => void;
+
 export class StageSim {
   private actors = new Map<string, Actor>();
   private order: string[] = [];
@@ -141,6 +150,40 @@ export class StageSim {
   bondOf: (a: string, b: string) => Bond;
   /** Last result per character, for the test panel. */
   lastResult = new Map<string, ActionResult>();
+  /** Requests waiting for a delay (game time, so pausing freezes them too). */
+  private scheduled: { at: number; raw: unknown; context: MoveContext; priority: Priority }[] = [];
+  onArrive: ArriveListener | null = null;
+  private pendingPriority: number = PRIORITIES.story;
+
+  /** Run a request after `delayMs` of game time (a hesitation before reacting). */
+  schedule(delayMs: number, raw: unknown, context: MoveContext = "event", priority: Priority = "story") {
+    if (delayMs <= 0) return this.request(raw, context, priority);
+    this.scheduled.push({ at: this.time + delayMs, raw, context, priority });
+    return null;
+  }
+
+  /** Is the player directly controlling this character's movement right now? */
+  isCommanded(id: string): boolean {
+    const a = this.actors.get(id);
+    return !!a && this.time < a.commandUntil;
+  }
+
+  /** Floor gap between two characters (null if either is missing). */
+  gapBetween(a: string, b: string): number | null {
+    const x = this.actors.get(a);
+    const y = this.actors.get(b);
+    return x && y ? standGap(x, y) : null;
+  }
+
+  /** Is there a walkable way to stand next to `target`? (used to reject unreachable approaches before choosing) */
+  canReach(actorId: string, targetId: string, distance = 30): boolean {
+    const a = this.actors.get(actorId);
+    const t = this.actors.get(targetId);
+    if (!a || !t) return false;
+    if (standGap(a, t) <= distance + 4) return true;
+    const goal = this.approachGoal(a, t, distance);
+    return !!goal && !!this.plan(a, goal);
+  }
 
   constructor(opts: SimOptions) {
     this.room = opts.room;
@@ -188,6 +231,8 @@ export class StageSim {
           nextIdleAt: this.time + 2500 + idleDelay(c, rng) / 2,
           idleSeq: 0,
           glanceUntil: 0,
+          movePriority: 0,
+          commandUntil: 0,
         });
       });
     }
@@ -295,15 +340,33 @@ export class StageSim {
 
   // ------------------------------------------------------------ actions
 
-  /** Validate and run one action (from rules, the test panel, or later an AI). */
-  request(raw: unknown, context: MoveContext = "test"): ActionResult {
+  /**
+   * Validate and run one action (from rules, the test panel, or later an AI).
+   * Priority defaults to "player" for the test panel and "story" otherwise.
+   */
+  request(raw: unknown, context: MoveContext = "test", priority: Priority = context === "test" ? "player" : "story"): ActionResult {
     if (this.paused) return { ok: false, reason: "paused" };
     const v = validateStageAction(raw, { onStage: (id) => this.actors.has(id), stateOf: (id) => this.stateOf(id) });
     if (!v.ok) {
       if (v.action) this.lastResult.set(v.action.actor, v);
       return v;
     }
+    const a0 = this.actors.get(v.action.actor)!;
+    const rank = PRIORITIES[priority];
+    const travels = v.action.type === "approach" || v.action.type === "retreat" || (v.action.type === "idle_reaction" && v.action.kind === "shift");
+    if (travels && rank < PRIORITIES.player && this.time < a0.commandUntil) {
+      const r: ActionResult = { ok: false, reason: "player_command", action: v.action };
+      this.lastResult.set(v.action.actor, r);
+      return r;
+    }
+    if (travels && (a0.move || a0.suspended) && rank < a0.movePriority) {
+      const r: ActionResult = { ok: false, reason: "outranked", action: v.action };
+      this.lastResult.set(v.action.actor, r);
+      return r;
+    }
+    this.pendingPriority = rank;
     const res = this.execute(v.action, context);
+    this.pendingPriority = PRIORITIES.story;
     this.lastResult.set(v.action.actor, res);
     this.emit();
     return res;
@@ -390,13 +453,23 @@ export class StageSim {
     if (a.state === "reacting") {
       // Finish the reaction first, then walk.
       a.suspended = m;
+      a.movePriority = this.pendingPriority;
+      if (this.pendingPriority >= PRIORITIES.player) a.commandUntil = Infinity;
       return true;
     }
     if (!this.setState(a, "moving")) return false;
     a.move = m;
     a.suspended = null;
     a.lookAt = m.targetId;
+    a.movePriority = this.pendingPriority;
+    if (this.pendingPriority >= PRIORITIES.player) a.commandUntil = Infinity;
     return true;
+  }
+
+  /** A walk ended (arrived, gave up or stopped): a player command keeps autonomy away a little longer. */
+  private endCommand(a: Actor) {
+    if (a.movePriority >= PRIORITIES.player) a.commandUntil = this.time + COMMAND_GRACE_MS;
+    a.movePriority = 0;
   }
 
   private startApproach(a: Actor, targetId: string, distance: number, act: StageAction): ActionResult {
@@ -578,6 +651,8 @@ export class StageSim {
       a.suspended = a.move;
       a.move = null;
       this.setState(a, this.convo.has(a.id) ? "interacting" : "idle");
+      // A stopped player walk stays the player's: autonomy waits for the grace period.
+      if (a.movePriority >= PRIORITIES.player) a.commandUntil = this.time + COMMAND_GRACE_MS;
       this.emit();
       return true;
     }
@@ -597,6 +672,7 @@ export class StageSim {
     const m = a.suspended;
     if (!m) return false;
     a.suspended = null;
+    this.pendingPriority = Math.max(a.movePriority, PRIORITIES.story);
     if (m.kind === "approach" && m.targetId && this.actors.has(m.targetId)) {
       const res = this.startApproach(a, m.targetId, m.distance, { type: "approach", actor: a.id, target: m.targetId, distance: m.distance });
       return res.ok;
@@ -611,6 +687,8 @@ export class StageSim {
     for (const a of this.actors.values()) {
       a.queued = null;
       a.suspended = null;
+      a.movePriority = 0;
+      a.commandUntil = 0;
       if (a.state === "moving") {
         a.move = null;
         this.setState(a, "idle");
@@ -631,6 +709,11 @@ export class StageSim {
     if (this.paused || dtMs <= 0) return;
     const dt = Math.min(dtMs, 100); // a background tab must not make anyone jump
     this.time += dt;
+    if (this.scheduled.length) {
+      const due = this.scheduled.filter((s) => s.at <= this.time);
+      this.scheduled = this.scheduled.filter((s) => s.at > this.time);
+      for (const s of due) this.request(s.raw, s.context, s.priority);
+    }
     for (const id of this.order) {
       const a = this.actors.get(id);
       if (!a) continue;
@@ -727,8 +810,11 @@ export class StageSim {
     const social = m?.kind === "approach" || (m?.kind === "makeRoom" && !!m.targetId);
     if (social) a.interactUntil = this.time + INTERACT_MS;
     this.setState(a, social || this.convo.has(a.id) ? "interacting" : "idle");
+    const priority = a.movePriority >= PRIORITIES.player ? "player" : a.movePriority === PRIORITIES.auto ? "auto" : "story";
+    this.endCommand(a);
     // Ended up in someone's personal space (they moved too)? Take one small step to make room.
     if (m && m.kind !== "makeRoom" && this.crowding(a)) this.makeRoom(a, m.targetId);
+    if (m?.kind === "approach" && m.targetId && this.actors.has(m.targetId)) this.onArrive?.(a.id, m.targetId, priority);
   }
 
   private crowding(a: Actor): boolean {
@@ -746,6 +832,7 @@ export class StageSim {
   private giveUp(a: Actor) {
     const m = a.move;
     a.move = null;
+    this.endCommand(a);
     this.setState(a, this.convo.has(a.id) ? "interacting" : "idle");
     if (m) {
       const action: StageAction = m.kind === "approach" && m.targetId ? { type: "approach", actor: a.id, target: m.targetId } : { type: "retreat", actor: a.id, from: m.targetId ?? undefined };

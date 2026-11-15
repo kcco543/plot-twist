@@ -77,6 +77,12 @@ Characters have a **current emotion** (neutral, happy, excited, affectionate, em
 - Movement rules: `src/lib/stage/behavior.ts`
 - Action interface for future AI events (`approach`, `retreat`, `face_target`, `idle_reaction`, `show_emotion`), validated before anything moves: `src/lib/stage/actions.ts`
 
+## Behavior engine (Step 3)
+
+Characters choose reactions from personality (sliders + written profile), several feelings at once, directional relationships (A→B differs from B→A), memories, place and distance. Hard limits (locked canon, player control, unreachable targets) are applied before a weighted random choice; the result drives movement, the pixel emotion effect (which can be hidden by reserved characters) and the reply, built-in or AI-written. Details, data shapes and how to tune: `docs/BEHAVIOR_ENGINE.md`. Code: `src/lib/mind/`.
+
+**Behavior debug panel (developers):** run `npm run dev`, or open `/play?dev=1` once on a deployed copy, then Settings → *Behavior debug panel*.
+
 **Test panel:** Settings → *Emotion & movement test panel* → On. In Play Mode it appears beside the stage on desktop and under the dialogue on phones (the stage stays pinned at the top while you scroll it).
 
 ## Design system

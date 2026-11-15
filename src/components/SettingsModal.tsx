@@ -11,12 +11,14 @@ import { gameActions } from "@/lib/gameStore";
 import { useI18n } from "@/i18n";
 import type { EventFrequency, TextSpeed } from "@/lib/types";
 import { useAiStatus } from "@/lib/ai/client";
+import { useDevMode } from "@/lib/devMode";
 
 const Section = ({ children }: { children: React.ReactNode }) => <div className="border-t-[3px] border-dashed border-line pt-5">{children}</div>;
 
 export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useI18n();
   const settings = useSettings();
+  const devMode = useDevMode();
   const ai = useAiStatus();
   const [confirmErase, setConfirmErase] = useState(false);
   const [erased, setErased] = useState(false);
@@ -75,6 +77,16 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
               onLabel={t("settings.on")}
               offLabel={t("settings.off")}
             />
+            {devMode && (
+              <Toggle
+                label={t("settings.behaviorDebug")}
+                description={t("settings.behaviorDebugDesc")}
+                checked={settings.behaviorDebug ?? false}
+                onChange={(behaviorDebug) => updateSettings({ behaviorDebug })}
+                onLabel={t("settings.on")}
+                offLabel={t("settings.off")}
+              />
+            )}
           </div>
         </Section>
         <Section>
