@@ -1,13 +1,18 @@
 "use client";
 
-import { createPersistentStore } from "./persistentStore";
+import { createActiveWorldStore, eraseAllWorlds } from "./saves/worldSaves";
+import { libraryActions } from "./library/characterLibrary";
+import { characterFromTemplate, forgetCharacterInStory, type CharacterTemplate } from "./library/templates";
 import { makeId } from "./id";
 import { createBlankCharacter, normalizeCharacter } from "./character/model";
 import { emptyStory, withMemoryNote } from "./story/engine";
 import type { Character, CharacterArt, EnvironmentDraft, SaveData, SpriteAsset, StoryLine, StoryState, WorldId } from "./types";
 
-/** Same key as v0.1–v0.3, so existing saves load. Older saves are upgraded in place without losing anything. */
-const SAVE_KEY = "plot-twist:save:v1";
+/**
+ * Each world save keeps its own copy of this data (see src/lib/saves/). The
+ * single v0.1–v0.4 save is migrated into the first world, and older data
+ * inside a world is still upgraded on load without losing anything.
+ */
 
 export const emptySave: SaveData = {
   version: 1,
@@ -44,7 +49,8 @@ export function migrateSave(raw: unknown): SaveData {
   };
 }
 
-const store = createPersistentStore<SaveData>(SAVE_KEY, emptySave, migrateSave);
+/** Only ever the ACTIVE world: there is no list of every world's characters in memory. */
+const store = createActiveWorldStore<SaveData>(emptySave, migrateSave);
 
 export const useSave = store.useStore;
 export const getSave = store.get;
@@ -115,8 +121,28 @@ export const gameActions = {
     // Characters already wearing it keep their copy.
     touch((s) => ({ ...s, sprites: s.sprites.filter((a) => a.assetId !== assetId) }));
   },
+  /** Every world save and the Character Library (Settings → Erase all data). */
   eraseAll() {
-    store.reset();
+    eraseAllWorlds();
+    libraryActions.eraseAll();
+  },
+  /** Add a Character Library original to THIS world as its own independent copy. */
+  addFromLibrary(template: CharacterTemplate): Character {
+    const c = characterFromTemplate(template, makeId("char"), Date.now());
+    touch((s) => ({ ...s, characters: [...s.characters, c] }));
+    return c;
+  },
+  /** Link a world-made character to the library original just saved from it. */
+  linkToTemplate(characterId: string, templateId: string) {
+    touch((s) => ({ ...s, characters: s.characters.map((c) => (c.id === characterId && !c.templateId ? { ...c, templateId } : c)) }));
+  },
+  /**
+   * Remove a character from this world only (the library original and other
+   * worlds are untouched). Their own state and pair records go; the story log
+   * and other characters' memories of them stay.
+   */
+  removeFromWorld(id: string) {
+    touch((s) => ({ ...s, characters: s.characters.filter((c) => c.id !== id), story: forgetCharacterInStory(s.story, id) }));
   },
 };
 

@@ -59,6 +59,7 @@ export function normalizeCharacter(raw: unknown): Character {
     behavior: r.behavior && typeof r.behavior === "object" && r.behavior.profile ? r.behavior : null,
     createdAt: typeof r.createdAt === "number" ? r.createdAt : base.createdAt,
     updatedAt: typeof r.updatedAt === "number" ? r.updatedAt : base.updatedAt,
+    ...(typeof r.templateId === "string" && r.templateId ? { templateId: r.templateId } : {}),
   };
 }
 

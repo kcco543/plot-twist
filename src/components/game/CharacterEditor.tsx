@@ -62,11 +62,18 @@ export function CharacterEditor({
   onChange,
   tab,
   onTab,
+  library = false,
 }: {
   character: Character;
   onChange: (patch: Partial<Character>) => void;
   tab: StudioTab;
   onTab: (t: StudioTab) => void;
+  /**
+   * Editing a Character Library original: written profile and sliders only.
+   * Behavior analysis, sprites and written relationships belong to a world's
+   * version, so those tabs and the relationships field are hidden.
+   */
+  library?: boolean;
 }) {
   const { t, tx } = useI18n();
   const base = useId();
@@ -116,10 +123,14 @@ export function CharacterEditor({
         value={tab}
         onChange={setTab}
         items={[
-          { id: "profile", label: t("studio.tabs.profile"), icon: "pencil" },
-          { id: "sliders", label: t("studio.tabs.sliders"), icon: "heart", badge: conflicts || undefined },
-          { id: "analysis", label: t("studio.tabs.analysis"), icon: "sparkle", badge: character.behavior?.status === "pending" ? "!" : undefined },
-          { id: "look", label: t("studio.tabs.look"), icon: "image" },
+          { id: "profile" as const, label: t("studio.tabs.profile"), icon: "pencil" as const },
+          { id: "sliders" as const, label: t("studio.tabs.sliders"), icon: "heart" as const, badge: conflicts || undefined },
+          ...(library
+            ? []
+            : [
+                { id: "analysis" as const, label: t("studio.tabs.analysis"), icon: "sparkle" as const, badge: character.behavior?.status === "pending" ? "!" : undefined },
+                { id: "look" as const, label: t("studio.tabs.look"), icon: "image" as const },
+              ]),
         ]}
       />
 
@@ -132,7 +143,11 @@ export function CharacterEditor({
         </p>
         <Panel title={t("studio.sections.identity")}>
           <div className="flex flex-col gap-6 md:flex-row md:items-start">
-            <PortraitSlot character={character} onChange={(portrait) => onChange({ portrait })} onMakeSprite={() => setTab("look")} />
+            {library ? (
+              <PortraitSlot character={character} onChange={(portrait) => onChange({ portrait })} onClearArt={() => onChange({ art: null })} />
+            ) : (
+              <PortraitSlot character={character} onChange={(portrait) => onChange({ portrait })} onMakeSprite={() => setTab("look")} />
+            )}
             <div className="flex min-w-0 flex-1 flex-col gap-4">
               <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">{IDENTITY.slice(0, 2).map(field)}</div>
               {field(IDENTITY[2])}
@@ -142,7 +157,7 @@ export function CharacterEditor({
         </Panel>
         {SECTIONS.map((s) => (
           <Panel key={s.title} title={tx(`studio.sections.${s.title}`)}>
-            <div className="grid gap-4 md:grid-cols-2">{s.fields.map(field)}</div>
+            <div className="grid gap-4 md:grid-cols-2">{s.fields.filter((f) => !(library && f.key === "relationships")).map(field)}</div>
           </Panel>
         ))}
       </TabPanel>
@@ -151,13 +166,17 @@ export function CharacterEditor({
         <PersonalitySliders character={character} onChange={onChange} onEditText={editText} />
       </TabPanel>
 
-      <TabPanel id="analysis" base={base} active={tab === "analysis"}>
-        <AnalysisPanel character={character} onChange={onChange} />
-      </TabPanel>
+      {!library && (
+        <TabPanel id="analysis" base={base} active={tab === "analysis"}>
+          <AnalysisPanel character={character} onChange={onChange} />
+        </TabPanel>
+      )}
 
-      <TabPanel id="look" base={base} active={tab === "look"}>
-        <SpriteStudio character={character} />
-      </TabPanel>
+      {!library && (
+        <TabPanel id="look" base={base} active={tab === "look"}>
+          <SpriteStudio character={character} />
+        </TabPanel>
+      )}
     </div>
   );
 }

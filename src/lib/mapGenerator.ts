@@ -22,6 +22,11 @@ import { MAP_HISTORY_LIMIT, clearAllMaps, deleteMaps, listMaps, putMap, type Sto
 import { compositeRegion } from "./mapComposite";
 import { regionIsUsable, type Region } from "./mapSelection";
 import type { EnvironmentTypeId, WorldId } from "./types";
+import { activeWorldId, getIndex } from "./saves/worldSaves";
+import { mapOwner, tagMap, type OwnedMap } from "./saves/worldMaps";
+
+/** Only the active world's maps (each world save keeps its own map history). */
+const inActiveWorld = (m: OwnedMap) => mapOwner(m, getIndex().migration?.worldId ?? null) === activeWorldId() || m.id === getSave().environment.mapId;
 
 export type GeneratedMap = Omit<StoredMap, "blob"> & { url: string; ext: "png" | "webp" };
 
@@ -67,7 +72,7 @@ function release(ids: string[]) {
 let loading: Promise<void> | null = null;
 function load() {
   loading ??= listMaps()
-    .then((maps) => set({ maps: maps.map(toGenerated), loaded: true }))
+    .then((maps) => set({ maps: maps.filter(inActiveWorld).map(toGenerated), loaded: true }))
     .catch(() => set({ loaded: true }));
   return loading;
 }
@@ -111,6 +116,7 @@ async function decode(dataUrl: string): Promise<{ blob: Blob; width: number; hei
 
 /** Store a new version, make it the map in use, and drop the oldest beyond the history limit. */
 async function addMap(stored: StoredMap) {
+  tagMap(stored, activeWorldId()); // each world save keeps its own maps
   await load();
   await putMap(stored);
   const all = [toGenerated(stored), ...state.maps];
