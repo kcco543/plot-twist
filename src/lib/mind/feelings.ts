@@ -29,6 +29,7 @@ export const DECAY: Record<Feeling, number> = {
   frustration: 0.75,
   surprise: 0.4,
   confusion: 0.5,
+  gratitude: 0.8,
 };
 /** Below this a feeling counts as gone. */
 export const FEELING_FLOOR = 5;
@@ -75,6 +76,7 @@ export const FEELING_TO_EMOTION: Record<Feeling, Emotion> = {
   frustration: "frustrated",
   surprise: "surprised",
   confusion: "confused",
+  gratitude: "happy",
 };
 
 /** The reverse, for the test panel / older story code that sets a display emotion directly. */

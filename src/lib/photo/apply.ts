@@ -21,6 +21,7 @@ import { withEmotion, type Emotion, type EmotionLevel } from "../emotion/emotion
 import { canonLimits } from "../mind/profile";
 import { neutralState } from "../story/engine";
 import { checkEmotion } from "../talk/ai/apply";
+import { recordInteraction, blendProposal } from "../relationships/progression";
 import { PLAYER_ID, type Character, type Memory, type PlayerBond, type StoryState } from "../types";
 import type { PhotoMove, PhotoReactionType, PhotoReply } from "./contract";
 
@@ -113,21 +114,20 @@ export function validatePhotoReply(reply: PhotoReply, character: Character, stor
   };
 }
 
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /** The reaction's emotion and how the character now feels about the player. No memory yet. */
 export function applyPhotoReaction(story: StoryState, v: ValidatedPhoto, character: Character, now = Date.now()): StoryState {
   const st = story.characters[character.id] ?? neutralState();
   const nextState = v.level === 0 ? withEmotion(st, "neutral", 0, now) : withEmotion(st, v.emotion, v.level, now);
-  const b = bondWithPlayer(story, character.id);
-  const bond: PlayerBond = {
-    trust: clamp(b.trust + v.bond.trust, -100, 100),
-    affection: clamp(b.affection + v.bond.affection, -100, 100),
-    familiarity: clamp(b.familiarity + PHOTO_FAMILIARITY, 0, 100),
-    photos: b.photos + 1,
-    recent: [...b.recent, { type: v.reactionType, dialogue: v.dialogue, at: now }].slice(-RECENT_KEEP),
-  };
-  return { ...story, characters: { ...story.characters, [character.id]: nextState }, player: { ...(story.player ?? {}), [character.id]: bond } };
+  // The bond with the visitor moves through the relationship rules (repeats give less; warm words alone move nothing).
+  const { proposed, ignoredWarmth } = blendProposal("photo", v.bond, "ordinary");
+  const recorded = recordInteraction(
+    { ...story, characters: { ...story.characters, [character.id]: nextState } },
+    { from: character, to: null, kind: "photo", proposed: { ...proposed, familiarity: PHOTO_FAMILIARITY }, source: "photo", why: v.memory.note.slice(0, 140), reasons: ignoredWarmth ? ["ai:warmer_numbers_ignored"] : [], feelings: false, now },
+  ).story;
+  const b = recorded.player?.[character.id] ?? neutralBond();
+  const bond: PlayerBond = { ...b, photos: (story.player?.[character.id]?.photos ?? 0) + 1, recent: [...(story.player?.[character.id]?.recent ?? []), { type: v.reactionType, dialogue: v.dialogue, at: now }].slice(-RECENT_KEEP) };
+  return { ...recorded, player: { ...(recorded.player ?? {}), [character.id]: bond } };
 }
 
 /** Keep the photo moment as one of the character's memories (the photo file is stored separately, by id). */

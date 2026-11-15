@@ -89,6 +89,16 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 offLabel={t("settings.off")}
               />
             )}
+            {devMode && (
+              <Toggle
+                label={t("settings.relationshipInspector")}
+                description={t("settings.relationshipInspectorDesc")}
+                checked={settings.relationshipInspector ?? false}
+                onChange={(relationshipInspector) => updateSettings({ relationshipInspector })}
+                onLabel={t("settings.on")}
+                offLabel={t("settings.off")}
+              />
+            )}
           </div>
         </Section>
         <Section>

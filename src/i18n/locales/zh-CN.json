@@ -153,7 +153,36 @@
       "look": "外观与像素形象"
     },
     "methodsNote": "可以用文字描述角色，也可以用滑块，或两者结合。两者分开保存，滑块永远不会改写你写的内容。",
-    "toReview": "{count} 项待查看"
+    "toReview": "{count} 项待查看",
+    "boundaries": {
+      "title": "界限",
+      "intro": "这个角色不会说的、不愿聊的、不会去做的事。信任再高，也不会自动越过这些界限。",
+      "hardHelp": "硬界限：游戏中永远不会被打破。只有在这里编辑角色才能修改。",
+      "softHelp": "软界限：暂时回避。经历过真正的共同经历后，可能会对某个人稍微敞开，但绝不会因为被一再追问而改变。",
+      "empty": "还没有写界限。锁定的设定里写着“从不……”的内容也算作硬界限。",
+      "item": "界限 {n}",
+      "strength": "硬或软",
+      "hard": "硬",
+      "soft": "软",
+      "kind": "类型",
+      "kinds": {
+        "secret": "秘密",
+        "topic": "话题",
+        "principle": "原则"
+      },
+      "remove": "删除界限",
+      "text": "内容",
+      "textPlaceholder": {
+        "secret": "例如：她对米拉的感情",
+        "topic": "例如：她在灯塔里的童年",
+        "principle": "例如：绝不作弊，哪怕是为了赢"
+      },
+      "topics": "会触及它的词",
+      "topicsHint": "用逗号分隔，任何语言都可以。消息中出现其中任何一个词，就会触及这个界限。",
+      "topicsPlaceholder": "例如：喜欢, 暗恋, crush, love",
+      "addHard": "添加硬界限",
+      "addSoft": "添加软界限"
+    }
   },
   "character": {
     "fields": {
@@ -377,7 +406,10 @@
       "open": "角色信息",
       "close": "关闭角色信息",
       "more": "关于{name}的更多信息",
-      "feeling": "情绪"
+      "feeling": "情绪",
+      "howSees": "{name}怎么看其他人",
+      "stageLine": "信任：{trust} · 好感：{affection} · 尊重：{respect}",
+      "visitor": "访客"
     },
     "test": {
       "open": "测试面板",
@@ -610,7 +642,9 @@
     "testPanel": "情绪与移动测试面板",
     "testPanelDesc": "在游戏画面的对话框下方显示按钮，可以手动触发每种情绪和移动。",
     "behaviorDebug": "行为调试面板（开发者）",
-    "behaviorDebugDesc": "显示每个角色为什么这样做：性格、情绪、关系、记忆，以及每个选项的权重。玩家看不到。"
+    "behaviorDebugDesc": "显示每个角色为什么这样做：性格、情绪、关系、记忆，以及每个选项的权重。玩家看不到。",
+    "relationshipInspector": "关系检查器",
+    "relationshipInspectorDesc": "开发者工具：长期关系数值、阶段、里程碑，以及每次变化被接受或拒绝的原因。"
   },
   "traits": {
     "extroversion": {
@@ -1741,7 +1775,8 @@
       "tooLong": "{name}放弃了走向{other}。",
       "cancelled": "已取消，没有人移动。",
       "emptySpace": "要开始对话，请把{name}放到另一个角色身上。",
-      "ended": "{name}和{other}聊完了。"
+      "ended": "{name}和{other}聊完了。",
+      "listenerEnded": "{other}结束了这次对话。"
     },
     "dismiss": "关闭",
     "panel": {
@@ -2337,5 +2372,203 @@
     "noRelationships": "还没有和其他角色建立关系。关系会随着故事发展而形成。",
     "bond": "亲近 {affinity} · 信任 {trust}",
     "unnamedOriginal": "未命名的原版角色"
+  },
+  "rel": {
+    "say": {
+      "refuse_polite": [
+        "这个我不太想聊，{other}。",
+        "那件事我不想多说。",
+        "这个话题就先放一边吧。"
+      ],
+      "refuse_firm": [
+        "不。我不会聊这个。",
+        "这是我自己的事，{other}。别问了。",
+        "不行。别再提了。"
+      ],
+      "explain_boundary": [
+        "我已经说过不了，{other}。有些事我只留给自己，这就是其中之一。",
+        "再问一次答案也不会变。这是我的底线。",
+        "我第一次就是认真的。这件事没得商量。"
+      ],
+      "deflect": [
+        "嗯……问点别的吧。",
+        "你真想聊这个？跳过。",
+        "想得美。下一个问题。"
+      ],
+      "change_subject": [
+        "对了，你今天过得怎么样？",
+        "我们聊点别的吧，什么都行。",
+        "话说……你看到外面的天气了吗？"
+      ],
+      "question_intent": [
+        "你为什么想知道？",
+        "{other}，你怎么会问这个？",
+        "是你想知道，还是别人让你问的？"
+      ],
+      "express_discomfort": [
+        "你一直在问，{other}。我不喜欢这样。",
+        "我已经拒绝两次了。这让我很不舒服。",
+        "请别再逼我了。这样不好。"
+      ],
+      "end_conversation": [
+        "我不想再聊下去了。",
+        "就到这里吧，{other}。",
+        "够了。我们不用再说了。"
+      ],
+      "hesitate": [
+        "……我不确定要不要说。",
+        "以后再说吧，不是现在。",
+        "我……不知道。让我想想。"
+      ],
+      "disagree": [
+        "我不同意，{other}。",
+        "不，我不这么看。",
+        "我觉得你这次说错了。"
+      ]
+    },
+    "stage": {
+      "trust": {
+        "distrustful": "不信任",
+        "guarded": "戒备",
+        "cautious": "谨慎",
+        "developing": "逐渐信任",
+        "strong": "很信任",
+        "deep": "深信不疑"
+      },
+      "affection": {
+        "hostile": "敌意",
+        "cold": "冷淡",
+        "neutral": "中立",
+        "warm": "有好感",
+        "fond": "喜欢",
+        "devoted": "全心在意"
+      },
+      "respect": {
+        "contempt": "看不起",
+        "doubtful": "怀疑",
+        "neutral": "中立",
+        "respect": "尊重",
+        "admiration": "钦佩"
+      },
+      "familiarity": {
+        "stranger": "陌生",
+        "acquaintance": "认识",
+        "familiar": "熟悉",
+        "close": "亲近"
+      },
+      "tension": {
+        "calm": "平静",
+        "strained": "紧张",
+        "hostile": "敌对"
+      }
+    },
+    "label": {
+      "stranger": "陌生人",
+      "acquaintance": "点头之交",
+      "friend": "朋友",
+      "close_friend": "挚友",
+      "family": "家人",
+      "partner": "恋人",
+      "rival": "对手",
+      "respected_rival": "可敬的对手",
+      "enemy": "敌人",
+      "wary": "心存戒备"
+    },
+    "impression": {
+      "prefix": {
+        "tentative": "{name}开始觉得",
+        "growing": "{name}越来越相信",
+        "firm": "{name}确信"
+      },
+      "reliable": {
+        "pos": "{other}靠得住。",
+        "neg": "{other}靠不住。"
+      },
+      "kind": {
+        "pos": "{other}很善良。",
+        "neg": "{other}有时会伤人。"
+      },
+      "competent": {
+        "pos": "{other}很有本事。",
+        "neg": "{other}不知道自己在做什么。"
+      },
+      "honest": {
+        "pos": "{other}很诚实。",
+        "neg": "{other}不诚实。"
+      },
+      "respectful": {
+        "pos": "{other}尊重自己的界限。",
+        "neg": "{other}总是越过自己的界限。"
+      },
+      "sincere": {
+        "pos": "{other}说的是真心话。",
+        "neg": "{other}是在讨好，别有用心。"
+      },
+      "safe": {
+        "pos": "和{other}在一起很安全。",
+        "neg": "{other}是个威胁。"
+      }
+    },
+    "milestone": {
+      "reliable_behavior": "多次靠得住",
+      "promise_kept": "信守了承诺",
+      "helped_in_difficulty": "在困难时帮了忙",
+      "voluntary_secret": "主动分享了秘密",
+      "shared_experience": "共同的经历",
+      "resolved_disagreement": "化解了分歧",
+      "respected_boundaries": "尊重了界限",
+      "earned_respect": "赢得了尊重",
+      "boundary_reconsidered": "稍微敞开了心扉",
+      "betrayed": "背叛",
+      "promise_broken": "违背了承诺",
+      "threatened": "威胁",
+      "boundary_violated": "一再越界"
+    }
+  },
+  "relInspector": {
+    "title": "关系检查器",
+    "close": "隐藏关系检查器",
+    "intro": "一个角色如何看另一个角色：长期数值与阶段、印象、里程碑，以及每一次经过验证的变化。仅供开发者使用。",
+    "from": "谁的视角",
+    "toward": "对谁",
+    "visitor": "访客（玩家）",
+    "longTerm": "长期关系",
+    "grandfathered": "阶段由之前的数值读出",
+    "next": "下一阶段：{stage}（{at}）（低于 {exit} 才会回落）",
+    "top": "已是最高阶段",
+    "needs": "还需要",
+    "impressions": "当前印象",
+    "evidence": "证据 {n}",
+    "none": "暂无。",
+    "milestones": "里程碑",
+    "openThings": "冲突、承诺、被拒绝的请求",
+    "conflict": "未解决的{kind}（第 {turn} 回合）：道歉 {apologies} 次，弥补 {repair}/{need}",
+    "promise": "承诺（{status}，第 {turn} 回合）：{text}",
+    "pressure": "问过{topic}：{asks} 次，拒绝 {refusals} 次（最近：{last}）",
+    "opened": "已为对方敞开的软界限：{id}",
+    "memories": "相关记忆",
+    "importance": "重要度 {n}",
+    "log": "变化（最新在前，点按查看详情）",
+    "noLog": "还没有记录。开始游戏后，每次关系变化都会显示在这里。",
+    "turn": "第 {n} 回合",
+    "proposedAs": "原提议为 {kind}",
+    "accepted": "实际生效",
+    "proposed": "提议",
+    "before": "之前",
+    "after": "之后",
+    "feelings": "情绪（之前 → 之后）",
+    "reasons": "原因",
+    "noReasons": "按提议生效",
+    "stages": "阶段",
+    "noStageChange": "阶段未变",
+    "why": "当时",
+    "noCast": "添加角色后即可查看他们的关系。",
+    "tests": "测试场景（固定种子）",
+    "testsIntro": "用示例角色和真实的游戏规则重放关系测试场景。不会保存到你的世界。",
+    "seed": "种子",
+    "runScenarios": "运行场景",
+    "runSimulation": "20 次互动模拟",
+    "passed": "通过 {n}/{total}",
+    "simSummary": "米拉对托比的看法：{start} → {end}；关系 {from} → {to}。"
   }
 }

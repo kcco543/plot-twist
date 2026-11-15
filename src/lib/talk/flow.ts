@@ -74,6 +74,6 @@ export function goTo(s: TalkSession, to: TalkPhase, patch: Partial<TalkSession> 
 }
 
 /** Feedback shown when a conversation could not start or had to stop. */
-export const TALK_NOTICES = ["unreachable", "blocked", "noRoom", "busy", "targetLeft", "lostTarget", "tooLong", "cancelled", "emptySpace", "ended"] as const;
+export const TALK_NOTICES = ["unreachable", "blocked", "noRoom", "busy", "targetLeft", "lostTarget", "tooLong", "cancelled", "emptySpace", "ended", "listenerEnded"] as const;
 export type TalkNoticeKind = (typeof TALK_NOTICES)[number];
 export type TalkNotice = { kind: TalkNoticeKind; actor: string; target: string; at: number };

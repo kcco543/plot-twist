@@ -26,6 +26,7 @@
 import { withEmotion, type Emotion, type EmotionLevel } from "../emotion/emotions";
 import { canonLimits, personalityOf } from "../mind/profile";
 import { bondWithPlayer, neutralBond, PHOTO_STEP, STRONG_BOND } from "../photo/apply";
+import { blendProposal, recordInteraction } from "../relationships/progression";
 import type { PhotoMove } from "../photo/contract";
 import type { RoomLayout } from "../stage/room";
 import { neutralState } from "../story/engine";
@@ -179,7 +180,6 @@ export function validateGiftReply(reply: GiftReactionReply, character: Character
 
 // ---------------------------------------------------------------- recording
 
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const newId = (prefix: string, now: number) => `${prefix}-${now.toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
 
 /** Who learns about a gift when it is put somewhere new. */
@@ -245,21 +245,23 @@ export function giveGift(
     source,
     gift: { instanceId: id, name: item.name, interpretation: v.interpretation },
   };
-  const b = story.player?.[character.id] ?? neutralBond();
-  const bond = {
-    ...b,
-    trust: clamp(b.trust + v.bond.trust, -100, 100),
-    affection: clamp(b.affection + v.bond.affection, -100, 100),
-    familiarity: clamp(b.familiarity + 2, 0, 100),
-    gifts: (b.gifts ?? 0) + 1,
-  };
+  // The bond with the visitor moves through the relationship rules: the same gift again gives
+  // much less, repeated gifts have diminishing returns, and a refusal adds no warmth.
+  const sig = v.memory.importance >= 3 ? "meaningful" : "ordinary";
+  const ai = refused ? { trust: Math.min(0, v.bond.trust), affection: Math.min(0, v.bond.affection) } : v.bond;
+  const { proposed, ignoredWarmth } = blendProposal("gift", ai, sig);
+  const recorded = recordInteraction(
+    { ...story, characters: { ...story.characters, [character.id]: { ...withFace, memories: [...withFace.memories, mem].slice(-MEMORY_KEEP) } } },
+    { from: character, to: null, kind: "gift", significance: sig, proposed: refused ? { ...proposed, trust: Math.min(0, proposed.trust ?? 0), affection: Math.min(0, proposed.affection ?? 0) } : proposed, key: item.id, source: "gift", why: `${item.name}: ${v.interpretation}`.slice(0, 140), reasons: [...(refused ? ["gift:refused_no_warmth"] : []), ...(ignoredWarmth ? ["ai:warmer_numbers_ignored"] : [])], feelings: false, now },
+  ).story;
+  const b = recorded.player?.[character.id] ?? neutralBond();
+  const bond = { ...b, gifts: (b.gifts ?? 0) + 1 };
   return {
     instanceId: id,
     story: {
-      ...story,
-      characters: { ...story.characters, [character.id]: { ...withFace, memories: [...withFace.memories, mem].slice(-MEMORY_KEEP) } },
-      player: { ...(story.player ?? {}), [character.id]: bond },
-      gifts: { ...(story.gifts ?? {}), [id]: inst },
+      ...recorded,
+      player: { ...(recorded.player ?? {}), [character.id]: bond },
+      gifts: { ...(recorded.gifts ?? {}), [id]: inst },
     },
   };
 }

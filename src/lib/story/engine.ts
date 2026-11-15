@@ -16,7 +16,8 @@ import { makeId } from "../id";
 import { approvedBehavior } from "../character/model";
 import { approachScores, reactionTendencies, traitVector } from "../behavior/tendencies";
 import { actorEmotion, fadeEmotion, otherEmotion, withEmotion } from "../emotion/emotions";
-import { syncRelationsFromBond } from "../mind/relations";
+import { recordInteraction } from "../relationships/progression";
+import { EVENT_KIND } from "../relationships/interactions";
 import { EVENTS, MOOD_BIAS, REACTION_EFFECTS, type EventContext, type EventDef } from "./events";
 import type {
   Approach,
@@ -248,7 +249,7 @@ export function plan(input: PlanInput): PlanResult {
     turn,
   } satisfies Partial<Beat>;
 
-  const finish = (beat: Beat, nextStates: Record<string, CharacterState>, bonds = story.bonds, relations = story.relations): PlanResult => {
+  const finish = (beat: Beat, nextStates: Record<string, CharacterState>, bonds = story.bonds, relations = story.relations, progress = story.progress): PlanResult => {
     const record: EventRecord = {
       id: makeId("evt"),
       turn,
@@ -264,7 +265,7 @@ export function plan(input: PlanInput): PlanResult {
     return {
       beat,
       // Keep the behavior engine's state (relations, decisions) that this engine doesn't manage itself.
-      story: { ...story, turn, characters: decayMoods(nextStates, involved), bonds, relations, events: [...story.events, record].slice(-MAX_EVENTS) },
+      story: { ...story, turn, characters: decayMoods(nextStates, involved), bonds, relations, ...(progress ? { progress } : {}), events: [...story.events, record].slice(-MAX_EVENTS) },
     };
   };
 
@@ -384,7 +385,22 @@ export function plan(input: PlanInput): PlanResult {
   }
 
   // The shared bond moved: mirror it into both directions of the behavior engine's relationships.
-  const relations = other && bondBefore && bondAfter ? syncRelationsFromBond(story, actor, other, bondBefore, bondAfter).relations : story.relations;
+  // Proposed through the relationship progression rules (significance from the event's importance).
+  let synced: StoryState = story;
+  if (other && bondBefore && bondAfter) {
+    const da = bondAfter.affinity - bondBefore.affinity;
+    const dt = bondAfter.trust - bondBefore.trust;
+    const kind = EVENT_KIND[def.type] ?? "small_talk";
+    const significance = importance >= 3 ? "major" : importance >= 2 ? "meaningful" : "ordinary";
+    for (const [x, y] of [
+      [actor, other],
+      [other, actor],
+    ] as const) {
+      synced = recordInteraction({ ...synced, turn }, { from: x, to: y, kind, significance, proposed: { affection: da * 0.7, trust: dt * 0.7, familiarity: 3, tension: da < 0 ? -da * 0.5 : 0 }, source: "story", why: `${def.type} (${reaction})`, feelings: false, now }).story;
+    }
+  }
+  const relations = synced.relations;
+  const progress = synced.progress;
   const variant = pickVariant(3, lastVariant(def.type), rng);
   return finish(
     {
@@ -406,6 +422,7 @@ export function plan(input: PlanInput): PlanResult {
     nextStates,
     bonds,
     relations,
+    progress,
   );
 }
 

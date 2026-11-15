@@ -148,7 +148,9 @@ describe("a given gift lives in this world", () => {
     expect(g.knownBy).toEqual(expect.arrayContaining([m.id, wren().id, tobi().id])); // displayed: everyone present saw it
     const mem = story.characters[m.id].memories.at(-1)!;
     expect(mem).toMatchObject({ withId: PLAYER_ID, eventType: "gift.received", gift: { instanceId, name: "Moonlight Cookie" } });
-    expect(story.player![m.id]).toMatchObject({ gifts: 1, affection: 2 });
+    expect(story.player![m.id].gifts).toBe(1);
+    expect(story.player![m.id].affection).toBeGreaterThan(0);
+    expect(story.player![m.id].affection).toBeLessThanOrEqual(2);
     expect(story.characters[m.id].emotion).toBe("happy");
   });
   it("a reserved character keeps a gift private even when the AI says display it", () => {

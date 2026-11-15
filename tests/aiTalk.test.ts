@@ -62,6 +62,8 @@ const reply = (patch: Partial<TalkReply> = {}): TalkReply => ({
     { label: "Ask about the map", line: "How long did the map take you?", intent: "curious" },
     { label: "Offer to help", line: "Need someone to carry your ink?", intent: "warm" },
   ],
+  stance: "respond_freely",
+  interpretation: { interaction: "compliment", significance: "ordinary", evidence: "praised my map" },
   staysInCharacter: true,
   ...patch,
 });
@@ -289,7 +291,9 @@ describe("conversation memory", () => {
     const s = applyReply(s0, validateReply(reply(), { listener: m, speaker: t, story: s0 }), m, t, "ai");
     expect(s.characters[m.id].emotion).toBe("embarrassed");
     const after = s.relations![relKey(m.id, t.id)];
-    expect(after.affection - before.affection).toBe(2);
+    // The reply proposed more; the game accepts a small, validated change.
+    expect(after.affection - before.affection).toBeGreaterThan(0);
+    expect(after.affection - before.affection).toBeLessThanOrEqual(2);
     expect(s.talk!["sample-mira|sample-tobi"].at(-1)!.text).toMatch(/Thank you/);
     expect(s.relationLog![relKey(m.id, t.id)]).toHaveLength(1);
   });

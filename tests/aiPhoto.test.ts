@@ -198,7 +198,13 @@ describe("the game engine validates a photo reaction", () => {
     const st = s.characters[m.id];
     expect(st.emotion).toBe("happy");
     expect(st.memories).toHaveLength(0);
-    expect(s.player![m.id]).toMatchObject({ photos: 6, familiarity: 6 * PHOTO_FAMILIARITY, affection: 6 });
+    // Six photos in a row: warmth grows, but repetition wears it down (src/lib/relationships), so far less than 6 × the first.
+    const b = s.player![m.id];
+    expect(b.photos).toBe(6);
+    expect(b.affection).toBeGreaterThan(0);
+    expect(b.affection).toBeLessThan(6);
+    expect(b.familiarity).toBeGreaterThan(0);
+    expect(b.familiarity).toBeLessThanOrEqual(6 * PHOTO_FAMILIARITY);
     expect(s.player![m.id].recent).toHaveLength(RECENT_KEEP);
   });
 });
