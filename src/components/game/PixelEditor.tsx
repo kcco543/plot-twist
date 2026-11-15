@@ -13,26 +13,74 @@ type Tool = "pencil" | "eraser" | "picker";
 
 const hexToRgb = (h: string) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 
-/** Tiny 32×32 pixel editor for touching up a generated sprite. */
+/**
+ * Tiny 32×32 pixel editor for touching up a generated sprite, in a menu window.
+ * The drawing surface itself is PixelCanvasEditor (also used by the Gift Creator).
+ */
 export function PixelEditor({ open, sprite, onClose, onApply }: { open: boolean; sprite: Img | null; onClose: () => void; onApply: (img: Img) => void }) {
   const { t } = useI18n();
-  const canvas = useRef<HTMLCanvasElement>(null);
   const [img, setImg] = useState<Img | null>(null);
+
+  useEffect(() => {
+    if (open && sprite) setImg({ w: sprite.w, h: sprite.h, data: new Uint8ClampedArray(sprite.data) });
+  }, [open, sprite]);
+
+  if (!open || !img) return null;
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={t("editor.title")}
+      closeLabel={t("common.close")}
+      size="lg"
+      footer={
+        <>
+          <PixelButton size="sm" variant="ghost" onClick={onClose}>
+            {t("common.cancel")}
+          </PixelButton>
+          <PixelButton size="sm" variant="success" icon="check" onClick={() => onApply(img)}>
+            {t("editor.apply")}
+          </PixelButton>
+        </>
+      }
+    >
+      <PixelCanvasEditor value={img} onChange={setImg} />
+    </Modal>
+  );
+}
+
+/**
+ * The pixel editor's drawing surface: canvas, pencil / eraser / picker, undo
+ * and palette. Controlled: `value` in, every stroke out through `onChange`.
+ * `note` replaces the hint under the palette; `onClear` adds a Clear button.
+ */
+export function PixelCanvasEditor({
+  value: img,
+  onChange,
+  note,
+  onClear,
+  canvasClassName = "max-w-[320px]",
+  label,
+}: {
+  value: Img;
+  onChange: (img: Img) => void;
+  note?: string;
+  onClear?: () => void;
+  canvasClassName?: string;
+  /** Screen-reader name of the canvas (defaults to the sprite wording). */
+  label?: string;
+}) {
+  const { t } = useI18n();
+  const canvas = useRef<HTMLCanvasElement>(null);
   const [history, setHistory] = useState<Uint8ClampedArray[]>([]);
   const [tool, setTool] = useState<Tool>("pencil");
   const [color, setColor] = useState("#5b4a86");
   const drawing = useRef(false);
 
   useEffect(() => {
-    if (open && sprite) {
-      setImg({ w: sprite.w, h: sprite.h, data: new Uint8ClampedArray(sprite.data) });
-      setHistory([]);
-    }
-  }, [open, sprite]);
-
-  useEffect(() => {
     const c = canvas.current;
-    if (!c || !img) return;
+    if (!c) return;
     const ctx = c.getContext("2d")!;
     ctx.clearRect(0, 0, c.width, c.height);
     for (let y = 0; y < img.h; y++)
@@ -47,7 +95,7 @@ export function PixelEditor({ open, sprite, onClose, onApply }: { open: boolean;
         ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
       }
     ctx.strokeStyle = "rgba(91,74,134,0.12)";
-    for (let k = 0; k <= img.w; k++) {
+    for (let k = 0; k <= Math.max(img.w, img.h); k++) {
       ctx.beginPath();
       ctx.moveTo(k * SCALE + 0.5, 0);
       ctx.lineTo(k * SCALE + 0.5, img.h * SCALE);
@@ -57,7 +105,6 @@ export function PixelEditor({ open, sprite, onClose, onApply }: { open: boolean;
     }
   }, [img]);
 
-  if (!open || !img) return null;
   const palette = [...new Set([...paletteOf(img, 16), ...EXTRA])].slice(0, 24);
 
   const at = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -78,35 +125,18 @@ export function PixelEditor({ open, sprite, onClose, onApply }: { open: boolean;
       const [r, g, b] = hexToRgb(color);
       data.set([r, g, b, 255], i);
     }
-    setImg({ ...img, data });
+    onChange({ ...img, data });
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={t("editor.title")}
-      closeLabel={t("common.close")}
-      size="lg"
-      footer={
-        <>
-          <PixelButton size="sm" variant="ghost" onClick={onClose}>
-            {t("common.cancel")}
-          </PixelButton>
-          <PixelButton size="sm" variant="success" icon="check" onClick={() => onApply(img)}>
-            {t("editor.apply")}
-          </PixelButton>
-        </>
-      }
-    >
       <div className="flex flex-col gap-4 md:flex-row md:items-start">
         <canvas
           ref={canvas}
           width={img.w * SCALE}
           height={img.h * SCALE}
           role="img"
-          aria-label={t("editor.canvas")}
-          className="pixelated w-full max-w-[320px] cursor-crosshair self-center touch-none bg-well shadow-[0_0_0_3px_var(--color-line)]"
+          aria-label={label ?? t("editor.canvas")}
+          className={`pixelated w-full ${canvasClassName} cursor-crosshair self-center touch-none bg-well shadow-[0_0_0_3px_var(--color-line)]`}
           onPointerDown={(e) => {
             e.currentTarget.setPointerCapture(e.pointerId);
             drawing.current = true;
@@ -130,12 +160,25 @@ export function PixelEditor({ open, sprite, onClose, onApply }: { open: boolean;
               icon="undo"
               disabled={history.length === 0}
               onClick={() => {
-                setImg({ ...img, data: history[history.length - 1] });
+                onChange({ ...img, data: history[history.length - 1] });
                 setHistory((h) => h.slice(0, -1));
               }}
             >
               {t("common.undo")}
             </PixelButton>
+            {onClear && (
+              <PixelButton
+                size="sm"
+                variant="ghost"
+                icon="trash"
+                onClick={() => {
+                  setHistory((h) => [...h.slice(-30), img.data]);
+                  onClear();
+                }}
+              >
+                {t("editor.clear")}
+              </PixelButton>
+            )}
           </div>
           <div className="grid grid-cols-8 gap-1.5" role="radiogroup" aria-label={t("editor.picker")}>
             {palette.map((hex) => (
@@ -155,10 +198,9 @@ export function PixelEditor({ open, sprite, onClose, onApply }: { open: boolean;
             ))}
           </div>
           <p className="flex items-center gap-2 text-sm text-ink-soft">
-            <PixelIcon name="pencil" size={10} className="shrink-0" /> {t("editor.note")}
+            <PixelIcon name="pencil" size={10} className="shrink-0" /> {note ?? t("editor.note")}
           </p>
         </div>
       </div>
-    </Modal>
   );
 }

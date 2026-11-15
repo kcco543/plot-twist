@@ -21,6 +21,7 @@ import { makeId } from "../id";
 import { INDEX_KEY, LEGACY_SAVE_KEY, SESSION_ACTIVE_KEY, WORLD_KEY_PREFIX, cleanWorldName, emptyIndex, openIndex, summarize, worldKey, type KV, type SaveIndex, type WorldSave } from "./format";
 import { characterIdMap, remapIds } from "./remap";
 import { copyWorldMaps, deleteWorldMaps, removeMapCopies } from "./worldMaps";
+import { copyWorldKeepsakes, deleteWorldKeepsakes } from "../keepsakes/store";
 
 export type { WorldSave, SaveIndex } from "./format";
 
@@ -313,6 +314,8 @@ export async function duplicateWorld(id: string, name: string): Promise<WorldSav
   const worlds = [...idx.worlds];
   worlds.splice(at < 0 ? worlds.length : at + 1, 0, copy);
   writeIndex({ ...idx, nextNumber: idx.nextNumber + 1, worlds });
+  // Photos and gifts follow the copied characters (new ids), independent of the original's.
+  await copyWorldKeepsakes(id, newId, ids).catch(() => {});
   return copy;
 }
 
@@ -349,6 +352,7 @@ export async function deleteWorld(id: string): Promise<void> {
     if (m) stillUsed.add(m);
   } catch {}
   await deleteWorldMaps(id, legacyOwner(), stillUsed).catch(() => {});
+  await deleteWorldKeepsakes(id).catch(() => {});
   if (wasCurrent) window.location.reload();
 }
 

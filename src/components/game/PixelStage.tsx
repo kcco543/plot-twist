@@ -87,7 +87,7 @@ export function PixelStage({
 
   return (
     <div className={`px-frame px-shadow ${className}`} style={{ "--frame": `var(--frame-${frame})` } as CSSProperties}>
-      <div ref={box} className="px-checker relative grid w-full place-items-center overflow-hidden" style={{ height: scale ? h : undefined, aspectRatio: scale ? undefined : `${art.width} / ${art.height}` }}>
+      <div ref={box} data-stage-view className="px-checker relative grid w-full place-items-center overflow-hidden" style={{ height: scale ? h : undefined, aspectRatio: scale ? undefined : `${art.width} / ${art.height}` }}>
         {scale > 0 && (
           <StageViewContext.Provider value={view}>
           <div

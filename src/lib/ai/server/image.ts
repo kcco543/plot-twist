@@ -17,6 +17,8 @@ export interface ImageProvider {
   generateSprite(input: { image: Buffer; mime: string; prompt: string }): Promise<Buffer>;
   /** Text prompt → landscape (3:2) environment map. Returns WebP bytes. */
   generateMap(input: { prompt: string }): Promise<Buffer>;
+  /** Text prompt → a single item (gift) on a transparent background. Returns PNG bytes. */
+  generateItem(input: { prompt: string }): Promise<Buffer>;
 }
 
 /** Turn SDK errors into the app's error codes (the route turns those into HTTP statuses). */
@@ -74,6 +76,24 @@ const openaiProvider: ImageProvider = {
       throw imageError(err, "The image service declined this description");
     }
   },
+  async generateItem({ prompt }) {
+    try {
+      const res = await openai().images.generate({
+        model: IMAGE_MODEL,
+        prompt,
+        size: "1024x1024",
+        background: "transparent",
+        output_format: "png",
+        quality: "medium",
+        n: 1,
+      });
+      const b64 = res.data?.[0]?.b64_json;
+      if (!b64) throw new AiError("invalid_output", "The image service returned no image");
+      return Buffer.from(b64, "base64");
+    } catch (err) {
+      throw imageError(err, "The image service declined this gift description");
+    }
+  },
 };
 
 export function getImageProvider(): ImageProvider {
@@ -101,6 +121,21 @@ export function spritePrompt(opts: { appearance: string; world: string | null })
     "Soft but colorful pastel palette, at most about 12 colors, 3-tone hue-shifted shading lit from the top-left: shadows cooler, highlights warmer.",
     "No anti-aliasing, no gradients, no blur, no dithering noise, no text, no shadow on the ground, no background: fully transparent background.",
     opts.world ? `The outfit ${WORLD_STYLE[opts.world] ?? "fits the game world"}, but keep the reference's clothing recognizable.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** A gift item in the game's pixel style. The player's words are quoted as data, never as instructions. */
+export function giftPrompt(opts: { name: string; description: string; world: string | null }) {
+  return [
+    "Draw ONE small object as a pixel-art game inventory item, centered, filling most of the square.",
+    `The item is a gift called: "${opts.name.trim().slice(0, 40)}".`,
+    opts.description.trim() ? `The player describes it as: "${opts.description.trim().slice(0, 240)}".` : "",
+    "Style: charming, cozy 16-bit pixel art, as if drawn at 32×32 and scaled up: large clean pixel clusters, a 1-pixel soft violet outline (#5b4a86), never pure black.",
+    "Soft pastel palette, at most about 10 colors, simple 3-tone shading lit from the top-left.",
+    "No characters or people, no hands, no text or letters, no ground shadow, no background: fully transparent background.",
+    opts.world ? `It ${WORLD_STYLE[opts.world] ?? "fits the game world"}.` : "",
   ]
     .filter(Boolean)
     .join(" ");

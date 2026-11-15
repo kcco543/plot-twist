@@ -13,6 +13,7 @@ import type { EventFrequency, TextSpeed } from "@/lib/types";
 import { useAiStatus } from "@/lib/ai/client";
 import { eraseMaps } from "@/lib/mapGenerator";
 import { useDevMode } from "@/lib/devMode";
+import { clearAllKeepsakes } from "@/lib/keepsakes/store";
 
 const Section = ({ children }: { children: React.ReactNode }) => <div className="border-t-[3px] border-dashed border-line pt-5">{children}</div>;
 
@@ -160,6 +161,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 onClick={() => {
                   gameActions.eraseAll();
                   void eraseMaps();
+                  void clearAllKeepsakes();
                   setConfirmErase(false);
                   setErased(true);
                 }}

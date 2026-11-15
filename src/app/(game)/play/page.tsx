@@ -40,6 +40,10 @@ import { editMemory, type MemoryPatch } from "@/lib/talk/ai/apply";
 import { TALKING_PHASES } from "@/lib/talk/flow";
 import type { Character, StoryLine, StoryState } from "@/lib/types";
 import { useI18n } from "@/i18n";
+import { InteractionMenu, type InteractionKind } from "@/components/keepsakes/InteractionMenu";
+import { PhotoPanel } from "@/components/keepsakes/PhotoPanel";
+import { GiftCreator } from "@/components/keepsakes/GiftCreator";
+import { activeWorldId } from "@/lib/saves/worldSaves";
 
 const isTyping = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
 /** Ignore a second "advance" this soon after the last one (double-clicks / key bounce never skip two lines). */
@@ -108,7 +112,10 @@ export default function PlayPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [resetDone, setResetDone] = useState(false);
-  const anyModal = logOpen || pauseOpen || settingsOpen || sheetOpen;
+  /** Personal interactions: the Photo / Gift menu next to a character, or the window it opened. */
+  const [interaction, setInteraction] = useState<{ kind: "menu" | InteractionKind; characterId: string } | null>(null);
+  const menuOpen = interaction?.kind === "menu";
+  const anyModal = logOpen || pauseOpen || settingsOpen || sheetOpen || (!!interaction && !menuOpen);
 
   // Desktop layout (sidebar) vs phone / tablet, and the sticky header's height (to pin the stage under it).
   const [wide, setWide] = useState(false);
@@ -273,7 +280,12 @@ export default function PlayPage() {
     onDrop: (a, b) => talk.startWalk(a, b, "drag"),
     onDropEmpty: (a) => talk.tell("emptySpace", a, null),
   });
-  /** Click / tap on a character: select it, or (choosing a target) walk over to it. */
+  /**
+   * Click / tap on a character: select it and open the Photo / Gift menu next to it
+   * (clicking them again closes it). While choosing who to talk to (tap-to-target)
+   * the tap still picks the target, and during a conversation it only selects.
+   * Dragging (mouse) or touch-and-hold (touch) still starts a walk & talk.
+   */
   const onStageSelect = useCallback(
     (id: string) => {
       if (drag.swallowClick()) return;
@@ -284,9 +296,14 @@ export default function PlayPage() {
         return;
       }
       setPickedId(id);
+      if (!s) setInteraction((cur) => (cur?.kind === "menu" && cur.characterId === id ? null : { kind: "menu", characterId: id }));
     },
     [drag],
   );
+  // A drag or a conversation takes over: the menu gets out of the way.
+  useEffect(() => {
+    if (drag.dragging || talk.session) setInteraction((cur) => (cur?.kind === "menu" ? null : cur));
+  }, [drag.dragging, talk.session]);
   const [touch, setTouch] = useState(false);
   useEffect(() => setTouch(window.matchMedia("(pointer: coarse)").matches), []);
 
@@ -432,7 +449,7 @@ export default function PlayPage() {
   // Desktop keyboard controls. Ignored while typing (incl. IME composition) or when a menu is open.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (anyModal || e.isComposing || (e.target instanceof Element && e.target.closest("[data-speech-bubble]")) || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      if (anyModal || menuOpen || e.isComposing || (e.target instanceof Element && e.target.closest("[data-speech-bubble]")) || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
       const inTalk = !!talkRef.current?.session;
       const onButton = e.target instanceof HTMLButtonElement || e.target instanceof HTMLAnchorElement;
       const k = e.key.toLowerCase();
@@ -467,7 +484,7 @@ export default function PlayPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [anyModal, act, cycle, advance, lineInProgress]);
+  }, [anyModal, menuOpen, act, cycle, advance, lineInProgress]);
 
   // Who is speaking right now (narration has no bubble; it stays in the panel).
   const sp = !busy && current?.speaker.kind === "character" ? current.speaker : null;
@@ -508,6 +525,11 @@ export default function PlayPage() {
   const worldName = t(`worlds.list.${world.id}.name` as const);
   const envName = t(`environments.${envType}.name` as const);
   const selectedName = selected ? selected.name.trim() || t("common.unnamed") : null;
+  // Photos and gifts belong to a saved character in the active world save (not the demo cast or a debug scenario).
+  const interactWith = interaction ? (cast.find((c) => c.id === interaction.characterId) ?? null) : null;
+  const interactName = interactWith ? interactWith.name.trim() || t("common.unnamed") : "";
+  const canKeep = !isDemo && !sandbox && !!interactWith && save.characters.some((c) => c.id === interactWith.id);
+  const keepWorldId = canKeep ? activeWorldId() : null;
 
 
   // Emotion & movement test panel: beside the stage on desktop, under the dialogue on phones
@@ -676,6 +698,38 @@ export default function PlayPage() {
           </div>
         </div>
       </div>
+
+      {/* Personal interactions: Photo / Gift menu next to the character, and the windows it opens */}
+      {interactWith && interaction?.kind === "menu" && (
+        <InteractionMenu
+          characterId={interactWith.id}
+          name={interactName}
+          unavailable={canKeep ? null : t("keepsakes.menu.demo")}
+          onClose={() => setInteraction(null)}
+          onPick={(kind) => setInteraction({ kind, characterId: interactWith.id })}
+        />
+      )}
+      {interactWith && (
+        <>
+          <PhotoPanel
+            open={interaction?.kind === "photo"}
+            worldId={keepWorldId}
+            characterId={interactWith.id}
+            name={interactName}
+            onClose={() => setInteraction(null)}
+            onShown={(p) => logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: p.caption ? "keepsakes.log.photoCaption" : "keepsakes.log.photo", params: { name: interactWith.name.trim(), caption: p.caption } }])}
+          />
+          <GiftCreator
+            open={interaction?.kind === "gift"}
+            worldId={keepWorldId}
+            world={world.id}
+            characterId={interactWith.id}
+            name={interactName}
+            onClose={() => setInteraction(null)}
+            onGiven={(g) => logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: "keepsakes.log.gift", params: { name: interactWith.name.trim(), gift: g.name } }])}
+          />
+        </>
+      )}
 
       {/* Phone / tablet character sheet */}
       <Modal open={sheetOpen} onClose={() => setSheetOpen(false)} title={t("play.character")} closeLabel={t("play.sidebar.close")}>

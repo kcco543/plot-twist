@@ -128,3 +128,8 @@ export type MapRequestBody = { description: string; type: string; world: string 
 export async function requestMap(body: MapRequestBody): Promise<{ image: string; model: string }> {
   return post<{ image: string; model: string }>("/api/ai/map", body);
 }
+
+/** Gift name + description → generated item picture (data URL). Only when image generation is configured. */
+export async function requestGiftImage(body: { name: string; description: string; world: string | null }): Promise<{ image: string; model: string }> {
+  return post<{ image: string; model: string }>("/api/ai/gift", body);
+}

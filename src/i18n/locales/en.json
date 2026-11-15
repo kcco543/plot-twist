@@ -917,7 +917,8 @@
     "color": "Color {hex}",
     "canvas": "Sprite pixels, 32 by 32. Use the pointer to draw.",
     "apply": "Apply edits",
-    "note": "Edits change the sprite. The portrait stays as it was."
+    "note": "Edits change the sprite. The portrait stays as it was.",
+    "clear": "Clear"
   },
   "story": {
     "talk": {
@@ -2056,6 +2057,100 @@
       "cooperated": "Teamwork",
       "teased": "Teasing",
       "met": "First meeting"
+    }
+  },
+  "keepsakes": {
+    "menu": {
+      "label": "Things to do with {name}",
+      "photo": "Photo",
+      "gift": "Gift",
+      "demo": "Add your own characters (or the sample cast) to share photos and gifts."
+    },
+    "done": "Done",
+    "reactionsLater": "Characters don't react to photos and gifts yet. That comes in a later update.",
+    "saveFailed": "Couldn't save it in this world. Try again, or reopen the world from My Worlds.",
+    "photo": {
+      "title": "Photo for {name}",
+      "take": "Take Photo",
+      "retake": "Retake",
+      "upload": "Upload Photo",
+      "another": "Choose Another",
+      "capture": "Snap!",
+      "flip": "Switch camera",
+      "stopCamera": "Close camera",
+      "tryAgain": "Try again",
+      "viewfinder": "Camera view",
+      "previewAlt": "Your photo",
+      "empty": "No photo yet",
+      "reading": "Opening photo…",
+      "caption": "Caption (optional)",
+      "captionPlaceholder": "What should {name} know about this photo?",
+      "show": "Show to {name}",
+      "shownTag": "Shown",
+      "shownTitle": "You showed {name} your photo.",
+      "shownBody": "It's kept with {name} in this world.",
+      "privacy": "Your photo stays on this device. Nothing is uploaded, and the camera only turns on when you press Take Photo.",
+      "problem": {
+        "type": "That file isn't a photo. Pick a JPG, PNG, WebP or HEIC image.",
+        "size": "That photo is too big (over 25 MB). Pick a smaller one.",
+        "empty": "That file is empty. Pick another photo.",
+        "unreadable": "This photo couldn't be opened. It may be damaged or in a format this browser can't read.",
+        "denied": "Camera access was turned down, so the camera stays off. You can upload a photo instead, or allow the camera in your browser's site settings.",
+        "noCamera": "No camera was found on this device. You can upload a photo instead.",
+        "cameraBusy": "The camera is being used by another app. Close it and try again, or upload a photo.",
+        "cameraFailed": "The camera couldn't start. Try again, or upload a photo.",
+        "saveFailed": "Couldn't save the photo in this world. Try again."
+      }
+    },
+    "gift": {
+      "title": "Gift for {name}",
+      "name": "Gift name",
+      "namePlaceholder": "e.g. Moonlight Cookie",
+      "description": "Description",
+      "descriptionPlaceholder": "What is it, and why this gift?",
+      "picture": "Picture",
+      "mode": {
+        "draw": "Draw it",
+        "ai": "AI picture"
+      },
+      "unavailableTag": "Off",
+      "drawNote": "Draw your gift on the 32×32 grid. Leave it blank to give a wrapped present.",
+      "canvas": "Gift pixels, 32 by 32. Use the pointer to draw.",
+      "aiIntro": "Make a picture from the gift's name and description. You can touch it up afterwards.",
+      "generate": "Generate picture",
+      "regenerate": "Try another",
+      "touchUp": "Touch up",
+      "generating": "Drawing your gift… this can take up to a minute.",
+      "aiUnavailableTitle": "AI pictures are unavailable",
+      "aiChecking": "Checking AI pictures…",
+      "aiUnavailableBody": "Image generation isn't set up for this game yet, so nothing can be generated. You can draw your gift instead.",
+      "drawInstead": "Draw it instead",
+      "aiError": {
+        "not_configured": "Image generation isn't set up, so no picture was made.",
+        "offline": "You're offline. Connect and try again.",
+        "rate_limited": "A picture is already being drawn. Try again in a moment.",
+        "refused": "The image service declined this description. Try different words.",
+        "failed": "The picture couldn't be made. Try again."
+      },
+      "needName": "Give the gift a name first.",
+      "preview": "Item preview",
+      "previewAlt": "Pixel picture of {gift}",
+      "noPicture": "Wrapped",
+      "untitled": "Unnamed gift",
+      "noDescription": "No description yet.",
+      "aiMade": "Picture made with AI",
+      "save": "Save Gift",
+      "give": "Give to {name}",
+      "saved": "“{gift}” is saved in this world's gift box.",
+      "box": "Gift box ({count})",
+      "openSaved": "Open saved gift {gift}",
+      "givenTitle": "You gave {name} the {gift}.",
+      "givenBody": "The gift is kept in this world's gift box, marked as given to {name}."
+    },
+    "log": {
+      "photo": "You showed {name} a photo.",
+      "photoCaption": "You showed {name} a photo: “{caption}”",
+      "gift": "You gave {name} a gift: {gift}."
     }
   }
 }

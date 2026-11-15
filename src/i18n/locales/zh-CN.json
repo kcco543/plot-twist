@@ -917,7 +917,8 @@
     "color": "颜色 {hex}",
     "canvas": "形象像素，32×32。用指针绘制。",
     "apply": "应用修改",
-    "note": "修改只作用于形象，头像保持不变。"
+    "note": "修改只作用于形象，头像保持不变。",
+    "clear": "清空"
   },
   "story": {
     "talk": {
@@ -2056,6 +2057,100 @@
       "cooperated": "合作",
       "teased": "打趣",
       "met": "初次见面"
+    }
+  },
+  "keepsakes": {
+    "menu": {
+      "label": "和{name}互动",
+      "photo": "照片",
+      "gift": "礼物",
+      "demo": "添加你自己的角色（或示例角色）后，就能分享照片和礼物。"
+    },
+    "done": "完成",
+    "reactionsLater": "角色暂时还不会对照片和礼物做出反应，之后的更新会加入。",
+    "saveFailed": "没能保存到这个世界。请再试一次，或从“我的世界”重新进入。",
+    "photo": {
+      "title": "给{name}的照片",
+      "take": "拍照",
+      "retake": "重拍",
+      "upload": "上传照片",
+      "another": "换一张",
+      "capture": "咔嚓！",
+      "flip": "切换镜头",
+      "stopCamera": "关闭相机",
+      "tryAgain": "再试一次",
+      "viewfinder": "相机画面",
+      "previewAlt": "你的照片",
+      "empty": "还没有照片",
+      "reading": "正在打开照片…",
+      "caption": "说明（可选）",
+      "captionPlaceholder": "想让{name}知道这张照片的什么？",
+      "show": "给{name}看",
+      "shownTag": "已展示",
+      "shownTitle": "你把照片给{name}看了。",
+      "shownBody": "照片已和{name}一起保存在这个世界里。",
+      "privacy": "照片只保存在这台设备上，不会上传。只有按下“拍照”时才会打开相机。",
+      "problem": {
+        "type": "这个文件不是照片。请选择 JPG、PNG、WebP 或 HEIC 图片。",
+        "size": "照片太大了（超过 25 MB），请选一张小一点的。",
+        "empty": "这个文件是空的，请换一张照片。",
+        "unreadable": "这张照片打不开，可能已损坏，或是浏览器无法读取的格式。",
+        "denied": "相机权限被拒绝，相机不会打开。你可以改为上传照片，或在浏览器的网站设置里允许使用相机。",
+        "noCamera": "这台设备上没有找到相机，可以改为上传照片。",
+        "cameraBusy": "相机正被其他应用使用。关闭后再试，或上传照片。",
+        "cameraFailed": "相机没能启动。请再试一次，或上传照片。",
+        "saveFailed": "没能把照片保存到这个世界，请再试一次。"
+      }
+    },
+    "gift": {
+      "title": "送给{name}的礼物",
+      "name": "礼物名称",
+      "namePlaceholder": "例如：月光饼干",
+      "description": "礼物描述",
+      "descriptionPlaceholder": "这是什么？为什么送这份礼物？",
+      "picture": "图案",
+      "mode": {
+        "draw": "自己画",
+        "ai": "AI 生成"
+      },
+      "unavailableTag": "未开启",
+      "drawNote": "在 32×32 的格子上画出礼物。不画的话，就会送出一个包好的礼盒。",
+      "canvas": "礼物像素画，32×32。用指针绘制。",
+      "aiIntro": "根据礼物名称和描述生成图案，生成后还可以再修改。",
+      "generate": "生成图案",
+      "regenerate": "换一个",
+      "touchUp": "修改",
+      "generating": "正在画你的礼物…最多需要一分钟。",
+      "aiUnavailableTitle": "AI 图案暂不可用",
+      "aiChecking": "正在检查 AI 图案…",
+      "aiUnavailableBody": "这个游戏还没有设置图像生成服务，所以无法生成。你可以自己画礼物。",
+      "drawInstead": "改为自己画",
+      "aiError": {
+        "not_configured": "图像生成服务未设置，没有生成图案。",
+        "offline": "你已离线，请联网后再试。",
+        "rate_limited": "已经在画一张图了，请稍后再试。",
+        "refused": "图像服务拒绝了这个描述，换个说法试试。",
+        "failed": "图案没能生成，请再试一次。"
+      },
+      "needName": "请先给礼物起个名字。",
+      "preview": "物品预览",
+      "previewAlt": "{gift}的像素图",
+      "noPicture": "礼盒",
+      "untitled": "未命名礼物",
+      "noDescription": "还没有描述。",
+      "aiMade": "图案由 AI 生成",
+      "save": "保存礼物",
+      "give": "送给{name}",
+      "saved": "“{gift}”已存入这个世界的礼物箱。",
+      "box": "礼物箱（{count}）",
+      "openSaved": "打开已保存的礼物 {gift}",
+      "givenTitle": "你把{gift}送给了{name}。",
+      "givenBody": "礼物保存在这个世界的礼物箱里，并标记为已送给{name}。"
+    },
+    "log": {
+      "photo": "你给{name}看了一张照片。",
+      "photoCaption": "你给{name}看了一张照片：“{caption}”",
+      "gift": "你送给{name}一份礼物：{gift}。"
     }
   }
 }
