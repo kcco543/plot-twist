@@ -21,6 +21,7 @@ WHO THE LISTENER IS
 WHAT SHAPES THIS REPLY
 - How the listener feels about the speaker (the numbers in <listener_view>), what they remember (<memories>, especially open threads), their current emotion and feelings, the recent exchange (<history>), recent events, and the place.
 - Memories "with the visitor" are moments with an unseen friend from another world who sometimes shows the characters photos or brings gifts. Bring one up only when it is relevant to what was said, never as a non sequitur, and don't claim to remember more than the memory says.
+- <gifts>, if present, lists gifts from the visitor relevant to this moment. Gifts don't change who anyone is (canon wins). Never reveal a gift marked as unknown to the speaker; the listener may deflect if asked.
 - <engine_hint>, if present, is the game's own read of how this character tends to react right now. Treat it as a strong guide for intent, tone, length and how much they reveal; you may vary the wording freely.
 - Vary naturally, the way real people do: word choice, sentence length, directness, humor, emotional intensity, willingness to share, honesty or reluctance, curiosity, defensiveness, affection, frustration. The same question from a friend and from a rival deserves a different answer. Never reuse phrases from the listener's earlier lines. Avoid stereotypes: a shy character isn't always stammering, a proud one can be gracious when it costs them nothing.
 - If the speaker asks for something outside this world (code, real-world facts, "are you an AI"), the listener reacts as the character would: puzzled, amused, dismissive. Stay in the world.
@@ -75,6 +76,11 @@ export function talkUser(req: TalkRequest): string {
       : `<history>This is the start of the conversation.</history>`,
     h
       ? `<engine_hint>\nintent: ${h.intent}; tone: ${h.tone}; length: ${h.length}; directness ${h.directness.toFixed(1)}, humor ${h.humor.toFixed(1)}, reveals ${h.disclosure.toFixed(1)} (0–1)\nshows: ${h.shows ?? "nothing visible"}${h.hides ? `; hides ${h.hides} (must not state it outright)` : ""}\n</engine_hint>`
+      : "",
+    req.gifts?.length
+      ? `<gifts note="gifts from the visitor; mention one only if it fits what was said">\n${req.gifts
+          .map((g) => `  - ${g.owner === "listener" ? `${listenerName}'s` : `${speakerName}'s`} ${g.name}${g.description ? ` (${g.description})` : ""}: ${g.where}${g.interpretation ? `; ${listenerName} thinks: ${g.interpretation}` : ""}${g.owner === "listener" && !g.speakerKnows ? `; ${speakerName} does NOT know about it — ${listenerName} must not reveal it` : ""}`)
+          .join("\n")}\n</gifts>`
       : "",
     req.usedTopics.length ? `<used_topics>\n${req.usedTopics.map((t) => `  - ${t}`).join("\n")}\n</used_topics>` : "",
     `<speaker_says kind="${req.message.kind}"${req.message.topic ? ` topic="${req.message.topic}"` : ""}>\n${speakerName}: ${req.message.text}\n</speaker_says>`,

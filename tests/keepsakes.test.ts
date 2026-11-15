@@ -9,7 +9,7 @@ import { getImageProvider, giftPrompt, type ImageProvider } from "@/lib/ai/serve
 import { POST as gift } from "@/app/api/ai/gift/route";
 import { placeMenu, MENU_MARGIN } from "@/lib/keepsakes/menuPlacement";
 import { cameraProblem, checkPhotoFile, fitWithin, MAX_PHOTO_BYTES } from "@/lib/keepsakes/photo";
-import { __resetKeepsakesForTests, copyWorldKeepsakes, deleteWorldKeepsakes, giveGift, listGifts, listPhotos, saveGift, savePhoto } from "@/lib/keepsakes/store";
+import { __resetKeepsakesForTests, copyWorldKeepsakes, deleteWorldKeepsakes, recordGiving, listGifts, listPhotos, saveGift, savePhoto } from "@/lib/keepsakes/store";
 import { makeItem, isEmptyArt, blankGift } from "@/lib/keepsakes/giftArt";
 import { blank } from "@/lib/sprites/pixelize";
 import { pressState } from "@/lib/talk/drag";
@@ -101,15 +101,15 @@ describe("keepsake storage keeps worlds and characters apart", () => {
     const again = await saveGift("w1", { id: g.id, name: "Moon Cookie+", description: "Crunchier", image: null, art: null });
     expect(again.id).toBe(g.id);
     expect(await listGifts("w1")).toHaveLength(1);
-    await giveGift("w1", g.id, "mira");
+    await recordGiving("w1", g.id, "mira");
     expect((await listGifts("w1"))[0].givenTo.map((x) => x.characterId)).toEqual(["mira"]);
-    await expect(giveGift("w2", g.id, "mira")).rejects.toThrow();
+    await expect(recordGiving("w2", g.id, "mira")).rejects.toThrow();
     expect(await listGifts("w2")).toHaveLength(0);
   });
   it("copying a world remaps characters; deleting a world removes only its keepsakes", async () => {
     await savePhoto({ worldId: "w1", characterId: "c1", blob, width: 1, height: 1, caption: "", source: "upload" });
     const g = await saveGift("w1", { name: "Kite", description: "", image: null, art: null });
-    await giveGift("w1", g.id, "c1");
+    await recordGiving("w1", g.id, "c1");
     await savePhoto({ worldId: "w3", characterId: "x", blob, width: 1, height: 1, caption: "", source: "upload" });
     await copyWorldKeepsakes("w1", "w2", new Map([["c1", "c1copy"]]));
     expect((await listPhotos("w2"))[0].characterId).toBe("c1copy");

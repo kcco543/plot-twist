@@ -161,8 +161,8 @@ export async function saveGift(worldId: string, draft: GiftDraft): Promise<GiftK
   return gift;
 }
 
-/** Record that a saved gift was given to a character (in the gift's own world). */
-export async function giveGift(worldId: string, giftId: string, characterId: string): Promise<GiftKeepsake> {
+/** Record in the gift box that a saved gift was given to a character (in the gift's own world). */
+export async function recordGiving(worldId: string, giftId: string, characterId: string): Promise<GiftKeepsake> {
   const gift = (await all()).find((k): k is GiftKeepsake => k.kind === "gift" && k.id === giftId);
   if (!gift || gift.worldId !== worldId) throw new Error("Gift not found in this world");
   const next: GiftKeepsake = { ...gift, givenTo: [...gift.givenTo, { characterId, at: Date.now() }], updatedAt: Date.now() };

@@ -150,6 +150,8 @@ export type Memory = {
   source?: "ai" | "mock" | "player";
   /** A photo the player showed this character and chose to keep as a memory. */
   photo?: PhotoMemory;
+  /** A gift the player gave (links the gift instance in story.gifts). */
+  gift?: { instanceId: string; name: string; interpretation: string };
 };
 
 /** Who memories with the player point at (withId). In the world, the player is "the visitor". */
@@ -172,13 +174,58 @@ export type PhotoMemory = {
   said: string;
 };
 
-/** How a character feels about the player (photos, and later gifts). */
+/**
+ * Where a gift is now. Displayed = on a visible display spot in the scene;
+ * carried = with them (inventory); private = kept in their own things;
+ * hidden = put away where no one will find it; stored = put away and
+ * forgotten about; refused = not accepted (it went back to the player).
+ */
+export const GIFT_DISPLAY = ["displayed", "carried", "private", "hidden", "stored", "refused"] as const;
+export type GiftDisplay = (typeof GIFT_DISPLAY)[number];
+
+/** One moment in a gift instance's life. */
+export type GiftEvent = { at: number; turn: number; kind: "given" | "accepted" | "refused" | "moved"; display?: GiftDisplay; by: string; why?: string };
+
+/**
+ * A gift as it exists in ONE world: who made it, who owns it, where it is,
+ * what the recipient made of it, and who knows about it. The item's design
+ * (name, description, picture) comes from the player's gift box (IndexedDB,
+ * keepsakes/store.ts) and is copied here so the world save is complete.
+ */
+export type GiftInstance = {
+  id: string;
+  /** The gift-box item this was made from. */
+  itemId: string;
+  name: string;
+  description: string;
+  /** 32×32 PNG data URL, or null. */
+  image: string | null;
+  creator: typeof PLAYER_ID;
+  /** Character id, or PLAYER_ID when the gift was refused. */
+  owner: string;
+  recipient: string;
+  receivedAt: number;
+  receivedTurn: number;
+  /** What the recipient made of it, in their words (AI, validated). */
+  interpretation: string;
+  /** Why it matters to them ("" if it doesn't). */
+  significance: string;
+  importance: number;
+  display: GiftDisplay;
+  /** Who in the world knows this gift exists (the owner always does). */
+  knownBy: string[];
+  history: GiftEvent[];
+};
+
+/** How a character feels about the player (photos and gifts). */
 export type PlayerBond = {
   trust: number;
   affection: number;
   familiarity: number;
   /** Photos shown to this character. */
   photos: number;
+  /** Gifts given to this character. */
+  gifts?: number;
   /** Last few photo reactions (most recent last), so the next one is different. */
   recent: { type: string; dialogue: string; at: number }[];
 };
@@ -277,6 +324,8 @@ export type StoryState = {
   relationLog?: Record<string, RelationShift[]>;
   /** How each character (by id) feels about the player. Missing = a neutral first meeting. */
   player?: Record<string, PlayerBond>;
+  /** Gifts in this world, by instance id. */
+  gifts?: Record<string, GiftInstance>;
 };
 
 // ---------------------------------------------------------------- save

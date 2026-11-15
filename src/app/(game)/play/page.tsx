@@ -44,6 +44,10 @@ import { InteractionMenu, type InteractionKind } from "@/components/keepsakes/In
 import { PhotoPanel } from "@/components/keepsakes/PhotoPanel";
 import { PhotoMomentCard } from "@/components/keepsakes/PhotoMomentCard";
 import { usePhotoMoment } from "@/components/keepsakes/usePhotoMoment";
+import { useGiftMoment } from "@/components/keepsakes/useGiftMoment";
+import { GiftMomentCard, StageGifts } from "@/components/keepsakes/GiftMomentCard";
+import type { SideTab } from "@/components/game/CharacterInfoPanel";
+import { displaySpots, giftAutonomy, placeDisplayed } from "@/lib/gifts/apply";
 import { deletePhoto, prunePhotos } from "@/lib/keepsakes/store";
 import { linkedPhotoIds, unlinkPhoto } from "@/lib/photo/apply";
 import { GiftCreator } from "@/components/keepsakes/GiftCreator";
@@ -355,6 +359,41 @@ export default function PlayPage() {
     worldId: !isDemo && !sandbox ? activeWorldId() : null,
     paused: anyModal,
   });
+  // ---- Gifts (AI reactions + world-specific gift instances shown on the stage's display spots).
+  const spots = useMemo(() => displaySpots(room), [room]);
+  const giftMoment = useGiftMoment({
+    stage,
+    cast: onStage,
+    getStory,
+    setStoryState,
+    showLines,
+    locale,
+    world: world?.id ?? "otherworld",
+    place: envType,
+    placeDescription: save.environment.description,
+    worldId: !isDemo && !sandbox ? activeWorldId() : null,
+    spots: spots.length,
+    paused: anyModal,
+  });
+  const [infoTab, setInfoTab] = useState<{ tab: SideTab; n: number } | null>(null);
+  // Characters handle their gifts by plain rules, once per story turn (never every frame, never AI).
+  const giftTurn = useRef(save.story.turn);
+  useEffect(() => {
+    if (sandbox || isDemo || save.story.turn === giftTurn.current) return;
+    giftTurn.current = save.story.turn;
+    const r = giftAutonomy(getStory(), onStage, spots.length);
+    if (!r.moves.length) return;
+    setStoryState(r.story);
+    logLines(
+      r.moves.map((m) => ({
+        speaker: { kind: "narrator" as const },
+        key: "tpl" as const,
+        tpl: `keepsakes.log.giftMoved.${m.to}`,
+        params: { name: onStage.find((c) => c.id === m.owner)?.name.trim() ?? "", gift: r.story.gifts?.[m.id]?.name ?? "" },
+      })),
+    );
+  }, [save.story.turn, sandbox, isDemo, getStory, onStage, spots.length, setStoryState, logLines]);
+
   // Photos that no memory links any more (forgotten, or pushed out by newer memories) are removed from this world.
   const photoLinks = useMemo(() => [...linkedPhotoIds(save.story)].sort().join("|"), [save.story]);
   useEffect(() => {
@@ -707,6 +746,7 @@ export default function PlayPage() {
               />
             }
           >
+            <StageGifts placed={placeDisplayed(story, spots)} nameOf={(id) => cast.find((c) => c.id === id)?.name.trim() ?? ""} />
             <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={onStageSelect} onPressStart={drag.onPressStart} reducedMotion={reducedMotion} />
           </PixelStage>
           </div>
@@ -743,6 +783,18 @@ export default function PlayPage() {
               onDismiss={photoMoment.dismiss}
               onOpenMemories={() => {
                 setPickedId(photoMoment.moment!.characterId);
+                setInfoTab({ tab: "memories", n: Date.now() });
+                if (!wide) setSheetOpen(true);
+              }}
+            />
+          )}
+          {giftMoment.moment?.played && (
+            <GiftMomentCard
+              moment={giftMoment.moment}
+              onDismiss={giftMoment.dismiss}
+              onOpenThings={() => {
+                setPickedId(giftMoment.moment!.characterId);
+                setInfoTab({ tab: "things", n: Date.now() });
                 if (!wide) setSheetOpen(true);
               }}
             />
@@ -755,7 +807,7 @@ export default function PlayPage() {
         <div className="hidden min-w-0 lg:block">
           <div className={`lg:sticky lg:top-20 ${sidePanels ? "flex max-h-[calc(100dvh-6rem)] flex-col gap-4 overflow-y-auto overscroll-contain pb-2" : ""}`}>
             {sidePanels && wide && sidePanels}
-            <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} onEditMemory={editMemoryFor} photoWorldId={keepPhotosWorld} onDeletePhoto={deletePhotoFor} />
+            <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} onEditMemory={editMemoryFor} photoWorldId={keepPhotosWorld} onDeletePhoto={deletePhotoFor} showTab={infoTab} />
           </div>
         </div>
       </div>
@@ -796,15 +848,25 @@ export default function PlayPage() {
             world={world.id}
             characterId={interactWith.id}
             name={interactName}
+            ai={aiTalk}
             onClose={() => setInteraction(null)}
-            onGiven={(g) => logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: "keepsakes.log.gift", params: { name: interactWith.name.trim(), gift: g.name } }])}
+            onGive={async (g, signal) => {
+              const id = interactWith.id;
+              const r = await giftMoment.give(id, g, signal);
+              if (r.ok) {
+                logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: "refused" in r && r.refused ? "keepsakes.log.giftRefused" : "keepsakes.log.gift", params: { name: interactWith.name.trim(), gift: g.name } }]);
+                setPickedId(id);
+                setInteraction(null);
+              }
+              return r;
+            }}
           />
         </>
       )}
 
       {/* Phone / tablet character sheet */}
       <Modal open={sheetOpen} onClose={() => setSheetOpen(false)} title={t("play.character")} closeLabel={t("play.sidebar.close")}>
-        <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} framed={false} onEditMemory={editMemoryFor} photoWorldId={keepPhotosWorld} onDeletePhoto={deletePhotoFor} />
+        <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} framed={false} onEditMemory={editMemoryFor} photoWorldId={keepPhotosWorld} onDeletePhoto={deletePhotoFor} showTab={infoTab} />
       </Modal>
 
       {/* Story log */}

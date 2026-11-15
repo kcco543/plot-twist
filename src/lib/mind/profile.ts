@@ -145,6 +145,7 @@ export const CANON_RULES: CanonRule[] = [
   { id: "neverJokes", pattern: /never\s+(?:jokes?|laughs?)|从不开玩笑/i, bans: ["respond_playfully"] },
   { id: "neverApologizes", pattern: /never\s+apologi[sz]es?|从不道歉|绝不认错/i, bans: ["acknowledge"] },
   { id: "neverIgnores", pattern: /never\s+ignores?\s+(?:anyone|people|a\s+friend|friends)|从不冷落/i, bans: ["avoid_conversation"] },
+  { id: "neverAcceptsGifts", pattern: /never\s+(?:accepts?|takes?)\s+(?:any\s+)?(?:gifts?|presents?)|refuses?\s+(?:all\s+)?gifts|从不(?:收|接受)礼物?|不收礼/i, bans: ["accept_gift"] },
   { id: "neverCries", pattern: /never\s+(?:cries|lets\s+anyone\s+see\s+(?:them|her|him)\s+cry)|从不哭|不在人前哭/i, bans: [], masks: ["sadness"] },
 ];
 

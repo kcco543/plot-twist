@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { PixelButton, buttonStyle } from "@/components/ui/PixelButton";
 import { PixelIcon } from "@/components/ui/PixelIcon";
@@ -10,7 +10,9 @@ import { AiRequestError, requestGiftImage, useAiStatus } from "@/lib/ai/client";
 import { dataURLToImg, imgToDataURL } from "@/lib/sprites/canvas";
 import type { Img } from "@/lib/sprites/pixelize";
 import { blankGift, isEmptyArt, makeItem } from "@/lib/keepsakes/giftArt";
-import { giveGift, listGifts, saveGift, subscribeKeepsakes } from "@/lib/keepsakes/store";
+import { listGifts, saveGift, subscribeKeepsakes } from "@/lib/keepsakes/store";
+import { GIFT_RETRYABLE } from "@/lib/gifts/request";
+import type { GiveResult } from "./useGiftMoment";
 import { GIFT_DESCRIPTION_MAX, GIFT_NAME_MAX, GIFT_SIZE, type GiftKeepsake } from "@/lib/keepsakes/types";
 import { useI18n } from "@/i18n";
 
@@ -20,7 +22,9 @@ type ArtMode = "draw" | "ai";
  * Gift Creator: name and describe a gift, draw it in the pixel editor (the
  * same editor as the Sprite Studio) or generate a picture with AI when an
  * image service is configured, see it as an item, then Save Gift (to this
- * world's gift box) and / or Give Gift to the character.
+ * world's gift box) and / or Give Gift to the character. Giving asks the AI
+ * for the character's reaction (the gift's name, description and picture go
+ * to Claude); on success the page plays it on the stage and closes this.
  */
 export function GiftCreator({
   open,
@@ -28,8 +32,9 @@ export function GiftCreator({
   world,
   characterId,
   name,
+  ai: aiMode,
   onClose,
-  onGiven,
+  onGive,
 }: {
   open: boolean;
   /** Active world save id. */
@@ -38,8 +43,11 @@ export function GiftCreator({
   world: string | null;
   characterId: string;
   name: string;
+  /** Reactions: real AI, developer TEST replies, or off. */
+  ai: "ai" | "mock" | null;
   onClose: () => void;
-  onGiven: (gift: GiftKeepsake) => void;
+  /** Give the saved gift; the page validates, asks for the reaction and closes this on success. */
+  onGive: (gift: GiftKeepsake, signal: AbortSignal) => Promise<GiveResult>;
 }) {
   const { t } = useI18n();
   const ai = useAiStatus();
@@ -54,7 +62,9 @@ export function GiftCreator({
   const [aiError, setAiError] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [given, setGiven] = useState<GiftKeepsake | null>(null);
+  const [giveError, setGiveError] = useState<string | null>(null);
+  const [canRetry, setCanRetry] = useState(false);
+  const giving = useRef<AbortController | null>(null);
   const [box, setBox] = useState<GiftKeepsake[]>([]);
 
   // Fresh creator each time it opens.
@@ -71,7 +81,12 @@ export function GiftCreator({
     setAiError(null);
     setProblem(null);
     setNotice(null);
-    setGiven(null);
+    setGiveError(null);
+    setCanRetry(false);
+    return () => {
+      giving.current?.abort();
+      giving.current = null;
+    };
   }, [open, characterId]);
 
   // This world's gift box (saved gifts), kept up to date.
@@ -147,19 +162,35 @@ export function GiftCreator({
     }
   };
 
-  const onGive = async () => {
+  const give = async () => {
+    if (!aiMode) return;
     setBusy("give");
+    setGiveError(null);
+    setCanRetry(false);
+    const ctrl = new AbortController();
+    giving.current = ctrl;
     try {
-      const g = savedId && !dirty ? { id: savedId } : await store();
+      const g = savedId && !dirty ? box.find((x) => x.id === savedId) ?? (await store()) : await store();
       if (!g || !worldId) return;
-      const done = await giveGift(worldId, g.id, characterId);
-      setGiven(done);
-      onGiven(done);
+      const r = await onGive(g, ctrl.signal);
+      if (giving.current !== ctrl || r.ok) return; // stopped, or the page took over
+      if (r.code === "cancelled") return;
+      if (r.code === "transfer") setGiveError(t(`keepsakes.gift.transfer.${r.problem}`, { name }));
+      else {
+        setGiveError(t(`keepsakes.gift.error.${r.code}`, { name }));
+        setCanRetry(GIFT_RETRYABLE.has(r.code));
+      }
     } catch {
       setProblem(t("keepsakes.saveFailed"));
     } finally {
+      if (giving.current === ctrl) giving.current = null;
       setBusy(null);
     }
+  };
+  const stopGiving = () => {
+    giving.current?.abort();
+    giving.current = null;
+    setBusy(null);
   };
 
   const loadFromBox = async (g: GiftKeepsake) => {
@@ -188,9 +219,9 @@ export function GiftCreator({
       closeLabel={t("common.close")}
       size="xl"
       footer={
-        given ? (
-          <PixelButton size="sm" variant="success" icon="check" onClick={onClose} data-autofocus>
-            {t("keepsakes.done")}
+        busy === "give" ? (
+          <PixelButton size="sm" variant="ghost" icon="close" onClick={stopGiving} data-gift-stop>
+            {t("keepsakes.photo.stop")}
           </PixelButton>
         ) : (
           <>
@@ -200,7 +231,7 @@ export function GiftCreator({
             <PixelButton size="sm" variant="magic" icon="check" loading={busy === "save"} disabled={!!busy && busy !== "save"} onClick={onSave} data-gift-save>
               {t("keepsakes.gift.save")}
             </PixelButton>
-            <PixelButton size="sm" variant="primary" icon="gift" loading={busy === "give"} disabled={!named || (!!busy && busy !== "give")} onClick={onGive} data-gift-give>
+            <PixelButton size="sm" variant="primary" icon="gift" disabled={!named || !!busy || !aiMode || !worldId} onClick={give} data-gift-give>
               {t("keepsakes.gift.give", { name })}
             </PixelButton>
           </>
@@ -210,14 +241,10 @@ export function GiftCreator({
       <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,14rem)]" data-gift-creator>
         {/* Left: details and picture */}
         <div className="flex min-w-0 flex-col gap-4">
-          {given ? (
-            <div className="flex flex-col gap-2" role="status">
-              <p className="font-head text-lg font-bold">{t("keepsakes.gift.givenTitle", { name, gift: given.name })}</p>
-              <p className="text-base text-ink-soft">{t("keepsakes.gift.givenBody", { name })}</p>
-              <p className="flex items-start gap-2 bg-lavender-hi px-2 py-1.5 text-sm text-ink-soft">
-                <PixelIcon name="clock" size={11} className="mt-1 shrink-0 text-label" />
-                {t("keepsakes.reactionsLater")}
-              </p>
+          {busy === "give" ? (
+            <div className="flex flex-col items-center gap-3 py-8 text-center" role="status" data-gift-thinking>
+              <PixelIcon name="gift" size={36} className="animate-bob text-rose" />
+              <p className="font-head text-lg font-bold">{t("keepsakes.gift.unwrapping", { name })}</p>
             </div>
           ) : (
             <>
@@ -334,7 +361,22 @@ export function GiftCreator({
             )}
           </div>
 
-          {!given && box.length > 0 && (
+          {giveError && (
+            <div className="flex flex-col gap-2 bg-peach-hi px-2 py-2 text-sm shadow-[inset_4px_0_0_var(--color-coral)]" role="alert" data-gift-error>
+              <p>{giveError}</p>
+              {canRetry && (
+                <PixelButton size="sm" variant="ghost" icon="undo" onClick={give} className="self-start" data-gift-retry>
+                  {t("keepsakes.photo.tryAgain")}
+                </PixelButton>
+              )}
+            </div>
+          )}
+          <p className="flex items-start gap-2 text-xs text-ink-soft" data-gift-ai-note>
+            <PixelIcon name={aiMode ? "sparkle" : "offline"} size={10} className="mt-0.5 shrink-0 text-label" />
+            {!worldId ? t("keepsakes.menu.demo") : aiMode === "ai" ? t("keepsakes.gift.sendNote", { name }) : aiMode === "mock" ? t("keepsakes.gift.sendMock", { name }) : t("keepsakes.gift.aiOff")}
+          </p>
+
+          {box.length > 0 && (
             <div className="flex flex-col gap-2">
               <p className="font-label text-xs uppercase tracking-wide text-label">{t("keepsakes.gift.box", { count: box.length })}</p>
               <ul className="flex flex-wrap gap-1.5" data-gift-box>

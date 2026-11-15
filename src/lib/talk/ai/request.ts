@@ -16,6 +16,7 @@ import { feelingsOf, ranked } from "../../mind/feelings";
 import { memoryKindOf } from "../../mind/memory";
 import { relationOf, relKey } from "../../mind/relations";
 import { PLAYER_ID, type Character, type EnvironmentTypeId, type Memory, type StoryState, type WorldId } from "../../types";
+import { giftsForTalk } from "../../gifts/apply";
 import { pairKey } from "./apply";
 import { HISTORY_MAX, MEMORY_MAX, MESSAGE_MAX, TalkReplySchema, type TalkMemory, type TalkRequest, type TalkResponse } from "./contract";
 
@@ -125,6 +126,7 @@ export function buildTalkRequest(i: BuildInput): TalkRequest {
         }
       : null,
     usedTopics: i.usedTopics.slice(-12).map((t) => cut(t, 160)),
+    gifts: giftsForTalk(story, listener.id, speaker.id, i.message).map((g) => ({ ...g, name: cut(g.name, 60), description: cut(g.description, 260), interpretation: cut(g.interpretation, 200) })),
   };
 }
 

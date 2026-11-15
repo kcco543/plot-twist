@@ -2092,7 +2092,6 @@
       "demo": "Add your own characters (or the sample cast) to share photos and gifts."
     },
     "done": "Done",
-    "reactionsLater": "Characters don't react to photos and gifts yet. That comes in a later update.",
     "saveFailed": "Couldn't save it in this world. Try again, or reopen the world from My Worlds.",
     "photo": {
       "title": "Photo for {name}",
@@ -2193,14 +2192,47 @@
       "saved": "“{gift}” is saved in this world's gift box.",
       "box": "Gift box ({count})",
       "openSaved": "Open saved gift {gift}",
-      "givenTitle": "You gave {name} the {gift}.",
-      "givenBody": "The gift is kept in this world's gift box, marked as given to {name}."
+      "unwrapping": "{name} is unwrapping it…",
+      "sendNote": "Giving sends the gift's name, description and picture to Claude (Anthropic) so {name} can react.",
+      "sendMock": "Test mode: {name} gives a TEST reaction (nothing is sent anywhere).",
+      "aiOff": "Gift reactions use the AI. Turn on “AI story writing” in Settings (and the server needs an Anthropic API key).",
+      "transfer": {
+        "not_in_world": "This gift belongs to another world.",
+        "unknown_character": "{name} isn't in this world.",
+        "already_has": "{name} already has this gift.",
+        "no_name": "Give the gift a name first."
+      },
+      "error": {
+        "not_configured": "Gift reactions aren't set up on this server yet (it needs an Anthropic API key).",
+        "unsupported": "The AI model set up on this server can't look at pictures.",
+        "refused": "{name} didn't want to react to this gift. Try a different one.",
+        "invalid_output": "{name}'s reaction didn't come out right. Try again.",
+        "rate_limited": "The AI is busy right now. Try again in a moment.",
+        "busy": "Another gift is still being opened. Try again in a moment.",
+        "limit": "That's a lot of gifts for now. Try again later.",
+        "auth": "The server's Anthropic API key was turned down.",
+        "failed": "Something went wrong on the way to the AI. Try again.",
+        "offline": "You're offline. Connect and try again.",
+        "timeout": "That took too long. Try again.",
+        "bad_request": "The gift couldn't be sent. Try another one.",
+        "bad_image": "The gift picture couldn't be read. Try another one.",
+        "too_large": "That gift picture is too big to send.",
+        "cancelled": "Stopped."
+      }
     },
     "log": {
       "photo": "You showed {name} a photo.",
       "photoCaption": "You showed {name} a photo: “{caption}”",
       "gift": "You gave {name} a gift: {gift}.",
-      "photoSaved": "{name} will remember your photo."
+      "photoSaved": "{name} will remember your photo.",
+      "giftRefused": "{name} turned down your gift: {gift}.",
+      "giftMoved": {
+        "displayed": "{name} put the {gift} on display.",
+        "carried": "{name} started carrying the {gift} around.",
+        "private": "{name} tucked the {gift} away among their things.",
+        "hidden": "{name} hid the {gift} where no one will find it.",
+        "stored": "{name} put the {gift} away in storage."
+      }
     },
     "moment": {
       "title": "{name} saw your photo",
@@ -2224,7 +2256,35 @@
       "deleteConfirm": "Delete this photo? {name} will still remember the moment, but the picture is gone for good.",
       "deleted": "The photo was deleted. The memory stays.",
       "missing": "Photo not on this device",
-      "alt": "Photo shown to {name}"
+      "alt": "Photo shown to {name}",
+      "giftLabel": "Gift from you"
+    },
+    "giftState": {
+      "displayed": "On display",
+      "carried": "Carried",
+      "private": "Kept privately",
+      "hidden": "Hidden",
+      "stored": "Stored away",
+      "refused": "Refused"
+    },
+    "giftMoment": {
+      "title": "{name} got your gift",
+      "accepted": "{name} took the {gift}.",
+      "indifferent": "{name} took the {gift}, without much interest.",
+      "refused": "{name} turned down the {gift}. It's back in your gift box.",
+      "where": "Now: {state}",
+      "thinks": "{name} thinks:",
+      "open": "See {name}'s things"
+    },
+    "things": {
+      "tab": "Things",
+      "empty": "{name} doesn't have any gifts from you yet.",
+      "knownBy": "Known to: {names}",
+      "onlyOwner": "Only {name} knows about it.",
+      "refused": "Turned down",
+      "history": "History",
+      "alt": "{gift}, a gift from you",
+      "onStage": "{owner}'s {gift} (a gift from you)"
     }
   },
   "library": {

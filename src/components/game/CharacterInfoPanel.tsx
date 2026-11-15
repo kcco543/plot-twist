@@ -43,7 +43,7 @@ function Meter({ value, label }: { value: number; label: string }) {
   );
 }
 
-type SideTab = "about" | "state" | "memories";
+export type SideTab = "about" | "state" | "memories" | "things";
 
 /**
  * Character sheet for Play Mode. Essentials (portrait, name, mood) always
@@ -59,6 +59,7 @@ export function CharacterInfoPanel({
   onEditMemory,
   photoWorldId = null,
   onDeletePhoto,
+  showTab = null,
 }: {
   character: Character | null;
   cast: Character[];
@@ -71,10 +72,15 @@ export function CharacterInfoPanel({
   photoWorldId?: string | null;
   /** Delete a photo memory's picture (the memory stays). */
   onDeletePhoto?: (photoId: string) => void;
+  /** Switch to this tab (bump `n` to switch again). */
+  showTab?: { tab: SideTab; n: number } | null;
 }) {
   const { t, tx } = useI18n();
   const base = useId();
   const [tab, setTab] = useState<SideTab>("about");
+  useEffect(() => {
+    if (showTab) setTab(showTab.tab);
+  }, [showTab]);
 
   const body = character ? (
     <div className="flex min-w-0 flex-col gap-3">
@@ -120,6 +126,7 @@ export function CharacterInfoPanel({
           { id: "about", label: t("play.sidebar.tabs.about") },
           { id: "state", label: t("play.sidebar.tabs.state") },
           { id: "memories", label: t("play.sidebar.tabs.memories") },
+          { id: "things", label: t("keepsakes.things.tab") },
         ]}
       />
 
@@ -154,6 +161,10 @@ export function CharacterInfoPanel({
             </ul>
           );
         })()}
+      </TabPanel>
+
+      <TabPanel id="things" base={base} active={tab === "things"}>
+        <GiftList story={story} cast={cast} owner={character} />
       </TabPanel>
 
       <TabPanel id="memories" base={base} active={tab === "memories"}>
@@ -226,7 +237,7 @@ function MemoryItem({
   const [draft, setDraft] = useState(m.note ?? "");
   const [confirmForget, setConfirmForget] = useState(false);
   // Conversation memories (walk & talk, AI) are labelled by kind; story-engine ones by their event.
-  const label = m.photo ? t("keepsakes.memory.label") : /^(talk|chat)\./.test(m.eventType) ? tx(`memoryEditor.kinds.${m.kind ?? "note"}`) : tx(`events.${m.eventType}`);
+  const label = m.photo ? t("keepsakes.memory.label") : m.gift ? t("keepsakes.memory.giftLabel") : /^(talk|chat)\./.test(m.eventType) ? tx(`memoryEditor.kinds.${m.kind ?? "note"}`) : tx(`events.${m.eventType}`);
   const text = m.note || tx(`memories.${m.eventType}`, { with: m.withName || t("common.someone") });
   return (
     <li className="bg-well px-2 py-1.5 shadow-[inset_3px_0_0_var(--color-lavender)]" data-memory={m.id}>
@@ -386,5 +397,41 @@ function PhotoMemoryDetails({ photo, name, worldId, onDelete }: { photo: PhotoMe
         )}
       </div>
     </div>
+  );
+}
+
+/** The character's gifts from the player: where each one is, what they made of it, and who knows about it. */
+function GiftList({ story, cast, owner }: { story: StoryState; cast: Character[]; owner: Character }) {
+  const { t } = useI18n();
+  const name = owner.name.trim() || t("common.unnamed");
+  const nameOf = (id: string) => cast.find((c) => c.id === id)?.name.trim() || t("common.someone");
+  const gifts = Object.values(story.gifts ?? {})
+    .filter((g) => g.owner === owner.id || (g.recipient === owner.id && g.display === "refused"))
+    .sort((a, b) => b.receivedAt - a.receivedAt);
+  if (!gifts.length) return <p className="text-base text-ink-mute">{t("keepsakes.things.empty", { name })}</p>;
+  return (
+    <ul className="flex max-h-80 flex-col gap-2 overflow-y-auto pr-1" data-gift-list>
+      {gifts.map((g) => {
+        const others = g.knownBy.filter((id) => id !== owner.id);
+        return (
+          <li key={g.id} className="flex gap-2 bg-well px-2 py-1.5 shadow-[inset_3px_0_0_var(--color-mint)]" data-gift-item={g.id} data-gift-state={g.display}>
+            <div className="px-checker grid size-10 shrink-0 place-items-center shadow-[inset_0_0_0_2px_var(--color-line)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {g.image ? <img src={g.image} alt={t("keepsakes.things.alt", { gift: g.name })} width={32} height={32} className="pixelated" /> : <PixelIcon name="gift" size={14} className="text-ink-mute" />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="flex flex-wrap items-center justify-between gap-1">
+                <span className="truncate font-head text-sm font-bold">{g.name}</span>
+                <span className="font-label text-[9px] uppercase text-rose">{t(`keepsakes.giftState.${g.display}`)}</span>
+              </p>
+              {g.interpretation && <p className="text-xs leading-snug text-ink-soft">{g.interpretation}</p>}
+              {g.display !== "refused" && (
+                <p className="mt-0.5 text-[11px] text-ink-mute">{others.length ? t("keepsakes.things.knownBy", { names: others.map(nameOf).join(", ") }) : t("keepsakes.things.onlyOwner", { name })}</p>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

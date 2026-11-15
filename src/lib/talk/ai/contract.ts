@@ -116,6 +116,20 @@ export const TalkRequestSchema = z.object({
     .nullable(),
   /** Topics already discussed in this conversation (so new suggestions differ). */
   usedTopics: z.array(text(160)).max(12),
+  /** Gifts from the visitor that matter to what was just said (only when relevant). */
+  gifts: z
+    .array(
+      z.object({
+        name: text(60),
+        description: text(260),
+        where: z.enum(["displayed", "carried", "private", "hidden", "stored", "refused"]),
+        owner: z.enum(["listener", "speaker"]),
+        speakerKnows: z.boolean(),
+        interpretation: text(200),
+      }),
+    )
+    .max(3)
+    .optional(),
 });
 export type TalkRequest = z.infer<typeof TalkRequestSchema>;
 

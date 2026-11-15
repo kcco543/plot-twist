@@ -2092,7 +2092,6 @@
       "demo": "添加你自己的角色（或示例角色）后，就能分享照片和礼物。"
     },
     "done": "完成",
-    "reactionsLater": "角色暂时还不会对照片和礼物做出反应，之后的更新会加入。",
     "saveFailed": "没能保存到这个世界。请再试一次，或从“我的世界”重新进入。",
     "photo": {
       "title": "给{name}的照片",
@@ -2193,14 +2192,47 @@
       "saved": "“{gift}”已存入这个世界的礼物箱。",
       "box": "礼物箱（{count}）",
       "openSaved": "打开已保存的礼物 {gift}",
-      "givenTitle": "你把{gift}送给了{name}。",
-      "givenBody": "礼物保存在这个世界的礼物箱里，并标记为已送给{name}。"
+      "unwrapping": "{name}正在拆礼物……",
+      "sendNote": "送出礼物时，礼物的名称、描述和图片会发送给 Claude（Anthropic），让{name}作出反应。",
+      "sendMock": "测试模式：{name}会给出测试反应（不会发送到任何地方）。",
+      "aiOff": "礼物反应需要用到 AI。请在设置里打开“AI 写故事”（服务器也需要 Anthropic API 密钥）。",
+      "transfer": {
+        "not_in_world": "这份礼物属于另一个世界。",
+        "unknown_character": "{name}不在这个世界里。",
+        "already_has": "{name}已经有这份礼物了。",
+        "no_name": "先给礼物起个名字。"
+      },
+      "error": {
+        "not_configured": "这台服务器还没设置礼物反应（需要 Anthropic API 密钥）。",
+        "unsupported": "服务器上设置的 AI 模型看不了图片。",
+        "refused": "{name}不想对这份礼物作出反应。换一张试试。",
+        "invalid_output": "{name}的反应没能正常生成。再试一次。",
+        "rate_limited": "AI 现在有点忙，稍后再试。",
+        "busy": "上一份礼物还在拆。稍后再试。",
+        "limit": "今天的礼物有点多了，稍后再试。",
+        "auth": "服务器的 Anthropic API 密钥被拒绝了。",
+        "failed": "发送给 AI 时出了点问题。再试一次。",
+        "offline": "你现在离线。连上网络后再试。",
+        "timeout": "等太久了。再试一次。",
+        "bad_request": "礼物没能送出去。",
+        "bad_image": "礼物图片读不出来。",
+        "too_large": "这份礼物太复杂，发不出去。换一张试试。",
+        "cancelled": "已停止。"
+      }
     },
     "log": {
       "photo": "你给{name}看了一张照片。",
       "photoCaption": "你给{name}看了一张照片：“{caption}”",
       "gift": "你送给{name}一份礼物：{gift}。",
-      "photoSaved": "{name}会记住你的照片。"
+      "photoSaved": "{name}会记住你的照片。",
+      "giftRefused": "{name}拒收了你的礼物：{gift}。",
+      "giftMoved": {
+        "displayed": "{name}把{gift}摆出来展示了。",
+        "carried": "{name}开始随身带着{gift}。",
+        "private": "{name}把{gift}收进了自己的东西里。",
+        "hidden": "{name}把{gift}藏到了没人找得到的地方。",
+        "stored": "{name}把{gift}收进了仓库。"
+      }
     },
     "moment": {
       "title": "{name}看了你的照片",
@@ -2224,7 +2256,35 @@
       "deleteConfirm": "删除这张照片？{name}仍会记得这一刻，但照片会永久删除。",
       "deleted": "照片已删除，记忆还在。",
       "missing": "这台设备上没有这张照片",
-      "alt": "给{name}看的照片"
+      "alt": "给{name}看的照片",
+      "giftLabel": "你送的礼物"
+    },
+    "giftState": {
+      "displayed": "摆出来展示",
+      "carried": "随身带着",
+      "private": "私下收着",
+      "hidden": "藏起来了",
+      "stored": "收进仓库",
+      "refused": "拒收"
+    },
+    "giftMoment": {
+      "title": "{name}收到了你的礼物",
+      "accepted": "{name}收下了{gift}。",
+      "indifferent": "{name}收下了{gift}，不过兴趣不大。",
+      "refused": "{name}没有收下{gift}，它回到了你的礼物盒。",
+      "where": "现在：{state}",
+      "thinks": "{name}觉得：",
+      "open": "查看{name}的物品"
+    },
+    "things": {
+      "tab": "物品",
+      "empty": "{name}还没有收到你的礼物。",
+      "knownBy": "知道的人：{names}",
+      "onlyOwner": "只有{name}知道。",
+      "refused": "拒收了",
+      "history": "经历",
+      "alt": "{gift}，你送的礼物",
+      "onStage": "{owner}的{gift}（你送的）"
     }
   },
   "library": {
