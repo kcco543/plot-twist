@@ -256,6 +256,30 @@
       "remove": "Remove",
       "usePlaceholder": "Use built-in art",
       "keepHint": "Your current map stays until the new one is ready."
+    },
+    "edit": {
+      "enter": "Edit region",
+      "exit": "Done editing",
+      "selectHint": "Drag over the map to select the area you want to change.",
+      "adjustHint": "Drag the box to move it, or drag a corner to resize it.",
+      "selectionLabel": "Selected area. Arrow keys move it, Shift + arrow keys resize it, Delete clears it.",
+      "clear": "Clear selection",
+      "instructionLabel": "What should change here?",
+      "instructionPlaceholder": "Add a green-roof cottage here.",
+      "examples": "Try",
+      "example1": "Add a green-roof cottage here.",
+      "example2": "Turn this area into a flower garden.",
+      "example3": "Replace this empty space with a pond and wooden fence.",
+      "submit": "Edit Selected Area",
+      "submitting": "Editing area",
+      "repainting": "Repainting this area",
+      "keepHint": "Everything outside the box stays as it is. Each edit is saved as a new version.",
+      "needSelection": "Select an area on the map first.",
+      "failed": "The area couldn't be edited: {reason}.",
+      "undo": "Undo edit",
+      "editedFrom": "Edited from version {n}: “{instruction}”",
+      "editedFromRemoved": "Edited: “{instruction}”",
+      "editedTag": "Edited"
     }
   },
   "environments": {
@@ -780,7 +804,8 @@
       "offline": "you're offline",
       "bad_request": "the request was invalid",
       "too_large": "the image is larger than 8 MB",
-      "bad_type": "only PNG, JPG or WebP images work"
+      "bad_type": "only PNG, JPG or WebP images work",
+      "unsupported": "this image service can't edit part of a map"
     },
     "errorTitle": "That didn't work: {reason}."
   },

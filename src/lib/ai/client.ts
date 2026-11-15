@@ -12,7 +12,7 @@ import type { AnalyzeRequest, CharacterBrief, TurnRequest } from "./contracts";
 import { activeWorldId } from "../saves/worldSaves";
 
 export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null };
-export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type";
+export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "unsupported";
 
 export class AiRequestError extends Error {
   constructor(public code: AiErrorCode, message: string) {
@@ -139,4 +139,26 @@ export type MapRequestBody = { description: string; type: string; world: string 
 /** Description → generated map (data URL). Takes up to a minute or two. */
 export async function requestMap(body: MapRequestBody): Promise<{ image: string; model: string }> {
   return post<{ image: string; model: string }>("/api/ai/map", body);
+}
+
+export type MapEditBody = { instruction: string; region: { x: number; y: number; w: number; h: number }; description: string; type: string | null; world: string | null };
+
+/** Current map + selected area + instruction → the map with that area repainted (data URL). */
+export async function requestMapEdit(image: Blob, body: MapEditBody): Promise<{ image: string; model: string }> {
+  const form = new FormData();
+  form.set("image", image, "map");
+  form.set("instruction", body.instruction);
+  for (const k of ["x", "y", "w", "h"] as const) form.set(k, String(body.region[k]));
+  form.set("description", body.description);
+  if (body.type) form.set("type", body.type);
+  if (body.world) form.set("world", body.world);
+  let res: Response;
+  try {
+    res = await fetch("/api/ai/map/edit", { method: "POST", body: form });
+  } catch {
+    throw new AiRequestError("offline", "Network error");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new AiRequestError((data.error as AiErrorCode) ?? "failed", data.message ?? `HTTP ${res.status}`);
+  return data;
 }

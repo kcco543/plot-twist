@@ -256,6 +256,30 @@
       "remove": "删除",
       "usePlaceholder": "使用内置图片",
       "keepHint": "新地图完成前，当前地图会一直保留。"
+    },
+    "edit": {
+      "enter": "编辑区域",
+      "exit": "完成编辑",
+      "selectHint": "在地图上拖动，框选想要修改的区域。",
+      "adjustHint": "拖动选框可以移动，拖动四个角可以调整大小。",
+      "selectionLabel": "选中区域。方向键移动，Shift + 方向键调整大小，Delete 清除。",
+      "clear": "清除选区",
+      "instructionLabel": "这里要改成什么？",
+      "instructionPlaceholder": "把这里改成一间绿色屋顶的小屋。",
+      "examples": "试试",
+      "example1": "把这里改成一间绿色屋顶的小屋。",
+      "example2": "在这里添加一个花圃和木栅栏。",
+      "example3": "把这片空地换成一个小池塘。",
+      "submit": "修改选中区域",
+      "submitting": "正在修改区域",
+      "repainting": "正在重绘这片区域",
+      "keepHint": "选框以外的部分保持不变。每次修改都会保存为一个新版本。",
+      "needSelection": "请先在地图上框选一个区域。",
+      "failed": "区域修改失败：{reason}。",
+      "undo": "撤销修改",
+      "editedFrom": "由版本 {n} 修改：“{instruction}”",
+      "editedFromRemoved": "已修改：“{instruction}”",
+      "editedTag": "已修改"
     }
   },
   "environments": {
@@ -780,7 +804,8 @@
       "offline": "你现在离线",
       "bad_request": "请求无效",
       "too_large": "图片超过 8 MB",
-      "bad_type": "只支持 PNG、JPG 或 WebP 图片"
+      "bad_type": "只支持 PNG、JPG 或 WebP 图片",
+      "unsupported": "当前的图像服务不支持局部修改"
     },
     "errorTitle": "没有成功：{reason}。"
   },
