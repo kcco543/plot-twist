@@ -143,6 +143,12 @@ export type BehaviorRecord = {
   locale: string;
   createdAt: number;
   approvedAt: number | null;
+  /** Profile version, + 1 for every accepted feedback change or restore. Missing = 1. */
+  version?: number;
+  /** Feedback refinement history (src/lib/behavior/refine.ts), oldest first, capped. */
+  revisions?: import("./behavior/refine").AnalysisRevision[];
+  /** A revised profile proposed from feedback, waiting for Accept / Reject. */
+  proposal?: import("./behavior/refine").AnalysisProposal | null;
 };
 
 // ---------------------------------------------------------------- story state

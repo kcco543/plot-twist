@@ -172,7 +172,7 @@ export function CharacterEditor({
 
       {!library && (
         <TabPanel id="analysis" base={base} active={tab === "analysis"}>
-          <AnalysisPanel character={character} onChange={onChange} />
+          <AnalysisPanel character={character} onChange={onChange} onEditField={editText} />
         </TabPanel>
       )}
 

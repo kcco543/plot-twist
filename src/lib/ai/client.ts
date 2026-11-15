@@ -9,7 +9,8 @@ import { approvedBehavior } from "../character/model";
 import { genderForPrompt } from "../character/gender";
 import { finishProfile } from "../behavior/schema";
 import { CHARACTER_TEXT_FIELDS, type BehaviorProfile, type Character, type Memory } from "../types";
-import type { AnalyzeRequest, CharacterBrief, TurnRequest } from "./contracts";
+import type { AnalyzeRequest, CharacterBrief, RefineRequest, TurnRequest } from "./contracts";
+import type { AnalysisProposal } from "../behavior/refine";
 import { activeWorldId } from "../saves/worldSaves";
 
 export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null; talk?: "ai" | "mock" | null };
@@ -110,6 +111,18 @@ export async function requestAnalysis(req: AnalyzeRequest): Promise<BehaviorProf
   const data = await post<{ profile: unknown }>("/api/ai/analyze", req);
   try {
     return finishProfile(data.profile);
+  } catch {
+    throw new AiRequestError("invalid_output", "Profile failed validation");
+  }
+}
+
+export type RefineResult = Omit<AnalysisProposal, "id" | "at" | "feedback" | "sourceVersion" | "keepCanon">;
+
+/** Feedback → a proposed revision (nothing is applied until the player accepts it). */
+export async function requestRefine(req: RefineRequest): Promise<RefineResult> {
+  const data = await post<RefineResult>("/api/ai/refine", req);
+  try {
+    return { ...data, profile: finishProfile(data.profile) };
   } catch {
     throw new AiRequestError("invalid_output", "Profile failed validation");
   }

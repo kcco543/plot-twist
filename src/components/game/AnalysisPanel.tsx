@@ -9,7 +9,9 @@ import { AiRequestError, briefFor, memoryBrief, requestAnalysis, useAiStatus } f
 import { buildLocalProfile } from "@/lib/behavior/localAnalysis";
 import { hasPersonalityInput, profileInputHash } from "@/lib/character/model";
 import { getSave } from "@/lib/gameStore";
-import { REACTIONS, type BehaviorProfile, type BehaviorRecord, type Character } from "@/lib/types";
+import { REACTIONS, type BehaviorProfile, type BehaviorRecord, type Character, type CharacterTextField } from "@/lib/types";
+import { versionOf } from "@/lib/behavior/refine";
+import { RefinePanel } from "./RefinePanel";
 import { useI18n } from "@/i18n";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -137,7 +139,7 @@ export function ProfileView({ profile }: { profile: BehaviorProfile }) {
   );
 }
 
-export function AnalysisPanel({ character, onChange }: { character: Character; onChange: (patch: Partial<Character>) => void }) {
+export function AnalysisPanel({ character, onChange, onEditField }: { character: Character; onChange: (patch: Partial<Character>) => void; onEditField?: (f: CharacterTextField) => void }) {
   const { t, tx, locale } = useI18n();
   const status = useAiStatus();
   const [running, setRunning] = useState(false);
@@ -148,7 +150,8 @@ export function AnalysisPanel({ character, onChange }: { character: Character; o
   const canRun = hasPersonalityInput(character);
 
   const store = (profile: BehaviorProfile, source: BehaviorRecord["source"]) =>
-    onChange({ behavior: { profile, source, status: "pending", inputHash: hash, locale, createdAt: Date.now(), approvedAt: null } });
+    // A fresh analysis keeps the feedback history (so earlier versions can still be restored).
+    onChange({ behavior: { profile, source, status: "pending", inputHash: hash, locale, createdAt: Date.now(), approvedAt: null, version: record ? versionOf(record) + 1 : 1, revisions: record?.revisions, proposal: null } });
 
   const runAi = async () => {
     setRunning(true);
@@ -232,6 +235,7 @@ export function AnalysisPanel({ character, onChange }: { character: Character; o
           <ProfileView profile={record.profile} />
         </Panel>
       )}
+      {record && <RefinePanel character={character} record={record} onChange={onChange} onEditField={onEditField} />}
     </div>
   );
 }
