@@ -19,12 +19,15 @@ export type StoredMap = {
   worldId: WorldId | null;
   model: string;
   createdAt: number;
+  /** Set when this version came from editing part of another one (Undo goes back to it). */
+  parentId?: string;
+  edit?: { instruction: string; region: { x: number; y: number; w: number; h: number } };
 };
 
 const DB = "plot-twist-maps";
 const STORE = "maps";
 /** Oldest maps beyond this are dropped. */
-export const MAP_HISTORY_LIMIT = 12;
+export const MAP_HISTORY_LIMIT = 24;
 
 let memory: StoredMap[] = [];
 let dbPromise: Promise<IDBDatabase | null> | null = null;

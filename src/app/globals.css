@@ -118,6 +118,15 @@ html[lang="zh-CN"] .font-display { font-weight: 400; }
 
 ::selection { background: var(--color-butter); color: var(--color-ink); }
 
+/* Map region selection: dashed border (World Builder → Edit region). */
+.region-ants {
+  background:
+    repeating-linear-gradient(90deg, #fffaf0 0 6px, transparent 6px 12px) top / 100% 2px no-repeat,
+    repeating-linear-gradient(90deg, #fffaf0 0 6px, transparent 6px 12px) bottom / 100% 2px no-repeat,
+    repeating-linear-gradient(0deg, #fffaf0 0 6px, transparent 6px 12px) left / 2px 100% no-repeat,
+    repeating-linear-gradient(0deg, #fffaf0 0 6px, transparent 6px 12px) right / 2px 100% no-repeat;
+}
+
 /* Settings: reduce motion (also honors the OS setting) */
 html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after {
   animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important;
