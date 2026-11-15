@@ -90,34 +90,33 @@ export function RelationshipInspector({ cast, story, selectedId, compact, onClos
                 {t("relInspector.longTerm")} · {tx(`rel.label.${view.label}`)}
                 {view.p.grandfathered && view.p.log.length === 0 ? ` · ${t("relInspector.grandfathered")}` : ""}
               </h3>
-              <table className="w-full text-left tabular-nums">
-                <tbody>
-                  {AXES.map((axis) => {
-                    const l = ladder(axis);
-                    const i = stageIndex(axis, view.p.stages[axis]);
-                    const next = l[i + 1];
-                    const pend = view.p.log.at(-1)?.pending.find((x) => x.axis === axis);
-                    return (
-                      <tr key={axis} className="border-b border-line/60 align-top">
-                        <td className="py-0.5 pr-2">{axis}</td>
-                        <td className="py-0.5 pr-2 font-bold">{(view.rel[axis] as number | undefined) ?? 0}</td>
-                        <td className="py-0.5 pr-2">{tx(`rel.stage.${axis}.${l[i].id}`)}</td>
-                        <td className="py-0.5 text-ink-mute">
-                          {next ? `${t("relInspector.next", { stage: tx(`rel.stage.${axis}.${next.id}`), at: next.enter, exit: l[i].exit === -Infinity ? "—" : l[i].exit })}` : t("relInspector.top")}
-                          {pend ? ` · ${t("relInspector.needs")} ${pend.needs.join(", ")}` : ""}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {(["rivalry", "fear", "dependence"] as const).map((k) => (
-                    <tr key={k} className="border-b border-line/60">
-                      <td className="py-0.5 pr-2">{k}</td>
-                      <td className="py-0.5 pr-2 font-bold">{(view.rel[k] as number | undefined) ?? 0}</td>
-                      <td colSpan={2} />
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ul className="flex flex-col tabular-nums" data-inspector-axes>
+                {AXES.map((axis) => {
+                  const l = ladder(axis);
+                  const i = stageIndex(axis, view.p.stages[axis]);
+                  const next = l[i + 1];
+                  const pend = view.p.log.at(-1)?.pending.find((x) => x.axis === axis);
+                  return (
+                    <li key={axis} className="border-b border-line/60 py-1">
+                      <span className="flex items-baseline gap-2">
+                        <span className="w-20 shrink-0">{axis}</span>
+                        <span className="w-12 shrink-0 text-right font-bold">{(view.rel[axis] as number | undefined) ?? 0}</span>
+                        <span className="min-w-0 flex-1 truncate">{tx(`rel.stage.${axis}.${l[i].id}`)}</span>
+                      </span>
+                      <span className="block text-xs text-ink-mute">
+                        {next ? t("relInspector.next", { stage: tx(`rel.stage.${axis}.${next.id}`), at: next.enter, exit: l[i].exit === -Infinity ? "—" : l[i].exit }) : t("relInspector.top")}
+                        {pend ? ` · ${t("relInspector.needs")} ${pend.needs.join(", ")}` : ""}
+                      </span>
+                    </li>
+                  );
+                })}
+                {(["rivalry", "fear", "dependence"] as const).map((k) => (
+                  <li key={k} className="flex items-baseline gap-2 border-b border-line/60 py-1">
+                    <span className="w-20 shrink-0">{k}</span>
+                    <span className="w-12 shrink-0 text-right font-bold">{(view.rel[k] as number | undefined) ?? 0}</span>
+                  </li>
+                ))}
+              </ul>
             </section>
 
             <section>

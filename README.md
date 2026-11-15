@@ -100,6 +100,8 @@ Drag a character onto another one (phones: touch and hold, then drag). While dra
 
 With an `ANTHROPIC_API_KEY` set and **AI story writing** on (Settings), the listener in a walk-and-talk answers suggested topics, AI suggestions and typed messages in character, written by Claude from their profile, sliders, mood, relationship, memories and the recent exchange. The reply also proposes an emotion, a movement, small relationship changes, a memory and 2–3 next lines for the speaker; the game validates all of it before anything changes. Full design: `docs/AI_CONVERSATIONS.md`.
 
+Relationships develop gradually and are enforced by game rules, not the AI: every change is scored, capped and checked against stage milestones, and characters keep hard and soft boundaries (Character Studio) that repeated asking never wears down. Design and tuning: `docs/RELATIONSHIPS.md`.
+
 - Contract (request + structured reply): `src/lib/talk/ai/contract.ts` · server route: `src/app/api/ai/talk/route.ts` · prompt: `src/lib/ai/server/talk.ts`
 - Server checks (character, language, repeats, one retry): `src/lib/talk/ai/checks.ts` · usage limits: `src/lib/ai/server/limits.ts`
 - Game-engine validation + memory: `src/lib/talk/ai/apply.ts` · request building: `src/lib/talk/ai/request.ts` · flow: `src/lib/talk/useTalk.ts`

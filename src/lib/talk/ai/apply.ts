@@ -31,6 +31,9 @@ import { remember } from "../../mind/memory";
 import { canonLimits, personalityOf } from "../../mind/profile";
 import { relationOf, relKey, type RelationDelta } from "../../mind/relations";
 import { DISCLOSING, type RequestDecision } from "../../relationships/boundaries";
+
+/** Decisions that say no (or not now): the game, not the reply, decides what they do to the relationship. */
+const REFUSING: Intention[] = ["hesitate", "refuse_polite", "refuse_firm", "explain_boundary", "deflect", "change_subject", "question_intent", "express_discomfort", "end_conversation"];
 import { classifyMessage } from "../../relationships/classify";
 import { blendProposal, progressOf, recordInteraction } from "../../relationships/progression";
 import { stageIndex } from "../../relationships/stages";
@@ -75,7 +78,8 @@ export type ValidatedReply = {
   /** What the listener did with the request (checked against the game's decision). */
   stance: Intention;
   /** The validated interaction (what the speaker did), for relationship progression. */
-  interaction: { kind: InteractionKind; proposedKind: InteractionKind; significance: Significance; reasons: string[] };
+  /** skip: the game already recorded what this moment means (a refused request), so the reply adds nothing on top. */
+  interaction: { kind: InteractionKind; proposedKind: InteractionKind; significance: Significance; reasons: string[]; skip?: boolean };
   /** Set when the reply broke a binding decision; nothing from it is applied. */
   rejected: null | "stance_not_allowed" | "disclosed_against_decision" | "overclaims_trust";
 };
@@ -261,7 +265,13 @@ export function validateReply(reply: TalkReply, ctx: ValidateContext): Validated
   const prog = progressOf(story, listener, speaker);
   if (!rejected && overclaims(reply.dialogue) && stageIndex("trust", prog.stages.trust) < 4) rejected = "overclaims_trust";
   if (rejected) adjustments.push(`decision:${rejected}`);
-  const interaction = validateInteraction(reply, ctx.message);
+  const interaction: ValidatedReply["interaction"] = validateInteraction(reply, ctx.message);
+  // A refusal was already scored by the game (applyDecisionOutcome: pressure, boundary pushes,
+  // respect for letting it go). The reply's own reading of the moment must not add warmth on top.
+  if (d && REFUSING.includes(d.intention)) {
+    interaction.skip = true;
+    interaction.reasons.push("decision:refusal_already_recorded");
+  }
   return { dialogue: rejected ? "" : reply.dialogue.trim(), emotion, level, movement, relation, memory, resolves, suggestions, adjustments, stance, interaction, rejected };
 }
 
@@ -311,7 +321,7 @@ export function applyReply(story: StoryState, v: ValidatedReply, listener: Chara
   s = { ...s, characters: { ...s.characters, [listener.id]: v.level === 0 ? withEmotion(st, "neutral", 0, now) : withEmotion(st, v.emotion, v.level, now) } };
   // Relationship (listener → speaker): the validated interaction goes through the progression
   // rules. The AI's numbers are only a proposal; affectionate words alone move nothing.
-  {
+  if (!v.interaction.skip) {
     const { proposed, ignoredWarmth } = blendProposal(v.interaction.kind, v.relation as RelationDelta, v.interaction.significance);
     const reasons = [...v.interaction.reasons, ...(ignoredWarmth ? ["ai:warmer_numbers_ignored"] : [])];
     const res = recordInteraction(s, { from: listener, to: speaker, kind: v.interaction.kind, proposedKind: v.interaction.proposedKind, significance: v.interaction.significance, proposed, source: source === "ai" ? "talk-ai" : "talk-mock", why: (v.memory?.note ?? v.dialogue).slice(0, 140), reasons, distressed: distressedOf(story, listener.id), now });
