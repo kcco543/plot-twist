@@ -6,7 +6,7 @@ import { TEXT_MODEL, textConfigured } from "./config";
 
 export class AiError extends Error {
   constructor(
-    public code: "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed",
+    public code: "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "unsupported",
     message: string,
   ) {
     super(message);
@@ -59,7 +59,7 @@ export async function structuredCall<S extends z.ZodType>(opts: {
 
 export function aiErrorResponse(err: unknown) {
   const e = err instanceof AiError ? err : new AiError("failed", "Unexpected error");
-  const status = e.code === "not_configured" ? 503 : e.code === "rate_limited" ? 429 : e.code === "refused" || e.code === "invalid_output" ? 422 : 502;
+  const status = e.code === "not_configured" || e.code === "unsupported" ? 503 : e.code === "rate_limited" ? 429 : e.code === "refused" || e.code === "invalid_output" ? 422 : 502;
   if (!(err instanceof AiError)) console.error("[ai]", err);
   return Response.json({ error: e.code, message: e.message }, { status });
 }

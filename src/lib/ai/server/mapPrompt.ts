@@ -57,3 +57,32 @@ export function mapPrompt(opts: { description: string; type: EnvironmentTypeId; 
     .filter(Boolean)
     .join("\n\n");
 }
+
+/**
+ * REGION EDIT
+ * Used when the player selects part of a generated map and asks for a change
+ * there. The image service receives the whole map plus a mask, and this text.
+ * The same house style is repeated so the new part can't drift from the rest.
+ */
+export const MAP_EDIT_CONSISTENCY = [
+  "This is a local edit of an existing game map. Only repaint the masked (transparent) area; everything outside it must stay exactly as it is.",
+  "The repainted area must look like it was always part of this same map: match the existing pixel grid and pixel size, the same slight angled bird's-eye perspective, the same palette, lighting direction, shadow softness and outline treatment.",
+  "Blend seamlessly into the surrounding pixels at the edges of the area: continue paths, grass, walls, water and ground textures across the border so no seam or box is visible.",
+  "Keep the scale of new objects consistent with nearby buildings, trees and props.",
+].join(" ");
+
+export function mapEditPrompt(opts: { instruction: string; description?: string; type?: EnvironmentTypeId | null; world?: WorldId | null }): string {
+  const instruction = opts.instruction.trim().replace(/\s+/g, " ").slice(0, 300);
+  const description = (opts.description ?? "").trim().replace(/\s+/g, " ").slice(0, 600);
+  return [
+    MAP_EDIT_CONSISTENCY,
+    `The change the player wants in this area (it may be written in Chinese or English; follow its meaning, never write its words into the image): """${instruction}"""`,
+    description ? `For context, the whole map shows: """${description}"""` : "",
+    opts.world ? MAP_WORLD[opts.world] : "",
+    MAP_STYLE,
+    "Where the requested change and the art style disagree, keep the art style and adapt the change to it.",
+    "Absolutely no text, letters, numbers, labels or watermarks. Do not add a frame, border or UI.",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
