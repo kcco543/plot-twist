@@ -15,10 +15,12 @@
  */
 import { useSyncExternalStore } from "react";
 import { defaultWorld, environmentArt, type ArtAsset } from "@/assets/manifest";
-import { AiRequestError, requestMap, type AiErrorCode } from "./ai/client";
+import { AiRequestError, requestMap, requestMapEdit, type AiErrorCode } from "./ai/client";
 import { gameActions, getSave } from "./gameStore";
 import { makeId } from "./id";
 import { MAP_HISTORY_LIMIT, clearAllMaps, deleteMaps, listMaps, putMap, type StoredMap } from "./mapLibrary";
+import { compositeRegion } from "./mapComposite";
+import { regionIsUsable, type Region } from "./mapSelection";
 import type { EnvironmentTypeId, WorldId } from "./types";
 import { activeWorldId, getIndex } from "./saves/worldSaves";
 import { mapOwner, tagMap, type OwnedMap } from "./saves/worldMaps";
@@ -36,9 +38,14 @@ type MapStudioState = {
   loaded: boolean;
   working: MapRequest | null;
   error: AiErrorCode | null;
+  /** A region edit in progress (see editMapRegion). */
+  editing: MapEditJob | null;
+  editError: AiErrorCode | null;
 };
 
-let state: MapStudioState = { maps: [], loaded: false, working: null, error: null };
+export type MapEditJob = { mapId: string; region: Region; instruction: string };
+
+let state: MapStudioState = { maps: [], loaded: false, working: null, error: null, editing: null, editError: null };
 const listeners = new Set<() => void>();
 const SERVER_STATE: MapStudioState = state;
 const urls = new Map<string, string>();
@@ -107,6 +114,22 @@ async function decode(dataUrl: string): Promise<{ blob: Blob; width: number; hei
   }
 }
 
+/** Store a new version, make it the map in use, and drop the oldest beyond the history limit. */
+async function addMap(stored: StoredMap) {
+  tagMap(stored, activeWorldId()); // each world save keeps its own maps
+  await load();
+  await putMap(stored);
+  const all = [toGenerated(stored), ...state.maps];
+  const keep = new Set([stored.id, getSave().environment.mapId]);
+  const dropped = all.slice(MAP_HISTORY_LIMIT).filter((m) => !keep.has(m.id));
+  if (dropped.length) {
+    await deleteMaps(dropped.map((m) => m.id));
+    release(dropped.map((m) => m.id));
+  }
+  set({ maps: all.filter((m) => !dropped.includes(m)) });
+  gameActions.updateEnvironment({ mapId: stored.id });
+}
+
 /** Start drawing a map. Ignored while another one is in progress. */
 export async function generateMap(req: MapRequest): Promise<void> {
   if (state.working || !req.description.trim()) return;
@@ -115,20 +138,63 @@ export async function generateMap(req: MapRequest): Promise<void> {
     const out = await requestMap({ description: req.description.trim(), type: req.type, world: req.worldId });
     const { blob, width, height } = await decode(out.image);
     const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model: out.model, createdAt: Date.now() };
-    tagMap(stored, activeWorldId());
-    await load();
-    await putMap(stored);
-    const all = [toGenerated(stored), ...state.maps];
-    const dropped = all.slice(MAP_HISTORY_LIMIT).filter((m) => m.id !== getSave().environment.mapId);
-    if (dropped.length) {
-      await deleteMaps(dropped.map((m) => m.id));
-      release(dropped.map((m) => m.id));
-    }
-    set({ maps: all.filter((m) => !dropped.includes(m)), working: null });
-    gameActions.updateEnvironment({ mapId: stored.id });
+    await addMap(stored);
+    set({ working: null });
   } catch (e) {
     set({ working: null, error: e instanceof AiRequestError ? e.code : "failed" });
   }
+}
+
+/**
+ * REGION EDIT — "Edit Selected Area"
+ * Sends the map version on screen, the selected rectangle and the instruction
+ * to /api/ai/map/edit (the server builds the mask and calls the image
+ * service), pastes only the selected area of the result back onto the
+ * original (see mapComposite.ts), and saves that as a new version whose
+ * parent is the one that was edited, so Undo can go back to it.
+ */
+export async function editMapRegion(job: MapEditJob): Promise<boolean> {
+  if (state.working || state.editing || !job.instruction.trim() || !regionIsUsable(job.region)) return false;
+  const source = state.maps.find((m) => m.id === job.mapId);
+  if (!source) return false;
+  set({ editing: job, editError: null });
+  try {
+    const original = await (await fetch(source.url)).blob();
+    const out = await requestMapEdit(original, {
+      instruction: job.instruction.trim(),
+      region: job.region,
+      description: source.description,
+      type: source.type,
+      world: source.worldId,
+    });
+    const edited = await (await fetch(out.image)).blob();
+    const { blob, width, height } = await compositeRegion(original, edited, job.region).catch(() => {
+      throw new AiRequestError("invalid_output", "The edited image could not be read");
+    });
+    const stored: StoredMap = {
+      id: makeId("map"),
+      description: source.description,
+      type: source.type,
+      worldId: source.worldId,
+      blob,
+      width,
+      height,
+      model: out.model,
+      createdAt: Date.now(),
+      parentId: source.id,
+      edit: { instruction: job.instruction.trim(), region: job.region },
+    };
+    await addMap(stored);
+    set({ editing: null });
+    return true;
+  } catch (e) {
+    set({ editing: null, editError: e instanceof AiRequestError ? e.code : "failed" });
+    return false;
+  }
+}
+
+export function dismissMapEditError() {
+  set({ editError: null });
 }
 
 export function selectMap(id: string | null) {
@@ -150,5 +216,5 @@ export function dismissMapError() {
 export async function eraseMaps() {
   await clearAllMaps();
   release([...urls.keys()]);
-  set({ maps: [], error: null });
+  set({ maps: [], error: null, editError: null });
 }

@@ -19,7 +19,17 @@ export interface ImageProvider {
   generateMap(input: { prompt: string }): Promise<Buffer>;
   /** Text prompt → a single item (gift) on a transparent background. Returns PNG bytes. */
   generateItem(input: { prompt: string }): Promise<Buffer>;
+  /**
+   * Region edit (inpainting): repaint only where `mask` is transparent and keep
+   * the rest of `image`. `mask` is a PNG the same size as `image`. Returns PNG
+   * bytes. Optional: a provider without inpainting leaves it out, and the edit
+   * route answers "unsupported" so the UI can say so.
+   */
+  editMap?(input: { image: Buffer; mime: string; mask: Buffer; width: number; height: number; prompt: string }): Promise<Buffer>;
 }
+
+/** Sizes the OpenAI image model accepts; anything else is left to "auto". */
+const OPENAI_SIZES = new Set(["1024x1024", "1536x1024", "1024x1536"]);
 
 /** Turn SDK errors into the app's error codes (the route turns those into HTTP statuses). */
 function imageError(err: unknown, refusedMessage: string): AiError {
@@ -92,6 +102,28 @@ const openaiProvider: ImageProvider = {
       return Buffer.from(b64, "base64");
     } catch (err) {
       throw imageError(err, "The image service declined this gift description");
+    }
+  },
+  async editMap({ image, mime, mask, width, height, prompt }) {
+    const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+    const size = OPENAI_SIZES.has(`${width}x${height}`) ? `${width}x${height}` : "auto";
+    try {
+      const res = await openai().images.edit({
+        model: IMAGE_MODEL,
+        image: await toFile(image, `map.${ext}`, { type: mime }),
+        mask: await toFile(mask, "mask.png", { type: "image/png" }),
+        prompt,
+        size,
+        background: "opaque",
+        output_format: "png",
+        quality: "high",
+        n: 1,
+      });
+      const b64 = res.data?.[0]?.b64_json;
+      if (!b64) throw new AiError("invalid_output", "The image service returned no image");
+      return Buffer.from(b64, "base64");
+    } catch (err) {
+      throw imageError(err, "The image service declined this edit");
     }
   },
 };

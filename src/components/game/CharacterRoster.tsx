@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react";
 import { ArtImage } from "@/components/ui/ArtImage";
 import { PixelButton } from "@/components/ui/PixelButton";
+import { PixelIcon } from "@/components/ui/PixelIcon";
 import { artFor } from "@/lib/character/art";
 import { useI18n } from "@/i18n";
 import type { Character } from "@/lib/types";
@@ -12,11 +13,14 @@ export function CharacterRoster({
   selectedId,
   onSelect,
   onAdd,
+  onImport,
 }: {
   characters: Character[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  /** "Add from Library". */
+  onImport?: () => void;
 }) {
   const { t } = useI18n();
   return (
@@ -35,7 +39,14 @@ export function CharacterRoster({
               >
                 <ArtImage art={artFor(c).sprite} alt="" showTag={false} className="w-12 shrink-0 bg-well" />
                 <span className="min-w-0">
-                  <span className={`block truncate font-head text-base font-bold ${active ? "text-label" : "text-ink"}`}>{c.name.trim() || t("common.unnamed")}</span>
+                  <span className={`flex items-center gap-1 font-head text-base font-bold ${active ? "text-label" : "text-ink"}`}>
+                    <span className="truncate">{c.name.trim() || t("common.unnamed")}</span>
+                    {c.templateId && (
+                      <span className="shrink-0 text-label" title={t("library.fromLibrary")}>
+                        <PixelIcon name="book" size={9} />
+                      </span>
+                    )}
+                  </span>
                   <span className="block truncate text-sm text-ink-soft">{c.age.trim() ? t("common.ageValue", { age: c.age.trim() }) : t("common.ageUnknown")}</span>
                 </span>
               </button>
@@ -43,9 +54,16 @@ export function CharacterRoster({
           );
         })}
       </ul>
-      <PixelButton variant="accent" size="sm" icon="plus" onClick={onAdd} className="w-full">
-        {t("studio.new")}
-      </PixelButton>
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+        <PixelButton variant="accent" size="sm" icon="plus" onClick={onAdd} className="w-full">
+          {onImport ? t("library.createNew") : t("studio.new")}
+        </PixelButton>
+        {onImport && (
+          <PixelButton variant="magic" size="sm" icon="book" onClick={onImport} className="w-full">
+            {t("library.addFromLibrary")}
+          </PixelButton>
+        )}
+      </div>
     </div>
   );
 }

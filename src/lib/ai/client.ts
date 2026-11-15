@@ -9,9 +9,10 @@ import { approvedBehavior } from "../character/model";
 import { finishProfile } from "../behavior/schema";
 import { CHARACTER_TEXT_FIELDS, type BehaviorProfile, type Character, type Memory } from "../types";
 import type { AnalyzeRequest, CharacterBrief, TurnRequest } from "./contracts";
+import { activeWorldId } from "../saves/worldSaves";
 
 export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null; talk?: "ai" | "mock" | null };
-export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "timeout" | "busy" | "limit";
+export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "timeout" | "busy" | "limit" | "unsupported";
 
 export class AiRequestError extends Error {
   constructor(public code: AiErrorCode, message: string) {
@@ -53,10 +54,21 @@ export function useAiStatus(): AiStatus | null {
   return status;
 }
 
+/**
+ * Every AI call says which world save it is for. The request bodies are built
+ * from the ACTIVE world's characters (their own ids, personality, emotions,
+ * relationships and memories), never from Character Library originals, and
+ * replies are saved through gameStore, which only writes the active world.
+ */
+const worldHeader = (): Record<string, string> => {
+  const id = activeWorldId();
+  return id ? { "X-Plot-Twist-World": id } : {};
+};
+
 async function post<T>(url: string, body: unknown): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", ...worldHeader() }, body: JSON.stringify(body) });
   } catch {
     throw new AiRequestError("offline", "Network error");
   }
@@ -113,7 +125,7 @@ export async function requestSprite(image: Blob, opts: { appearance: string; wor
   if (opts.world) form.set("world", opts.world);
   let res: Response;
   try {
-    res = await fetch("/api/ai/sprite", { method: "POST", body: form });
+    res = await fetch("/api/ai/sprite", { method: "POST", body: form, headers: worldHeader() });
   } catch {
     throw new AiRequestError("offline", "Network error");
   }
@@ -132,4 +144,26 @@ export async function requestMap(body: MapRequestBody): Promise<{ image: string;
 /** Gift name + description → generated item picture (data URL). Only when image generation is configured. */
 export async function requestGiftImage(body: { name: string; description: string; world: string | null }): Promise<{ image: string; model: string }> {
   return post<{ image: string; model: string }>("/api/ai/gift", body);
+}
+
+export type MapEditBody = { instruction: string; region: { x: number; y: number; w: number; h: number }; description: string; type: string | null; world: string | null };
+
+/** Current map + selected area + instruction → the map with that area repainted (data URL). */
+export async function requestMapEdit(image: Blob, body: MapEditBody): Promise<{ image: string; model: string }> {
+  const form = new FormData();
+  form.set("image", image, "map");
+  form.set("instruction", body.instruction);
+  for (const k of ["x", "y", "w", "h"] as const) form.set(k, String(body.region[k]));
+  form.set("description", body.description);
+  if (body.type) form.set("type", body.type);
+  if (body.world) form.set("world", body.world);
+  let res: Response;
+  try {
+    res = await fetch("/api/ai/map/edit", { method: "POST", body: form });
+  } catch {
+    throw new AiRequestError("offline", "Network error");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new AiRequestError((data.error as AiErrorCode) ?? "failed", data.message ?? `HTTP ${res.status}`);
+  return data;
 }

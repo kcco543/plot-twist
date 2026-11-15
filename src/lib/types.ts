@@ -72,6 +72,12 @@ export type Character = Record<CharacterTextField, string> & {
   behavior: BehaviorRecord | null;
   createdAt: number;
   updatedAt: number;
+  /**
+   * The Character Library original this world's character was added from
+   * (read-only link; see src/lib/library). Missing = made in this world.
+   * Everything else on the character is this world's own copy.
+   */
+  templateId?: string;
 };
 
 // ---------------------------------------------------------------- behavior

@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ActionBar, ScreenHeader } from "@/components/ScreenHeader";
+import { MapEditOverlay, MapEditPanel, useRegionEdit } from "@/components/game/MapEditPanel";
 import { MapStage } from "@/components/game/MapStage";
 import { PixelStage } from "@/components/game/PixelStage";
 import { ArtImage } from "@/components/ui/ArtImage";
@@ -45,8 +46,11 @@ export default function WorldBuilderPage() {
   const request = { worldId: save.worldId, type, description };
   const map = currentMap(studio.maps, save.environment.mapId);
   const working = studio.working !== null;
+  /** A full map or a region edit is being drawn: only one at a time. */
+  const busy = working || studio.editing !== null;
   const outdated = map !== null && description.trim() !== "" && mapIsOutdated(map, request);
-  const canGenerate = Boolean(status?.image) && description.trim() !== "" && !working;
+  const canGenerate = Boolean(status?.image) && description.trim() !== "" && !busy;
+  const edit = useRegionEdit(map, { editing: studio.editing, editError: studio.editError, busy, available: Boolean(status?.image) });
   const generate = () => {
     // Close the phone keyboard so the preview (and its loading state) is in view.
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -59,6 +63,7 @@ export default function WorldBuilderPage() {
   // the button mid-tap, swallowing the click. Keep focus until the click itself runs.
   const keepFocus = (e: React.PointerEvent) => e.preventDefault();
   const versionOf = (id: string) => studio.maps.length - studio.maps.findIndex((m) => m.id === id);
+  const versionIfKept = (id: string) => (studio.maps.some((m) => m.id === id) ? versionOf(id) : null);
 
   const drawing = working && (
     <div role="status" className="absolute inset-0 grid place-items-center bg-surface/70 backdrop-blur-[1px]">
@@ -87,6 +92,7 @@ export default function WorldBuilderPage() {
       <div className="flex flex-col gap-3">
         {map ? (
           <MapStage src={map.url} width={map.width} height={map.height} label={t("builder.previewAlt", { title })} frame={world?.frame ?? "card"}>
+            <MapEditOverlay edit={edit} />
             {drawing}
           </MapStage>
         ) : (
@@ -104,6 +110,8 @@ export default function WorldBuilderPage() {
             {t("builder.map.outdated")}
           </p>
         )}
+
+        <MapEditPanel edit={edit} versionOf={versionIfKept} />
 
         <p className="min-h-12 text-lg leading-snug text-ink-soft">
           {map ? `“${map.description}”` : description.trim() ? `“${description.trim()}”` : t("builder.quoteEmpty")}
@@ -126,7 +134,7 @@ export default function WorldBuilderPage() {
                   </a>
                 )}
                 {map && (
-                  <PixelButton size="sm" variant="ghost" icon="trash" disabled={working} onClick={() => void removeMap(map.id)}>
+                  <PixelButton size="sm" variant="ghost" icon="trash" disabled={busy} onClick={() => void removeMap(map.id)}>
                     {t("builder.map.remove")}
                   </PixelButton>
                 )}
@@ -147,13 +155,20 @@ export default function WorldBuilderPage() {
                       type="button"
                       onClick={() => selectMap(m.id)}
                       aria-pressed={active}
-                      title={m.description}
+                      title={m.edit ? m.edit.instruction : m.description}
                       aria-label={t("builder.map.showVersion", { n })}
                       className={`px-focus relative block w-24 sm:w-28 ${active ? "shadow-[0_0_0_3px_var(--color-butter-lo)]" : "opacity-80 shadow-[0_0_0_2px_var(--color-line)] hover:opacity-100"}`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={m.url} alt="" className="block w-full object-cover" style={{ aspectRatio: `${m.width} / ${m.height}` }} />
-                      <span className="absolute bottom-0.5 left-0.5 bg-white/90 px-1 font-label text-[9px] uppercase leading-tight text-ink">v{n}</span>
+                      <span className="absolute bottom-0.5 left-0.5 flex items-center gap-0.5 bg-white/90 px-1 font-label text-[9px] uppercase leading-tight text-ink">
+                        v{n}
+                        {m.parentId && (
+                          <span title={t("builder.edit.editedTag")}>
+                            <PixelIcon name="pencil" size={8} className="text-label" />
+                          </span>
+                        )}
+                      </span>
                     </button>
                   </li>
                 );
