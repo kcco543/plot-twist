@@ -37,6 +37,11 @@ export function characterBlock(c: CharacterBrief, label: string) {
     for (const [k, v] of traits) lines.push(`    ${TRAIT_POLES[k]?.[0]} ↔ ${TRAIT_POLES[k]?.[1]}: ${v}`);
     lines.push("  </sliders>");
   }
+  if (c.boundaries?.length) {
+    lines.push(`  <boundaries note="hard = never crossed in play; soft = avoided, may be reconsidered only through real shared experience">`);
+    for (const b of c.boundaries) lines.push(`    ${b.strength} ${b.kind}: ${b.text}`);
+    lines.push(`  </boundaries>`);
+  }
   if (c.profile) {
     lines.push(`  <approved_profile>`);
     lines.push(`    summary: ${c.profile.summary}`);

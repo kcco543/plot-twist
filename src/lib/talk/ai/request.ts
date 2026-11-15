@@ -17,6 +17,8 @@ import { memoryKindOf } from "../../mind/memory";
 import { relationOf, relKey } from "../../mind/relations";
 import { PLAYER_ID, type Character, type EnvironmentTypeId, type Memory, type StoryState, type WorldId } from "../../types";
 import { giftsForTalk } from "../../gifts/apply";
+import type { RequestDecision } from "../../relationships/boundaries";
+import { relationshipSummary } from "../../relationships/summary";
 import { pairKey } from "./apply";
 import { HISTORY_MAX, MEMORY_MAX, MESSAGE_MAX, TalkReplySchema, type TalkMemory, type TalkRequest, type TalkResponse } from "./contract";
 
@@ -36,7 +38,27 @@ export type BuildInput = {
   decision: Decision | null;
   recentEvents: string[];
   usedTopics: string[];
+  /** The game's decision about what the listener is willing to do (boundaries.ts). */
+  request?: RequestDecision | null;
 };
+
+function decisionBrief(d: RequestDecision): NonNullable<TalkRequest["decision"]> {
+  const b = d.analysis.boundary;
+  return {
+    kind: d.analysis.kind,
+    tier: d.analysis.tier,
+    intention: d.intention,
+    allowed: d.allowed,
+    disclosure: d.disclosure,
+    mustNotReveal: d.mustNotReveal.slice(0, 3).map((m) => cut(m, 240)),
+    askedBefore: Math.min(10000, d.askedBefore),
+    refusedBefore: Math.min(10000, d.refusedBefore),
+    valueConflicts: d.analysis.valueConflicts.slice(0, 6),
+    reasoned: d.analysis.reasoned,
+    endConversation: d.endConversation,
+    boundary: b ? { strength: b.strength, kind: b.kind, text: cut(b.text, 240) } : null,
+  };
+}
 
 function toTalkMemory(m: Memory, story: StoryState, holder: "listener" | "speaker"): TalkMemory {
   return {
@@ -126,6 +148,18 @@ export function buildTalkRequest(i: BuildInput): TalkRequest {
         }
       : null,
     usedTopics: i.usedTopics.slice(-12).map((t) => cut(t, 160)),
+    relationship: (() => {
+      const r = relationshipSummary(story, listener, speaker);
+      return {
+        stages: r.stages,
+        label: r.label,
+        impressions: r.impressions.map((x) => ({ theme: x.theme, polarity: x.polarity, strength: x.strength })),
+        conflicts: r.conflicts.map((c) => cut(c, 120)),
+        promises: r.promises.map((c) => cut(c, 160)),
+        milestones: r.milestones.map((c) => cut(c, 120)),
+      };
+    })(),
+    ...(i.request ? { decision: decisionBrief(i.request) } : {}),
     gifts: giftsForTalk(story, listener.id, speaker.id, i.message).map((g) => ({ ...g, name: cut(g.name, 60), description: cut(g.description, 260), interpretation: cut(g.interpretation, 200) })),
   };
 }

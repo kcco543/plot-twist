@@ -46,6 +46,7 @@ const RANGES: Record<keyof Omit<Relation, "label">, [number, number]> = {
   rivalry: [0, 100],
   tension: [0, 100],
   fear: [0, 100],
+  dependence: [0, 100],
 };
 const NUM_KEYS = Object.keys(RANGES) as (keyof Omit<Relation, "label">)[];
 
@@ -76,7 +77,7 @@ export function seedFromText(a: Character, b: Character): Relation | null {
       used.add(seed.label);
       rel.label = seed.label;
     }
-    for (const k of NUM_KEYS) if (seed.delta[k]) rel[k] = clampTo(k, rel[k] + seed.delta[k]!);
+    for (const k of NUM_KEYS) if (seed.delta[k]) rel[k] = clampTo(k, (rel[k] ?? 0) + seed.delta[k]!);
   }
   if (rel.label === "acquaintance" && rel.familiarity < 15) rel.label = "stranger";
   return rel;
@@ -107,7 +108,7 @@ export function applyRelation(rel: Relation, d: RelationDelta): Relation {
   for (const k of NUM_KEYS) {
     const v = d[k];
     if (!v) continue;
-    out[k] = clampTo(k, out[k] + Math.max(-REL_STEP_CAP, Math.min(REL_STEP_CAP, v)));
+    out[k] = clampTo(k, (out[k] ?? 0) + Math.max(-REL_STEP_CAP, Math.min(REL_STEP_CAP, v)));
   }
   if (out.label === "stranger" && out.familiarity >= 20) out.label = "acquaintance";
   return out;

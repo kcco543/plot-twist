@@ -14,6 +14,8 @@ import { PLAYER_ID, type Character, type Memory, type Mood, type PhotoMemory, ty
 import { getPhoto } from "@/lib/keepsakes/store";
 import type { MemoryPatch } from "@/lib/talk/ai/apply";
 import { useI18n } from "@/i18n";
+import { currentRelation, progressKey } from "@/lib/relationships/progression";
+import { relationshipSummary } from "@/lib/relationships/summary";
 
 const ROWS = ["identity", "personality", "goals", "fears", "relationships"] as const;
 
@@ -142,25 +144,8 @@ export function CharacterInfoPanel({
       </TabPanel>
 
       <TabPanel id="state" base={base} active={tab === "state"}>
-        <p className="mb-2 font-label text-[10px] uppercase text-rose">{t("play.sidebar.bonds")}</p>
-        {(() => {
-          const others = cast.filter((c) => c.id !== character.id && story.bonds[bondKey(c.id, character.id)]);
-          if (others.length === 0) return <p className="text-base text-ink-mute">{t("play.sidebar.noBonds")}</p>;
-          return (
-            <ul className="flex flex-col gap-3">
-              {others.map((o) => {
-                const b = story.bonds[bondKey(o.id, character.id)];
-                return (
-                  <li key={o.id} className="flex flex-col gap-1">
-                    <span className="truncate font-head text-sm font-bold">{o.name.trim() || t("common.unnamed")}</span>
-                    <Meter value={b.affinity} label={t("play.sidebar.affinity")} />
-                    <Meter value={b.trust} label={t("play.sidebar.trust")} />
-                  </li>
-                );
-              })}
-            </ul>
-          );
-        })()}
+        <p className="mb-2 font-label text-[10px] uppercase text-rose">{t("play.sidebar.howSees", { name: character.name.trim() || t("common.unnamed") })}</p>
+        <RelationshipList character={character} cast={cast} story={story} />
       </TabPanel>
 
       <TabPanel id="things" base={base} active={tab === "things"}>
@@ -429,6 +414,47 @@ function GiftList({ story, cast, owner }: { story: StoryState; cast: Character[]
                 <p className="mt-0.5 text-[11px] text-ink-mute">{others.length ? t("keepsakes.things.knownBy", { names: others.map(nameOf).join(", ") }) : t("keepsakes.things.onlyOwner", { name })}</p>
               )}
             </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** How this character sees each other person (one direction): label, stages, two meters and the clearest impression. */
+function RelationshipList({ character, cast, story }: { character: Character; cast: Character[]; story: StoryState }) {
+  const { t, tx } = useI18n();
+  const others: (Character | null)[] = cast.filter((c) => c.id !== character.id && (story.bonds[bondKey(c.id, character.id)] || story.relations?.[progressKey(character.id, c.id)] || story.progress?.[progressKey(character.id, c.id)]));
+  if (story.player?.[character.id] || story.progress?.[progressKey(character.id, PLAYER_ID)]) others.push(null);
+  if (others.length === 0) return <p className="text-base text-ink-mute">{t("play.sidebar.noBonds")}</p>;
+  const name = character.name.trim() || t("common.unnamed");
+  return (
+    <ul className="flex flex-col gap-3" data-relationship-list>
+      {others.map((o) => {
+        const sum = relationshipSummary(story, character, o);
+        const rel = currentRelation(story, character, o);
+        const oName = o ? o.name.trim() || t("common.unnamed") : t("play.sidebar.visitor");
+        const top = sum.impressions[0];
+        return (
+          <li key={o?.id ?? PLAYER_ID} className="flex flex-col gap-1" data-relationship-to={o?.id ?? PLAYER_ID}>
+            <span className="flex items-baseline justify-between gap-2">
+              <span className="truncate font-head text-sm font-bold">{oName}</span>
+              <span className="shrink-0 font-label text-[10px] uppercase text-label" data-relationship-label={sum.label}>{tx(`rel.label.${sum.label}`)}</span>
+            </span>
+            <span className="text-xs text-ink-soft">
+              {t("play.sidebar.stageLine", {
+                trust: tx(`rel.stage.trust.${sum.stages.trust}`),
+                affection: tx(`rel.stage.affection.${sum.stages.affection}`),
+                respect: tx(`rel.stage.respect.${sum.stages.respect}`),
+              })}
+            </span>
+            <Meter value={Math.round(rel.affection)} label={t("play.sidebar.affinity")} />
+            <Meter value={Math.round(rel.trust)} label={t("play.sidebar.trust")} />
+            {top && (
+              <span className="text-xs text-ink-soft">
+                {t(`rel.impression.prefix.${top.strength}`, { name })} {tx(`rel.impression.${top.theme}.${top.polarity}`, { other: oName })}
+              </span>
+            )}
           </li>
         );
       })}

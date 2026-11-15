@@ -78,6 +78,27 @@ export type Character = Record<CharacterTextField, string> & {
    * Everything else on the character is this world's own copy.
    */
   templateId?: string;
+  /**
+   * Personal boundaries written in the Character Studio (see
+   * src/lib/relationships/boundaries.ts). HARD ones never change through
+   * play, only by editing the character; SOFT ones may be reconsidered for
+   * one person after meaningful experiences, never because a number is high.
+   * Missing in older saves = none written (locked canon still counts).
+   */
+  boundaries?: CharacterBoundary[];
+};
+
+export const BOUNDARY_KINDS = ["secret", "topic", "principle"] as const;
+/** secret = won't reveal it · topic = won't discuss it · principle = won't do / agree to it. */
+export type BoundaryKind = (typeof BOUNDARY_KINDS)[number];
+export type CharacterBoundary = {
+  id: string;
+  strength: "hard" | "soft";
+  kind: BoundaryKind;
+  /** What the boundary is, in the player's words ("Her feelings for Mira"). */
+  text: string;
+  /** Words that bring it up in a conversation, comma separated ("crush, love, 喜欢, 暗恋"). */
+  topics: string;
 };
 
 // ---------------------------------------------------------------- behavior
@@ -262,7 +283,7 @@ export type CharacterState = {
 // ---------------------------------------------------------------- behavior engine state
 
 /** Temporary feelings. Kept apart from personality (Character.traits), which never changes by itself. */
-export const FEELINGS = ["happiness", "anger", "sadness", "fear", "anxiety", "excitement", "embarrassment", "affection", "frustration", "surprise", "confusion"] as const;
+export const FEELINGS = ["happiness", "anger", "sadness", "fear", "anxiety", "excitement", "embarrassment", "affection", "frustration", "surprise", "confusion", "gratitude"] as const;
 export type Feeling = (typeof FEELINGS)[number];
 export type Feelings = Partial<Record<Feeling, number>>;
 
@@ -282,6 +303,8 @@ export type Relation = {
   tension: number;
   /** 0…100: how much they fear the other. */
   fear: number;
+  /** 0…100: how much they rely on the other. Missing in older saves = 0. */
+  dependence?: number;
   /** Label read from the written relationships text (friend, rival…). Context only: it never decides a reaction by itself. */
   label?: RelationLabel;
 };
@@ -326,6 +349,13 @@ export type StoryState = {
   player?: Record<string, PlayerBond>;
   /** Gifts in this world, by instance id. */
   gifts?: Record<string, GiftInstance>;
+  /**
+   * Relationship development (src/lib/relationships), keyed "fromId>toId"
+   * (toId may be "player"): stages, interaction history, milestones,
+   * impressions, open conflicts, promises, refused requests and the
+   * inspector's change log. Missing = nothing recorded yet (older saves).
+   */
+  progress?: Record<string, import("./relationships/types").RelProgress>;
 };
 
 // ---------------------------------------------------------------- save
@@ -389,4 +419,6 @@ export type Settings = {
   testPanel?: boolean;
   /** Developer-only Behavior Debug Panel (only offered in development builds or after opening /play?dev=1). */
   behaviorDebug?: boolean;
+  /** Developer-only Relationship Inspector (same visibility rule as the Behavior Debug Panel). */
+  relationshipInspector?: boolean;
 };

@@ -14,6 +14,7 @@ import { z } from "zod";
 import { CharacterBriefSchema } from "../../ai/contracts";
 import { EMOTIONS } from "../../emotion/emotions";
 import { MEMORY_KINDS, RELATION_LABELS } from "../../types";
+import { INTENTIONS, INTERACTION_KINDS, SIGNIFICANCE } from "../../relationships/types";
 
 /** Movement the AI may ask for. Executed only through the stage's validated actions. */
 export const MOVEMENT_INTENTS = ["none", "approach", "retreat", "face_target", "idle_reaction"] as const;
@@ -116,6 +117,41 @@ export const TalkRequestSchema = z.object({
     .nullable(),
   /** Topics already discussed in this conversation (so new suggestions differ). */
   usedTopics: z.array(text(160)).max(12),
+  /**
+   * How the relationship has developed (relationships/): named stages, what the
+   * listener has come to believe about the speaker, open conflicts, promises
+   * and milestones. Optional so older clients still validate.
+   */
+  relationship: z
+    .object({
+      stages: z.object({ trust: text(20), affection: text(20), respect: text(20), familiarity: text(20), tension: text(20) }),
+      label: text(30),
+      impressions: z.array(z.object({ theme: text(20), polarity: z.enum(["pos", "neg"]), strength: z.enum(["tentative", "growing", "firm"]) })).max(7),
+      conflicts: z.array(text(120)).max(4),
+      promises: z.array(text(160)).max(4),
+      milestones: z.array(text(120)).max(6),
+    })
+    .optional(),
+  /**
+   * The game's decision about what the listener is willing to do (boundaries.ts).
+   * Binding: a reply whose stance is outside `allowed` is rejected.
+   */
+  decision: z
+    .object({
+      kind: z.enum(["disclosure", "action", "opinion", "trust_question", "none"]),
+      tier: z.enum(["public", "casual", "sensitive", "private", "locked"]),
+      intention: z.enum(INTENTIONS),
+      allowed: z.array(z.enum(INTENTIONS)).max(INTENTIONS.length),
+      disclosure: z.enum(["none", "partial", "full"]),
+      mustNotReveal: z.array(text(240)).max(3),
+      askedBefore: z.number().int().min(0).max(10000),
+      refusedBefore: z.number().int().min(0).max(10000),
+      valueConflicts: z.array(text(20)).max(6),
+      reasoned: z.boolean(),
+      endConversation: z.boolean(),
+      boundary: z.object({ strength: z.enum(["hard", "soft"]), kind: z.enum(["secret", "topic", "principle"]), text: text(240) }).nullable(),
+    })
+    .optional(),
   /** Gifts from the visitor that matter to what was just said (only when relevant). */
   gifts: z
     .array(
@@ -161,6 +197,13 @@ export const TalkReplySchema = z.object({
   }),
   /** 2–3 things the SPEAKER might say next, in the speaker's voice. */
   conversationSuggestions: z.array(z.object({ label: z.string(), line: z.string(), intent: z.enum(SUGGESTION_INTENTS) })),
+  /** What the listener does with what was asked (must be one of the decision's allowed intentions, if one was given). */
+  stance: z.enum(INTENTIONS),
+  /**
+   * The model's reading of what the SPEAKER did, for the game to validate.
+   * The game checks it against what was actually said before any relationship moves.
+   */
+  interpretation: z.object({ interaction: z.enum([...INTERACTION_KINDS, "none"]), significance: z.enum(SIGNIFICANCE), evidence: z.string() }),
   /** The model's own check that the reply respects the listener's canon and boundaries. */
   staysInCharacter: z.boolean(),
 });

@@ -28,7 +28,10 @@ import { bondKey, neutralBond, neutralState } from "../story/engine";
 import type { TriggerId } from "../mind/catalog";
 import { memoryPull, remember } from "../mind/memory";
 import { goalMentions, personalityOf, type PersonalityFactors } from "../mind/profile";
-import { applyRelation, relationOf, withRelation, type RelationDelta } from "../mind/relations";
+import { relationOf, type RelationDelta } from "../mind/relations";
+import { recordInteraction } from "../relationships/progression";
+import { TOPIC_KIND } from "../relationships/interactions";
+import type { InteractionKind } from "../relationships/types";
 
 export const TOPIC_IDS = [
   "howFeeling",
@@ -299,6 +302,19 @@ export const TOPIC_DEFS: Record<TopicId, TopicDef> = {
   },
 };
 
+/** What the LISTENER experiences when a topic is said to them (what the speaker did). */
+export const TOPIC_LISTENER_KIND: Partial<Record<TopicId, InteractionKind>> = {
+  apologize: "apology",
+  confide: "share_secret",
+  cheerUp: "help",
+  compliment: "compliment",
+  challenge: "provoke",
+  tease: "tease",
+  betrayal: "argument",
+  recentDisagreement: "small_talk",
+  introduce: "small_talk",
+};
+
 export type TopicChoice = {
   id: TopicId;
   reason: ReasonId;
@@ -364,8 +380,8 @@ export function applyTopic(story: StoryState, actor: Character, target: Characte
   const turn = story.turn + 1;
   let s: StoryState = { ...story, turn };
   if (def.rel) {
-    const bond = s.bonds[bondKey(actor.id, target.id)] ?? neutralBond();
-    s = withRelation(s, actor.id, target.id, applyRelation(relationOf(s, actor, target, bond), def.rel));
+    // The speaker's own view shifts a little (validated by the relationship progression rules).
+    s = recordInteraction(s, { from: actor, to: target, kind: TOPIC_KIND[choice.id] ?? "small_talk", proposed: def.rel, source: "talk-topic", why: `said: ${choice.id}`, feelings: false, now }).story;
   }
   const mem = (who: Character, other: Character, m: { kind: MemoryKind; importance: number }) => {
     const st = s.characters[who.id] ?? neutralState();

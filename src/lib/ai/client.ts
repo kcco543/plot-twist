@@ -88,6 +88,7 @@ export function briefFor(c: Character): CharacterBrief {
     fields,
     traits: { ...c.traits },
     lockedFields: c.lockedFields,
+    ...(c.boundaries?.length ? { boundaries: c.boundaries.filter((b) => b.text.trim()).slice(0, 12).map((b) => ({ strength: b.strength, kind: b.kind, text: b.text.slice(0, 240) })) } : {}),
     profile: approved
       ? {
           summary: approved.summary,

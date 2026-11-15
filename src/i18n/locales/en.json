@@ -153,7 +153,36 @@
       "look": "Look & sprite"
     },
     "methodsNote": "Describe your character in words, with sliders, or both. The two are saved separately and sliders never rewrite what you wrote.",
-    "toReview": "{count} to review"
+    "toReview": "{count} to review",
+    "boundaries": {
+      "title": "Boundaries",
+      "intro": "What this character won't share, won't discuss or won't do. Trust never overrides these by itself.",
+      "hardHelp": "Hard: never crossed in play. Only editing the character here changes them.",
+      "softHelp": "Soft: avoided for now. They may open up to one person after real shared experiences, never just because someone asks again.",
+      "empty": "No boundaries written yet. Locked canon that says \"never…\" still counts as a hard boundary.",
+      "item": "Boundary {n}",
+      "strength": "Hard or soft",
+      "hard": "Hard",
+      "soft": "Soft",
+      "kind": "Type",
+      "kinds": {
+        "secret": "A secret",
+        "topic": "A topic",
+        "principle": "A principle"
+      },
+      "remove": "Remove boundary",
+      "text": "What it is",
+      "textPlaceholder": {
+        "secret": "e.g. Her feelings for Mira",
+        "topic": "e.g. Her childhood in the lighthouse",
+        "principle": "e.g. Never cheats, even to win"
+      },
+      "topics": "Words that bring it up",
+      "topicsHint": "Comma separated, any language. A message containing one of these touches the boundary.",
+      "topicsPlaceholder": "e.g. crush, love, 喜欢, 暗恋",
+      "addHard": "Add hard boundary",
+      "addSoft": "Add soft boundary"
+    }
   },
   "character": {
     "fields": {
@@ -377,7 +406,10 @@
       "open": "Character info",
       "close": "Close character info",
       "more": "More about {name}",
-      "feeling": "Feeling"
+      "feeling": "Feeling",
+      "howSees": "How {name} sees others",
+      "stageLine": "Trust: {trust} · Affection: {affection} · Respect: {respect}",
+      "visitor": "The visitor"
     },
     "test": {
       "open": "Test panel",
@@ -610,7 +642,9 @@
     "testPanel": "Emotion & movement test panel",
     "testPanelDesc": "Shows buttons under the dialogue in Play Mode to trigger every emotion and movement by hand.",
     "behaviorDebug": "Behavior debug panel (developers)",
-    "behaviorDebugDesc": "Shows why each character chose what they did: personality, feelings, relationship, memories and every option's weight. Hidden from players."
+    "behaviorDebugDesc": "Shows why each character chose what they did: personality, feelings, relationship, memories and every option's weight. Hidden from players.",
+    "relationshipInspector": "Relationship inspector",
+    "relationshipInspectorDesc": "Developer tool: long-term relationship values, stages, milestones and why each change was accepted or refused."
   },
   "traits": {
     "extroversion": {
@@ -1741,7 +1775,8 @@
       "tooLong": "{name} gave up trying to reach {other}.",
       "cancelled": "Cancelled. Nobody moved.",
       "emptySpace": "To start a conversation, drop {name} onto another character.",
-      "ended": "{name} and {other} finished talking."
+      "ended": "{name} and {other} finished talking.",
+      "listenerEnded": "{other} ended the conversation."
     },
     "dismiss": "Dismiss",
     "panel": {
@@ -2337,5 +2372,203 @@
     "noRelationships": "No relationships with the rest of the cast yet. They grow as the story plays out.",
     "bond": "Closeness {affinity} · Trust {trust}",
     "unnamedOriginal": "Unnamed original"
+  },
+  "rel": {
+    "say": {
+      "refuse_polite": [
+        "I'd rather not talk about that, {other}.",
+        "That's not something I want to get into.",
+        "Let's leave that one alone, if you don't mind."
+      ],
+      "refuse_firm": [
+        "No. I'm not talking about that.",
+        "That stays with me, {other}. Don't ask.",
+        "No. Drop it."
+      ],
+      "explain_boundary": [
+        "I already said no, {other}. Some things I keep to myself, and that's one of them.",
+        "Asking again won't change my answer. That's a line for me.",
+        "I meant it the first time. That isn't up for discussion."
+      ],
+      "deflect": [
+        "Hm. Ask me something else.",
+        "Is that really what you want to talk about? Pass.",
+        "Nice try. Next question."
+      ],
+      "change_subject": [
+        "Anyway. How's your day going?",
+        "Let's talk about something else. Anything else.",
+        "So… did you see the weather out there?"
+      ],
+      "question_intent": [
+        "Why do you want to know?",
+        "What makes you ask that, {other}?",
+        "Who's asking, you or someone else?"
+      ],
+      "express_discomfort": [
+        "You keep asking, {other}. I don't like it.",
+        "I've said no twice now. This is making me uncomfortable.",
+        "Please stop pushing. It's not okay."
+      ],
+      "end_conversation": [
+        "I'm done with this conversation.",
+        "I'm going to stop here, {other}.",
+        "That's enough. We're finished talking."
+      ],
+      "hesitate": [
+        "…I'm not sure I want to say.",
+        "Maybe another time. Not now.",
+        "I… don't know. Let me think about it."
+      ],
+      "disagree": [
+        "I don't agree with that, {other}.",
+        "No, I see it differently.",
+        "I think you're wrong about this."
+      ]
+    },
+    "stage": {
+      "trust": {
+        "distrustful": "Distrustful",
+        "guarded": "Guarded",
+        "cautious": "Cautious",
+        "developing": "Developing trust",
+        "strong": "Strong trust",
+        "deep": "Deep trust"
+      },
+      "affection": {
+        "hostile": "Hostile",
+        "cold": "Cold",
+        "neutral": "Neutral",
+        "warm": "Warm",
+        "fond": "Fond",
+        "devoted": "Devoted"
+      },
+      "respect": {
+        "contempt": "Contempt",
+        "doubtful": "Doubtful",
+        "neutral": "Neutral",
+        "respect": "Respect",
+        "admiration": "Admiration"
+      },
+      "familiarity": {
+        "stranger": "Stranger",
+        "acquaintance": "Acquaintance",
+        "familiar": "Familiar",
+        "close": "Close"
+      },
+      "tension": {
+        "calm": "Calm",
+        "strained": "Strained",
+        "hostile": "Hostile"
+      }
+    },
+    "label": {
+      "stranger": "Strangers",
+      "acquaintance": "Acquaintances",
+      "friend": "Friends",
+      "close_friend": "Close friends",
+      "family": "Family",
+      "partner": "Partners",
+      "rival": "Rivals",
+      "respected_rival": "Respected rival",
+      "enemy": "Enemies",
+      "wary": "Wary"
+    },
+    "impression": {
+      "prefix": {
+        "tentative": "{name} is beginning to think",
+        "growing": "{name} has come to believe",
+        "firm": "{name} is sure"
+      },
+      "reliable": {
+        "pos": "{other} can be relied on.",
+        "neg": "{other} can't be relied on."
+      },
+      "kind": {
+        "pos": "{other} is kind.",
+        "neg": "{other} can be hurtful."
+      },
+      "competent": {
+        "pos": "{other} knows what they're doing.",
+        "neg": "{other} doesn't know what they're doing."
+      },
+      "honest": {
+        "pos": "{other} is honest.",
+        "neg": "{other} isn't honest."
+      },
+      "respectful": {
+        "pos": "{other} respects their boundaries.",
+        "neg": "{other} pushes past their boundaries."
+      },
+      "sincere": {
+        "pos": "{other} means what they say.",
+        "neg": "{other} flatters to get something."
+      },
+      "safe": {
+        "pos": "{other} is safe to be around.",
+        "neg": "{other} is a threat."
+      }
+    },
+    "milestone": {
+      "reliable_behavior": "Several times reliable",
+      "promise_kept": "Kept a promise",
+      "helped_in_difficulty": "Helped in a hard moment",
+      "voluntary_secret": "Shared a secret freely",
+      "shared_experience": "A shared experience",
+      "resolved_disagreement": "Resolved a disagreement",
+      "respected_boundaries": "Respected boundaries",
+      "earned_respect": "Earned respect",
+      "boundary_reconsidered": "Opened up a little",
+      "betrayed": "Betrayal",
+      "promise_broken": "Broke a promise",
+      "threatened": "A threat",
+      "boundary_violated": "Kept pushing past a boundary"
+    }
+  },
+  "relInspector": {
+    "title": "Relationship inspector",
+    "close": "Hide relationship inspector",
+    "intro": "How one character sees another: long-term values and stages, impressions, milestones and every validated change. Developers only.",
+    "from": "Whose view",
+    "toward": "Toward",
+    "visitor": "The visitor (player)",
+    "longTerm": "Long-term",
+    "grandfathered": "stages read from earlier values",
+    "next": "next: {stage} at {at} (falls back below {exit})",
+    "top": "highest stage",
+    "needs": "needs",
+    "impressions": "Current impressions",
+    "evidence": "evidence {n}",
+    "none": "None yet.",
+    "milestones": "Milestones",
+    "openThings": "Conflicts, promises, refused requests",
+    "conflict": "Open {kind} (turn {turn}): {apologies} apologies, repair {repair}/{need}",
+    "promise": "Promise ({status}, turn {turn}): {text}",
+    "pressure": "Asked about {topic}: {asks}×, refused {refusals}× (last: {last})",
+    "opened": "Soft boundary opened for them: {id}",
+    "memories": "Relevant memories",
+    "importance": "importance {n}",
+    "log": "Changes (newest first, tap for details)",
+    "noLog": "No changes recorded yet. Play, and every relationship change shows up here.",
+    "turn": "Turn {n}",
+    "proposedAs": "proposed as {kind}",
+    "accepted": "Accepted",
+    "proposed": "Proposed",
+    "before": "Before",
+    "after": "After",
+    "feelings": "Emotion (before → after)",
+    "reasons": "Why",
+    "noReasons": "accepted as proposed",
+    "stages": "Stages",
+    "noStageChange": "no stage change",
+    "why": "Moment",
+    "noCast": "Add characters to inspect their relationships.",
+    "tests": "Test scenarios (fixed seed)",
+    "testsIntro": "Replays the relationship scenarios on a sample cast with the real game rules. Nothing is saved to your world.",
+    "seed": "Seed",
+    "runScenarios": "Run scenarios",
+    "runSimulation": "20-interaction simulation",
+    "passed": "{n} of {total} passed",
+    "simSummary": "Mira's view of Tobi: {start} → {end}; label {from} → {to}."
   }
 }

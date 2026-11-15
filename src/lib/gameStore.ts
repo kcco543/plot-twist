@@ -39,6 +39,11 @@ function normalizeStory(raw: unknown): StoryState {
     // The visitor's bonds (photos, gifts) and this world's gift instances.
     ...(r.player && typeof r.player === "object" ? { player: r.player } : {}),
     ...(r.gifts && typeof r.gifts === "object" ? { gifts: r.gifts } : {}),
+    // Conversation history, relationship shifts and relationship development (stages, milestones,
+    // impressions, refusals) must survive a reload too; older saves simply don't have them yet.
+    ...(r.talk && typeof r.talk === "object" ? { talk: r.talk } : {}),
+    ...(r.relationLog && typeof r.relationLog === "object" ? { relationLog: r.relationLog } : {}),
+    ...(r.progress && typeof r.progress === "object" ? { progress: r.progress } : {}),
   };
 }
 
@@ -49,7 +54,7 @@ export function migrateSave(raw: unknown): SaveData {
     ...r,
     version: 1,
     environment: { ...emptySave.environment, ...(r.environment ?? {}) },
-    characters: Array.isArray(r.characters) ? r.characters.map(normalizeCharacter) : [],
+    characters: Array.isArray(r.characters) ? r.characters.map(normalizeCharacter).map(backfillSampleBoundaries) : [],
     log: Array.isArray(r.log) ? r.log : [],
     story: normalizeStory(r.story),
     sprites: Array.isArray(r.sprites) ? r.sprites.filter((s) => s && typeof s.sprite === "string") : [],
@@ -64,7 +69,7 @@ export const getSave = store.get;
 
 const touch = (fn: (s: SaveData) => SaveData) => store.set((s) => ({ ...fn(s), updatedAt: Date.now() }));
 
-import { sampleCharacter } from "./mind/scenarios";
+import { backfillSampleBoundaries, sampleCharacter } from "./mind/scenarios";
 export { CHARACTER_TEXT_FIELDS, createBlankCharacter } from "./character/model";
 
 export const gameActions = {

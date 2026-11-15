@@ -15,6 +15,8 @@ export const CharacterBriefSchema = z.object({
   fields: z.partialRecord(z.enum(CHARACTER_TEXT_FIELDS), text(800)),
   traits: z.partialRecord(z.enum(TRAIT_IDS), z.number().min(0).max(100)),
   lockedFields: z.array(z.enum(CHARACTER_TEXT_FIELDS)).max(CHARACTER_TEXT_FIELDS.length),
+  /** Personal boundaries from the Character Studio (hard never change in play; soft may, for one person). */
+  boundaries: z.array(z.object({ strength: z.enum(["hard", "soft"]), kind: z.enum(["secret", "topic", "principle"]), text: text(240) })).max(12).optional(),
   /** Approved behavioral profile (summary + speech), if any. */
   profile: z
     .object({

@@ -110,7 +110,20 @@ export function inLanguage(s: string, locale: TalkRequest["locale"], names: stri
   return locale === "zh-CN" ? share >= 0.5 : share < 0.25;
 }
 
-export type ReplyProblem = "empty" | "out_of_character" | "wrong_language" | "repeat" | "self_check" | "suggestion_language";
+/** Claims of total trust / devotion the relationship hasn't earned (sycophancy guard). */
+const OVERCLAIM = [
+  /(?:i )?trust you (?:completely|more than anyone|with my life|with everything|absolutely)/i,
+  /of course i trust you/i,
+  /you(?:'re| are) (?:absolutely|completely|totally) right/i,
+  /i(?:'ll| will) do (?:anything|whatever) you (?:say|want|ask)/i,
+  /完全信任你|最信任你|当然信任你|你说得(?:完全|绝对)?对极了|你说什么我都(?:听|做)|我什么都听你的/,
+];
+export const overclaims = (s: string) => OVERCLAIM.some((re) => re.test(s));
+
+const DISCLOSING = ["share", "partial_disclosure"];
+const TRUSTED = ["strong", "deep"];
+
+export type ReplyProblem = "empty" | "out_of_character" | "wrong_language" | "repeat" | "self_check" | "suggestion_language" | "stance" | "disclosure" | "overclaim";
 
 /** The first rule the reply breaks, or null. Run on a sanitized reply. */
 export function replyProblem(r: TalkReply, req: TalkRequest): ReplyProblem | null {
@@ -122,6 +135,12 @@ export function replyProblem(r: TalkReply, req: TalkRequest): ReplyProblem | nul
   if (r.conversationSuggestions.some((s) => !inLanguage(s.line, req.locale, names))) return "suggestion_language";
   const ownLines = req.history.filter((h) => h.who === "listener").map((h) => h.text);
   if (isRepeat(r.dialogue, ownLines, 0.6)) return "repeat";
+  const d = req.decision;
+  if (d && d.intention !== "respond_freely") {
+    if (d.disclosure === "none" && DISCLOSING.includes(r.stance)) return "disclosure";
+    if (!d.allowed.includes(r.stance)) return "stance";
+  }
+  if (overclaims(r.dialogue) && !TRUSTED.includes(req.relationship?.stages.trust ?? "")) return "overclaim";
   return null;
 }
 
@@ -133,4 +152,7 @@ export const PROBLEM_FEEDBACK: Record<ReplyProblem, string> = {
   wrong_language: "The dialogue was not in the required language. Write it in the game language given.",
   suggestion_language: "A suggestion was not in the required language. Write every suggestion in the game language given.",
   repeat: "The dialogue repeated one of the character's own recent lines. Say something new, in fresh words.",
+  stance: "The stance was not one the <decision> allows. Carry out the listener's decided intention, in their own words, and set stance to one of the allowed values.",
+  disclosure: "The reply disclosed something the <decision> says the listener will not share. Refuse, deflect or explain the boundary instead, revealing nothing.",
+  overclaim: "The reply claimed more trust, agreement or devotion than the relationship shows. Answer from the listener's actual relationship and their own opinion.",
 };

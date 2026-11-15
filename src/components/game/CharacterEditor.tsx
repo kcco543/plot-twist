@@ -6,6 +6,7 @@ import { Panel } from "@/components/ui/Panel";
 import { PixelIcon } from "@/components/ui/PixelIcon";
 import { TabPanel, Tabs } from "@/components/ui/Tabs";
 import { AnalysisPanel } from "./AnalysisPanel";
+import { BoundaryEditor } from "./BoundaryEditor";
 import { PersonalitySliders } from "./PersonalitySliders";
 import { PortraitSlot } from "./PortraitSlot";
 import { SpriteStudio } from "./SpriteStudio";
@@ -160,6 +161,7 @@ export function CharacterEditor({
             <div className="grid gap-4 md:grid-cols-2">{s.fields.filter((f) => !(library && f.key === "relationships")).map(field)}</div>
           </Panel>
         ))}
+        <BoundaryEditor character={character} onChange={onChange} />
       </TabPanel>
 
       <TabPanel id="sliders" base={base} active={tab === "sliders"}>

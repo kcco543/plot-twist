@@ -4,7 +4,7 @@
  * Pure functions (no React, no storage) so they are easy to test.
  */
 import { makeId } from "../id";
-import { CHARACTER_TEXT_FIELDS, TRAIT_IDS, type Character, type CharacterTextField, type Traits } from "../types";
+import { BOUNDARY_KINDS, CHARACTER_TEXT_FIELDS, TRAIT_IDS, type BoundaryKind, type Character, type CharacterBoundary, type CharacterTextField, type Traits } from "../types";
 
 export { CHARACTER_TEXT_FIELDS };
 
@@ -60,7 +60,22 @@ export function normalizeCharacter(raw: unknown): Character {
     createdAt: typeof r.createdAt === "number" ? r.createdAt : base.createdAt,
     updatedAt: typeof r.updatedAt === "number" ? r.updatedAt : base.updatedAt,
     ...(typeof r.templateId === "string" && r.templateId ? { templateId: r.templateId } : {}),
+    ...(Array.isArray(r.boundaries) ? { boundaries: normalizeBoundaries(r.boundaries) } : {}),
   };
+}
+
+/** Keep every boundary the player wrote; drop only malformed entries. */
+export function normalizeBoundaries(raw: unknown[]): CharacterBoundary[] {
+  return raw
+    .filter((b): b is Record<string, unknown> => !!b && typeof b === "object")
+    .map((b) => ({
+      id: typeof b.id === "string" && b.id ? b.id : makeId("bd"),
+      strength: b.strength === "soft" ? ("soft" as const) : ("hard" as const),
+      kind: BOUNDARY_KINDS.includes(b.kind as BoundaryKind) ? (b.kind as BoundaryKind) : ("secret" as const),
+      text: typeof b.text === "string" ? b.text : "",
+      topics: typeof b.topics === "string" ? b.topics : "",
+    }))
+    .slice(0, 12);
 }
 
 /** Stable short hash (FNV-1a) of everything a personality analysis reads. */

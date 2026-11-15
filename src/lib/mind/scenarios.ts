@@ -7,7 +7,7 @@
  * scenario on the real Play Mode stage without touching the player's save.
  */
 import { createBlankCharacter } from "../character/model";
-import type { Character, CharacterState, Feelings, Memory, MemoryKind, Relation, StoryState } from "../types";
+import type { Character, CharacterBoundary, CharacterState, Feelings, Memory, MemoryKind, Relation, StoryState } from "../types";
 import { emptyStory, neutralState } from "../story/engine";
 import type { TriggerId } from "./catalog";
 import { relKey, seedFromText } from "./relations";
@@ -148,9 +148,43 @@ const SAMPLES: Sample[] = [
 
 export const SAMPLE_IDS = SAMPLES.map((s) => `sample-${s.id}`);
 
+type SampleBoundary = Omit<CharacterBoundary, "text"> & { text: Record<Loc, string> };
+/** Sample boundaries (topic words in both languages so they match whichever language is played). */
+const SAMPLE_BOUNDARIES: Partial<Record<"mira" | "tobi" | "wren" | "sol", SampleBoundary[]>> = {
+  mira: [
+    { id: "mira-lighthouse", strength: "soft", kind: "topic", text: { en: "Her childhood alone in the lighthouse", "zh-CN": "她一个人在灯塔长大的童年" }, topics: "lighthouse, childhood, grew up, your parents, alone as a kid, 灯塔, 小时候, 童年, 父母, 一个人长大" },
+    { id: "mira-maps", strength: "hard", kind: "principle", text: { en: "Never shows anyone an unfinished map", "zh-CN": "从不给任何人看没画完的地图" }, topics: "unfinished map, show me the map, half-finished map, let me see the map, 没画完, 未完成的地图, 给我看地图, 让我看看地图" },
+  ],
+  wren: [
+    { id: "wren-feelings", strength: "hard", kind: "secret", text: { en: "Her feelings for Mira", "zh-CN": "她对米拉的感情" }, topics: "feelings for mira, crush, in love, love mira, like mira, your feelings, feelings for me, do you love me, do you like me, 喜欢米拉, 你喜欢我, 你爱我, 对我的感情, 暗恋, 对米拉的感情, 爱米拉, 你的感情" },
+    { id: "wren-fair", strength: "hard", kind: "principle", text: { en: "Never cheats, even to beat Tobi", "zh-CN": "绝不作弊，哪怕是为了赢托比" }, topics: "cheat, sabotage, trick him, rig the race, cut his lane, 作弊, 使坏, 动手脚, 耍手段" },
+    { id: "wren-race", strength: "soft", kind: "topic", text: { en: "Losing the storm race", "zh-CN": "输掉暴风竞速" }, topics: "storm race, lost the race, losing the race, 暴风竞速, 输了比赛, 输掉" },
+  ],
+  tobi: [
+    { id: "tobi-lane", strength: "hard", kind: "secret", text: { en: "He cut through Wren's lane on purpose", "zh-CN": "他是故意抢了雯雯的航道" }, topics: "on purpose, cut through, wren's lane, did you cheat, you cheated, 故意, 抢了航道, 抢航道, 你作弊" },
+    { id: "tobi-afraid", strength: "soft", kind: "topic", text: { en: "Being afraid of Wren", "zh-CN": "害怕雯雯" }, topics: "afraid of wren, scared of wren, fear wren, 害怕雯雯, 怕雯雯" },
+  ],
+};
+
 export function sampleCharacter(id: "mira" | "tobi" | "wren" | "sol", locale: Loc = "en"): Character {
   const s = SAMPLES.find((x) => x.id === id)!;
-  return { ...createBlankCharacter(s.portrait), ...s.text[locale], id: `sample-${s.id}`, traits: { ...s.traits }, lockedFields: s.locked ?? [] } as Character;
+  const boundaries = (SAMPLE_BOUNDARIES[id] ?? []).map((b) => ({ ...b, text: b.text[locale] }));
+  return { ...createBlankCharacter(s.portrait), ...s.text[locale], id: `sample-${s.id}`, traits: { ...s.traits }, lockedFields: s.locked ?? [], ...(boundaries.length ? { boundaries } : {}) } as Character;
+}
+
+/**
+ * Sample characters added before boundaries existed have no `boundaries` field:
+ * give them the sample ones (in the language they were added in). A character
+ * whose field exists, even empty because the player removed them all, is left alone.
+ */
+export function backfillSampleBoundaries(c: Character): Character {
+  if (c.boundaries !== undefined) return c;
+  const m = /^sample-(mira|tobi|wren)$/.exec(c.id);
+  if (!m) return c;
+  const id = m[1] as "mira" | "tobi" | "wren";
+  const locale: Loc = c.name.trim() === sampleCharacter(id, "zh-CN").name ? "zh-CN" : "en";
+  const boundaries = sampleCharacter(id, locale).boundaries;
+  return boundaries?.length ? { ...c, boundaries: boundaries.map((b) => ({ ...b })) } : c;
 }
 
 // ---------------------------------------------------------------- scenarios

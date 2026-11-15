@@ -33,6 +33,7 @@ import { bondBetween, choreographBeat, rngFrom, talkDistance } from "@/lib/stage
 import { applyDecision, behaviorBrief, buildScenario, decide, decisionLines, scenarioByKey, triggerForBeat, type BehaviorEvent, type Decision, type Rng } from "@/lib/mind";
 import type { Priority } from "@/lib/stage/actions";
 import { applyDevParam, useDevMode } from "@/lib/devMode";
+import { RelationshipInspector } from "@/components/game/RelationshipInspector";
 import { roomFor } from "@/lib/stage/room";
 import { useReducedMotion, useStagePoint, useStageSim } from "@/lib/stage/useStage";
 import { useTalk } from "@/lib/talk/useTalk";
@@ -681,9 +682,21 @@ export default function PlayPage() {
         onClose={() => updateSettings({ behaviorDebug: false })}
       />
     ) : null;
-  const sidePanels = testPanel || debugPanel ? (
+  // Relationship Inspector (developers only): why each relationship is where it is.
+  const relPanel =
+    devMode && settings.relationshipInspector ? (
+      <RelationshipInspector
+        cast={onStage}
+        story={story}
+        selectedId={selected?.id ?? null}
+        compact={wide}
+        onClose={() => updateSettings({ relationshipInspector: false })}
+      />
+    ) : null;
+  const sidePanels = testPanel || debugPanel || relPanel ? (
     <>
       {debugPanel}
+      {relPanel}
       {testPanel}
     </>
   ) : null;

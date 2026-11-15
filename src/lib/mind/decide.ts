@@ -38,7 +38,15 @@ import {
 import { addFeelings, FEELING_TO_EMOTION, feelingsOf, ranked } from "./feelings";
 import { memoryKindOf, memoryPull, relevantMemories, remember } from "./memory";
 import { canonLimits, goalMentions, personalityOf, preferencesOf, type PersonalityFactors } from "./profile";
-import { applyRelation, relationOf, withRelation } from "./relations";
+import { relationOf, type RelationDelta } from "./relations";
+import { recordInteraction } from "../relationships/progression";
+import { ACTION_KIND, TRIGGER_KIND } from "../relationships/interactions";
+
+function sumDelta(a: RelationDelta, b: RelationDelta): RelationDelta {
+  const out: RelationDelta = { ...a };
+  for (const [k, v] of Object.entries(b) as [keyof RelationDelta, number][]) out[k] = (out[k] ?? 0) + v;
+  return out;
+}
 
 export type Rng = () => number;
 
@@ -64,6 +72,8 @@ export type BehaviorEvent = {
   reactorId: string;
   /** Who caused it. */
   otherId: string | null;
+  /** What the other person did, when the caller knows better than the trigger (an apology, a confidence…). */
+  interaction?: import("../relationships/types").InteractionKind;
 };
 
 export type DecideInput = {
@@ -454,12 +464,15 @@ export function applyDecision(story: StoryState, d: Decision, cast: Character[],
   }
   s = { ...s, characters: { ...s.characters, [me.id]: st } };
 
-  // Relationship, both directions, each with its own change.
+  // Relationship, both directions, each with its own change — proposed here, validated by the
+  // relationship progression rules (significance, repetition, caps, stage doors, milestones).
   if (other) {
-    const bond = s.bonds[bondKey(me.id, other.id)] ?? neutralBond();
-    const mine = applyRelation(applyRelation(relationOf(s, me, other, bond), trig.relation ?? {}), { familiarity: 2, ...(def.selfRel ?? {}) });
-    s = withRelation(s, me.id, other.id, mine);
-    if (def.otherRel) s = withRelation(s, other.id, me.id, applyRelation(relationOf(s, other, me, bond), def.otherRel));
+    const before = s.characters[me.id]?.feelings ?? {};
+    const distressed = Math.max(before.sadness ?? 0, before.anxiety ?? 0, before.fear ?? 0) >= 40;
+    const proposal = sumDelta(trig.relation ?? {}, { familiarity: 2, ...(def.selfRel ?? {}) });
+    const kind = d.event.interaction ?? TRIGGER_KIND[d.event.trigger] ?? "small_talk";
+    s = recordInteraction(s, { from: me, to: other, kind, proposed: proposal, source: "behavior", why: `${d.event.trigger} → ${d.action}`, distressed, feelings: false, now }).story;
+    if (def.otherRel) s = recordInteraction(s, { from: other, to: me, kind: ACTION_KIND[d.action] ?? "small_talk", proposed: def.otherRel, source: "behavior", why: `${me.name.trim()}: ${d.action}`, feelings: false, now }).story;
   }
 
   const rec = { turn: s.turn, actorId: me.id, otherId: other?.id ?? null, trigger: d.event.trigger, action: d.action, at: now };
