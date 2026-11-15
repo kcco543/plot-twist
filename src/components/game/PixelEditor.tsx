@@ -62,6 +62,7 @@ export function PixelCanvasEditor({
   onClear,
   canvasClassName = "max-w-[320px]",
   label,
+  stacked = false,
 }: {
   value: Img;
   onChange: (img: Img) => void;
@@ -70,6 +71,8 @@ export function PixelCanvasEditor({
   canvasClassName?: string;
   /** Screen-reader name of the canvas (defaults to the sprite wording). */
   label?: string;
+  /** Narrow column (Gift Creator): canvas and tools sit side by side from small screens up, with a smaller canvas. */
+  stacked?: boolean;
 }) {
   const { t } = useI18n();
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -129,14 +132,14 @@ export function PixelCanvasEditor({
   };
 
   return (
-      <div className="flex flex-col gap-4 md:flex-row md:items-start">
+      <div className={`flex flex-col gap-4 ${stacked ? "sm:flex-row sm:items-start" : "md:flex-row md:items-start"}`}>
         <canvas
           ref={canvas}
           width={img.w * SCALE}
           height={img.h * SCALE}
           role="img"
           aria-label={label ?? t("editor.canvas")}
-          className={`pixelated w-full ${canvasClassName} cursor-crosshair self-center touch-none bg-well shadow-[0_0_0_3px_var(--color-line)]`}
+          className={`pixelated w-full ${canvasClassName} cursor-crosshair self-center ${stacked ? "sm:self-start" : ""} touch-none bg-well shadow-[0_0_0_3px_var(--color-line)]`}
           onPointerDown={(e) => {
             e.currentTarget.setPointerCapture(e.pointerId);
             drawing.current = true;

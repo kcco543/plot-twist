@@ -66,6 +66,7 @@ Saves live in the browser's `localStorage` and survive refreshes, language switc
 ### Controls in Play Mode
 - **Keyboard:** ← → (or A / D) choose a character · Z / Enter / Space talk · X observe · C wait · V twist · L story log · Esc / P pause
 - **Touch:** the ◀ ▶ pad chooses a character, **A** talks, and the four big dialogue buttons do the rest. You can also tap a character in the scene.
+- **Photo & Gift:** click or tap a character to open a small menu with **Photo** (take or upload a photo, add a caption, show it to them) and **Gift** (name, describe and draw a gift in the pixel editor, or generate its picture when `OPENAI_API_KEY` is set; save it to the world's gift box and give it). Photos and gifts are kept in this browser, per world and per character. Drag a character (mouse) or touch-and-hold then drag (touch) to start a walk & talk as before.
 
 ## Emotions and movement (Step 2)
 

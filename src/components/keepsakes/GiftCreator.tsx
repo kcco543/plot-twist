@@ -186,7 +186,7 @@ export function GiftCreator({
       onClose={onClose}
       title={t("keepsakes.gift.title", { name })}
       closeLabel={t("common.close")}
-      size="lg"
+      size="xl"
       footer={
         given ? (
           <PixelButton size="sm" variant="success" icon="check" onClick={onClose} data-autofocus>
@@ -207,7 +207,7 @@ export function GiftCreator({
         )
       }
     >
-      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,15rem)]" data-gift-creator>
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,14rem)]" data-gift-creator>
         {/* Left: details and picture */}
         <div className="flex min-w-0 flex-col gap-4">
           {given ? (
@@ -260,7 +260,8 @@ export function GiftCreator({
                     onClear={() => edit(blankGift())}
                     note={t("keepsakes.gift.drawNote")}
                     label={t("keepsakes.gift.canvas")}
-                    canvasClassName="max-w-[256px]"
+                    canvasClassName="max-w-[256px] sm:w-56 sm:shrink-0"
+                    stacked
                   />
                 ) : imageReady ? (
                   <div className="flex flex-col gap-2 bg-lavender-hi p-3 shadow-[inset_0_0_0_2px_var(--color-lavender)]" data-gift-ai="ready">

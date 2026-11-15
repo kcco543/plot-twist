@@ -19,7 +19,7 @@ export function Modal({
   closeLabel: string;
   children: ReactNode;
   footer?: ReactNode;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
 }) {
   const titleId = useId();
   const ref = useRef<HTMLDivElement>(null);
@@ -40,7 +40,7 @@ export function Modal({
   }, [open, onClose]);
 
   if (!open) return null;
-  const width = size === "sm" ? "sm:max-w-sm" : size === "lg" ? "sm:max-w-2xl" : "sm:max-w-lg";
+  const width = size === "sm" ? "sm:max-w-sm" : size === "lg" ? "sm:max-w-2xl" : size === "xl" ? "sm:max-w-4xl" : "sm:max-w-lg";
 
   return (
     <div
