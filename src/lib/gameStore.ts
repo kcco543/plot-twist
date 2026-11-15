@@ -55,6 +55,7 @@ export const getSave = store.get;
 
 const touch = (fn: (s: SaveData) => SaveData) => store.set((s) => ({ ...fn(s), updatedAt: Date.now() }));
 
+import { sampleCharacter } from "./mind/scenarios";
 export { CHARACTER_TEXT_FIELDS, createBlankCharacter } from "./character/model";
 
 export const gameActions = {
@@ -75,6 +76,14 @@ export const gameActions = {
       ...s,
       characters: s.characters.map((c) => (c.id === id ? { ...c, ...patch, updatedAt: Date.now() } : c)),
     }));
+  },
+  /** Add the sample cast (Mira, Wren, Tobi: very different personalities, a friendship and a rivalry) for trying conversations. */
+  addSampleCast(locale: "en" | "zh-CN") {
+    touch((s) => {
+      const have = new Set(s.characters.map((c) => c.id));
+      const add = (["mira", "wren", "tobi"] as const).map((id) => sampleCharacter(id, locale)).filter((c) => !have.has(c.id));
+      return { ...s, worldId: s.worldId ?? "otherworld", characters: [...s.characters, ...add] };
+    });
   },
   deleteCharacter(id: string) {
     touch((s) => ({ ...s, characters: s.characters.filter((c) => c.id !== id) }));

@@ -18,13 +18,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Character, EnvironmentTypeId, StoryLine, StoryState, WorldId } from "../types";
 import type { StageSim } from "../stage/sim";
 import type { BehaviorEvent, Decision } from "../mind";
-import { decisionLines, relationOf } from "../mind";
+import { decisionLines } from "../mind";
 import { emotionOf } from "../emotion/emotions";
 import { bondBetween, rngFrom, talkDistance } from "../stage/behavior";
 import { CHOOSING_PHASES, goTo, newSession, TALKING_PHASES, type TalkNotice, type TalkNoticeKind, type TalkSession } from "./flow";
 import { applyCustom, applyTopic, sayKey, suggestTopics, talkContext, toneOf, type TopicChoice } from "./topics";
 import { personalityOf } from "../mind/profile";
-import { cleanMessage, requestCustomReply } from "./customReply";
+import { cleanMessage } from "./customReply";
+import type { IdleKind } from "../stage/actions";
+import { applyReply, pushTalkLine, validateReply, type ValidatedReply } from "./ai/apply";
+import type { TalkRequest, TalkSuggestion } from "./ai/contract";
+import { buildTalkRequest, sendTalkRequest, type TalkResult } from "./ai/request";
 
 /** A walk that takes longer than this is given up (target kept running off, etc.). */
 export const WALK_TIMEOUT_MS = 20000;
@@ -47,14 +51,62 @@ export type TalkDeps = {
   beatNo: number;
   lineIndex: number;
   lineInProgress: boolean;
-  /** Recent lines (for the future AI reply). */
+  /** Recent story-log lines, "Speaker: text" (context for AI replies). */
   recentText: () => string[];
+  /** AI conversations: "ai" (Claude), "mock" (developer TEST replies) or null (off: built-in replies). */
+  ai: "ai" | "mock" | null;
+  placeDescription: string;
+  /** Render a stored line into text in the current language (what the AI is told was said). */
+  renderText: (line: StoryLine) => string;
   onSelect: (id: string) => void;
   /** The conversation ended (or was cancelled) while its lines may still be playing. */
   onEnd?: () => void;
 };
 
 export type TalkController = ReturnType<typeof useTalk>;
+
+/** One AI reply being written (or failed, waiting for "Try again"). */
+type AiJob = {
+  req: TalkRequest;
+  abort: AbortController;
+  promise: Promise<TalkResult>;
+  sessionId: number;
+  meId: string;
+  themId: string;
+  /** Built-in reaction to show (clearly labelled) if the AI fails on a suggested topic. */
+  decision: Decision | null;
+  fallback: StoryLine[] | null;
+  state: "pending" | "shown" | "failed";
+  awaited: boolean;
+};
+type Convo = {
+  /** Dialogue-queue beat holding our current lines. */
+  beat: number;
+  decision: Decision | null;
+  /** Typed message waiting for a reply that can't come (AI off). */
+  custom: string | null;
+  job: AiJob | null;
+  /** What the speaker has said in this conversation (so suggestions don't repeat it). */
+  said: string[];
+};
+const emptyConvo = (): Convo => ({ beat: -1, decision: null, custom: null, job: null, said: [] });
+const aiBusy = (c: Convo) => c.job?.state === "pending";
+/** Failures worth a "Try again" button. */
+const RETRYABLE = new Set(["timeout", "offline", "failed", "rate_limited", "busy", "invalid_output", "refused"]);
+
+const IDLE_FOR: Record<string, IdleKind> = {
+  angry: "stomp",
+  frustrated: "sigh",
+  sad: "sigh",
+  anxious: "shiver",
+  excited: "hop",
+  happy: "hop",
+  affectionate: "shift",
+  embarrassed: "shift",
+  surprised: "look_around",
+  confused: "look_around",
+  neutral: "shift",
+};
 
 export function useTalk(d: TalkDeps) {
   const [session, setSessionState] = useState<TalkSession | null>(null);
@@ -64,7 +116,7 @@ export function useTalk(d: TalkDeps) {
   deps.current = d;
   const nextId = useRef(1);
   const walk = useRef<{ started: number; dist: number }>({ started: 0, dist: 30 });
-  const convo = useRef<{ beat: number; decision: Decision | null; custom: string | null }>({ beat: -1, decision: null, custom: null });
+  const convo = useRef<Convo>(emptyConvo());
 
   const set = useCallback((s: TalkSession | null) => {
     ref.current = s;
@@ -89,7 +141,8 @@ export function useTalk(d: TalkDeps) {
         stage.endConversation();
         deps.current.onEnd?.();
       }
-      convo.current = { beat: -1, decision: null, custom: null };
+      convo.current.job?.abort.abort();
+      convo.current = emptyConvo();
       set(null);
       if (kind) tell(kind, s.actorId, s.targetId);
     },
@@ -179,6 +232,120 @@ export function useTalk(d: TalkDeps) {
     return suggestTopics(talkContext(story, me, them, world, place), rng, s.offered);
   }, []);
 
+  /** Hybrid suggestions: up to two AI-written lines from the last reply, filled up with rule-based topics. */
+  const nextOptions = useCallback(
+    (s: TalkSession): Partial<TalkSession> => {
+      const ai = s.aiTopics.slice(0, 2);
+      const rules = freshTopics(s).slice(0, Math.max(1, 3 - ai.length));
+      return { aiTopics: ai, topics: rules, offered: [...s.offered, ...rules.map((t) => t.id)] };
+    },
+    [freshTopics],
+  );
+
+  /** The listener's validated movement: face the speaker, then at most one allowed action (walls/people checked by the stage). */
+  const playMovement = useCallback((v: ValidatedReply, me: Character, them: Character) => {
+    const { stage, getStory } = deps.current;
+    stage.request({ type: "face_target", actor: them.id, target: me.id }, "conversation", "story");
+    if (stage.walkOf(them.id)) return; // already moving: never stack a second, possibly contradictory, walk
+    if (v.movement === "approach") {
+      const dist = Math.max(18, Math.round(talkDistance(them, bondBetween(getStory(), them.id, me.id), v.emotion) * 0.7));
+      if ((stage.gapBetween(them.id, me.id) ?? 0) > dist + 4) stage.request({ type: "approach", actor: them.id, target: me.id, distance: dist }, "conversation", "story");
+    } else if (v.movement === "retreat") {
+      stage.request({ type: "retreat", actor: them.id, from: me.id, distance: 16 }, "conversation", "story");
+    } else if (v.movement === "idle_reaction") {
+      stage.schedule(350, { type: "idle_reaction", actor: them.id, kind: IDLE_FOR[v.emotion] ?? "shift" }, "conversation", "story");
+    }
+  }, []);
+
+  /** An AI reply arrived (or failed). Validate → line → emotion → movement → relationship + memory → suggestions. */
+  const onAiResult = useCallback(
+    (job: AiJob, r: TalkResult) => {
+      const cur = ref.current;
+      if (!cur || cur.id !== job.sessionId || convo.current.job !== job || cur.phase !== "WAIT_FOR_RESPONSE") return;
+      const { cast, getStory, setStoryState, showLines, beatNo, stage, commit } = deps.current;
+      const me = cast.find((c) => c.id === job.meId);
+      const them = cast.find((c) => c.id === job.themId);
+      if (!me || !them) return end("targetLeft");
+      if (r.ok) {
+        const v = validateReply(r.data.reply, { listener: them, speaker: me, story: getStory() });
+        if (v.dialogue) {
+          const next = applyReply(getStory(), v, them, me, r.data.source);
+          setStoryState(next);
+          const e = emotionOf(next.characters[them.id]);
+          stage.syncEmotion(them.id, e.emotion, e.level, e.at);
+          playMovement(v, me, them);
+          job.state = "shown";
+          convo.current.beat = beatNo + 1;
+          showLines([{ speaker: { kind: "character", name: them.name.trim(), id: them.id }, key: "custom", params: { text: v.dialogue }, source: r.data.source }]);
+          set({ ...cur, aiTopics: v.suggestions, replySource: r.data.source, aiError: null, canRetry: false });
+          return;
+        }
+        r = { ok: false, code: "invalid_output" };
+      }
+      if (r.code === "cancelled") return;
+      if (job.fallback && job.decision) {
+        // Suggested topic: show the built-in reaction instead, and say so (never passed off as AI).
+        commit(job.decision);
+        job.state = "shown";
+        convo.current.beat = beatNo + 1;
+        showLines(job.fallback);
+        set({ ...cur, aiError: r.code, canRetry: false, replySource: "builtin", aiTopics: [] });
+        return;
+      }
+      // Typed message / AI suggestion: no honest built-in answer exists. Say what failed and offer a retry.
+      job.state = "failed";
+      const failed = { ...cur, aiError: r.code, canRetry: RETRYABLE.has(r.code), aiTopics: [] };
+      set(goTo(failed, "CONTINUE_OR_EXIT", nextOptions(failed)));
+    },
+    [end, set, playMovement, nextOptions],
+  );
+
+  /** Ask the AI for the listener's reply. The request goes out now; the answer plays after the speaker's line. */
+  const startAi = useCallback(
+    (
+      s: TalkSession,
+      me: Character,
+      them: Character,
+      o: { text: string; kind: TalkRequest["message"]["kind"]; topic: string | null; decision: Decision | null; fallback: StoryLine[] | null; pre: StoryState; sourceOfLine?: "player" | "ai" | "mock" | "builtin" },
+    ) => {
+      const d = deps.current;
+      const said = convo.current.said;
+      const req = buildTalkRequest({
+        story: o.pre,
+        speaker: me,
+        listener: them,
+        locale: d.locale,
+        world: d.world,
+        place: d.place,
+        placeDescription: d.placeDescription,
+        message: o.text,
+        kind: o.kind,
+        topic: o.topic,
+        decision: o.decision,
+        recentEvents: d.recentText(),
+        usedTopics: said,
+      });
+      const now = d.getStory();
+      d.setStoryState(pushTalkLine(now, me.id, them.id, { from: me.id, text: o.text, turn: now.turn, at: Date.now(), source: o.sourceOfLine ?? "builtin" }));
+      const abort = new AbortController();
+      const job: AiJob = { req, abort, promise: sendTalkRequest(req, abort.signal), sessionId: s.id, meId: me.id, themId: them.id, decision: o.decision, fallback: o.fallback, state: "pending", awaited: false };
+      convo.current = { ...emptyConvo(), said: [...said, o.text].slice(-12), job };
+    },
+    [],
+  );
+
+  /** "Try again" after a failed reply (same request; nothing was applied the first time). */
+  const retry = useCallback(() => {
+    const s = ref.current;
+    const job = convo.current.job;
+    if (!s || !job || job.state !== "failed" || s.phase !== "CONTINUE_OR_EXIT" || deps.current.lineInProgress) return;
+    const abort = new AbortController();
+    const nj: AiJob = { ...job, abort, promise: sendTalkRequest(job.req, abort.signal), state: "pending", awaited: true };
+    convo.current.job = nj;
+    set(goTo(s, "WAIT_FOR_RESPONSE", { aiError: null, canRetry: false }));
+    void nj.promise.then((r) => onAiResult(nj, r));
+  }, [set, onAiResult]);
+
   // ---- FACE_TARGET: both turn to each other and stay together, then the options open.
   useEffect(() => {
     if (phase !== "FACE_TARGET") return;
@@ -201,7 +368,7 @@ export function useTalk(d: TalkDeps) {
     (choice: TopicChoice) => {
       const s = ref.current;
       const { cast, getStory, setStoryState, showLines, decideOnly, beatNo, lineInProgress, stage } = deps.current;
-      if (!s || !CHOOSING_PHASES.includes(s.phase) || lineInProgress || !s.targetId) return;
+      if (!s || !CHOOSING_PHASES.includes(s.phase) || lineInProgress || !s.targetId || aiBusy(convo.current)) return;
       const me = cast.find((c) => c.id === s.actorId);
       const them = cast.find((c) => c.id === s.targetId);
       if (!me || !them) return end("targetLeft");
@@ -221,11 +388,20 @@ export function useTalk(d: TalkDeps) {
       };
       let reply = decision ? decisionLines(decision, cast, variant) : [];
       if (!reply.length) reply = [{ speaker: { kind: "narrator" }, key: "tpl", tpl: "talk.listens", index: variant, params: { other: them.name.trim() }, source: "builtin" }];
-      convo.current = { beat: beatNo + 1, decision, custom: null };
+      if (deps.current.ai) {
+        // AI reply: the speaker's line plays while the listener's answer is being written.
+        const text = deps.current.renderText(said);
+        startAi(s, me, them, { text, kind: "topic", topic: choice.id, decision, fallback: reply, pre: story });
+        convo.current.beat = beatNo + 1;
+        showLines([said]);
+        set(goTo(s, "SPEAK", { round: s.round + 1, composing: false, aiError: null, canRetry: false }));
+        return;
+      }
+      convo.current = { ...emptyConvo(), said: convo.current.said, beat: beatNo + 1, decision };
       showLines([said, ...reply]);
-      set(goTo(s, "SPEAK", { round: s.round + 1, composing: false }));
+      set(goTo(s, "SPEAK", { round: s.round + 1, composing: false, aiError: null, canRetry: false, replySource: "builtin", aiTopics: [] }));
     },
-    [end, set],
+    [end, set, startAi],
   );
 
   /** "Ask something else": open / close the composer. The draft is kept until it is sent. */
@@ -245,23 +421,49 @@ export function useTalk(d: TalkDeps) {
     [set],
   );
 
-  /** Send the typed message: the speaker says it in their bubble. There is no AI reply yet (and we say so). */
+  /** Send the typed message: the speaker says it in their bubble; with AI on, the listener answers it. */
   const sendCustom = useCallback(() => {
     const s = ref.current;
     const { cast, getStory, setStoryState, showLines, beatNo, lineInProgress, stage } = deps.current;
-    if (!s || !CHOOSING_PHASES.includes(s.phase) || lineInProgress || !s.targetId) return false;
+    if (!s || !CHOOSING_PHASES.includes(s.phase) || lineInProgress || !s.targetId || aiBusy(convo.current)) return false;
     const text = cleanMessage(s.draft);
     if (!text) return false;
     const me = cast.find((c) => c.id === s.actorId);
     const them = cast.find((c) => c.id === s.targetId);
     if (!me || !them) return false;
-    setStoryState(applyCustom(getStory(), me, them));
+    const before = getStory();
+    setStoryState(applyCustom(before, me, them));
     stage.beginConversation([me.id, them.id]);
-    convo.current = { beat: beatNo + 1, decision: null, custom: text };
-    showLines([{ speaker: { kind: "character", name: me.name.trim(), id: me.id }, key: "custom", params: { text } }]);
-    set(goTo(s, "SPEAK", { round: s.round + 1, composing: false, draft: "", customPending: false }));
+    const line: StoryLine = { speaker: { kind: "character", name: me.name.trim(), id: me.id }, key: "custom", params: { text } };
+    if (deps.current.ai) {
+      startAi(s, me, them, { text, kind: "typed", topic: null, decision: null, fallback: null, pre: before, sourceOfLine: "player" });
+      convo.current.beat = beatNo + 1;
+    } else convo.current = { ...emptyConvo(), said: convo.current.said, beat: beatNo + 1, custom: text };
+    showLines([line]);
+    set(goTo(s, "SPEAK", { round: s.round + 1, composing: false, draft: "", customPending: false, aiError: null, canRetry: false }));
     return true;
-  }, [set]);
+  }, [set, startAi]);
+
+  /** Say one of the AI-written suggestions (the speaker's own next line). */
+  const chooseSuggestion = useCallback(
+    (sug: TalkSuggestion) => {
+      const s = ref.current;
+      const { cast, getStory, setStoryState, showLines, beatNo, lineInProgress, stage } = deps.current;
+      if (!s || !CHOOSING_PHASES.includes(s.phase) || lineInProgress || !s.targetId || aiBusy(convo.current) || !deps.current.ai) return;
+      const me = cast.find((c) => c.id === s.actorId);
+      const them = cast.find((c) => c.id === s.targetId);
+      if (!me || !them) return end("targetLeft");
+      const before = getStory();
+      setStoryState(applyCustom(before, me, them));
+      stage.beginConversation([me.id, them.id]);
+      const src = deps.current.ai === "ai" ? "ai" : "mock";
+      startAi(s, me, them, { text: sug.line, kind: "suggestion", topic: sug.label, decision: null, fallback: null, pre: before, sourceOfLine: src });
+      convo.current.beat = beatNo + 1;
+      showLines([{ speaker: { kind: "character", name: me.name.trim(), id: me.id }, key: "custom", params: { text: sug.line }, source: src }]);
+      set(goTo(s, "SPEAK", { round: s.round + 1, composing: false, aiError: null, canRetry: false }));
+    },
+    [end, set, startAi],
+  );
 
   // ---- SPEAK → WAIT_FOR_RESPONSE → CONTINUE_OR_EXIT, following the dialogue queue.
   const { beatNo, lineIndex, lineInProgress } = d;
@@ -272,46 +474,39 @@ export function useTalk(d: TalkDeps) {
     // Our lines are on screen (ours), or something newer replaced them (moved on).
     const ours = beatNo === c.beat;
     const movedOn = beatNo > c.beat;
+    const done = (ours && !lineInProgress) || movedOn;
+    if (c.job) {
+      const job = c.job;
+      // The speaker has finished: wait for (or show) the AI's answer.
+      if (s.phase === "SPEAK" && done) {
+        set(goTo(s, "WAIT_FOR_RESPONSE"));
+        deps.current.stage.request({ type: "face_target", actor: job.themId, target: job.meId }, "conversation", "story");
+        if (!job.awaited) {
+          job.awaited = true;
+          void job.promise.then((r) => onAiResult(job, r));
+        }
+      }
+      // The answer has been read: next options.
+      if (s.phase === "WAIT_FOR_RESPONSE" && job.state === "shown" && done) set(goTo(s, "CONTINUE_OR_EXIT", nextOptions(s)));
+      return;
+    }
     if (s.phase === "SPEAK") {
       // Built-in topic: the reply starts when the player moves on to the listener's line.
       if (!c.custom && ((ours && lineIndex >= 1) || movedOn)) {
         if (c.decision) deps.current.commit(c.decision);
         set(goTo(s, "WAIT_FOR_RESPONSE"));
       }
-      // Typed message: once it has been said, ask the reply service (not built yet).
-      if (c.custom && ((ours && !lineInProgress) || movedOn)) {
+      // Typed message with AI conversations off: nobody can honestly answer it, and the panel says why.
+      if (c.custom && done) {
         set(goTo(s, "WAIT_FOR_RESPONSE"));
-        const { cast, getStory, world, place, locale, recentText, stage } = deps.current;
-        const me = cast.find((x) => x.id === s.actorId)!;
-        const them = cast.find((x) => x.id === s.targetId)!;
-        const story = getStory();
-        stage.request({ type: "face_target", actor: them.id, target: me.id }, "conversation", "story");
-        void requestCustomReply({
-          locale,
-          world,
-          place,
-          speaker: { id: me.id, name: me.name.trim() },
-          listener: { id: them.id, name: them.name.trim() },
-          message: c.custom,
-          relation: relationOf(story, them, me),
-          listenerEmotion: emotionOf(story.characters[them.id]).emotion,
-          recentLines: recentText(),
-        }).then((r) => {
-          const cur = ref.current;
-          if (!cur || cur.id !== s.id || cur.phase !== "WAIT_FOR_RESPONSE") return;
-          // r.status is always "unavailable" for now; an "ok" result will add the reply lines here.
-          const next = { ...cur, customPending: r.status !== "ok" };
-          const topics = freshTopics(next);
-          set(goTo(next, "CONTINUE_OR_EXIT", { topics, offered: [...next.offered, ...topics.map((t) => t.id)] }));
-        });
+        deps.current.stage.request({ type: "face_target", actor: s.targetId!, target: s.actorId }, "conversation", "story");
+        const next = { ...s, phase: "WAIT_FOR_RESPONSE" as const, customPending: true };
+        set(goTo(next, "CONTINUE_OR_EXIT", nextOptions({ ...next, aiTopics: [] })));
       }
       return;
     }
-    if (!c.custom && ((ours && !lineInProgress) || movedOn)) {
-      const topics = freshTopics(s);
-      set(goTo(s, "CONTINUE_OR_EXIT", { topics, offered: [...s.offered, ...topics.map((t) => t.id)], customPending: false }));
-    }
-  }, [session, beatNo, lineIndex, lineInProgress, set, freshTopics]);
+    if (!c.custom && done) set(goTo(s, "CONTINUE_OR_EXIT", { ...nextOptions({ ...s, aiTopics: [] }), customPending: false }));
+  }, [session, beatNo, lineIndex, lineInProgress, set, freshTopics, onAiResult, nextOptions]);
 
   // ---- Someone left the stage mid-conversation.
   const castKey = d.cast.map((c) => c.id).join("|");
@@ -337,6 +532,8 @@ export function useTalk(d: TalkDeps) {
     closeComposer,
     setDraft,
     sendCustom,
+    chooseSuggestion,
+    retry,
     /** Is this pair in a walk-and-talk right now (the autonomous "approached" reaction stays out of it)? */
     involves: useCallback((a: string, b: string) => {
       const s = ref.current;

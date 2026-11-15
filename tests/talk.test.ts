@@ -4,7 +4,7 @@ import zh from "@/i18n/locales/zh-CN.json";
 import { canTalkTransition, goTo, newSession, TALK_NOTICES, TALK_PHASES } from "@/lib/talk/flow";
 import { DRAG, hitCharacter, pressState, toStagePoint } from "@/lib/talk/drag";
 import { applyTopic, eligibleTopics, GOOD_MEMORIES, REASONS, sayKey, suggestTopics, talkContext, TOPIC_DEFS, TOPIC_IDS, type TalkContext } from "@/lib/talk/topics";
-import { cleanMessage, CUSTOM_MAX, requestCustomReply } from "@/lib/talk/customReply";
+import { cleanMessage, CUSTOM_MAX } from "@/lib/talk/customReply";
 import { relationWords } from "@/lib/talk/text";
 import { sampleCharacter } from "@/lib/mind/scenarios";
 import { relKey } from "@/lib/mind/relations";
@@ -194,10 +194,6 @@ describe("Ask Something Else", () => {
     const long = "好".repeat(CUSTOM_MAX + 50);
     expect(Array.from(cleanMessage(long)).length).toBe(CUSTOM_MAX);
     expect(cleanMessage("🙂".repeat(CUSTOM_MAX + 1))).toBe("🙂".repeat(CUSTOM_MAX));
-  });
-  it("never fakes an AI answer: the reply service says it isn't available yet", async () => {
-    const r = await requestCustomReply({ locale: "en", world: "modern", place: "street", speaker: { id: "a", name: "A" }, listener: { id: "b", name: "B" }, message: "hi", relation: { trust: 0, affection: 0, respect: 0, familiarity: 0, rivalry: 0, tension: 0, fear: 0 }, listenerEmotion: "neutral", recentLines: [] });
-    expect(r.status).toBe("unavailable");
   });
 });
 

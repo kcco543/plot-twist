@@ -40,7 +40,7 @@ afterEach(() => {
 describe("/api/ai/status", () => {
   it("reports unconfigured services without leaking anything", async () => {
     const res = await status();
-    expect(await res.json()).toEqual({ text: false, image: false, textModel: null, imageModel: null });
+    expect(await res.json()).toEqual({ text: false, image: false, textModel: null, imageModel: null, talk: null });
   });
   it("reports configured services by model name only", async () => {
     process.env.ANTHROPIC_API_KEY = "sk-test-secret";

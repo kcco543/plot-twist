@@ -1,9 +1,9 @@
 import "server-only";
 import type { AnalyzeRequest, CharacterBrief, TurnRequest } from "../contracts";
 
-const LANGUAGE: Record<string, string> = { en: "English", "zh-CN": "Simplified Chinese" };
+export const LANGUAGE: Record<string, string> = { en: "English", "zh-CN": "Simplified Chinese" };
 
-const TRAIT_POLES: Record<string, [string, string]> = {
+export const TRAIT_POLES: Record<string, [string, string]> = {
   extroversion: ["introverted", "extroverted"],
   impulsiveness: ["cautious", "impulsive"],
   expressiveness: ["reserved", "expressive"],
@@ -16,7 +16,7 @@ const TRAIT_POLES: Record<string, [string, string]> = {
   rebelliousness: ["rule-following", "rebellious"],
 };
 
-const WORLD_RULES: Record<string, string> = {
+export const WORLD_RULES: Record<string, string> = {
   "western-fantasy": "Western fantasy: mossy villages, crooked castles, prophecies, low magic that is common but unreliable.",
   modern: "Modern day: cafés, late trains, phones and group chats. No magic.",
   "ancient-china": "Ancient China: courtyards, roadside inns, wandering swordsfolk, honor debts. Grounded wuxia flavor, no modern technology.",
@@ -24,7 +24,7 @@ const WORLD_RULES: Record<string, string> = {
 };
 
 /** Player-written fields, quoted exactly. Empty fields are skipped. */
-function characterBlock(c: CharacterBrief, label: string) {
+export function characterBlock(c: CharacterBrief, label: string) {
   const lines = [`<${label} id="${c.id}">`];
   for (const [k, v] of Object.entries(c.fields)) {
     if (!v || !v.trim()) continue;

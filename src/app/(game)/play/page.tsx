@@ -36,6 +36,7 @@ import { applyDevParam, useDevMode } from "@/lib/devMode";
 import { roomFor } from "@/lib/stage/room";
 import { useReducedMotion, useStagePoint, useStageSim } from "@/lib/stage/useStage";
 import { useTalk } from "@/lib/talk/useTalk";
+import { editMemory, type MemoryPatch } from "@/lib/talk/ai/apply";
 import { TALKING_PHASES } from "@/lib/talk/flow";
 import type { Character, StoryLine, StoryState } from "@/lib/types";
 import { useI18n } from "@/i18n";
@@ -75,6 +76,8 @@ export default function PlayPage() {
     },
     [setSandbox],
   );
+  /** Memory inspector: the player corrects or forgets a saved memory. */
+  const editMemoryFor = useCallback((characterId: string, memoryId: string, patch: MemoryPatch | null) => setStoryState(editMemory(getStory(), characterId, memoryId, patch)), [getStory, setStoryState]);
   const logLines = useCallback((lines: StoryLine[]) => {
     if (!sandboxRef.current) gameActions.appendLines(lines);
   }, []);
@@ -97,6 +100,8 @@ export default function PlayPage() {
   const [note, setNote] = useState<string | null>(null);
   const ai = useAiStatus();
   const useAi = Boolean(ai?.text && settings.aiStory);
+  /** AI conversations (walk & talk): real Claude replies, developer TEST replies, or off (built-in replies). */
+  const aiTalk: "ai" | "mock" | null = !settings.aiStory ? null : ai?.text ? "ai" : ai?.talk === "mock" ? "mock" : null;
 
   const [logOpen, setLogOpen] = useState(false);
   const [pauseOpen, setPauseOpen] = useState(false);
@@ -233,7 +238,14 @@ export default function PlayPage() {
     beatNo,
     lineIndex,
     lineInProgress: lineInProgress || busy,
-    recentText: () => getSave().log.slice(-6).map((e) => renderLine(e, locale).text),
+    recentText: () =>
+      getSave()
+        .log.slice(-6)
+        .map((e) => renderLine(e, locale))
+        .map((r) => `${r.speaker}: ${r.text}`),
+    ai: aiTalk,
+    placeDescription: save.environment.description,
+    renderText: (line) => renderLine(line, locale).text,
     onSelect: setPickedId,
     // Ending mid-line: the unread lines go away with the conversation (no stale, half-read reply).
     onEnd: () => {
@@ -592,9 +604,12 @@ export default function PlayPage() {
       </div>
 
       {isDemo && !sandbox && (
-        <p className="content-block plain-pad-x mb-4 flex items-center gap-2 bg-butter-hi py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
+        <p className="content-block plain-pad-x mb-4 flex flex-wrap items-center gap-2 bg-butter-hi py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
           <PixelIcon name="star" size={12} className="shrink-0 text-label" />
-          {t("play.demoNotice")}
+          <span className="min-w-0 flex-1">{t("play.demoNotice")}</span>
+          <PixelButton size="sm" variant="calm" icon="user" onClick={() => gameActions.addSampleCast(locale)} className="shrink-0 px-2" data-sample-cast>
+            {t("play.sampleCast")}
+          </PixelButton>
         </p>
       )}
 
@@ -649,7 +664,7 @@ export default function PlayPage() {
             hideActions={talking}
             actionsDisabled={!!talk.session}
           />
-          <ConversationPanel talk={talk} cast={onStage} story={story} lineInProgress={lineInProgress || busy} />
+          <ConversationPanel talk={talk} cast={onStage} story={story} lineInProgress={lineInProgress || busy} aiMode={aiTalk} />
           <TalkStrip talk={talk} cast={onStage} selectedId={selected?.id ?? null} touch={touch} />
           <p className="hidden font-label text-[10px] uppercase text-ink-mute lg:block">{t("play.keyboardHint")}</p>
           {sidePanels && !wide && sidePanels}
@@ -657,14 +672,14 @@ export default function PlayPage() {
         <div className="hidden min-w-0 lg:block">
           <div className={`lg:sticky lg:top-20 ${sidePanels ? "flex max-h-[calc(100dvh-6rem)] flex-col gap-4 overflow-y-auto overscroll-contain pb-2" : ""}`}>
             {sidePanels && wide && sidePanels}
-            <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} />
+            <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} onEditMemory={editMemoryFor} />
           </div>
         </div>
       </div>
 
       {/* Phone / tablet character sheet */}
       <Modal open={sheetOpen} onClose={() => setSheetOpen(false)} title={t("play.character")} closeLabel={t("play.sidebar.close")}>
-        <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} framed={false} />
+        <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} framed={false} onEditMemory={editMemoryFor} />
       </Modal>
 
       {/* Story log */}
@@ -696,6 +711,7 @@ export default function PlayPage() {
                   <p className="font-label text-[10px] uppercase text-rose">
                     {r.speaker} · {new Date(e.at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                     {"source" in e && e.source === "ai" && <span className="ml-1 bg-lavender-hi px-1 text-label">AI</span>}
+                    {"source" in e && e.source === "mock" && <span className="ml-1 bg-butter-hi px-1 text-ink" title={t("talk.ai.testTag")}>TEST</span>}
                   </p>
                   <p className="text-lg leading-snug">{r.text}</p>
                 </li>
