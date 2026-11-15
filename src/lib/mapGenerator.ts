@@ -20,6 +20,11 @@ import { gameActions, getSave } from "./gameStore";
 import { makeId } from "./id";
 import { MAP_HISTORY_LIMIT, clearAllMaps, deleteMaps, listMaps, putMap, type StoredMap } from "./mapLibrary";
 import type { EnvironmentTypeId, WorldId } from "./types";
+import { activeWorldId, getIndex } from "./saves/worldSaves";
+import { mapOwner, tagMap, type OwnedMap } from "./saves/worldMaps";
+
+/** Only the active world's maps (each world save keeps its own map history). */
+const inActiveWorld = (m: OwnedMap) => mapOwner(m, getIndex().migration?.worldId ?? null) === activeWorldId() || m.id === getSave().environment.mapId;
 
 export type GeneratedMap = Omit<StoredMap, "blob"> & { url: string; ext: "png" | "webp" };
 
@@ -60,7 +65,7 @@ function release(ids: string[]) {
 let loading: Promise<void> | null = null;
 function load() {
   loading ??= listMaps()
-    .then((maps) => set({ maps: maps.map(toGenerated), loaded: true }))
+    .then((maps) => set({ maps: maps.filter(inActiveWorld).map(toGenerated), loaded: true }))
     .catch(() => set({ loaded: true }));
   return loading;
 }
@@ -110,6 +115,7 @@ export async function generateMap(req: MapRequest): Promise<void> {
     const out = await requestMap({ description: req.description.trim(), type: req.type, world: req.worldId });
     const { blob, width, height } = await decode(out.image);
     const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model: out.model, createdAt: Date.now() };
+    tagMap(stored, activeWorldId());
     await load();
     await putMap(stored);
     const all = [toGenerated(stored), ...state.maps];
