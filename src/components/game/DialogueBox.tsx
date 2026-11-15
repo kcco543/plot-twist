@@ -25,6 +25,8 @@ export function DialogueBox({
   total,
   busy,
   note,
+  hideActions = false,
+  actionsDisabled = false,
 }: {
   speaker: string;
   text: string;
@@ -39,15 +41,18 @@ export function DialogueBox({
   busy: boolean;
   /** Small status under the box (e.g. "AI writing didn't work"). */
   note?: string | null;
+  /** A walk-and-talk conversation is open: its own panel replaces these buttons. */
+  hideActions?: boolean;
+  actionsDisabled?: boolean;
 }) {
   const { t } = useI18n();
   const { shown, rest, done } = typer;
   const [head, space] = splitTrailingSpace(shown);
-  const disabled = !targetName || busy;
+  const disabled = !targetName || busy || actionsDisabled;
   const more = index < total - 1;
 
   return (
-    <section aria-label={t("play.dialogue")} className="mt-5 grid gap-[var(--stack-gap)] xl:grid-cols-[minmax(0,1fr)_16rem] xl:items-start xl:gap-4">
+    <section aria-label={t("play.dialogue")} className={`mt-5 grid gap-[var(--stack-gap)] ${hideActions ? "" : "xl:grid-cols-[minmax(0,1fr)_16rem]"} xl:items-start xl:gap-4`}>
       <div className="flex min-w-0 flex-col gap-2">
         <div className="content-block px-frame px-shadow relative" style={{ "--frame": "var(--frame-cream)" } as React.CSSProperties}>
           <span className="px-tab absolute -top-7 left-[calc(var(--u)*-4)] sm:-top-8" style={{ borderImageSource: "var(--frame-pink)" }}>
@@ -91,6 +96,7 @@ export function DialogueBox({
           )}
         </div>
       </div>
+      {!hideActions && (
       <div className="content-block grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-2">
         <PixelButton variant="accent" icon="chat" disabled={disabled} onClick={() => onAction("talk")} className="px-1">
           {t("play.actions.talk")}
@@ -105,6 +111,7 @@ export function DialogueBox({
           {t("play.actions.twist")}
         </PixelButton>
       </div>
+      )}
     </section>
   );
 }

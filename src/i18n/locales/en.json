@@ -1617,5 +1617,314 @@
       "sameTraitsDifferentPast": "Same sliders, different past",
       "hiddenAffection": "Hiding strong affection"
     }
+  },
+  "talk": {
+    "hint": "Drag a character onto someone to walk over and talk.",
+    "hintTouch": "Touch and hold a character, then drag onto someone.",
+    "orTap": "Or:",
+    "chooseButton": "Talk to…",
+    "chooseNeedsSelection": "Select a character first",
+    "chooseFor": "Who should {name} talk to?",
+    "chooseHelp": "Tap someone on the stage, or pick a name:",
+    "cancel": "Cancel",
+    "walking": "{name} is walking over to {other}…",
+    "drag": {
+      "talk": "Talk to {other}",
+      "noRoute": "Can't reach {other}",
+      "empty": "Drop on someone to talk",
+      "self": "Release to cancel"
+    },
+    "notices": {
+      "unreachable": "{name} can't find a way to {other}. Something is in the way.",
+      "blocked": "{name} can't get past someone standing in the way to {other}. Try moving them first, or pick someone closer.",
+      "noRoom": "There's no free space to stand next to {other}.",
+      "busy": "{name} is in the middle of something. Try again in a moment.",
+      "targetLeft": "{other} isn't here any more.",
+      "lostTarget": "{name} couldn't catch up with {other}.",
+      "tooLong": "{name} gave up trying to reach {other}.",
+      "cancelled": "Cancelled. Nobody moved.",
+      "emptySpace": "To start a conversation, drop {name} onto another character.",
+      "ended": "{name} and {other} finished talking."
+    },
+    "dismiss": "Dismiss",
+    "panel": {
+      "title": "Conversation",
+      "pair": "{name} talks to {other}",
+      "relationship": "Relationship",
+      "relationshipOf": "How {name} sees {other}",
+      "mood": "{other}'s mood",
+      "hardToRead": "Hard to read",
+      "suggested": "Suggested topics",
+      "askElse": "Ask Something Else",
+      "end": "End conversation",
+      "speaking": "Tap the dialogue to hear {other}'s answer.",
+      "answering": "{other} is answering…",
+      "continue": "Keep talking, or end the conversation.",
+      "aiPending": "{other} heard you. Replies to your own words need the AI stage, which comes in the next update, so there is no answer yet. Nothing scripted is shown in its place."
+    },
+    "relation": {
+      "labels": {
+        "stranger": "Strangers",
+        "acquaintance": "Acquaintances",
+        "friend": "Friends",
+        "family": "Family",
+        "partner": "Partners",
+        "rival": "Rivals",
+        "enemy": "Enemies"
+      },
+      "warm": "warm",
+      "cold": "cold",
+      "trusting": "trusting",
+      "wary": "wary",
+      "tense": "tense",
+      "competitive": "competitive",
+      "neutral": "no strong feelings yet"
+    },
+    "composer": {
+      "label": "What should {name} say to {other}?",
+      "placeholder": "Type in English or 中文…",
+      "send": "Send",
+      "cancel": "Cancel",
+      "count": "{n} / {max}",
+      "hint": "Enter sends · Shift+Enter new line · Esc closes (your draft is kept)",
+      "empty": "Type something first."
+    },
+    "listens": [
+      "{other} listens quietly.",
+      "{other} takes that in.",
+      "{other} nods slowly."
+    ],
+    "topics": {
+      "howFeeling": "Ask how {other} is feeling",
+      "cheerUp": "Try to cheer {other} up",
+      "worries": "Ask what's worrying {other}",
+      "recentDisagreement": "Talk about the recent disagreement",
+      "apologize": "Apologize to {other}",
+      "betrayal": "Ask {other} why they broke your trust",
+      "challenge": "Challenge {other}",
+      "sharedMemory": "Bring up {memory}",
+      "compliment": "Compliment {other}",
+      "tease": "Tease {other} a little",
+      "confide": "Confide in {other}",
+      "askHelp": "Ask {other} for help with your goal",
+      "theirGoal": "Ask about {other}'s goals",
+      "introduce": "Introduce yourself",
+      "place": "Talk about this place",
+      "rumor": "Share some local news"
+    },
+    "reasons": {
+      "looks": "Visible mood: {emotion}",
+      "argued": "You clashed recently",
+      "tension": "Things feel tense",
+      "betrayed": "{other} broke your trust",
+      "rivals": "You're rivals",
+      "memory": "A memory you share",
+      "close": "You're close",
+      "playful": "{name} likes to joke",
+      "trust": "You trust each other",
+      "yourGoal": "{name}'s goal",
+      "theirGoal": "{other} has a goal",
+      "stranger": "You barely know each other",
+      "place": "Here: {place}",
+      "world": "World: {world}",
+      "smallTalk": "Small talk"
+    },
+    "memory": {
+      "helped": "the time we helped each other",
+      "cooperated": "the time we worked together",
+      "reunion": "the day we met again",
+      "promise": "the promise we made",
+      "secret": "the secret we shared",
+      "complimented": "the nice things we said",
+      "teased": "all our teasing",
+      "met": "the day we first met"
+    },
+    "say": {
+      "howFeeling": {
+        "soft": [
+          "{other}… are you doing okay?",
+          "How are you feeling, {other}? Really?"
+        ],
+        "bold": [
+          "Hey {other}! How are you holding up?",
+          "So, {other}, how's your day going?"
+        ]
+      },
+      "cheerUp": {
+        "soft": [
+          "You seem down, {other}. Want to sit with me for a bit?",
+          "Whatever it is, {other}, you don't have to carry it alone."
+        ],
+        "bold": [
+          "Okay, enough gloom, {other}. Let's find something good about today.",
+          "Chin up, {other}! I've got a terrible joke ready if you need it."
+        ]
+      },
+      "worries": {
+        "soft": [
+          "Is something worrying you, {other}?",
+          "You can tell me what's on your mind, {other}. Only if you want to."
+        ],
+        "bold": [
+          "What's eating at you, {other}? Out with it.",
+          "Something's bugging you, {other}. What is it?"
+        ]
+      },
+      "recentDisagreement": {
+        "soft": [
+          "About what happened between us… can we talk about it, {other}?",
+          "I keep thinking about our disagreement, {other}."
+        ],
+        "bold": [
+          "We need to talk about what happened, {other}.",
+          "Let's clear the air, {other}. That fight's still bugging me."
+        ]
+      },
+      "apologize": {
+        "soft": [
+          "{other}, I'm sorry about before. I didn't handle it well.",
+          "I owe you an apology, {other}."
+        ],
+        "bold": [
+          "Look, {other}, I was out of line. Sorry.",
+          "Okay. I messed up, {other}. I'm sorry."
+        ]
+      },
+      "betrayal": {
+        "soft": [
+          "Why did you do it, {other}? I need to understand.",
+          "I haven't forgotten what you did, {other}."
+        ],
+        "bold": [
+          "Explain yourself, {other}. Why did you betray me?",
+          "Did you think I'd just forget, {other}?"
+        ]
+      },
+      "challenge": {
+        "soft": [
+          "I think I could beat you this time, {other}.",
+          "Want to see who's better at this, {other}?"
+        ],
+        "bold": [
+          "Bet you can't keep up with me, {other}!",
+          "Rematch, {other}. Right now."
+        ]
+      },
+      "sharedMemory": {
+        "soft": [
+          "Do you remember {memory}, {other}?",
+          "I was thinking about {memory}, {other}."
+        ],
+        "bold": [
+          "{other}! I still think about {memory}.",
+          "Remember {memory}, {other}? Good times."
+        ]
+      },
+      "compliment": {
+        "soft": [
+          "I like how you see things, {other}.",
+          "You're really good at this, {other}. I mean it."
+        ],
+        "bold": [
+          "{other}, you're honestly kind of amazing.",
+          "Nobody does it like you, {other}!"
+        ]
+      },
+      "tease": {
+        "soft": [
+          "Is that your thinking face, {other}? It's very serious.",
+          "Did you sleep at all, {other}? Your hair says no."
+        ],
+        "bold": [
+          "Wow, {other}, did you get dressed in the dark?",
+          "Still slower than me, {other}?"
+        ]
+      },
+      "confide": {
+        "soft": [
+          "Can I tell you something, {other}? Just between us.",
+          "{other}, there's something I haven't told anyone."
+        ],
+        "bold": [
+          "{other}, I trust you, so here goes.",
+          "Okay, secret time, {other}. Don't laugh."
+        ]
+      },
+      "askHelp": {
+        "soft": [
+          "{other}, could you help me with something? It matters to me.",
+          "I'm stuck on something important, {other}. Would you help?"
+        ],
+        "bold": [
+          "{other}, I need a hand. You in?",
+          "Help me out with something, {other}? It's a big deal for me."
+        ]
+      },
+      "theirGoal": {
+        "soft": [
+          "What are you hoping for, {other}? What do you want most?",
+          "Do you have something you're working toward, {other}?"
+        ],
+        "bold": [
+          "So what's your big plan, {other}?",
+          "Tell me, {other}: what are you really after?"
+        ]
+      },
+      "introduce": {
+        "soft": [
+          "Um, hi. I'm {name}. I don't think we've really met.",
+          "Hello. I'm {name}. You're {other}, right?"
+        ],
+        "bold": [
+          "Hi! I'm {name}. And you're {other}, right?",
+          "Hey, we haven't met properly. I'm {name}!"
+        ]
+      },
+      "place": {
+        "interior": [
+          "It's cozy in here, isn't it, {other}?",
+          "Have you noticed how quiet this room gets, {other}?",
+          "Someone should really tidy this place up."
+        ],
+        "street": [
+          "It's busy out here today, {other}.",
+          "Did you see that stall on the corner, {other}?",
+          "I like watching people go by. Don't you, {other}?"
+        ],
+        "wilderness": [
+          "It's so open out here, {other}. Hear that wind?",
+          "Careful where you step, {other}. Things grow fast out here.",
+          "I could stay out here all day."
+        ],
+        "ruins": [
+          "This place gives me chills, {other}.",
+          "Who do you think built all this, {other}?",
+          "Stay close, {other}. I don't trust these walls."
+        ],
+        "dreamscape": [
+          "Is any of this real, {other}?",
+          "The sky keeps changing color. Is it just me?",
+          "I feel like I've been here before, {other}."
+        ]
+      },
+      "rumor": {
+        "western-fantasy": [
+          "Did you hear? The guild posted a dragon bounty.",
+          "They say the old wizard's tower lit up again last night, {other}."
+        ],
+        "modern": [
+          "Did you see the news this morning, {other}?",
+          "Apparently the café on the corner is closing. Can you believe it?"
+        ],
+        "ancient-china": [
+          "I heard a wandering swordsman passed through the city gate today.",
+          "They say the magistrate is holding a poetry contest, {other}."
+        ],
+        "otherworld": [
+          "Word is the floating islands drifted closer overnight, {other}.",
+          "Someone saw a slime wearing a hat by the crystal fields."
+        ]
+      }
+    }
   }
 }

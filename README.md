@@ -85,6 +85,16 @@ Characters choose reactions from personality (sliders + written profile), severa
 
 **Test panel:** Settings → *Emotion & movement test panel* → On. In Play Mode it appears beside the stage on desktop and under the dialogue on phones (the stage stays pinned at the top while you scroll it).
 
+## Walk & talk (drag-to-interact)
+
+Drag a character onto another one (phones: touch and hold, then drag). While dragging, a dotted route and a green frame show who they'd talk to; red means there's no way there. Let go and they **walk** over (same pathfinding and collision as everything else), stop at a comfortable distance, face each other, and a conversation panel opens with the relationship, the listener's visible mood, 2–3 suggested topics and **Ask Something Else**. A plain click / tap still selects. Without dragging: select someone, press **Talk to…** and tap a name or a character. Esc or Cancel stops a walk or ends a conversation.
+
+- Flow (SELECT_TARGET → MOVE_TO_TARGET → FACE_TARGET → SHOW_OPTIONS → SPEAK → WAIT_FOR_RESPONSE → CONTINUE_OR_EXIT): `src/lib/talk/flow.ts`, driven by `src/lib/talk/useTalk.ts`
+- Click vs drag rules and hit-testing: `src/lib/talk/drag.ts` · pointer handling + preview: `src/components/game/CharacterDrag.tsx`
+- Topic library (16 rule-based topics, no AI): `src/lib/talk/topics.ts`, wording under `talk.*` in both locale files. The listener's answer comes from the behavior engine with the topic's trigger.
+- Custom messages: `src/lib/talk/customReply.ts` holds the request/response shape for the future AI reply. Until then the game says plainly that replies to your own words need the next stage.
+- Tests: `tests/talk.test.ts`
+
 ## Design system
 
 See **[docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** for the palette, fonts, frames, components, motion and pixel-art standards.
