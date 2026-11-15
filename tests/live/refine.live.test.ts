@@ -77,6 +77,8 @@ describe.skipIf(!LIVE)("live feedback refinement (Claude)", () => {
     const d = await call(c, shyProfile(c), "虽然这个角色不擅长表达感情，但他并不冷漠。他会通过实际行动表达关心，说话简短但会偶尔开个冷笑话。", "zh-CN");
     expect(d.changes.some((x: { section: string }) => ["speech", "socialStyle", "summary", "emotionalPatterns"].includes(x.section))).toBe(true);
     expect(/[一-鿿]/.test(d.interpretation)).toBe(true);
+    // Locked canon stays in the player's own words, even in a Chinese revision.
+    if (JSON.stringify(shyProfile(c)).includes("Never breaks a promise")) expect(JSON.stringify(d.profile)).toContain("Never breaks a promise");
   }, 120_000);
 
   it("flags feedback that contradicts locked canon, and leaves it out when told to keep canon", async () => {

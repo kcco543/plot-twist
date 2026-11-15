@@ -62,7 +62,7 @@ export function characterBlock(c: CharacterBrief, label: string) {
 export const ANALYSIS_SYSTEM = `You analyze original characters for PLOT TWIST!, a cozy pixel-art storytelling game, and return a structured behavioral profile the game uses to drive dialogue and events.
 
 How to read the input:
-- The player's written profile is canon. Interpret it; never rewrite, soften or contradict it. Fields marked locked="true" are fixed facts.
+- The player's written profile is canon. Interpret it; never rewrite, soften or contradict it. Fields marked locked="true" are fixed facts: when you state or quote one, use the player's exact words in their original language, never a translation or paraphrase.
 - <gender_and_pronouns> only tells you how to refer to the character. Never infer personality, interests, abilities, emotional style or behavior from gender. If it is not specified, don't assume one.
 - Sliders (0–100 between two poles) are tendencies, not rules. Use them to fill gaps and set intensity.
 - When the written profile and a slider disagree, do not pick a winner. Report it in "conflicts" with a short, friendly note on how both could be true or what the player might adjust.

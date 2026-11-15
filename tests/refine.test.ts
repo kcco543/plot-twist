@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "./fakeBrowser";
-import { acceptBlockers, acceptProposal, changedSections, lastAccepted, reconcileChanges, rejectProposal, restoreRevision, versionOf, withProposal, type AnalysisProposal } from "@/lib/behavior/refine";
+import { acceptBlockers, acceptProposal, canonSentences, changedSections, pinLockedCanon, lastAccepted, reconcileChanges, rejectProposal, restoreRevision, versionOf, withProposal, type AnalysisProposal } from "@/lib/behavior/refine";
 import { buildLocalProfile } from "@/lib/behavior/localAnalysis";
 import { approvedBehavior } from "@/lib/character/model";
 import type { BehaviorProfile, BehaviorRecord } from "@/lib/types";
@@ -153,5 +153,40 @@ describe("refinement only changes the active world's character", () => {
     g = await enter(b.id);
     expect(g.game.getSave().characters[0].behavior!.profile.summary).not.toBe("Refined in A");
     expect(g.lib.getLibrary().templates[0].behavior ?? null).toBeNull();
+  });
+});
+
+describe("locked canon stays word for word", () => {
+  const p0 = (): BehaviorProfile => ({
+    ...buildLocalProfile(rook(), "en"),
+    summary: "Juno is quiet. Never breaks a promise.",
+    decisionStyle: "Decides slowly; Never breaks a promise, even when it costs them.",
+    boundaries: ["Never breaks a promise.", "Won't talk about their sister."],
+    motivations: ["Finish building the rooftop telescope"],
+  });
+
+  it("splits locked text into sentences and skips tiny fragments", () => {
+    expect(canonSentences(["Never breaks a promise. Loyal.\n绝不食言。"])).toEqual(["Never breaks a promise", "绝不食言"]);
+  });
+
+  it("puts back a locked rule the revision translated, in place of the translation", () => {
+    const before = p0();
+    const after: BehaviorProfile = { ...before, summary: "朱诺话少，但会用行动表达关心。绝不违背承诺。", decisionStyle: "做决定很慢；绝不违背承诺。", boundaries: ["绝不违背承诺。", "Won't talk about their sister."], socialStyle: "用行动关心别人。" };
+    const { profile, pinned } = pinLockedCanon(before, after, canonSentences(["Never breaks a promise."]));
+    expect(pinned).toEqual(["Never breaks a promise"]);
+    expect(profile.boundaries).toEqual(["Never breaks a promise.", "Won't talk about their sister."]);
+    expect(profile.decisionStyle).toBe(before.decisionStyle);
+    expect(profile.summary).toContain("Never breaks a promise");
+    expect(profile.summary).toContain("朱诺话少"); // the feedback's change to the summary is kept
+    expect(profile.socialStyle).toBe("用行动关心别人。"); // unlocked change untouched
+  });
+
+  it("leaves a revision alone when the canon is already verbatim, and adds a dropped one back within the list limit", () => {
+    const before = p0();
+    expect(pinLockedCanon(before, before, ["Never breaks a promise"]).pinned).toEqual([]);
+    const after: BehaviorProfile = { ...before, boundaries: ["a", "b", "c", "d", "e", "f", "g", "h"] };
+    const { profile } = pinLockedCanon(before, after, ["Never breaks a promise"]);
+    expect(profile.boundaries).toHaveLength(8);
+    expect(profile.boundaries[0]).toBe("Never breaks a promise.");
   });
 });

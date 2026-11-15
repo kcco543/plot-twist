@@ -24,7 +24,8 @@ How to revise:
 - "canonConflicts": anything in the feedback that contradicts a locked field: name the field, quote the canon, quote the feedback, and explain. If there is a conflict and <keep_canon>true</keep_canon> is NOT set, still write your best profile but leave the conflicting part of the feedback out of it. If <keep_canon>true</keep_canon> is set, leave the conflicting part out and return canonConflicts empty.
 - "interpretation": one or two sentences, addressed to the player, saying how you understood their feedback.
 - The game rejects revisions that change locked facts.
-- Write every text in the requested language.`;
+- Write new and rewritten text in the requested language. Locked canon is the exception: wherever the profile states or quotes a locked field, keep the player's exact words in their original language. Never translate, paraphrase or reword it (the game puts the original back if you do).
+- Don't translate or reword conclusions the feedback doesn't touch just because the requested language differs; leave them as they are.`;
 
 export function refineUser(req: RefineRequest, profile: BehaviorProfile): string {
   return [

@@ -164,3 +164,92 @@ export function reconcileChanges(before: BehaviorProfile, after: BehaviorProfile
   for (const s of real) if (!out.some((c) => c.section === s)) out.push({ section: s, before: brief(before[s]), after: brief(after[s]), why: "" });
   return out;
 }
+
+/* ── Locked canon stays verbatim ──────────────────────────────────────────
+ * Locked fields are fixed facts in the player's own words. If the current
+ * profile quotes one (a boundary "Never breaks a promise."), a revision may
+ * not reword or translate that quote, whatever language it is written in.
+ * This is enforced here, in code, not only asked for in the prompt.
+ */
+
+const CJK = /[㐀-鿿豈-﫿]/;
+const squash = (s: string) => s.replace(/\s+/g, " ").trim();
+
+/** The sentences of the locked fields worth pinning (the name is checked elsewhere; very short fragments are skipped). */
+export function canonSentences(locked: string[]): string[] {
+  const out = new Set<string>();
+  for (const text of locked) {
+    for (const part of text.split(/(?<=[.!?。！？；;])|\n+/)) {
+      const s = squash(part).replace(/[.!?。！？；;,，、\s]+$/u, "");
+      if (s.length >= (CJK.test(s) ? 4 : 8)) out.add(s);
+    }
+  }
+  return [...out];
+}
+
+const has = (text: string, s: string) => squash(text).includes(s);
+const flat = (v: unknown): string => (typeof v === "string" ? v : v && typeof v === "object" ? Object.values(v).map(flat).join(" \u0000 ") : "");
+
+/**
+ * Put back every quote of locked canon that the revision dropped, reworded or
+ * translated. List items are restored whole (in place of their rewrite when
+ * there is one); a scalar field is restored to its earlier wording, except the
+ * summary, which keeps the revision and gets the canon sentence back.
+ * Returns the fixed profile and the sentences that had to be put back.
+ */
+export function pinLockedCanon(before: BehaviorProfile, after: BehaviorProfile, canon: string[]): { profile: BehaviorProfile; pinned: string[] } {
+  const pinned = new Set<string>();
+  const missing = (b: string, a: string) => canon.filter((s) => has(b, s) && !has(a, s));
+  const p: BehaviorProfile = structuredClone(after);
+
+  for (const k of ["decisionStyle", "socialStyle"] as const) {
+    const m = missing(before[k], p[k]);
+    if (m.length) {
+      p[k] = before[k];
+      m.forEach((s) => pinned.add(s));
+    }
+  }
+  for (const k of ["register", "sample"] as const) {
+    const m = missing(before.speech[k], p.speech[k]);
+    if (m.length) {
+      p.speech[k] = before.speech[k];
+      m.forEach((s) => pinned.add(s));
+    }
+  }
+  const sm = missing(before.summary, p.summary);
+  if (sm.length) {
+    const add = sm.join(". ") + ".";
+    p.summary = `${p.summary.slice(0, Math.max(0, 600 - add.length - 1)).trim()} ${add}`.trim();
+    sm.forEach((s) => pinned.add(s));
+  }
+
+  const pinList = <T,>(b: T[], a: T[], limit: number): T[] => {
+    const out = [...a];
+    const key = (x: T) => JSON.stringify(x);
+    const carries = (x: T) => canon.some((s) => has(flat(x), s));
+    b.forEach((item, i) => {
+      const m = canon.filter((s) => has(flat(item), s) && !out.some((x) => has(flat(x), s)));
+      if (!m.length) return;
+      m.forEach((s) => pinned.add(s));
+      // Its rewrite usually sits at the same place: a changed item there is replaced, otherwise it is put back in.
+      if (out[i] !== undefined && !carries(out[i]) && !b.some((y) => key(y) === key(out[i]))) out[i] = item;
+      else out.splice(Math.min(i, out.length), 0, item);
+    });
+    // Over the limit: drop items that carry no canon, from the end.
+    while (out.length > limit) {
+      const j = out.findLastIndex((x) => !carries(x));
+      out.splice(j === -1 ? out.length - 1 : j, 1);
+    }
+    return out;
+  };
+
+  p.motivations = pinList(before.motivations, p.motivations, 5);
+  p.boundaries = pinList(before.boundaries, p.boundaries, 8);
+  p.storyHooks = pinList(before.storyHooks, p.storyHooks, 5);
+  p.speech.tics = pinList(before.speech.tics, p.speech.tics, 5);
+  p.speech.avoids = pinList(before.speech.avoids, p.speech.avoids, 5);
+  p.coreTraits = pinList(before.coreTraits, p.coreTraits, 8);
+  p.emotionalPatterns = pinList(before.emotionalPatterns, p.emotionalPatterns, 6);
+  p.conflicts = pinList(before.conflicts, p.conflicts, 6);
+  return { profile: p, pinned: [...pinned] };
+}
