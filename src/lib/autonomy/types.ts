@@ -107,8 +107,8 @@ export type AgencyState = {
   goals: StatedGoal[];
   /** Keyed "who>other". */
   boundaries: Record<string, ConvoBoundary>;
-  /** Where everyone stands, so a reload puts them back. */
-  spots?: Record<string, SavedSpot>;
+  /** Where everyone stands (in which place), so a reload puts them back. */
+  spots?: { place: string; at: Record<string, SavedSpot> };
   /** Last time each character's planner ran / acted (ms). */
   lastThought?: Record<string, number>;
   lastActed?: Record<string, number>;

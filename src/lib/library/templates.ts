@@ -15,6 +15,7 @@
  * minus world-only things: the written relationships (they name people in a
  * particular world) and the link to another template.
  */
+import type { AgencyState } from "../autonomy/types";
 import { normalizeCharacter } from "../character/model";
 import type { Character } from "../types";
 
@@ -80,5 +81,18 @@ export function forgetCharacterInStory<S extends object>(story: S, id: string): 
         .filter(([, g]) => g.owner !== id && g.recipient !== id)
         .map(([k, g]) => [k, { ...g, knownBy: g.knownBy.filter((x) => x !== id) }]),
     );
+  // Autonomy: their intents, goals, boundaries and saved spot go too.
+  const ag = (story as { agency?: AgencyState }).agency;
+  if (ag) {
+    const keep = (i: { actor: string; target?: string }) => i.actor !== id && i.target !== id;
+    out.agency = {
+      ...ag,
+      intents: ag.intents.filter(keep),
+      log: ag.log.filter(keep),
+      goals: ag.goals.filter((g) => g.actor !== id),
+      boundaries: Object.fromEntries(Object.entries(ag.boundaries).filter(([k]) => !k.split(">").includes(id))),
+      ...(ag.spots ? { spots: { ...ag.spots, at: Object.fromEntries(Object.entries(ag.spots.at).filter(([k]) => k !== id)) } } : {}),
+    } satisfies AgencyState;
+  }
   return out as S;
 }

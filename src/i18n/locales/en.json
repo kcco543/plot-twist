@@ -1834,8 +1834,8 @@
       "nearby": "That spot is blocked, so {name} is going as close as possible.",
       "refused": "{other} doesn't want to talk to {name} right now.",
       "walkedAway": "{other} walked away from {name}.",
-      "goingTo": "{name} is heading to the {other}, as promised.",
-      "noSuchPlace": "{name} meant to go to {other}, but there's no such place here, so {name} stays put."
+      "goingTo": "{name} is heading to the {other}, as they said.",
+      "noSuchPlace": "{name} meant to go to “{other}”, but there's no such place here, so {name} stays put."
     },
     "dismiss": "Dismiss",
     "panel": {
@@ -2747,6 +2747,93 @@
       "dialogueApproaches": "Dialogue approaches",
       "reactionTendencies": "Reaction tendencies",
       "storyHooks": "Story hooks"
+    }
+  },
+  "autonomy": {
+    "title": "Autonomy",
+    "intro": "What characters are doing on their own, and why. Rules only, no AI; a player command always comes first, but a character's boundaries can't be overridden.",
+    "active": "Now",
+    "recent": "Recently",
+    "nothing": "Nothing yet.",
+    "boundaries": "Conversation boundaries",
+    "boundary": "{who} ↛ {other} · severity {severity} · pushed {pushes}×",
+    "ready": "ready to talk again",
+    "goals": "Plans said out loud",
+    "kinds": {
+      "approach": "go up to {target}",
+      "move_away": "move away from {target}",
+      "go_to_place": "go to the {object}",
+      "inspect_object": "look at the {object}",
+      "use_object": "use the {object}",
+      "sit": "sit on the {object}",
+      "stand": "stand up",
+      "turn_toward": "turn to {target}",
+      "turn_away": "turn away from {target}",
+      "pause": "pause",
+      "leave_conversation": "leave the conversation",
+      "decline": "decline",
+      "seek_privacy": "find a quiet spot ({object})",
+      "return_to_task": "go back to the {object}",
+      "stay_still": "stay put",
+      "observe": "watch the room"
+    },
+    "status": {
+      "proposed": "proposed",
+      "validated": "validated",
+      "queued": "queued",
+      "executing": "doing it",
+      "completed": "done",
+      "interrupted": "interrupted",
+      "failed": "didn't happen"
+    },
+    "goalStatus": {
+      "pending": "after the conversation",
+      "started": "on the way",
+      "done": "arrived",
+      "unavailable": "no such place here",
+      "failed": "couldn't get there"
+    },
+    "reasons": {
+      "keepingDistance": "keeping their distance after a conversation ended badly",
+      "standingGround": "upset, but not one to walk away",
+      "coolingOff": "upset; wants a quiet moment",
+      "seeksComfort": "wants to be near someone they trust",
+      "needsQuiet": "low; wants somewhere quiet to sit",
+      "embarrassed": "embarrassed",
+      "wantsCompany": "in a good mood and wants company",
+      "contentAlone": "in a good mood, happy pottering about",
+      "curious": "something caught their attention",
+      "takingItIn": "taking in what just happened",
+      "backToIt": "going back to what they were doing",
+      "idleCuriosity": "idly curious",
+      "stretchLegs": "stretching their legs",
+      "content": "content where they are",
+      "endedConversation": "ended the conversation and stepped away",
+      "saidSo": "said they would"
+    },
+    "why": {
+      "cooldown": "needs more time",
+      "upset": "still upset",
+      "repair": "waiting for an apology or a kind gesture",
+      "trust": "trust has broken down",
+      "fear": "afraid of them"
+    },
+    "notes": {
+      "in_conversation": "in a conversation",
+      "player_command": "the player is steering them",
+      "busy": "busy",
+      "boundary": "a boundary stands in the way",
+      "too_many_walks": "enough people are walking around",
+      "unknown_object": "not in this room",
+      "not_allowed": "not theirs to use",
+      "no_path": "blocked",
+      "timeout": "took too long",
+      "expired": "never got the chance",
+      "replaced": "something else came first",
+      "resumed": "picked up again after loading",
+      "no_room": "no room",
+      "unknown_target": "they left",
+      "outranked": "something more important is happening"
     }
   }
 }

@@ -4,6 +4,7 @@ import { createActiveWorldStore, eraseAllWorlds } from "./saves/worldSaves";
 import { libraryActions } from "./library/characterLibrary";
 import { characterFromTemplate, forgetCharacterInStory, type CharacterTemplate } from "./library/templates";
 import { makeId } from "./id";
+import { emptyAgency } from "./autonomy/types";
 import { createBlankCharacter, normalizeCharacter } from "./character/model";
 import { emptyStory, neutralState, withMemoryNote } from "./story/engine";
 import { withEmotion, type Emotion } from "./emotion/emotions";
@@ -26,6 +27,7 @@ export const emptySave: SaveData = {
   updatedAt: null,
 };
 
+
 function normalizeStory(raw: unknown): StoryState {
   const r = (raw ?? {}) as Partial<StoryState>;
   return {
@@ -44,6 +46,8 @@ function normalizeStory(raw: unknown): StoryState {
     ...(r.talk && typeof r.talk === "object" ? { talk: r.talk } : {}),
     ...(r.relationLog && typeof r.relationLog === "object" ? { relationLog: r.relationLog } : {}),
     ...(r.progress && typeof r.progress === "object" ? { progress: r.progress } : {}),
+    // Character autonomy: intents, stated goals, conversation boundaries, saved positions.
+    ...(r.agency && typeof r.agency === "object" && Array.isArray(r.agency.intents) ? { agency: { ...emptyAgency(), ...r.agency } } : {}),
   };
 }
 

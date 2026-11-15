@@ -31,6 +31,8 @@ import { beatToLines } from "@/lib/story/localWriter";
 import { getWorld } from "@/lib/worlds";
 import { emotionOf, fadeEmotion } from "@/lib/emotion/emotions";
 import { bondBetween, choreographBeat, rngFrom, talkDistance } from "@/lib/stage/behavior";
+import { useAutonomy, type AutonomyController } from "@/lib/autonomy/useAutonomy";
+import { AutonomyDebug } from "@/components/game/AutonomyDebug";
 import { applyDecision, behaviorBrief, buildScenario, decide, decisionLines, scenarioByKey, triggerForBeat, type BehaviorEvent, type Decision, type Rng } from "@/lib/mind";
 import type { Priority } from "@/lib/stage/actions";
 import { applyDevParam, useDevMode } from "@/lib/devMode";
@@ -174,7 +176,14 @@ export default function PlayPage() {
   const onStage = useMemo(() => cast.slice(0, MAX_ON_STAGE), [cast]);
   const room = useMemo(() => roomFor(world?.id ?? "otherworld", envType), [world?.id, envType]);
   const bondOf = useCallback((a: string, b: string) => bondBetween(getStory(), a, b), [getStory]);
-  const stage = useStageSim({ cast: onStage, room, paused: anyModal || frozen, reducedMotion, bondOf });
+  // Where everyone stood last time in this room (saved with the world), so a reload puts them back.
+  const roomKeyRef = useRef("");
+  roomKeyRef.current = `${world?.id ?? "otherworld"}:${envType}`;
+  const savedSpots = useCallback(() => {
+    const sp = getStory().agency?.spots;
+    return sp && sp.place === roomKeyRef.current ? sp.at : {};
+  }, [getStory]);
+  const stage = useStageSim({ cast: onStage, room, paused: anyModal || frozen, reducedMotion, bondOf, savedSpots });
   // Show each character's current emotion (story state is the source of truth; also covers loading a save).
   useEffect(() => {
     for (const c of onStage) {
@@ -263,6 +272,19 @@ export default function PlayPage() {
   const lineInProgressRef = useRef(lineInProgress);
   lineInProgressRef.current = lineInProgress || busy;
 
+  // Character autonomy is set up further down (it needs the room's objects); the talk flow reaches it through this bridge.
+  const autonomyRef = useRef<AutonomyController | null>(null);
+  const autonomyBridge = useMemo(
+    () => ({
+      refusesTalk: (l: string, sp: string) => autonomyRef.current?.refusesTalk(l, sp) ?? null,
+      refused: (l: string, sp: string) => autonomyRef.current?.refused(l, sp),
+      talking: (a: string, b: string) => void autonomyRef.current?.talking(a, b),
+      endedConversation: (l: string, sp: string) => autonomyRef.current?.endedConversation(l, sp),
+      heard: (id: string, text: string) => autonomyRef.current?.heard(id, text),
+      conversationOver: (ids: string[]) => autonomyRef.current?.conversationOver(ids),
+    }),
+    [],
+  );
   // ---- Walk-and-talk (Step 3): drag a character onto another (or tap-to-target), they walk over and talk.
   const talk = useTalk({
     stage,
@@ -296,6 +318,7 @@ export default function PlayPage() {
     onEnd: () => {
       if (lineInProgressRef.current) setQueue([]);
     },
+    autonomy: autonomyBridge,
   });
   talkRef.current = talk;
   // Developer builds: expose the stage to browser tests (e.g. to put a wall in the way).
@@ -408,6 +431,22 @@ export default function PlayPage() {
     },
     [stage, getStory, t],
   );
+  // ---- Character autonomy: characters act on their own (rules, not AI), keep their distance after a
+  // conversation ends, and follow through on plans they said out loud. Off in the demo and debug scenarios.
+  const autonomy = useAutonomy({
+    stage,
+    cast: onStage,
+    objects,
+    roomKey: `${world?.id ?? "otherworld"}:${envType}`,
+    getStory,
+    setStoryState,
+    enabled: !isDemo && !sandbox && !anyModal && !frozen,
+    inConversation: (id) => !!talkRef.current?.session && (talkRef.current.session.actorId === id || talkRef.current.session.targetId === id),
+    notify: (kind, actorId, other) => talk.tellNames(kind, castRef.current.find((c) => c.id === actorId)?.name.trim() ?? "", other),
+    objectName,
+    nameOf: (id) => castRef.current.find((c) => c.id === id)?.name.trim() ?? "",
+  });
+  autonomyRef.current = autonomy;
   /** Player command: walk to a floor spot or to an object (never a conversation). Returns false with a notice when impossible. */
   sendToRef.current = (actorId, to) => {
     const s = talkRef.current?.session;
@@ -760,6 +799,7 @@ export default function PlayPage() {
       {debugPanel}
       {relPanel}
       {testPanel}
+      {settings.testPanel && !isDemo && !sandbox ? <AutonomyDebug story={story} cast={onStage} objectName={objectName} /> : null}
     </>
   ) : null;
 

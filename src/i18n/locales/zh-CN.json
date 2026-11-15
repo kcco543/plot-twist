@@ -1835,7 +1835,7 @@
       "refused": "{other}现在不想和{name}说话。",
       "walkedAway": "{other}从{name}身边走开了。",
       "goingTo": "{name}照自己说的，往{other}那边走去。",
-      "noSuchPlace": "{name}本想去{other}，但这里没有那个地方，所以留在原地。"
+      "noSuchPlace": "{name}本想去“{other}”，但这里没有那个地方，所以留在原地。"
     },
     "dismiss": "关闭",
     "panel": {
@@ -2747,6 +2747,93 @@
       "dialogueApproaches": "对话方式",
       "reactionTendencies": "反应倾向",
       "storyHooks": "故事钩子"
+    }
+  },
+  "autonomy": {
+    "title": "自主行动",
+    "intro": "角色自己在做什么、为什么。只用规则，不调用 AI；玩家的指令总是优先，但不能越过角色的边界。",
+    "active": "现在",
+    "recent": "最近",
+    "nothing": "暂时没有。",
+    "boundaries": "对话边界",
+    "boundary": "{who} ↛ {other} · 严重程度 {severity} · 被追问 {pushes} 次",
+    "ready": "愿意再聊了",
+    "goals": "说出口的打算",
+    "kinds": {
+      "approach": "走向{target}",
+      "move_away": "离{target}远一点",
+      "go_to_place": "去{object}",
+      "inspect_object": "看看{object}",
+      "use_object": "使用{object}",
+      "sit": "坐到{object}上",
+      "stand": "站起来",
+      "turn_toward": "转向{target}",
+      "turn_away": "背对{target}",
+      "pause": "停一下",
+      "leave_conversation": "离开对话",
+      "decline": "拒绝",
+      "seek_privacy": "找个安静的地方（{object}）",
+      "return_to_task": "回到{object}那边",
+      "stay_still": "待在原地",
+      "observe": "观察四周"
+    },
+    "status": {
+      "proposed": "提出",
+      "validated": "已核实",
+      "queued": "排队中",
+      "executing": "进行中",
+      "completed": "完成",
+      "interrupted": "被打断",
+      "failed": "没有发生"
+    },
+    "goalStatus": {
+      "pending": "对话结束后",
+      "started": "在路上",
+      "done": "到了",
+      "unavailable": "这里没有那个地方",
+      "failed": "去不了"
+    },
+    "reasons": {
+      "keepingDistance": "对话不欢而散后，和对方保持距离",
+      "standingGround": "很不高兴，但不是会走开的人",
+      "coolingOff": "心情不好，想一个人静一静",
+      "seeksComfort": "想待在信任的人身边",
+      "needsQuiet": "情绪低落，想找个安静的地方坐坐",
+      "embarrassed": "不好意思",
+      "wantsCompany": "心情好，想找人作伴",
+      "contentAlone": "心情好，自己随便看看",
+      "curious": "有东西引起了注意",
+      "takingItIn": "在消化刚才发生的事",
+      "backToIt": "回去继续刚才的事",
+      "idleCuriosity": "随便看看",
+      "stretchLegs": "活动一下",
+      "content": "待在原地挺好",
+      "endedConversation": "结束了对话，走开了",
+      "saidSo": "说过要去"
+    },
+    "why": {
+      "cooldown": "还需要一点时间",
+      "upset": "还在生气或难过",
+      "repair": "在等一句道歉或一个善意的举动",
+      "trust": "信任已经破裂",
+      "fear": "害怕对方"
+    },
+    "notes": {
+      "in_conversation": "正在对话",
+      "player_command": "玩家正在指挥",
+      "busy": "忙着",
+      "boundary": "有边界挡着",
+      "too_many_walks": "走动的人已经够多了",
+      "unknown_object": "这个房间里没有",
+      "not_allowed": "不是自己的东西",
+      "no_path": "被挡住了",
+      "timeout": "太久了",
+      "expired": "一直没轮到",
+      "replaced": "有更重要的事先发生了",
+      "resumed": "读档后继续",
+      "no_room": "没有空间",
+      "unknown_target": "对方离开了",
+      "outranked": "有更重要的事在发生"
     }
   }
 }

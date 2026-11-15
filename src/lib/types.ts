@@ -367,6 +367,12 @@ export type StoryState = {
    * inspector's change log. Missing = nothing recorded yet (older saves).
    */
   progress?: Record<string, import("./relationships/types").RelProgress>;
+  /**
+   * Character autonomy (src/lib/autonomy): intents and their lifecycle,
+   * stated goals, conversation boundaries and where everyone stands.
+   * Missing = nothing yet (older saves).
+   */
+  agency?: import("./autonomy/types").AgencyState;
 };
 
 // ---------------------------------------------------------------- save
