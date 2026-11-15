@@ -66,7 +66,7 @@ export default function WorldBuilderPage() {
   const versionIfKept = (id: string) => (studio.maps.some((m) => m.id === id) ? versionOf(id) : null);
 
   const drawing = working && (
-    <div role="status" className="absolute inset-0 grid place-items-center bg-surface/70 backdrop-blur-[1px]">
+    <div role="status" className="absolute inset-0 grid place-items-center bg-surface/40">
       <span className="flex flex-col items-center gap-1 bg-white/95 px-3 py-2 text-center shadow-[0_0_0_2px_var(--color-line)]">
         <span className="flex items-center gap-2 font-label text-xs uppercase text-label">
           {t("builder.map.drawing")} <LoadingDots />
@@ -85,7 +85,7 @@ export default function WorldBuilderPage() {
       title={t("builder.preview")}
       titleRight={
         <span className="mt-1 bg-well px-1.5 py-1 font-label text-[10px] uppercase text-ink-soft">
-          {!studio.loaded ? <LoadingDots /> : map ? t("builder.map.version", { n: versionOf(map.id) }) : t("builder.sourcePlaceholder")}
+          {!studio.loaded ? <LoadingDots /> : working && map ? t("builder.map.showingWhileDrawing", { n: versionOf(map.id) }) : map ? t("builder.map.version", { n: versionOf(map.id) }) : t("builder.sampleTag")}
         </span>
       }
     >
@@ -101,6 +101,11 @@ export default function WorldBuilderPage() {
               <span className="absolute left-1 top-1 bg-white/90 px-1 py-[1px] font-label text-[6px] uppercase leading-none text-ink">{title}</span>
             </PixelStage>
             {drawing}
+            {/* Never let the built-in art pass for a map made from the player's words. */}
+            <p data-sample-notice className="mt-2 flex items-start gap-2 bg-well px-3 py-2 text-sm leading-snug text-ink-soft shadow-[inset_4px_0_0_var(--color-line)]">
+              <PixelIcon name="image" size={12} className="mt-0.5 shrink-0 text-label" />
+              {t("builder.sampleNotice", { place: envName })}
+            </p>
           </div>
         )}
 
@@ -114,7 +119,7 @@ export default function WorldBuilderPage() {
         <MapEditPanel edit={edit} versionOf={versionIfKept} />
 
         <p className="min-h-12 text-lg leading-snug text-ink-soft">
-          {map ? `“${map.description}”` : description.trim() ? `“${description.trim()}”` : t("builder.quoteEmpty")}
+          {map ? `“${map.description}”` : description.trim() ? t("builder.notDrawnYet", { text: description.trim() }) : t("builder.quoteEmpty")}
         </p>
 
         {studio.maps.length > 0 && (

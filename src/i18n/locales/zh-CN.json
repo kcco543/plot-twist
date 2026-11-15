@@ -284,7 +284,8 @@
       "download": "下载",
       "remove": "删除",
       "usePlaceholder": "使用内置图片",
-      "keepHint": "新地图完成前，当前地图会一直保留。"
+      "keepHint": "新地图完成前，你看到的仍是当前地图。",
+      "showingWhileDrawing": "正在生成 · 当前显示 v{n}"
     },
     "edit": {
       "enter": "编辑区域",
@@ -309,7 +310,10 @@
       "editedFrom": "由版本 {n} 修改：“{instruction}”",
       "editedFromRemoved": "已修改：“{instruction}”",
       "editedTag": "已修改"
-    }
+    },
+    "sampleTag": "内置示例",
+    "sampleNotice": "这是游戏内置的「{place}」示例图，并不是根据你的描述生成的。点击生成地图，才会按你的文字绘制。",
+    "notDrawnYet": "你的描述（尚未生成）：“{text}”"
   },
   "environments": {
     "interior": {
@@ -636,7 +640,7 @@
     "aiTitle": "AI 服务",
     "aiText": "性格分析与对话",
     "aiImage": "像素形象与地图生成",
-    "aiReady": "可用",
+    "aiReady": "已添加密钥",
     "aiMissing": "未配置",
     "aiChecking": "检查中",
     "testPanel": "情绪与移动测试面板",
@@ -644,7 +648,20 @@
     "behaviorDebug": "行为调试面板（开发者）",
     "behaviorDebugDesc": "显示每个角色为什么这样做：性格、情绪、关系、记忆，以及每个选项的权重。玩家看不到。",
     "relationshipInspector": "关系检查器",
-    "relationshipInspectorDesc": "开发者工具：长期关系数值、阶段、里程碑，以及每次变化被接受或拒绝的原因。"
+    "relationshipInspectorDesc": "开发者工具：长期关系数值、阶段、里程碑，以及每次变化被接受或拒绝的原因。",
+    "aiCheck": "测试连接",
+    "aiCheckFailed": "无法连接到应用服务器。",
+    "aiService": {
+      "anthropic": "Claude（对话、分析）",
+      "openai": "OpenAI 图像（角色、地图）"
+    },
+    "aiResult": {
+      "ok": "已连接",
+      "missing": "没有密钥",
+      "auth": "密钥被拒绝",
+      "model_missing": "模型不可用",
+      "unreachable": "无法连接"
+    }
   },
   "traits": {
     "extroversion": {

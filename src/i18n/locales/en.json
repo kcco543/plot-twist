@@ -284,7 +284,8 @@
       "download": "Download",
       "remove": "Remove",
       "usePlaceholder": "Use built-in art",
-      "keepHint": "Your current map stays until the new one is ready."
+      "keepHint": "You're still looking at your current map until the new one is ready.",
+      "showingWhileDrawing": "Drawing new · showing v{n}"
     },
     "edit": {
       "enter": "Edit region",
@@ -309,7 +310,10 @@
       "editedFrom": "Edited from version {n}: “{instruction}”",
       "editedFromRemoved": "Edited: “{instruction}”",
       "editedTag": "Edited"
-    }
+    },
+    "sampleTag": "Built-in sample",
+    "sampleNotice": "This is the game's built-in sample art for “{place}”. It was not made from your description. Generate a map to draw one from your words.",
+    "notDrawnYet": "Your description (not drawn yet): “{text}”"
   },
   "environments": {
     "interior": {
@@ -636,7 +640,7 @@
     "aiTitle": "AI services",
     "aiText": "Personality analysis & dialogue",
     "aiImage": "Pixel character & map generation",
-    "aiReady": "Ready",
+    "aiReady": "Key added",
     "aiMissing": "Not configured",
     "aiChecking": "Checking",
     "testPanel": "Emotion & movement test panel",
@@ -644,7 +648,20 @@
     "behaviorDebug": "Behavior debug panel (developers)",
     "behaviorDebugDesc": "Shows why each character chose what they did: personality, feelings, relationship, memories and every option's weight. Hidden from players.",
     "relationshipInspector": "Relationship inspector",
-    "relationshipInspectorDesc": "Developer tool: long-term relationship values, stages, milestones and why each change was accepted or refused."
+    "relationshipInspectorDesc": "Developer tool: long-term relationship values, stages, milestones and why each change was accepted or refused.",
+    "aiCheck": "Test connections",
+    "aiCheckFailed": "Couldn't reach the app's server.",
+    "aiService": {
+      "anthropic": "Claude (dialogue, analysis)",
+      "openai": "OpenAI images (characters, maps)"
+    },
+    "aiResult": {
+      "ok": "Connected",
+      "missing": "No key",
+      "auth": "Key rejected",
+      "model_missing": "Model not available",
+      "unreachable": "Couldn't reach"
+    }
   },
   "traits": {
     "extroversion": {
