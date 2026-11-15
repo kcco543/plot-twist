@@ -162,7 +162,18 @@ export function analyzeRequest(listener: Character, text: string, castNames: str
   return { kind, tier, topic, boundary, valueConflicts: conflicts, reasoned: hasReason(text), kinds: classifyMessage(text) };
 }
 
+/**
+ * The 8-step decision. Ending the conversation is the last rung of the refusal
+ * ladder: unless the game chose it, the reply may not pick it (however angry
+ * the character is), so a refusal can't skip from "no" straight to leaving.
+ */
 export function decideRequest(i: DecideInput): RequestDecision {
+  const d = decideSteps(i);
+  if (d.intention === "respond_freely" || d.intention === "end_conversation") return d;
+  return { ...d, allowed: d.allowed.filter((x) => x !== "end_conversation") };
+}
+
+function decideSteps(i: DecideInput): RequestDecision {
   const { story, listener, speaker } = i;
   const names = (i.cast ?? []).map((c) => c.name);
   const steps: DecisionStep[] = [];

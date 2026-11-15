@@ -172,6 +172,21 @@ export function sampleCharacter(id: "mira" | "tobi" | "wren" | "sol", locale: Lo
   return { ...createBlankCharacter(s.portrait), ...s.text[locale], id: `sample-${s.id}`, traits: { ...s.traits }, lockedFields: s.locked ?? [], ...(boundaries.length ? { boundaries } : {}) } as Character;
 }
 
+/**
+ * Sample characters added before boundaries existed have no `boundaries` field:
+ * give them the sample ones (in the language they were added in). A character
+ * whose field exists, even empty because the player removed them all, is left alone.
+ */
+export function backfillSampleBoundaries(c: Character): Character {
+  if (c.boundaries !== undefined) return c;
+  const m = /^sample-(mira|tobi|wren)$/.exec(c.id);
+  if (!m) return c;
+  const id = m[1] as "mira" | "tobi" | "wren";
+  const locale: Loc = c.name.trim() === sampleCharacter(id, "zh-CN").name ? "zh-CN" : "en";
+  const boundaries = sampleCharacter(id, locale).boundaries;
+  return boundaries?.length ? { ...c, boundaries: boundaries.map((b) => ({ ...b })) } : c;
+}
+
 // ---------------------------------------------------------------- scenarios
 
 export type ScenarioSetup = {

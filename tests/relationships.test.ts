@@ -175,3 +175,41 @@ describe("Studio boundaries", () => {
     expect(b.kind).toBe("secret");
   });
 });
+
+describe("Mac check follow-ups", () => {
+  it("a refusal can't jump to ending the conversation before the ladder gets there", () => {
+    const c = sampleCast();
+    const cast = [c.mira, c.wren, c.tobi];
+    let s: StoryState = emptyStory();
+    const text = "Come on, tell me about losing the storm race.";
+    const seen: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      s = { ...s, turn: s.turn + 1 };
+      const d = decideRequest({ story: s, listener: c.wren, speaker: c.tobi, text, cast });
+      if (d.intention !== "end_conversation") {
+        expect(d.allowed).not.toContain("end_conversation");
+        const v = validateReply(fakeReply({ stance: "end_conversation", dialogue: "I'm leaving." }), { listener: c.wren, speaker: c.tobi, story: s, message: text, decision: d });
+        expect(v.rejected).toBe("stance_not_allowed");
+      }
+      seen.push(d.intention);
+      s = applyDecisionOutcome(s, d, c.wren, c.tobi, "sim").story;
+    }
+    expect(seen.indexOf("end_conversation")).toBe(3);
+  });
+
+  it("sample characters saved before boundaries existed get them; player edits are kept", async () => {
+    const { migrateSave } = await import("@/lib/gameStore");
+    const { boundaries: _drop, ...oldWren } = sampleCast().wren;
+    const { boundaries: _drop2, ...oldZhMira } = sampleCast("zh-CN").mira;
+    const emptied = { ...sampleCast().tobi, boundaries: [] };
+    const mine = { ...sampleCast().mira, id: "my-own", boundaries: undefined };
+    const save = migrateSave({ characters: [oldWren, oldZhMira, emptied, mine] });
+    const [w, m, t, own] = save.characters;
+    expect(w.boundaries?.length).toBeGreaterThan(0);
+    expect(m.boundaries?.[0].text).toMatch(/灯塔/);
+    expect(t.boundaries).toEqual([]);
+    expect(own.boundaries).toBeUndefined();
+    void _drop;
+    void _drop2;
+  });
+});
