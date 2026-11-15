@@ -377,10 +377,14 @@ export default function PlayPage() {
   });
   const [infoTab, setInfoTab] = useState<{ tab: SideTab; n: number } | null>(null);
   // Characters handle their gifts by plain rules, once per story turn (never every frame, never AI).
-  const giftTurn = useRef(save.story.turn);
+  // The first turn seen after the save loads is only remembered: opening or reloading a world moves nothing.
+  const giftTurn = useRef<number | null>(null);
   useEffect(() => {
-    if (sandbox || isDemo || save.story.turn === giftTurn.current) return;
+    if (!hydrated || sandbox || isDemo) return;
+    const first = giftTurn.current === null;
+    if (save.story.turn === giftTurn.current) return;
     giftTurn.current = save.story.turn;
+    if (first) return;
     const r = giftAutonomy(getStory(), onStage, spots.length);
     if (!r.moves.length) return;
     setStoryState(r.story);
@@ -392,7 +396,7 @@ export default function PlayPage() {
         params: { name: onStage.find((c) => c.id === m.owner)?.name.trim() ?? "", gift: r.story.gifts?.[m.id]?.name ?? "" },
       })),
     );
-  }, [save.story.turn, sandbox, isDemo, getStory, onStage, spots.length, setStoryState, logLines]);
+  }, [hydrated, save.story.turn, sandbox, isDemo, getStory, onStage, spots.length, setStoryState, logLines]);
 
   // Photos that no memory links any more (forgotten, or pushed out by newer memories) are removed from this world.
   const photoLinks = useMemo(() => [...linkedPhotoIds(save.story)].sort().join("|"), [save.story]);

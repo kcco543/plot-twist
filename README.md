@@ -116,6 +116,18 @@ Click a character → **Photo** → take or upload a photo (optional caption) �
 - Code: `src/lib/photo/` (contract, checks, apply, request) · route `src/app/api/ai/photo/route.ts` · prompt `src/lib/ai/server/photo.ts` · UI `src/components/keepsakes/` (PhotoPanel, PhotoMomentCard, usePhotoMoment)
 - Tests: `tests/aiPhoto.test.ts`; live: `RUN_LIVE_AI=1 npx vitest run tests/live/photo.live.test.ts` (downloads 3 public-domain sample photos, or put your own in `tests/live/photos/`). `AI_TALK_MOCK=1` (dev only) gives TEST reactions without a key; they don't look at the photo.
 
+## Gifts
+
+Click a character → **Gift** → draw a 32×32 picture (or load one from this world's Gift Box), name it, describe it → **Give**. The character's reaction comes from Claude (same model and image check as photos); the drawing goes with the request as a small PNG.
+
+- **Item vs. instance.** The Gift Box item (IndexedDB, this world only) is the design you can reuse. Giving creates a gift *instance* in the world's story state (`story.gifts`): owner, recipient, creator (the visitor), when it was received, what the character thinks it is, why it matters, where it is kept, who knows about it, and a history of every move. The instance keeps its own copy of the small icon, so editing or deleting the box item never rewrites what was given. The Character Library is never touched.
+- **Reactions.** The AI returns accept / refuse / shrug, an interpretation, a line, emotion, movement, where to keep it, a memory and an optional question. The game engine has the last word: canon rules can force a refusal, a shrug is never put on display, reserved or secretive characters keep things private, there are only 3 display spots (on furniture, never where people walk) and 3 carried things per character, and relationship changes are capped. Refused gifts go back to the visitor.
+- **Keeping places:** On display · Carried · Kept privately · Hidden · Stored · Refused. Displayed gifts are drawn on the stage; the **Things** tab in the character panel lists them all.
+- **Rules, not AI, move gifts later** (once per story turn, at most one move per character, 3-turn cooldown): put away when they cool on the visitor, hidden when trust drops, brought out when trust grows, shown off when they're fond of the visitor, carried when it's treasured.
+- **Knowledge.** Everyone present sees a displayed gift; hidden and private gifts are known only to the owner. Later conversations get a gift only when it is relevant (asked about, named, or on display where the speaker saw it), and the prompt says plainly when the speaker doesn't know about it.
+- Code: `src/lib/gifts/` · route `src/app/api/ai/gift-reaction/route.ts` · prompt `src/lib/ai/server/giftReaction.ts` · UI `GiftCreator`, `GiftMomentCard`, `useGiftMoment` · tests `tests/gifts.test.ts`. In `AI_TALK_MOCK=1` the TEST reply refuses when the description contains "refuse" (拒绝) and hides it for "secret" (秘密).
+- **AI pictures** in the Gift Creator need `OPENAI_API_KEY` (image generation). Without it the AI picture tab says it's unavailable and drawing works as usual.
+
 ## Design system
 
 See **[docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** for the palette, fonts, frames, components, motion and pixel-art standards.

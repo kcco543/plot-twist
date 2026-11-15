@@ -22,6 +22,8 @@ import { GiftReactionReplySchema, GiftReactionRequestSchema, type GiftReactionRe
 import { buildGiftRequest, sendGiftRequest } from "@/lib/gifts/request";
 import { sampleCharacter } from "@/lib/mind/scenarios";
 import { remapIds } from "@/lib/saves/remap";
+import { emptySave, migrateSave } from "@/lib/gameStore";
+import { forgetCharacterInStory } from "@/lib/library/templates";
 import { hitsObstacle, roomFor } from "@/lib/stage/room";
 import { emptyStory } from "@/lib/story/engine";
 import { pushTalkLine } from "@/lib/talk/ai/apply";
@@ -163,6 +165,19 @@ describe("a given gift lives in this world", () => {
     expect(g.owner).toBe(PLAYER_ID);
     expect(g.display).toBe("refused");
     expect(refused.story.characters[tobi().id].memories.at(-1)!.eventType).toBe("gift.refused");
+  });
+  it("reopening a world keeps its gifts and the visitor's bonds", () => {
+    const { story, instanceId } = given(tobi(), story0());
+    const loaded = migrateSave(JSON.parse(JSON.stringify({ ...emptySave, story })));
+    expect(loaded.story.gifts![instanceId].display).toBe("displayed");
+    expect(loaded.story.player![tobi().id].gifts).toBe(1);
+  });
+  it("removing a character from the world removes their gifts and what they saw", () => {
+    const a = given(tobi(), story0());
+    const b = given(mira(), a.story, reply(), [mira().id, tobi().id], item({ id: "it-2" }));
+    const out = forgetCharacterInStory(b.story, tobi().id);
+    expect(out.gifts![a.instanceId]).toBeUndefined();
+    expect(out.gifts![b.instanceId].knownBy).not.toContain(tobi().id);
   });
   it("survives a save round trip; duplicating a world gives the copy its own gift with new character ids", () => {
     const { story, instanceId } = given(mira(), story0());

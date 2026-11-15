@@ -36,6 +36,9 @@ function normalizeStory(raw: unknown): StoryState {
     // Behavior engine state (relationships, recent decisions) must survive a reload too.
     ...(r.relations && typeof r.relations === "object" ? { relations: r.relations } : {}),
     ...(Array.isArray(r.decisions) ? { decisions: r.decisions } : {}),
+    // The visitor's bonds (photos, gifts) and this world's gift instances.
+    ...(r.player && typeof r.player === "object" ? { player: r.player } : {}),
+    ...(r.gifts && typeof r.gifts === "object" ? { gifts: r.gifts } : {}),
   };
 }
 
