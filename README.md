@@ -107,6 +107,15 @@ With an `ANTHROPIC_API_KEY` set and **AI story writing** on (Settings), the list
 - No characters yet? **Add the sample cast** on the Play screen (Mira, Wren, Tobi).
 - Tests: `tests/aiTalk.test.ts`; live model checks (cost a few cents): `RUN_LIVE_AI=1 npx vitest run tests/live`
 
+## AI photo reactions
+
+Click a character → **Photo** → take or upload a photo (optional caption) → **Show** → **Send**. Show first explains that the photo goes to Anthropic's Claude; nothing leaves the device before Send. The character looks at the photo through Claude (the same model as conversations, `ANTHROPIC_TALK_MODEL` → `ANTHROPIC_MODEL` → `claude-opus-5-5`; the route checks the model accepts images) and reacts in the speech bubble, with an emotion, a small validated movement and sometimes a follow-up question.
+
+- What the AI sees: the re-encoded JPEG (≤1280 px, no metadata), the caption, the character's profile, emotion, how they feel about the player ("the visitor" in-world), a few memories and their last photo reactions. Rules: only what is visible, uncertainty allowed, never identify people or infer sensitive traits.
+- Nothing is stored unless the player presses **Save as memory**. Then the photo goes to IndexedDB (this world, this character) and the memory (story state) keeps the AI's short description, why it mattered, the caption and what was said, linked to the photo by id. **Delete photo** in the memory inspector removes the file and the link (the memory stays); **Forget** removes both. The server never stores or logs the image.
+- Code: `src/lib/photo/` (contract, checks, apply, request) · route `src/app/api/ai/photo/route.ts` · prompt `src/lib/ai/server/photo.ts` · UI `src/components/keepsakes/` (PhotoPanel, PhotoMomentCard, usePhotoMoment)
+- Tests: `tests/aiPhoto.test.ts`; live: `RUN_LIVE_AI=1 npx vitest run tests/live/photo.live.test.ts` (downloads 3 public-domain sample photos, or put your own in `tests/live/photos/`). `AI_TALK_MOCK=1` (dev only) gives TEST reactions without a key; they don't look at the photo.
+
 ## Design system
 
 See **[docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** for the palette, fonts, frames, components, motion and pixel-art standards.

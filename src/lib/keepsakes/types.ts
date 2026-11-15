@@ -3,11 +3,16 @@
  * --------------------------------------------------------------------------
  * Every keepsake belongs to exactly one world save (`worldId` = the save's id,
  * from activeWorldId()) and, once shared, to one character in that world.
- * Images are kept in the browser (IndexedDB, see store.ts); nothing is sent
- * anywhere when a photo is shown or a gift is given.
+ * Images are kept in the browser (IndexedDB, see store.ts).
+ *
+ * Photos: showing a photo sends it (after the player confirms) to the AI for
+ * the character's reaction, but it is NOT stored. It is kept only when the
+ * player saves the moment as a memory; the memory (story state) holds the
+ * AI's text and links the photo file by id. Deleting the photo removes the
+ * file and the link; forgetting the memory deletes the photo too.
  */
 
-/** A photo the player showed to a character. */
+/** A photo the player saved as a character's memory. Private to this browser and this world save. */
 export type PhotoKeepsake = {
   kind: "photo";
   id: string;

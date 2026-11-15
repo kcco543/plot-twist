@@ -103,7 +103,34 @@ export async function savePhoto(input: Omit<PhotoKeepsake, "kind" | "id" | "crea
   return photo;
 }
 
-/** Photos shown in one world (optionally only to one character), newest first. */
+/** One photo, only if it belongs to this world (photos are never read across world saves). */
+export async function getPhoto(worldId: string, id: string): Promise<PhotoKeepsake | null> {
+  const k = (await all()).find((x) => x.id === id);
+  return k && k.kind === "photo" && k.worldId === worldId ? k : null;
+}
+
+/** Delete a photo file (only from its own world). Memories that linked it are updated by the caller. */
+export async function deletePhoto(worldId: string, id: string): Promise<boolean> {
+  const k = await getPhoto(worldId, id);
+  if (!k) return false;
+  await remove([id]);
+  changed();
+  return true;
+}
+
+/**
+ * Remove this world's photos that no memory links any more (a memory forgotten
+ * or pushed out by newer ones). Photos saved in the last `graceMs` are left
+ * alone, so a photo whose memory is still being written isn't lost.
+ */
+export async function prunePhotos(worldId: string, linked: Set<string>, graceMs = 60_000, now = Date.now()): Promise<number> {
+  const drop = (await all()).filter((k) => k.kind === "photo" && k.worldId === worldId && !linked.has(k.id) && now - k.createdAt > graceMs).map((k) => k.id);
+  await remove(drop);
+  if (drop.length) changed();
+  return drop.length;
+}
+
+/** Photos saved in one world (optionally only for one character), newest first. */
 export async function listPhotos(worldId: string, characterId?: string): Promise<PhotoKeepsake[]> {
   return (await all()).filter((k): k is PhotoKeepsake => k.kind === "photo" && k.worldId === worldId && (!characterId || k.characterId === characterId)).sort(newest);
 }
@@ -150,16 +177,24 @@ export async function listGifts(worldId: string): Promise<GiftKeepsake[]> {
 
 // ---------------------------------------------------------------- world lifecycle
 
-/** Duplicate a world's keepsakes into its copy. `ids` maps old character ids to the copy's new ones. */
-export async function copyWorldKeepsakes(fromId: string, toId: string, ids: Map<string, string>): Promise<void> {
+/**
+ * Duplicate a world's keepsakes into its copy. `ids` maps old character ids
+ * to the copy's new ones. Returns old → new keepsake ids, so the copied
+ * world's memories can be pointed at the copies (never at the original's).
+ */
+export async function copyWorldKeepsakes(fromId: string, toId: string, ids: ReadonlyMap<string, string>): Promise<Map<string, string>> {
   const mine = (await all()).filter((k) => k.worldId === fromId);
-  const copies: Keepsake[] = mine.map((k) =>
-    k.kind === "photo"
-      ? { ...k, id: makeId("photo"), worldId: toId, characterId: ids.get(k.characterId) ?? k.characterId }
-      : { ...k, id: makeId("gift"), worldId: toId, givenTo: k.givenTo.map((g) => ({ ...g, characterId: ids.get(g.characterId) ?? g.characterId })) },
-  );
+  const map = new Map<string, string>();
+  const copies: Keepsake[] = mine.map((k) => {
+    const id = makeId(k.kind);
+    map.set(k.id, id);
+    return k.kind === "photo"
+      ? { ...k, id, worldId: toId, characterId: ids.get(k.characterId) ?? k.characterId }
+      : { ...k, id, worldId: toId, givenTo: k.givenTo.map((g) => ({ ...g, characterId: ids.get(g.characterId) ?? g.characterId })) };
+  });
   await put(copies);
   if (copies.length) changed();
+  return map;
 }
 
 export async function deleteWorldKeepsakes(worldId: string): Promise<void> {

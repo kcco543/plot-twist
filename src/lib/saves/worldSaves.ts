@@ -284,7 +284,11 @@ export async function duplicateWorld(id: string, name: string): Promise<WorldSav
   }
   const newId = makeId("world");
   const mapIds = await copyWorldMaps(id, newId, legacyOwner()).catch(() => new Map<string, string>());
-  const ids = new Map([...characterIdMap(parsed, () => makeId("char")), ...mapIds]);
+  const charIds = characterIdMap(parsed, () => makeId("char"));
+  // Photos and gifts follow the copied characters (new ids), independent of the original's;
+  // memories in the copy are pointed at the copied photos.
+  const keepIds = await copyWorldKeepsakes(id, newId, charIds).catch(() => new Map<string, string>());
+  const ids = new Map([...charIds, ...mapIds, ...keepIds]);
   const data = parsed ? remapIds(parsed, ids) : null;
   const key = worldKey(newId);
   if (data) {
@@ -292,6 +296,7 @@ export async function duplicateWorld(id: string, name: string): Promise<WorldSav
       kv?.setItem(key, JSON.stringify(data));
     } catch {
       await removeMapCopies(mapIds.values());
+      await deleteWorldKeepsakes(newId).catch(() => {});
       throw new WorldSaveError("storage_full");
     }
   }
@@ -314,8 +319,6 @@ export async function duplicateWorld(id: string, name: string): Promise<WorldSav
   const worlds = [...idx.worlds];
   worlds.splice(at < 0 ? worlds.length : at + 1, 0, copy);
   writeIndex({ ...idx, nextNumber: idx.nextNumber + 1, worlds });
-  // Photos and gifts follow the copied characters (new ids), independent of the original's.
-  await copyWorldKeepsakes(id, newId, ids).catch(() => {});
   return copy;
 }
 

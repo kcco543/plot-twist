@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
+import type { BetaContentBlockParam } from "@anthropic-ai/sdk/resources/beta/messages/messages";
 import type { z } from "zod";
 import { TEXT_MODEL, textConfigured } from "./config";
 
@@ -28,7 +29,8 @@ function getClient() {
 export async function structuredCall<S extends z.ZodType>(opts: {
   schema: S;
   system: string;
-  user: string;
+  /** Plain text, or content blocks (e.g. an image followed by text). */
+  user: string | BetaContentBlockParam[];
   effort: "low" | "medium" | "high";
   maxTokens?: number;
   /** Per-request limits (defaults: the client's 90 s and 1 retry). */
@@ -69,4 +71,28 @@ export function aiErrorResponse(err: unknown) {
   const status = e.code === "not_configured" || e.code === "unsupported" ? 503 : e.code === "rate_limited" ? 429 : e.code === "timeout" ? 504 : e.code === "refused" || e.code === "invalid_output" ? 422 : 502;
   if (!(err instanceof AiError)) console.error("[ai]", err);
   return Response.json({ error: e.code, message: e.message }, { status });
+}
+
+/** Per model: does it accept images? Looked up once (Models API), then remembered. */
+const imageSupport = new Map<string, Promise<boolean>>();
+
+/**
+ * Check that `model` accepts image input before sending a photo. If the
+ * Models API can't be reached or doesn't say, we assume yes and let the
+ * request itself decide (it fails clearly if images aren't supported).
+ */
+export async function assertImageInput(model: string): Promise<void> {
+  const anthropic = getClient();
+  let known = imageSupport.get(model);
+  if (!known) {
+    known = anthropic.models
+      .retrieve(model, {}, { timeout: 8000, maxRetries: 0 })
+      .then((m) => m.capabilities?.image_input?.supported !== false)
+      .catch(() => {
+        imageSupport.delete(model); // try again next time
+        return true;
+      });
+    imageSupport.set(model, known);
+  }
+  if (!(await known)) throw new AiError("unsupported", `The configured model (${model}) does not accept images`);
 }

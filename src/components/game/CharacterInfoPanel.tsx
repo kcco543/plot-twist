@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { ArtImage } from "@/components/ui/ArtImage";
 import { Panel } from "@/components/ui/Panel";
 import { PixelIcon } from "@/components/ui/PixelIcon";
@@ -10,7 +10,8 @@ import { artFor } from "@/lib/character/art";
 import { approvedBehavior } from "@/lib/character/model";
 import { bondKey, neutralState } from "@/lib/story/engine";
 import { emotionOf } from "@/lib/emotion/emotions";
-import type { Character, Memory, Mood, StoryState } from "@/lib/types";
+import { PLAYER_ID, type Character, type Memory, type Mood, type PhotoMemory, type StoryState } from "@/lib/types";
+import { getPhoto } from "@/lib/keepsakes/store";
 import type { MemoryPatch } from "@/lib/talk/ai/apply";
 import { useI18n } from "@/i18n";
 
@@ -56,6 +57,8 @@ export function CharacterInfoPanel({
   isDemo,
   framed = true,
   onEditMemory,
+  photoWorldId = null,
+  onDeletePhoto,
 }: {
   character: Character | null;
   cast: Character[];
@@ -64,6 +67,10 @@ export function CharacterInfoPanel({
   framed?: boolean;
   /** Correct (patch) or forget (null) a saved memory. Omitted = read-only. */
   onEditMemory?: (characterId: string, memoryId: string, patch: MemoryPatch | null) => void;
+  /** World save whose photos photo memories may show (null: none, e.g. the demo cast). */
+  photoWorldId?: string | null;
+  /** Delete a photo memory's picture (the memory stays). */
+  onDeletePhoto?: (photoId: string) => void;
 }) {
   const { t, tx } = useI18n();
   const base = useId();
@@ -158,7 +165,14 @@ export function CharacterInfoPanel({
               {onEditMemory && <p className="mb-2 text-xs text-ink-soft">{t("memoryEditor.help")}</p>}
               <ul className="flex max-h-80 flex-col gap-2 overflow-y-auto pr-1" data-memory-list>
                 {mems.map((m) => (
-                  <MemoryItem key={m.id} m={m} onEdit={onEditMemory ? (patch) => onEditMemory(character.id, m.id, patch) : undefined} />
+                  <MemoryItem
+                    key={m.id}
+                    m={m}
+                    name={character.name.trim() || t("common.unnamed")}
+                    photoWorldId={photoWorldId}
+                    onDeletePhoto={onDeletePhoto}
+                    onEdit={onEditMemory ? (patch) => onEditMemory(character.id, m.id, patch) : undefined}
+                  />
                 ))}
               </ul>
             </>
@@ -194,20 +208,32 @@ export function CharacterInfoPanel({
 }
 
 /** One memory: what it was, how important, any open thread, and (in play) correct / resolve / forget. */
-function MemoryItem({ m, onEdit }: { m: Memory; onEdit?: (patch: MemoryPatch | null) => void }) {
+function MemoryItem({
+  m,
+  name,
+  photoWorldId,
+  onDeletePhoto,
+  onEdit,
+}: {
+  m: Memory;
+  name: string;
+  photoWorldId: string | null;
+  onDeletePhoto?: (photoId: string) => void;
+  onEdit?: (patch: MemoryPatch | null) => void;
+}) {
   const { t, tx } = useI18n();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(m.note ?? "");
   const [confirmForget, setConfirmForget] = useState(false);
   // Conversation memories (walk & talk, AI) are labelled by kind; story-engine ones by their event.
-  const label = /^(talk|chat)\./.test(m.eventType) ? tx(`memoryEditor.kinds.${m.kind ?? "note"}`) : tx(`events.${m.eventType}`);
+  const label = m.photo ? t("keepsakes.memory.label") : /^(talk|chat)\./.test(m.eventType) ? tx(`memoryEditor.kinds.${m.kind ?? "note"}`) : tx(`events.${m.eventType}`);
   const text = m.note || tx(`memories.${m.eventType}`, { with: m.withName || t("common.someone") });
   return (
     <li className="bg-well px-2 py-1.5 shadow-[inset_3px_0_0_var(--color-lavender)]" data-memory={m.id}>
       <p className="flex items-center justify-between gap-2 font-label text-[9px] uppercase text-rose">
         <span className="flex flex-wrap items-center gap-1">
           {label}
-          {m.withName && <span className="normal-case text-ink-soft">· {m.withName}</span>}
+          {m.withName && m.withId !== PLAYER_ID && <span className="normal-case text-ink-soft">· {m.withName}</span>}
           {m.source === "ai" && <span className="bg-lavender-hi px-1 text-label">AI</span>}
           {m.source === "mock" && <span className="bg-butter-hi px-1 text-ink">TEST</span>}
           {m.source === "player" && <span className="bg-mint-hi px-1 text-ink">{t("memoryEditor.edited")}</span>}
@@ -249,6 +275,7 @@ function MemoryItem({ m, onEdit }: { m: Memory; onEdit?: (patch: MemoryPatch | n
       ) : (
         <p className="text-sm leading-snug">{text}</p>
       )}
+      {m.photo && <PhotoMemoryDetails photo={m.photo} name={name} worldId={photoWorldId} onDelete={onDeletePhoto} />}
       {m.thread && (
         <p className="mt-1 font-label text-[9px] uppercase">
           <span className={m.resolved ? "text-ink-mute line-through" : "text-coral"}>{tx(`memoryEditor.threads.${m.thread}`)}</span>
@@ -289,5 +316,75 @@ function MemoryItem({ m, onEdit }: { m: Memory; onEdit?: (patch: MemoryPatch | n
         </div>
       )}
     </li>
+  );
+}
+
+/** A photo memory's picture (loaded from this world's photos only) and what the AI noted about it. */
+function PhotoMemoryDetails({ photo, name, worldId, onDelete }: { photo: PhotoMemory; name: string; worldId: string | null; onDelete?: (photoId: string) => void }) {
+  const { t } = useI18n();
+  const [url, setUrl] = useState<string | null>(null);
+  const [missing, setMissing] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  useEffect(() => {
+    setUrl(null);
+    setMissing(false);
+    if (!photo.photoId || !worldId) return;
+    let live = true;
+    let made: string | null = null;
+    void getPhoto(worldId, photo.photoId).then((p) => {
+      if (!live) return;
+      if (!p) return setMissing(true);
+      made = URL.createObjectURL(p.blob);
+      setUrl(made);
+    });
+    return () => {
+      live = false;
+      if (made) URL.revokeObjectURL(made);
+    };
+  }, [photo.photoId, worldId]);
+  const row = (k: string, v: string) =>
+    v ? (
+      <p className="text-xs leading-snug text-ink-soft">
+        <span className="font-label text-[9px] uppercase text-label">{k}</span> {v}
+      </p>
+    ) : null;
+  return (
+    <div className="mt-1.5 flex gap-2" data-photo-memory={photo.photoId ?? "deleted"}>
+      {photo.photoId && worldId && (
+        <div className="grid size-14 shrink-0 place-items-center bg-surface p-0.5 shadow-[0_0_0_2px_var(--color-lavender-lo)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {url ? <img src={url} alt={t("keepsakes.memory.alt", { name })} className="size-full object-cover" data-photo-thumb /> : <PixelIcon name="image" size={14} className="text-ink-mute" />}
+        </div>
+      )}
+      <div className="flex min-w-0 flex-col gap-0.5">
+        {row(t("keepsakes.memory.inPhoto"), photo.description)}
+        {row(t("keepsakes.memory.why"), photo.significance)}
+        {row(t("keepsakes.memory.caption"), photo.caption)}
+        {row(t("keepsakes.memory.said", { name }), photo.said)}
+        {!photo.photoId && <p className="text-xs text-ink-mute">{t("keepsakes.memory.deleted")}</p>}
+        {photo.photoId && missing && <p className="text-xs text-ink-mute">{t("keepsakes.memory.missing")}</p>}
+        {photo.photoId && worldId && onDelete && (
+          <div className="font-label text-[10px] uppercase">
+            {confirm ? (
+              <span className="flex flex-col gap-1">
+                <span className="normal-case font-body text-xs text-ink-soft">{t("keepsakes.memory.deleteConfirm", { name })}</span>
+                <span className="flex gap-3">
+                  <button type="button" className="px-focus min-h-8 text-coral hover:text-ink" onClick={() => onDelete(photo.photoId!)} data-photo-delete-confirm>
+                    {t("keepsakes.memory.deletePhoto")}
+                  </button>
+                  <button type="button" className="px-focus min-h-8 text-ink-soft" onClick={() => setConfirm(false)}>
+                    {t("memoryEditor.cancel")}
+                  </button>
+                </span>
+              </span>
+            ) : (
+              <button type="button" className="px-focus min-h-8 text-ink-soft hover:text-coral" onClick={() => setConfirm(true)} data-photo-delete>
+                {t("keepsakes.memory.deletePhoto")}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

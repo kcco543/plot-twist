@@ -42,6 +42,10 @@ import type { Character, StoryLine, StoryState } from "@/lib/types";
 import { useI18n } from "@/i18n";
 import { InteractionMenu, type InteractionKind } from "@/components/keepsakes/InteractionMenu";
 import { PhotoPanel } from "@/components/keepsakes/PhotoPanel";
+import { PhotoMomentCard } from "@/components/keepsakes/PhotoMomentCard";
+import { usePhotoMoment } from "@/components/keepsakes/usePhotoMoment";
+import { deletePhoto, prunePhotos } from "@/lib/keepsakes/store";
+import { linkedPhotoIds, unlinkPhoto } from "@/lib/photo/apply";
 import { GiftCreator } from "@/components/keepsakes/GiftCreator";
 import { activeWorldId } from "@/lib/saves/worldSaves";
 
@@ -80,8 +84,26 @@ export default function PlayPage() {
     },
     [setSandbox],
   );
-  /** Memory inspector: the player corrects or forgets a saved memory. */
-  const editMemoryFor = useCallback((characterId: string, memoryId: string, patch: MemoryPatch | null) => setStoryState(editMemory(getStory(), characterId, memoryId, patch)), [getStory, setStoryState]);
+  /** Memory inspector: the player corrects or forgets a saved memory. Forgetting a photo memory deletes its photo too. */
+  const editMemoryFor = useCallback(
+    (characterId: string, memoryId: string, patch: MemoryPatch | null) => {
+      const photoId = patch === null ? getStory().characters[characterId]?.memories.find((m) => m.id === memoryId)?.photo?.photoId : null;
+      setStoryState(editMemory(getStory(), characterId, memoryId, patch));
+      const w = activeWorldId();
+      if (photoId && w && !sandboxRef.current) void deletePhoto(w, photoId).catch(() => {});
+    },
+    [getStory, setStoryState],
+  );
+  /** Memory inspector: delete only the photo file; the memory (the AI's text) stays, without the link. */
+  const deletePhotoFor = useCallback(
+    async (photoId: string) => {
+      const w = activeWorldId();
+      if (sandboxRef.current || !w) return;
+      await deletePhoto(w, photoId).catch(() => false);
+      setStoryState(unlinkPhoto(getStory(), photoId));
+    },
+    [getStory, setStoryState],
+  );
   const logLines = useCallback((lines: StoryLine[]) => {
     if (!sandboxRef.current) gameActions.appendLines(lines);
   }, []);
@@ -319,6 +341,29 @@ export default function PlayPage() {
     [logLines],
   );
 
+  // ---- Photo reactions (AI): the confirmed photo goes to the AI; the reaction plays on the stage once the Photo window closes.
+  const photoMoment = usePhotoMoment({
+    stage,
+    cast: onStage,
+    getStory,
+    setStoryState,
+    showLines,
+    locale,
+    world: world?.id ?? "otherworld",
+    place: envType,
+    placeDescription: save.environment.description,
+    worldId: !isDemo && !sandbox ? activeWorldId() : null,
+    paused: anyModal,
+  });
+  // Photos that no memory links any more (forgotten, or pushed out by newer memories) are removed from this world.
+  const photoLinks = useMemo(() => [...linkedPhotoIds(save.story)].sort().join("|"), [save.story]);
+  useEffect(() => {
+    const w = activeWorldId();
+    if (isDemo || sandbox || !w) return;
+    const t = setTimeout(() => void prunePhotos(w, new Set(photoLinks ? photoLinks.split("|") : [])).catch(() => {}), 1500);
+    return () => clearTimeout(t);
+  }, [photoLinks, isDemo, sandbox]);
+
   // Autonomous reaction: when someone walks up to a character outside a conversation (e.g. the test
   // panel's "Walk closer"), the approached character decides how to respond. Story conversations
   // already handle their own reactions, and each pair has a short cooldown so nobody loops.
@@ -530,6 +575,8 @@ export default function PlayPage() {
   const interactName = interactWith ? interactWith.name.trim() || t("common.unnamed") : "";
   const canKeep = !isDemo && !sandbox && !!interactWith && save.characters.some((c) => c.id === interactWith.id);
   const keepWorldId = canKeep ? activeWorldId() : null;
+  /** Saved photos are shown (from this world only) outside the demo cast and debug scenarios. */
+  const keepPhotosWorld = !isDemo && !sandbox ? activeWorldId() : null;
 
 
   // Emotion & movement test panel: beside the stage on desktop, under the dialogue on phones
@@ -686,6 +733,20 @@ export default function PlayPage() {
             hideActions={talking}
             actionsDisabled={!!talk.session}
           />
+          {photoMoment.moment?.played && (
+            <PhotoMomentCard
+              moment={photoMoment.moment}
+              onSave={async () => {
+                const m = photoMoment.moment;
+                if (m && (await photoMoment.save())) logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: "keepsakes.log.photoSaved", params: { name: m.name } }]);
+              }}
+              onDismiss={photoMoment.dismiss}
+              onOpenMemories={() => {
+                setPickedId(photoMoment.moment!.characterId);
+                if (!wide) setSheetOpen(true);
+              }}
+            />
+          )}
           <ConversationPanel talk={talk} cast={onStage} story={story} lineInProgress={lineInProgress || busy} aiMode={aiTalk} />
           <TalkStrip talk={talk} cast={onStage} selectedId={selected?.id ?? null} touch={touch} />
           <p className="hidden font-label text-[10px] uppercase text-ink-mute lg:block">{t("play.keyboardHint")}</p>
@@ -694,7 +755,7 @@ export default function PlayPage() {
         <div className="hidden min-w-0 lg:block">
           <div className={`lg:sticky lg:top-20 ${sidePanels ? "flex max-h-[calc(100dvh-6rem)] flex-col gap-4 overflow-y-auto overscroll-contain pb-2" : ""}`}>
             {sidePanels && wide && sidePanels}
-            <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} onEditMemory={editMemoryFor} />
+            <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} onEditMemory={editMemoryFor} photoWorldId={keepPhotosWorld} onDeletePhoto={deletePhotoFor} />
           </div>
         </div>
       </div>
@@ -713,11 +774,21 @@ export default function PlayPage() {
         <>
           <PhotoPanel
             open={interaction?.kind === "photo"}
-            worldId={keepWorldId}
+            canKeep={canKeep}
+            ai={aiTalk}
             characterId={interactWith.id}
             name={interactName}
             onClose={() => setInteraction(null)}
-            onShown={(p) => logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: p.caption ? "keepsakes.log.photoCaption" : "keepsakes.log.photo", params: { name: interactWith.name.trim(), caption: p.caption } }])}
+            onSend={async (shot, caption, signal) => {
+              const id = interactWith.id;
+              const r = await photoMoment.send(id, shot, caption, signal);
+              if (r.ok) {
+                logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: caption.trim() ? "keepsakes.log.photoCaption" : "keepsakes.log.photo", params: { name: interactWith.name.trim(), caption: caption.trim() } }]);
+                setPickedId(id);
+                setInteraction(null);
+              }
+              return r;
+            }}
           />
           <GiftCreator
             open={interaction?.kind === "gift"}
@@ -733,7 +804,7 @@ export default function PlayPage() {
 
       {/* Phone / tablet character sheet */}
       <Modal open={sheetOpen} onClose={() => setSheetOpen(false)} title={t("play.character")} closeLabel={t("play.sidebar.close")}>
-        <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} framed={false} onEditMemory={editMemoryFor} />
+        <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} framed={false} onEditMemory={editMemoryFor} photoWorldId={keepPhotosWorld} onDeletePhoto={deletePhotoFor} />
       </Modal>
 
       {/* Story log */}

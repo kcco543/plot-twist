@@ -73,17 +73,18 @@ export type ValidateContext = {
   story: StoryState;
 };
 
-export function validateReply(reply: TalkReply, ctx: ValidateContext): ValidatedReply {
-  const { listener, speaker, story } = ctx;
-  const adjustments: string[] = [];
-  const p = personalityOf(listener);
-  const canon = canonLimits(listener);
-  const rel = relationOf(story, listener, speaker);
-  const before = emotionOf(story.characters[listener.id]);
-
-  // ---- emotion
-  let emotion: Emotion = reply.emotion;
-  const intensity = Number.isFinite(reply.reactionIntensity) ? Math.max(0, Math.min(1, reply.reactionIntensity)) : 0.4;
+/**
+ * The emotion a character may show: only allowed emotions; strength from
+ * intensity, capped for reserved characters; canon masks ("never admits her
+ * feelings") hide what the character wouldn't show; an angry character
+ * doesn't flip to beaming in one line. Shared by conversations and photos.
+ */
+export function checkEmotion(character: Character, story: StoryState, proposed: Emotion, rawIntensity: number, adjustments: string[]): { emotion: Emotion; level: 0 | EmotionLevel } {
+  const p = personalityOf(character);
+  const canon = canonLimits(character);
+  const before = emotionOf(story.characters[character.id]);
+  let emotion: Emotion = proposed;
+  const intensity = Number.isFinite(rawIntensity) ? Math.max(0, Math.min(1, rawIntensity)) : 0.4;
   let level: 0 | EmotionLevel = emotion === "neutral" ? 0 : intensity < 0.34 ? 1 : intensity < 0.67 ? 2 : 3;
   if (level === 3 && (p.reserved >= 0.6 || p.hides > 0)) {
     level = 2;
@@ -105,6 +106,17 @@ export function validateReply(reply: TalkReply, ctx: ValidateContext): Validated
     level = 1;
     adjustments.push("emotion:cooling_down");
   }
+  return { emotion, level };
+}
+
+export function validateReply(reply: TalkReply, ctx: ValidateContext): ValidatedReply {
+  const { listener, speaker, story } = ctx;
+  const adjustments: string[] = [];
+  const canon = canonLimits(listener);
+  const rel = relationOf(story, listener, speaker);
+
+  // ---- emotion
+  const { emotion, level } = checkEmotion(listener, story, reply.emotion, reply.reactionIntensity, adjustments);
 
   // ---- memory (decided before relationships: an unforgettable moment may move feelings further)
   const imp = Math.max(0, Math.min(3, Math.round(reply.memory.importance)));

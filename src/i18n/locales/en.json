@@ -2111,10 +2111,7 @@
       "caption": "Caption (optional)",
       "captionPlaceholder": "What should {name} know about this photo?",
       "show": "Show to {name}",
-      "shownTag": "Shown",
-      "shownTitle": "You showed {name} your photo.",
-      "shownBody": "It's kept with {name} in this world.",
-      "privacy": "Your photo stays on this device. Nothing is uploaded, and the camera only turns on when you press Take Photo.",
+      "privacy": "The camera only turns on when you press Take Photo. Nothing leaves this device until you choose to show the photo.",
       "problem": {
         "type": "That file isn't a photo. Pick a JPG, PNG, WebP or HEIC image.",
         "size": "That photo is too big (over 25 MB). Pick a smaller one.",
@@ -2125,6 +2122,33 @@
         "cameraBusy": "The camera is being used by another app. Close it and try again, or upload a photo.",
         "cameraFailed": "The camera couldn't start. Try again, or upload a photo.",
         "saveFailed": "Couldn't save the photo in this world. Try again."
+      },
+      "sendTitle": "Show this photo to {name}?",
+      "sendBody": "{name} looks at photos through Claude, an AI service made by Anthropic. When you press Send, this photo and your caption are sent to Anthropic for this one reaction.",
+      "sendKeep": "The game doesn't keep the photo unless you save the moment as a memory afterwards.",
+      "sendMock": "Test mode: the photo stays on this device. {name} gives a TEST reply without looking at it.",
+      "send": "Send",
+      "back": "Back",
+      "thinking": "{name} is looking at your photo…",
+      "stop": "Stop",
+      "aiOff": "Photo reactions use the AI. Turn on “AI story writing” in Settings (and the server needs an Anthropic API key).",
+      "testTag": "TEST",
+      "error": {
+        "not_configured": "Photo reactions aren't set up on this server yet (it needs an Anthropic API key).",
+        "unsupported": "The AI model set up on this server can't look at pictures.",
+        "refused": "{name} didn't want to react to this photo. Try a different one.",
+        "invalid_output": "{name}'s reaction didn't come out right. Try again.",
+        "rate_limited": "The AI is busy right now. Try again in a moment.",
+        "busy": "Another photo is still being looked at. Try again in a moment.",
+        "limit": "That's a lot of photos for now. Try again later.",
+        "auth": "The server's Anthropic API key was turned down.",
+        "failed": "Something went wrong on the way to the AI. Try again.",
+        "offline": "You're offline. Connect and try again.",
+        "timeout": "That took too long. Try again.",
+        "bad_request": "The photo couldn't be sent. Try another one.",
+        "bad_image": "The photo couldn't be read. Try another one.",
+        "too_large": "That photo is too detailed to send. Try another one.",
+        "cancelled": "Stopped."
       }
     },
     "gift": {
@@ -2175,7 +2199,32 @@
     "log": {
       "photo": "You showed {name} a photo.",
       "photoCaption": "You showed {name} a photo: “{caption}”",
-      "gift": "You gave {name} a gift: {gift}."
+      "gift": "You gave {name} a gift: {gift}.",
+      "photoSaved": "{name} will remember your photo."
+    },
+    "moment": {
+      "title": "{name} saw your photo",
+      "suggest": "{name} seems to want to remember this.",
+      "unclear": "{name} couldn't quite make it out.",
+      "save": "Save as memory",
+      "notNow": "Not now",
+      "saved": "Saved to {name}'s memories.",
+      "open": "See in memories",
+      "saveFailed": "Couldn't save the photo. Try again.",
+      "privacy": "Saved photos stay in this browser, in this world only. Not now = the photo is let go.",
+      "thumbAlt": "The photo you showed {name}"
+    },
+    "memory": {
+      "label": "Photo from you",
+      "inPhoto": "In the photo",
+      "why": "Why it mattered",
+      "caption": "Your caption",
+      "said": "{name} said",
+      "deletePhoto": "Delete photo",
+      "deleteConfirm": "Delete this photo? {name} will still remember the moment, but the picture is gone for good.",
+      "deleted": "The photo was deleted. The memory stays.",
+      "missing": "Photo not on this device",
+      "alt": "Photo shown to {name}"
     }
   },
   "library": {

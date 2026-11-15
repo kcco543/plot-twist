@@ -148,6 +148,39 @@ export type Memory = {
   resolved?: boolean;
   /** Written by an AI conversation; "player" once the player has edited it. */
   source?: "ai" | "mock" | "player";
+  /** A photo the player showed this character and chose to keep as a memory. */
+  photo?: PhotoMemory;
+};
+
+/** Who memories with the player point at (withId). In the world, the player is "the visitor". */
+export const PLAYER_ID = "player";
+
+/**
+ * The AI-written part of a photo memory. The photo file itself is kept
+ * separately (IndexedDB, keepsakes/store.ts) and linked by `photoId`; it is
+ * null once the player deleted the photo (the character still remembers).
+ */
+export type PhotoMemory = {
+  photoId: string | null;
+  /** Concise factual description of what the photo showed. */
+  description: string;
+  /** Why it mattered to the character ("" if it didn't especially). */
+  significance: string;
+  /** The player's caption, if any. */
+  caption: string;
+  /** What the character said about it. */
+  said: string;
+};
+
+/** How a character feels about the player (photos, and later gifts). */
+export type PlayerBond = {
+  trust: number;
+  affection: number;
+  familiarity: number;
+  /** Photos shown to this character. */
+  photos: number;
+  /** Last few photo reactions (most recent last), so the next one is different. */
+  recent: { type: string; dialogue: string; at: number }[];
 };
 
 export type MemoryThread = "conflict" | "promise" | "discovery" | "secret";
@@ -242,6 +275,8 @@ export type StoryState = {
   talk?: Record<string, TalkLine[]>;
   /** AI conversations: recent relationship shifts per direction (keyed "fromId>toId"), capped. */
   relationLog?: Record<string, RelationShift[]>;
+  /** How each character (by id) feels about the player. Missing = a neutral first meeting. */
+  player?: Record<string, PlayerBond>;
 };
 
 // ---------------------------------------------------------------- save

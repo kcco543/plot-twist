@@ -43,3 +43,5 @@ next-env.d.ts
 
 # live AI test output
 /tests/live/last-run.md
+/tests/live/photo-last-run.md
+/tests/live/photos/

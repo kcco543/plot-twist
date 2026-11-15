@@ -15,7 +15,7 @@ import { behaviorBrief, type Decision } from "../../mind";
 import { feelingsOf, ranked } from "../../mind/feelings";
 import { memoryKindOf } from "../../mind/memory";
 import { relationOf, relKey } from "../../mind/relations";
-import type { Character, EnvironmentTypeId, Memory, StoryState, WorldId } from "../../types";
+import { PLAYER_ID, type Character, type EnvironmentTypeId, type Memory, type StoryState, type WorldId } from "../../types";
 import { pairKey } from "./apply";
 import { HISTORY_MAX, MEMORY_MAX, MESSAGE_MAX, TalkReplySchema, type TalkMemory, type TalkRequest, type TalkResponse } from "./contract";
 
@@ -39,9 +39,10 @@ export type BuildInput = {
 
 function toTalkMemory(m: Memory, story: StoryState, holder: "listener" | "speaker"): TalkMemory {
   return {
-    summary: cut(m.note ?? "", 200),
-    kind: cut(memoryKindOf(m) ?? m.eventType, 30),
-    withName: cut(m.withName, 80),
+    // Photo memories: the character's own summary already says what the photo showed.
+    summary: cut(m.note ?? m.photo?.description ?? "", 200),
+    kind: cut(m.photo ? "photo from the visitor" : (memoryKindOf(m) ?? m.eventType), 30),
+    withName: cut(m.withId === PLAYER_ID ? "the visitor" : m.withName, 80),
     importance: Math.max(1, Math.min(3, Math.round(m.importance))),
     thread: m.thread ?? "none",
     resolved: !!m.resolved,

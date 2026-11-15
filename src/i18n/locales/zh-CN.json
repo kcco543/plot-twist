@@ -2111,10 +2111,7 @@
       "caption": "说明（可选）",
       "captionPlaceholder": "想让{name}知道这张照片的什么？",
       "show": "给{name}看",
-      "shownTag": "已展示",
-      "shownTitle": "你把照片给{name}看了。",
-      "shownBody": "照片已和{name}一起保存在这个世界里。",
-      "privacy": "照片只保存在这台设备上，不会上传。只有按下“拍照”时才会打开相机。",
+      "privacy": "只有按下“拍照”时才会打开相机。在你选择展示照片之前，照片不会离开这台设备。",
       "problem": {
         "type": "这个文件不是照片。请选择 JPG、PNG、WebP 或 HEIC 图片。",
         "size": "照片太大了（超过 25 MB），请选一张小一点的。",
@@ -2125,6 +2122,33 @@
         "cameraBusy": "相机正被其他应用使用。关闭后再试，或上传照片。",
         "cameraFailed": "相机没能启动。请再试一次，或上传照片。",
         "saveFailed": "没能把照片保存到这个世界，请再试一次。"
+      },
+      "sendTitle": "把这张照片给{name}看？",
+      "sendBody": "{name}会通过 Claude（Anthropic 提供的 AI 服务）来看照片。按下“发送”后，这张照片和你的说明会发送给 Anthropic，只用于这一次反应。",
+      "sendKeep": "之后除非你把这一刻存为记忆，否则游戏不会保留这张照片。",
+      "sendMock": "测试模式：照片不会离开这台设备，{name}会给出一个不看照片的测试回复。",
+      "send": "发送",
+      "back": "返回",
+      "thinking": "{name}正在看你的照片……",
+      "stop": "停止",
+      "aiOff": "照片反应需要用到 AI。请在设置里打开“AI 写故事”（服务器也需要 Anthropic API 密钥）。",
+      "testTag": "测试",
+      "error": {
+        "not_configured": "这台服务器还没设置照片反应（需要 Anthropic API 密钥）。",
+        "unsupported": "服务器上设置的 AI 模型看不了图片。",
+        "refused": "{name}不想对这张照片作出反应。换一张试试。",
+        "invalid_output": "{name}的反应没能正常生成。再试一次。",
+        "rate_limited": "AI 现在有点忙，稍后再试。",
+        "busy": "上一张照片还在看。稍后再试。",
+        "limit": "今天的照片有点多了，稍后再试。",
+        "auth": "服务器的 Anthropic API 密钥被拒绝了。",
+        "failed": "发送给 AI 时出了点问题。再试一次。",
+        "offline": "你现在离线。连上网络后再试。",
+        "timeout": "等太久了。再试一次。",
+        "bad_request": "照片没能发出去。换一张试试。",
+        "bad_image": "照片读不出来。换一张试试。",
+        "too_large": "这张照片太复杂，发不出去。换一张试试。",
+        "cancelled": "已停止。"
       }
     },
     "gift": {
@@ -2175,7 +2199,32 @@
     "log": {
       "photo": "你给{name}看了一张照片。",
       "photoCaption": "你给{name}看了一张照片：“{caption}”",
-      "gift": "你送给{name}一份礼物：{gift}。"
+      "gift": "你送给{name}一份礼物：{gift}。",
+      "photoSaved": "{name}会记住你的照片。"
+    },
+    "moment": {
+      "title": "{name}看了你的照片",
+      "suggest": "{name}似乎想记住这一刻。",
+      "unclear": "{name}没太看清楚。",
+      "save": "存为记忆",
+      "notNow": "先不用",
+      "saved": "已存入{name}的记忆。",
+      "open": "在记忆里查看",
+      "saveFailed": "照片没能保存。再试一次。",
+      "privacy": "保存的照片只留在这个浏览器、这个世界里。选“先不用”则不保留照片。",
+      "thumbAlt": "你给{name}看的照片"
+    },
+    "memory": {
+      "label": "你给的照片",
+      "inPhoto": "照片里",
+      "why": "为什么重要",
+      "caption": "你的说明",
+      "said": "{name}说",
+      "deletePhoto": "删除照片",
+      "deleteConfirm": "删除这张照片？{name}仍会记得这一刻，但照片会永久删除。",
+      "deleted": "照片已删除，记忆还在。",
+      "missing": "这台设备上没有这张照片",
+      "alt": "给{name}看的照片"
     }
   },
   "library": {
