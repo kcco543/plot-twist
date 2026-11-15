@@ -12,7 +12,7 @@ import { POST as map } from "@/app/api/ai/map/route";
 const mocked = vi.mocked(getImageProvider);
 const webp = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WEBPVP8 "), Buffer.alloc(16)]);
 const post = (body: unknown) => map(new Request("http://x/api/ai/map", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
-const fake = (generateMap: ImageProvider["generateMap"]): ImageProvider => ({ id: "fake", model: "fake-model", generateSprite: vi.fn(), generateMap });
+const fake = (generateMap: ImageProvider["generateMap"]): ImageProvider => ({ id: "fake", model: "fake-model", generateSprite: vi.fn(), generateMap, generateItem: vi.fn() });
 
 afterEach(() => {
   mocked.mockReset();

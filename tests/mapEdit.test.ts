@@ -39,7 +39,7 @@ function form(fields: Record<string, string>, image: Buffer | null = MAP) {
   return edit(new Request("http://x/api/ai/map/edit", { method: "POST", body: f }));
 }
 const good = { instruction: "Add a green-roof cottage here.", x: "0.25", y: "0.25", w: "0.5", h: "0.5", description: "a meadow", type: "wilderness", world: "western-fantasy" };
-const fake = (editMap?: ImageProvider["editMap"]): ImageProvider => ({ id: "fake", model: "fake-model", generateSprite: vi.fn(), generateMap: vi.fn(), editMap });
+const fake = (editMap?: ImageProvider["editMap"]): ImageProvider => ({ id: "fake", model: "fake-model", generateSprite: vi.fn(), generateMap: vi.fn(), generateItem: vi.fn(), editMap });
 
 afterEach(() => mocked.mockReset());
 

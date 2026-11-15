@@ -71,5 +71,14 @@ export function forgetCharacterInStory<S extends object>(story: S, id: string): 
       out[key] = Object.fromEntries(Object.entries(value as Record<string, unknown>).filter(([k]) => !k.split(/[|>]/).includes(id)));
     } else out[key] = value;
   }
+  // Gift instances are keyed by their own id: drop the ones this character owned or received,
+  // and forget that they ever saw the others.
+  const gifts = out.gifts as Record<string, { owner: string; recipient: string; knownBy: string[] }> | undefined;
+  if (gifts)
+    out.gifts = Object.fromEntries(
+      Object.entries(gifts)
+        .filter(([, g]) => g.owner !== id && g.recipient !== id)
+        .map(([k, g]) => [k, { ...g, knownBy: g.knownBy.filter((x) => x !== id) }]),
+    );
   return out as S;
 }

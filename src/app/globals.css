@@ -78,6 +78,11 @@
   --u: 2px;
   --gutter-l: max(16px, env(safe-area-inset-left, 0px));
   --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+  /* Shared content grid: one set of left/right edges for every block on a screen. */
+  --content-max: 72rem;
+  --stack-gap: 12px;
+  /* Level 2: distance from a panel's outer edge to its text / icons. */
+  --panel-pad-x: 12px;
 }
 @media (min-width: 640px) {
   :root { --u: 3px; }
@@ -118,6 +123,47 @@ html[lang="zh-CN"] .font-display { font-weight: 400; }
 
 ::selection { background: var(--color-butter); color: var(--color-ink); }
 
+/* ===================================================================
+   Emotion effects + character body motion (Play Mode).
+   Drawn in ART pixels inside the scaled stage, so 1px here = one art pixel.
+   steps() timing keeps every frame on whole pixels. Effects are defined in
+   src/lib/emotion/effects.ts; each motion name maps to one keyframe here.
+   ========================================================================== */
+.fx { animation-duration: var(--fx-dur, 1200ms); animation-delay: var(--fx-delay, 0ms); animation-iteration-count: infinite; animation-fill-mode: both; transform-origin: 50% 50%; }
+.fx-twinkle { animation-name: fx-twinkle; animation-timing-function: steps(5); }
+.fx-burst { animation-name: fx-burst; animation-timing-function: steps(6); }
+.fx-float { animation-name: fx-float; animation-timing-function: steps(8); }
+.fx-pop { animation-name: fx-pop; animation-timing-function: steps(6); }
+.fx-drip { animation-name: fx-drip; animation-timing-function: steps(6); }
+.fx-shake { animation-name: fx-shake; animation-timing-function: steps(1); animation-duration: 240ms; }
+.fx-rise { animation-name: fx-rise; animation-timing-function: steps(6); }
+.fx-spin { animation-name: fx-spin; animation-timing-function: steps(4); }
+@keyframes fx-twinkle { 0% { opacity: 0; transform: scale(0.4); } 20% { opacity: 1; transform: scale(1); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.6); } }
+@keyframes fx-burst { 0% { opacity: 0; transform: scale(0.3); } 30% { opacity: 1; transform: scale(1.2); } 60% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translateY(-3px) scale(0.8); } }
+@keyframes fx-float { 0% { opacity: 0; transform: translateY(2px); } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+@keyframes fx-pop { 0% { opacity: 0; transform: scale(0.4); } 20% { opacity: 1; transform: scale(1.25); } 35% { transform: scale(1); } 85% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
+@keyframes fx-drip { 0% { opacity: 0; transform: translateY(-2px); } 15% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(8px); } }
+@keyframes fx-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-1px); } 75% { transform: translateX(1px); } }
+@keyframes fx-rise { 0% { opacity: 0; transform: translateY(0) scale(0.6); } 20% { opacity: 1; transform: scale(1); } 80% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-8px) scale(1.2); } }
+@keyframes fx-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.body-walk { animation: body-walk 280ms steps(1) infinite; }
+.body-hop, .body-jolt { animation: body-hop 420ms steps(4) 2; }
+.body-jolt { animation-iteration-count: 1; }
+.body-bounce { animation: body-bounce 360ms steps(2) 2; }
+.body-shake, .body-stomp { animation: body-shake 140ms steps(1) 5; }
+.body-tremble, .body-shiver { animation: body-shake 100ms steps(1) 8; }
+.body-droop, .body-sigh { animation: body-droop 900ms steps(3) 1 both; }
+.body-tilt { animation: body-tilt 700ms steps(2) 1 both; }
+.body-stretch { animation: body-stretch 800ms steps(3) 1; }
+@keyframes body-walk { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+@keyframes body-hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes body-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes body-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-1px); } 75% { transform: translateX(1px); } }
+@keyframes body-droop { 0%, 100% { transform: translateY(0); } 30%, 80% { transform: translateY(1px) scaleY(0.97); } }
+@keyframes body-tilt { 0%, 100% { transform: translateX(0); } 30%, 80% { transform: translateX(1px) skewX(-4deg); } }
+@keyframes body-stretch { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.07); } }
+=======
 /* Map region selection: dashed border (World Builder → Edit region). */
 .region-ants {
   background:
@@ -223,6 +269,31 @@ html[data-crt="on"] body::after {
     image-rendering: pixelated;
   }
 
+  /* In-world speech bubble: cream body, thin pixel outline with notched corners, soft lavender shadow. */
+  .bubble {
+    --bubble-fill: var(--color-surface);
+    --bubble-line: var(--color-lavender-lo);
+    filter: drop-shadow(0 3px 0 rgba(91, 74, 134, 0.16));
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (min-width: 640px) { .bubble { font-size: 1.0625rem; } }
+  .bubble-body {
+    background: var(--bubble-fill);
+    box-shadow: 0 -2px 0 0 var(--bubble-line), 0 2px 0 0 var(--bubble-line), -2px 0 0 0 var(--bubble-line), 2px 0 0 0 var(--bubble-line),
+      inset 0 -2px 0 0 var(--color-pink-hi);
+  }
+  .bubble:focus-visible { outline: 2px dashed var(--color-label); outline-offset: 5px; }
+  .bubble-scroll { scrollbar-width: none; }
+  .bubble-scroll::-webkit-scrollbar { display: none; }
+  /* Zero-width caret: an empty inline, so it never adds a line-break opportunity mid-word. */
+  .bubble-caret { position: relative; }
+  .bubble-caret::after {
+    content: ""; position: absolute; left: 1px; bottom: 0.2em; width: 5px; height: 0.95em;
+    background: var(--color-rose); animation: var(--animate-cursor);
+  }
+
   /* Checkerboard behind pixel art and the game stage. */
   .px-checker {
     background-color: var(--color-well);
@@ -234,6 +305,26 @@ html[data-crt="on"] body::after {
   }
 
   .gutter { padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+
+  /*
+   * Content grid. The container owns the side gutters; every direct block
+   * (and anything marked .content-block) spans its full width, so all outer
+   * edges line up. Blocks never add their own side margins.
+   */
+  .content-grid {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
+    padding-left: var(--gutter-l);
+    padding-right: var(--gutter-r);
+  }
+  .content-block { box-sizing: border-box; width: 100%; margin-inline: 0; }
+  /* Inner padding for a .px-frame panel: the frame border counts toward --panel-pad-x. */
+  .panel-pad-x { padding-inline: max(0px, calc(var(--panel-pad-x) - var(--u) * 4)); }
+  .plain-pad-x { padding-inline: var(--panel-pad-x); }
+  .content-stack { display: flex; flex-direction: column; gap: var(--stack-gap); min-width: 0; }
+  .content-stack > * { box-sizing: border-box; width: 100%; margin-inline: 0; }
 
   /* Scalloped top edge (bottom action bar, footers). */
   .px-scallop { position: relative; }
@@ -288,3 +379,8 @@ html[data-crt="on"] body::after {
   .px-tabbar { display: flex; gap: calc(var(--u) * 2); overflow-x: auto; scrollbar-width: none; }
   .px-tabbar::-webkit-scrollbar { display: none; }
 }
+
+/* Level 2 padding grows a little on larger screens. */
+@media (min-width: 640px) { :root { --panel-pad-x: 16px; } }
+/* Screens that opt into the wide layout (Play) widen the shared grid, top bar included. */
+:root:has([data-layout="wide"]) { --content-max: 1600px; }

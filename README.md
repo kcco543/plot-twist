@@ -66,6 +66,67 @@ Saves live in the browser's `localStorage` and survive refreshes, language switc
 ### Controls in Play Mode
 - **Keyboard:** ← → (or A / D) choose a character · Z / Enter / Space talk · X observe · C wait · V twist · L story log · Esc / P pause
 - **Touch:** the ◀ ▶ pad chooses a character, **A** talks, and the four big dialogue buttons do the rest. You can also tap a character in the scene.
+- **Photo & Gift:** click or tap a character to open a small menu with **Photo** (take or upload a photo, add a caption, show it to them) and **Gift** (name, describe and draw a gift in the pixel editor, or generate its picture when `OPENAI_API_KEY` is set; save it to the world's gift box and give it). Photos and gifts are kept in this browser, per world and per character. Drag a character (mouse) or touch-and-hold then drag (touch) to start a walk & talk as before.
+
+## Emotions and movement (Step 2)
+
+Characters have a **current emotion** (neutral, happy, excited, affectionate, embarrassed, angry, frustrated, sad, anxious, surprised, confused) stored in the story state, separate from their permanent personality. Story events change it; small pixel effects show it above the character, and characters walk, turn, step back and fidget according to personality, emotion, bond and context.
+
+- Emotions + rules: `src/lib/emotion/emotions.ts` · effect library (add new emotions here): `src/lib/emotion/effects.ts`
+- Rooms (floor + furniture footprints): `src/lib/stage/room.ts` · pathfinding: `src/lib/stage/path.ts`
+- State machine (idle → moving → interacting → speaking → reacting): `src/lib/stage/sim.ts`
+- Movement rules: `src/lib/stage/behavior.ts`
+- Action interface for future AI events (`approach`, `retreat`, `face_target`, `idle_reaction`, `show_emotion`), validated before anything moves: `src/lib/stage/actions.ts`
+
+## Behavior engine (Step 3)
+
+Characters choose reactions from personality (sliders + written profile), several feelings at once, directional relationships (A→B differs from B→A), memories, place and distance. Hard limits (locked canon, player control, unreachable targets) are applied before a weighted random choice; the result drives movement, the pixel emotion effect (which can be hidden by reserved characters) and the reply, built-in or AI-written. Details, data shapes and how to tune: `docs/BEHAVIOR_ENGINE.md`. Code: `src/lib/mind/`.
+
+**Behavior debug panel (developers):** run `npm run dev`, or open `/play?dev=1` once on a deployed copy, then Settings → *Behavior debug panel*.
+
+**Test panel:** Settings → *Emotion & movement test panel* → On. In Play Mode it appears beside the stage on desktop and under the dialogue on phones (the stage stays pinned at the top while you scroll it).
+
+## Walk & talk (drag-to-interact)
+
+Drag a character onto another one (phones: touch and hold, then drag). While dragging, a dotted route and a green frame show who they'd talk to; red means there's no way there. Let go and they **walk** over (same pathfinding and collision as everything else), stop at a comfortable distance, face each other, and a conversation panel opens with the relationship, the listener's visible mood, 2–3 suggested topics and **Ask Something Else**. A plain click / tap still selects. Without dragging: select someone, press **Talk to…** and tap a name or a character. Esc or Cancel stops a walk or ends a conversation.
+
+- Flow (SELECT_TARGET → MOVE_TO_TARGET → FACE_TARGET → SHOW_OPTIONS → SPEAK → WAIT_FOR_RESPONSE → CONTINUE_OR_EXIT): `src/lib/talk/flow.ts`, driven by `src/lib/talk/useTalk.ts`
+- Click vs drag rules and hit-testing: `src/lib/talk/drag.ts` · pointer handling + preview: `src/components/game/CharacterDrag.tsx`
+- Topic library (16 rule-based topics, no AI): `src/lib/talk/topics.ts`, wording under `talk.*` in both locale files. The listener's answer comes from the behavior engine with the topic's trigger.
+- Custom messages: `src/lib/talk/customReply.ts` (length limit + cleanup). With AI conversations on, the listener answers them (below); with AI off the game says plainly that nobody can answer typed messages.
+- Tests: `tests/talk.test.ts`
+
+## AI conversations (Step 4)
+
+With an `ANTHROPIC_API_KEY` set and **AI story writing** on (Settings), the listener in a walk-and-talk answers suggested topics, AI suggestions and typed messages in character, written by Claude from their profile, sliders, mood, relationship, memories and the recent exchange. The reply also proposes an emotion, a movement, small relationship changes, a memory and 2–3 next lines for the speaker; the game validates all of it before anything changes. Full design: `docs/AI_CONVERSATIONS.md`.
+
+- Contract (request + structured reply): `src/lib/talk/ai/contract.ts` · server route: `src/app/api/ai/talk/route.ts` · prompt: `src/lib/ai/server/talk.ts`
+- Server checks (character, language, repeats, one retry): `src/lib/talk/ai/checks.ts` · usage limits: `src/lib/ai/server/limits.ts`
+- Game-engine validation + memory: `src/lib/talk/ai/apply.ts` · request building: `src/lib/talk/ai/request.ts` · flow: `src/lib/talk/useTalk.ts`
+- Memory inspector: Play Mode → character → **Memories** (correct, resolve, forget)
+- No characters yet? **Add the sample cast** on the Play screen (Mira, Wren, Tobi).
+- Tests: `tests/aiTalk.test.ts`; live model checks (cost a few cents): `RUN_LIVE_AI=1 npx vitest run tests/live`
+
+## AI photo reactions
+
+Click a character → **Photo** → take or upload a photo (optional caption) → **Show** → **Send**. Show first explains that the photo goes to Anthropic's Claude; nothing leaves the device before Send. The character looks at the photo through Claude (the same model as conversations, `ANTHROPIC_TALK_MODEL` → `ANTHROPIC_MODEL` → `claude-opus-5-5`; the route checks the model accepts images) and reacts in the speech bubble, with an emotion, a small validated movement and sometimes a follow-up question.
+
+- What the AI sees: the re-encoded JPEG (≤1280 px, no metadata), the caption, the character's profile, emotion, how they feel about the player ("the visitor" in-world), a few memories and their last photo reactions. Rules: only what is visible, uncertainty allowed, never identify people or infer sensitive traits.
+- Nothing is stored unless the player presses **Save as memory**. Then the photo goes to IndexedDB (this world, this character) and the memory (story state) keeps the AI's short description, why it mattered, the caption and what was said, linked to the photo by id. **Delete photo** in the memory inspector removes the file and the link (the memory stays); **Forget** removes both. The server never stores or logs the image.
+- Code: `src/lib/photo/` (contract, checks, apply, request) · route `src/app/api/ai/photo/route.ts` · prompt `src/lib/ai/server/photo.ts` · UI `src/components/keepsakes/` (PhotoPanel, PhotoMomentCard, usePhotoMoment)
+- Tests: `tests/aiPhoto.test.ts`; live: `RUN_LIVE_AI=1 npx vitest run tests/live/photo.live.test.ts` (downloads 3 public-domain sample photos, or put your own in `tests/live/photos/`). `AI_TALK_MOCK=1` (dev only) gives TEST reactions without a key; they don't look at the photo.
+
+## Gifts
+
+Click a character → **Gift** → draw a 32×32 picture (or load one from this world's Gift Box), name it, describe it → **Give**. The character's reaction comes from Claude (same model and image check as photos); the drawing goes with the request as a small PNG.
+
+- **Item vs. instance.** The Gift Box item (IndexedDB, this world only) is the design you can reuse. Giving creates a gift *instance* in the world's story state (`story.gifts`): owner, recipient, creator (the visitor), when it was received, what the character thinks it is, why it matters, where it is kept, who knows about it, and a history of every move. The instance keeps its own copy of the small icon, so editing or deleting the box item never rewrites what was given. The Character Library is never touched.
+- **Reactions.** The AI returns accept / refuse / shrug, an interpretation, a line, emotion, movement, where to keep it, a memory and an optional question. The game engine has the last word: canon rules can force a refusal, a shrug is never put on display, reserved or secretive characters keep things private, there are only 3 display spots (on furniture, never where people walk) and 3 carried things per character, and relationship changes are capped. Refused gifts go back to the visitor.
+- **Keeping places:** On display · Carried · Kept privately · Hidden · Stored · Refused. Displayed gifts are drawn on the stage; the **Things** tab in the character panel lists them all.
+- **Rules, not AI, move gifts later** (once per story turn, at most one move per character, 3-turn cooldown): put away when they cool on the visitor, hidden when trust drops, brought out when trust grows, shown off when they're fond of the visitor, carried when it's treasured.
+- **Knowledge.** Everyone present sees a displayed gift; hidden and private gifts are known only to the owner. Later conversations get a gift only when it is relevant (asked about, named, or on display where the speaker saw it), and the prompt says plainly when the speaker doesn't know about it.
+- Code: `src/lib/gifts/` · route `src/app/api/ai/gift-reaction/route.ts` · prompt `src/lib/ai/server/giftReaction.ts` · UI `GiftCreator`, `GiftMomentCard`, `useGiftMoment` · tests `tests/gifts.test.ts`. In `AI_TALK_MOCK=1` the TEST reply refuses when the description contains "refuse" (拒绝) and hides it for "secret" (秘密).
+- **AI pictures** in the Gift Creator need `OPENAI_API_KEY` (image generation). Without it the AI picture tab says it's unavailable and drawing works as usual.
 
 ## Design system
 

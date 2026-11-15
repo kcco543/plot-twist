@@ -11,8 +11,8 @@ import { CHARACTER_TEXT_FIELDS, type BehaviorProfile, type Character, type Memor
 import type { AnalyzeRequest, CharacterBrief, TurnRequest } from "./contracts";
 import { activeWorldId } from "../saves/worldSaves";
 
-export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null };
-export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "unsupported";
+export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null; talk?: "ai" | "mock" | null };
+export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "timeout" | "busy" | "limit" | "unsupported";
 
 export class AiRequestError extends Error {
   constructor(public code: AiErrorCode, message: string) {
@@ -139,6 +139,11 @@ export type MapRequestBody = { description: string; type: string; world: string 
 /** Description → generated map (data URL). Takes up to a minute or two. */
 export async function requestMap(body: MapRequestBody): Promise<{ image: string; model: string }> {
   return post<{ image: string; model: string }>("/api/ai/map", body);
+}
+
+/** Gift name + description → generated item picture (data URL). Only when image generation is configured. */
+export async function requestGiftImage(body: { name: string; description: string; world: string | null }): Promise<{ image: string; model: string }> {
+  return post<{ image: string; model: string }>("/api/ai/gift", body);
 }
 
 export type MapEditBody = { instruction: string; region: { x: number; y: number; w: number; h: number }; description: string; type: string | null; world: string | null };

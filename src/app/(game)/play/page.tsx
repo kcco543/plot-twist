@@ -1,12 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CharacterInfoPanel } from "@/components/game/CharacterInfoPanel";
 import { ControlPad } from "@/components/game/ControlPad";
 import { DialogueBox } from "@/components/game/DialogueBox";
 import { PixelStage } from "@/components/game/PixelStage";
-import { SceneLabels, SceneSprites } from "@/components/game/SceneSprites";
+import { MAX_ON_STAGE } from "@/components/game/SceneSprites";
+import { StageActors, StageOverlay } from "@/components/game/StageLayers";
+import { StageTestPanel } from "@/components/game/StageTestPanel";
+import { BehaviorDebugPanel } from "@/components/game/BehaviorDebugPanel";
+import { useCharacterDrag } from "@/components/game/CharacterDrag";
+import { ConversationPanel, TalkStrip } from "@/components/game/ConversationPanel";
 import { SettingsModal } from "@/components/SettingsModal";
 import { LoadingState } from "@/components/ui/LoadingDots";
 import { Modal } from "@/components/ui/Modal";
@@ -17,15 +22,40 @@ import { environmentArt } from "@/assets/manifest";
 import { AiRequestError, briefFor, memoryBrief, requestTurn, useAiStatus } from "@/lib/ai/client";
 import { gameActions, getSave, useSave } from "@/lib/gameStore";
 import { useHydrated } from "@/lib/persistentStore";
+import { useTypewriter } from "@/lib/useTypewriter";
 import { demoCast, introLine, renderLine } from "@/lib/scenes";
-import { TEXT_SPEED_MS, useSettings } from "@/lib/settingsStore";
+import { TEXT_SPEED_MS, updateSettings, useSettings } from "@/lib/settingsStore";
 import { neutralState, plan, type Action, type Beat } from "@/lib/story/engine";
 import { beatToLines } from "@/lib/story/localWriter";
 import { getWorld } from "@/lib/worlds";
-import type { Character, StoryLine } from "@/lib/types";
+import { emotionOf, fadeEmotion } from "@/lib/emotion/emotions";
+import { bondBetween, choreographBeat, rngFrom, talkDistance } from "@/lib/stage/behavior";
+import { applyDecision, behaviorBrief, buildScenario, decide, decisionLines, scenarioByKey, triggerForBeat, type BehaviorEvent, type Decision, type Rng } from "@/lib/mind";
+import type { Priority } from "@/lib/stage/actions";
+import { applyDevParam, useDevMode } from "@/lib/devMode";
+import { roomFor } from "@/lib/stage/room";
+import { useReducedMotion, useStagePoint, useStageSim } from "@/lib/stage/useStage";
+import { useTalk } from "@/lib/talk/useTalk";
+import { editMemory, type MemoryPatch } from "@/lib/talk/ai/apply";
+import { TALKING_PHASES } from "@/lib/talk/flow";
+import type { Character, StoryLine, StoryState } from "@/lib/types";
 import { useI18n } from "@/i18n";
+import { InteractionMenu, type InteractionKind } from "@/components/keepsakes/InteractionMenu";
+import { PhotoPanel } from "@/components/keepsakes/PhotoPanel";
+import { PhotoMomentCard } from "@/components/keepsakes/PhotoMomentCard";
+import { usePhotoMoment } from "@/components/keepsakes/usePhotoMoment";
+import { useGiftMoment } from "@/components/keepsakes/useGiftMoment";
+import { GiftMomentCard, StageGifts } from "@/components/keepsakes/GiftMomentCard";
+import type { SideTab } from "@/components/game/CharacterInfoPanel";
+import { displaySpots, giftAutonomy, placeDisplayed } from "@/lib/gifts/apply";
+import { deletePhoto, prunePhotos } from "@/lib/keepsakes/store";
+import { linkedPhotoIds, unlinkPhoto } from "@/lib/photo/apply";
+import { GiftCreator } from "@/components/keepsakes/GiftCreator";
+import { activeWorldId } from "@/lib/saves/worldSaves";
 
 const isTyping = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+/** Ignore a second "advance" this soon after the last one (double-clicks / key bounce never skip two lines). */
+const ADVANCE_GUARD_MS = 250;
 
 export default function PlayPage() {
   const { t, tx, locale } = useI18n();
@@ -37,13 +67,62 @@ export default function PlayPage() {
   const envType = save.environment.type;
 
   const isDemo = save.characters.length === 0;
-  const cast = useMemo(() => (isDemo ? demoCast(locale) : save.characters), [isDemo, save.characters, locale]);
+  const baseCast = useMemo(() => (isDemo ? demoCast(locale) : save.characters), [isDemo, save.characters, locale]);
+  // Behavior Debug Panel scenarios run on this stage with their own sample cast + story, never touching the save.
+  const [sandbox, setSandboxState] = useState<{ key: string; cast: Character[]; story: StoryState } | null>(null);
+  const sandboxRef = useRef(sandbox);
+  const setSandbox = useCallback((sb: typeof sandbox) => {
+    sandboxRef.current = sb;
+    setSandboxState(sb);
+  }, []);
+  const cast = sandbox?.cast ?? baseCast;
+  const story = sandbox?.story ?? save.story;
+  const castRef = useRef(cast);
+  castRef.current = cast;
+  /** Story state the rules read from / write to (the sandbox's while a debug scenario is loaded). */
+  const getStory = useCallback(() => sandboxRef.current?.story ?? getSave().story, []);
+  const setStoryState = useCallback(
+    (next: StoryState) => {
+      if (sandboxRef.current) setSandbox({ ...sandboxRef.current, story: next });
+      else gameActions.setStory(next);
+    },
+    [setSandbox],
+  );
+  /** Memory inspector: the player corrects or forgets a saved memory. Forgetting a photo memory deletes its photo too. */
+  const editMemoryFor = useCallback(
+    (characterId: string, memoryId: string, patch: MemoryPatch | null) => {
+      const photoId = patch === null ? getStory().characters[characterId]?.memories.find((m) => m.id === memoryId)?.photo?.photoId : null;
+      setStoryState(editMemory(getStory(), characterId, memoryId, patch));
+      const w = activeWorldId();
+      if (photoId && w && !sandboxRef.current) void deletePhoto(w, photoId).catch(() => {});
+    },
+    [getStory, setStoryState],
+  );
+  /** Memory inspector: delete only the photo file; the memory (the AI's text) stays, without the link. */
+  const deletePhotoFor = useCallback(
+    async (photoId: string) => {
+      const w = activeWorldId();
+      if (sandboxRef.current || !w) return;
+      await deletePhoto(w, photoId).catch(() => false);
+      setStoryState(unlinkPhoto(getStory(), photoId));
+    },
+    [getStory, setStoryState],
+  );
+  const logLines = useCallback((lines: StoryLine[]) => {
+    if (!sandboxRef.current) gameActions.appendLines(lines);
+  }, []);
+  const devMode = useDevMode();
+  useEffect(() => applyDevParam(), []);
+  const [decisions, setDecisions] = useState<Decision[]>([]);
   const [pickedId, setPickedId] = useState<string | null>(null);
+  const talkRef = useRef<ReturnType<typeof useTalk> | null>(null);
   const selectedIndex = Math.max(0, cast.findIndex((c) => c.id === pickedId));
   const selected = cast[selectedIndex] ?? null;
 
   // The current beat's lines are stored as data, so switching language re-renders built-in lines.
   const [queue, setQueue] = useState<StoryLine[]>([]);
+  /** Bumped for every new beat, so a repeated line still counts as a new line. */
+  const [beatNo, setBeatNo] = useState(0);
   const [lineIndex, setLineIndex] = useState(0);
   const current = queue[lineIndex] ?? null;
   const shownLine = renderLine(current ?? introLine(save.environment.description, envType), locale);
@@ -51,13 +130,301 @@ export default function PlayPage() {
   const [note, setNote] = useState<string | null>(null);
   const ai = useAiStatus();
   const useAi = Boolean(ai?.text && settings.aiStory);
+  /** AI conversations (walk & talk): real Claude replies, developer TEST replies, or off (built-in replies). */
+  const aiTalk: "ai" | "mock" | null = !settings.aiStory ? null : ai?.text ? "ai" : ai?.talk === "mock" ? "mock" : null;
 
   const [logOpen, setLogOpen] = useState(false);
   const [pauseOpen, setPauseOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [resetDone, setResetDone] = useState(false);
-  const anyModal = logOpen || pauseOpen || settingsOpen || sheetOpen;
+  /** Personal interactions: the Photo / Gift menu next to a character, or the window it opened. */
+  const [interaction, setInteraction] = useState<{ kind: "menu" | InteractionKind; characterId: string } | null>(null);
+  const menuOpen = interaction?.kind === "menu";
+  const anyModal = logOpen || pauseOpen || settingsOpen || sheetOpen || (!!interaction && !menuOpen);
+
+  // Desktop layout (sidebar) vs phone / tablet, and the sticky header's height (to pin the stage under it).
+  const [wide, setWide] = useState(false);
+  const [headerH, setHeaderH] = useState(0);
+  useEffect(() => {
+    const update = () => {
+      setWide(window.innerWidth >= 1024);
+      setHeaderH(document.querySelector("header")?.getBoundingClientRect().height ?? 0);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // ---- Stage: positions, movement, emotions (Step 2). Paused with the game.
+  const [frozen, setFrozen] = useState(false);
+  const reducedMotion = useReducedMotion(settings.reduceMotion);
+  const onStage = useMemo(() => cast.slice(0, MAX_ON_STAGE), [cast]);
+  const room = useMemo(() => roomFor(world?.id ?? "otherworld", envType), [world?.id, envType]);
+  const bondOf = useCallback((a: string, b: string) => bondBetween(getStory(), a, b), [getStory]);
+  const stage = useStageSim({ cast: onStage, room, paused: anyModal || frozen, reducedMotion, bondOf });
+  // Show each character's current emotion (story state is the source of truth; also covers loading a save).
+  useEffect(() => {
+    for (const c of onStage) {
+      const e = emotionOf(story.characters[c.id]);
+      stage.syncEmotion(c.id, e.emotion, e.level, e.at);
+    }
+  }, [stage, onStage, story]);
+
+  /**
+   * BEHAVIOR ENGINE: one character reacts to an event. Reads the live stage
+   * (distance, who's busy, whether the player is steering them, whether the
+   * other can be reached), decides, writes the result to story state, and
+   * plays it through the validated stage actions. Returns the lines to show.
+   */
+  const decideFor = useCallback(
+    (event: BehaviorEvent, rng?: Rng): Decision | null => {
+      const s = getStory();
+      const castNow = castRef.current;
+      const me = castNow.find((c) => c.id === event.reactorId);
+      if (!me) return null;
+      const otherId = event.otherId;
+      return decide({
+        story: s,
+        cast: castNow,
+        event,
+        place: envType,
+        stage: {
+          gap: otherId ? stage.gapBetween(me.id, otherId) : null,
+          talkDistance: otherId ? talkDistance(me, bondBetween(s, me.id, otherId), emotionOf(s.characters[me.id]).emotion) : 32,
+          state: stage.stateOf(me.id),
+          commanded: stage.isCommanded(me.id),
+          canReach: otherId ? stage.canReach(me.id, otherId) : true,
+        },
+        rng: rng ?? rngFrom(`${s.turn}:${me.id}:${event.trigger}:${Date.now()}`),
+      });
+    },
+    [getStory, stage, envType],
+  );
+  /** Apply a decision: story state (feelings, relations, memory), the visible emotion and the movement. */
+  const commitDecision = useCallback(
+    (decision: Decision, priority: Priority = "story") => {
+      const s = getStory();
+      const castNow = castRef.current;
+      const next = applyDecision(s, decision, castNow);
+      setStoryState(next);
+      const id = decision.event.reactorId;
+      const e = emotionOf(next.characters[id]);
+      stage.syncEmotion(id, e.emotion, e.level, e.at);
+      // Walks start now: if the character's own line begins first, the walk pauses while they speak and resumes
+      // afterwards (the stage's normal rule). Small gestures wait for the hesitation pause.
+      for (const m of decision.movement) {
+        const travels = m.action.type === "approach" || m.action.type === "retreat";
+        stage.schedule(travels ? 0 : m.delay, m.action, "event", priority);
+      }
+      setDecisions((list) => [decision, ...list].slice(0, 12));
+      return next;
+    },
+    [getStory, setStoryState, stage],
+  );
+  const behave = useCallback(
+    (event: BehaviorEvent, priority: Priority, opts: { rng?: Rng; apply?: boolean } = {}): { decision: Decision; lines: StoryLine[] } | null => {
+      const s = getStory();
+      const decision = decideFor(event, opts.rng);
+      if (!decision) return null;
+      if (opts.apply === false) return { decision, lines: [] };
+      const next = commitDecision(decision, priority);
+      return { decision, lines: decisionLines(decision, castRef.current, (next.decisions?.length ?? 0) + s.turn) };
+    },
+    [getStory, decideFor, commitDecision],
+  );
+
+  // One typewriter for the current line, shared by the speech bubble and the dialogue panel.
+  const lineId = `${beatNo}:${lineIndex}`;
+  const typer = useTypewriter(busy ? "" : shownLine.text, TEXT_SPEED_MS[settings.textSpeed], { id: lineId, paused: anyModal });
+  const more = lineIndex < queue.length - 1;
+  const lastAdvance = useRef(0);
+  /** Finish the typing; if it's already finished, go to the next line. One step per call. */
+  const advance = useCallback(() => {
+    const now = performance.now();
+    if (now - lastAdvance.current < ADVANCE_GUARD_MS) return;
+    lastAdvance.current = now;
+    if (!typer.done) typer.skip();
+    else if (more) setLineIndex((i) => Math.min(queue.length - 1, i + 1));
+  }, [typer, more, queue.length]);
+  const lineInProgress = !busy && (!typer.done || more);
+  const lineInProgressRef = useRef(lineInProgress);
+  lineInProgressRef.current = lineInProgress || busy;
+
+  // ---- Walk-and-talk (Step 3): drag a character onto another (or tap-to-target), they walk over and talk.
+  const talk = useTalk({
+    stage,
+    cast: onStage,
+    world: world?.id ?? "otherworld",
+    place: envType,
+    locale,
+    getStory,
+    setStoryState,
+    decideOnly: (event) => decideFor(event),
+    commit: (d) => commitDecision(d, "story"),
+    showLines: (lines) => {
+      setQueue(lines);
+      setBeatNo((n) => n + 1);
+      setLineIndex(0);
+      logLines(lines);
+    },
+    beatNo,
+    lineIndex,
+    lineInProgress: lineInProgress || busy,
+    recentText: () =>
+      getSave()
+        .log.slice(-6)
+        .map((e) => renderLine(e, locale))
+        .map((r) => `${r.speaker}: ${r.text}`),
+    ai: aiTalk,
+    placeDescription: save.environment.description,
+    renderText: (line) => renderLine(line, locale).text,
+    onSelect: setPickedId,
+    // Ending mid-line: the unread lines go away with the conversation (no stale, half-read reply).
+    onEnd: () => {
+      if (lineInProgressRef.current) setQueue([]);
+    },
+  });
+  talkRef.current = talk;
+  // Developer builds: expose the stage to browser tests (e.g. to put a wall in the way).
+  useEffect(() => {
+    if (!devMode) return;
+    (window as unknown as { __plotTwistStage?: typeof stage }).__plotTwistStage = stage;
+  }, [devMode, stage]);
+  const talkPhase = talk.session?.phase ?? null;
+  const talking = talkPhase !== null && TALKING_PHASES.includes(talkPhase);
+  const blockDrag = useRef(false);
+  blockDrag.current = anyModal || frozen;
+  const drag = useCharacterDrag({
+    stage,
+    canDrag: () => !blockDrag.current && !isTyping(document.activeElement) && !talkRef.current?.session?.composing,
+    distanceFor: (a, b) => {
+      const s = getStory();
+      const me = castRef.current.find((c) => c.id === a);
+      return me ? Math.max(22, talkDistance(me, bondBetween(s, a, b), emotionOf(s.characters[a]).emotion)) : 30;
+    },
+    onDrop: (a, b) => talk.startWalk(a, b, "drag"),
+    onDropEmpty: (a) => talk.tell("emptySpace", a, null),
+  });
+  /**
+   * Click / tap on a character: select it and open the Photo / Gift menu next to it
+   * (clicking them again closes it). While choosing who to talk to (tap-to-target)
+   * the tap still picks the target, and during a conversation it only selects.
+   * Dragging (mouse) or touch-and-hold (touch) still starts a walk & talk.
+   */
+  const onStageSelect = useCallback(
+    (id: string) => {
+      if (drag.swallowClick()) return;
+      const s = talkRef.current?.session;
+      if (s?.phase === "SELECT_TARGET") {
+        if (id === s.actorId) talkRef.current?.cancel();
+        else talkRef.current?.startWalk(s.actorId, id, "tap");
+        return;
+      }
+      setPickedId(id);
+      if (!s) setInteraction((cur) => (cur?.kind === "menu" && cur.characterId === id ? null : { kind: "menu", characterId: id }));
+    },
+    [drag],
+  );
+  // A drag or a conversation takes over: the menu gets out of the way.
+  useEffect(() => {
+    if (drag.dragging || talk.session) setInteraction((cur) => (cur?.kind === "menu" ? null : cur));
+  }, [drag.dragging, talk.session]);
+  const [touch, setTouch] = useState(false);
+  useEffect(() => setTouch(window.matchMedia("(pointer: coarse)").matches), []);
+
+  /** Show a reaction's lines right away (bubble + panel). */
+  const showLines = useCallback(
+    (lines: StoryLine[]) => {
+      if (!lines.length) return;
+      setQueue(lines);
+      setBeatNo((n) => n + 1);
+      setLineIndex(0);
+      logLines(lines);
+    },
+    [logLines],
+  );
+
+  // ---- Photo reactions (AI): the confirmed photo goes to the AI; the reaction plays on the stage once the Photo window closes.
+  const photoMoment = usePhotoMoment({
+    stage,
+    cast: onStage,
+    getStory,
+    setStoryState,
+    showLines,
+    locale,
+    world: world?.id ?? "otherworld",
+    place: envType,
+    placeDescription: save.environment.description,
+    worldId: !isDemo && !sandbox ? activeWorldId() : null,
+    paused: anyModal,
+  });
+  // ---- Gifts (AI reactions + world-specific gift instances shown on the stage's display spots).
+  const spots = useMemo(() => displaySpots(room), [room]);
+  const giftMoment = useGiftMoment({
+    stage,
+    cast: onStage,
+    getStory,
+    setStoryState,
+    showLines,
+    locale,
+    world: world?.id ?? "otherworld",
+    place: envType,
+    placeDescription: save.environment.description,
+    worldId: !isDemo && !sandbox ? activeWorldId() : null,
+    spots: spots.length,
+    paused: anyModal,
+  });
+  const [infoTab, setInfoTab] = useState<{ tab: SideTab; n: number } | null>(null);
+  // Characters handle their gifts by plain rules, once per story turn (never every frame, never AI).
+  // The first turn seen after the save loads is only remembered: opening or reloading a world moves nothing.
+  const giftTurn = useRef<number | null>(null);
+  useEffect(() => {
+    if (!hydrated || sandbox || isDemo) return;
+    const first = giftTurn.current === null;
+    if (save.story.turn === giftTurn.current) return;
+    giftTurn.current = save.story.turn;
+    if (first) return;
+    const r = giftAutonomy(getStory(), onStage, spots.length);
+    if (!r.moves.length) return;
+    setStoryState(r.story);
+    logLines(
+      r.moves.map((m) => ({
+        speaker: { kind: "narrator" as const },
+        key: "tpl" as const,
+        tpl: `keepsakes.log.giftMoved.${m.to}`,
+        params: { name: onStage.find((c) => c.id === m.owner)?.name.trim() ?? "", gift: r.story.gifts?.[m.id]?.name ?? "" },
+      })),
+    );
+  }, [hydrated, save.story.turn, sandbox, isDemo, getStory, onStage, spots.length, setStoryState, logLines]);
+
+  // Photos that no memory links any more (forgotten, or pushed out by newer memories) are removed from this world.
+  const photoLinks = useMemo(() => [...linkedPhotoIds(save.story)].sort().join("|"), [save.story]);
+  useEffect(() => {
+    const w = activeWorldId();
+    if (isDemo || sandbox || !w) return;
+    const t = setTimeout(() => void prunePhotos(w, new Set(photoLinks ? photoLinks.split("|") : [])).catch(() => {}), 1500);
+    return () => clearTimeout(t);
+  }, [photoLinks, isDemo, sandbox]);
+
+  // Autonomous reaction: when someone walks up to a character outside a conversation (e.g. the test
+  // panel's "Walk closer"), the approached character decides how to respond. Story conversations
+  // already handle their own reactions, and each pair has a short cooldown so nobody loops.
+  const lastArrive = useRef(new Map<string, number>());
+  useEffect(() => {
+    stage.onArrive = (actorId, targetId) => {
+      if (lineInProgressRef.current || talkRef.current?.involves(actorId, targetId)) return;
+      const key = `${actorId}>${targetId}`;
+      const now = performance.now();
+      if (now - (lastArrive.current.get(key) ?? -1e9) < 6000) return;
+      lastArrive.current.set(key, now);
+      const r = behave({ trigger: "approached", reactorId: targetId, otherId: actorId }, "auto");
+      if (r) showLines(r.lines);
+    };
+    return () => {
+      stage.onArrive = null;
+    };
+  }, [stage, behave, showLines]);
 
   // Keep the stage + dialogue on screen: the stage may use the window height minus the HUD and dialogue.
   const [stageMax, setStageMax] = useState<number | undefined>(undefined);
@@ -70,7 +437,7 @@ export default function PlayPage() {
 
   /** Ask the AI to word a beat. Returns null if it can't, so the built-in lines are used instead. */
   const writeWithAi = useCallback(
-    async (beat: Beat, actor: Character, other: Character | null): Promise<StoryLine[] | null> => {
+    async (beat: Beat, actor: Character, other: Character | null, behaviors: Decision[] = []): Promise<StoryLine[] | null> => {
       if (!world) return null;
       const save = getSave();
       const recentLines = save.log.slice(-8).map((e) => renderLine(e, locale).text).filter(Boolean);
@@ -96,10 +463,11 @@ export default function PlayPage() {
           actor: briefFor(actor),
           other: other ? briefFor(other) : null,
           bond: beat.bondAfter,
-          memories: (save.story.characters[actor.id]?.memories ?? []).slice(-6).map(memoryBrief),
+          memories: (getStory().characters[actor.id]?.memories ?? []).slice(-6).map(memoryBrief),
           recentLines: recentLines.map((l) => l.slice(0, 400)),
+          behaviors: behaviors.map(behaviorBrief),
         });
-        if (beat.memoryId && out.memoryNote) gameActions.setMemoryNote(actor.id, beat.memoryId, out.memoryNote);
+        if (beat.memoryId && out.memoryNote && !sandboxRef.current) gameActions.setMemoryNote(actor.id, beat.memoryId, out.memoryNote);
         const who = (id: string): StoryLine["speaker"] => {
           const c = id === actor.id ? actor : id === other?.id ? other : null;
           return c ? { kind: "character", name: c.name.trim(), id: c.id } : { kind: "narrator" };
@@ -110,16 +478,16 @@ export default function PlayPage() {
         return null;
       }
     },
-    [world, envType, locale, t],
+    [world, envType, locale, t, getStory],
   );
 
   const act = useCallback(
     async (action: Action) => {
-      if (!selected || !world || busy) return;
+      if (!selected || !world || busy || talkRef.current?.active()) return;
       setNote(null);
       // 1. Game rules decide what happens and update state (mood, bonds, memories).
       const { beat, story } = plan({
-        story: getSave().story,
+        story: getStory(),
         cast,
         actorId: selected.id,
         action,
@@ -127,21 +495,36 @@ export default function PlayPage() {
         place: envType,
         frequency: settings.eventFrequency,
       });
-      gameActions.setStory(story);
-      const other = beat.otherId ? (cast.find((c) => c.id === beat.otherId) ?? null) : null;
-      // 2. A writer puts it into words: the AI if available, otherwise built-in templates.
+      setStoryState(story);
+      // 1b. The same rules decide how the actor moves: face the other, show the feeling, approach / step back.
+      const choreo = choreographBeat(beat, cast, story, (id) => stage.nearest(id), { otherByEngine: true });
+      stage.beginConversation(choreo.participants);
+      for (const a of choreo.actions) {
+        if (a.type === "show_emotion") {
+          const e = emotionOf(story.characters[a.actor]);
+          stage.syncEmotion(a.actor, e.emotion, e.level, e.at);
+        } else stage.request(a, beat.kind === "event" ? "event" : "conversation");
+      }
+      // 1c. The behavior engine decides how the OTHER person (or the listener) responds:
+      //     movement, what shows on their face, and the intention behind their reply.
+      const listenerId = beat.kind === "talk" ? (choreo.participants[1] ?? null) : beat.otherId;
+      const walkedUp = choreo.actions.some((a) => a.type === "approach" && a.actor === selected.id);
+      const response = listenerId ? behave({ trigger: triggerForBeat(beat, walkedUp), reactorId: listenerId, otherId: selected.id }, "story") : null;
+      const other = listenerId ? (cast.find((c) => c.id === listenerId) ?? null) : null;
+      // 2. A writer puts it into words: the AI if available (told what the engine decided), otherwise built-in templates.
       let lines: StoryLine[] | null = null;
       if (useAi) {
         setBusy(true);
-        lines = await writeWithAi(beat, selected, other);
+        lines = await writeWithAi(beat, selected, other, response ? [response.decision] : []);
         setBusy(false);
       }
-      lines ??= beatToLines(beat, cast, envType, world.id);
+      lines ??= [...beatToLines(beat, cast, envType, world.id), ...(response?.lines ?? [])];
       setQueue(lines);
+      setBeatNo((n) => n + 1);
       setLineIndex(0);
-      gameActions.appendLines(lines);
+      logLines(lines);
     },
-    [selected, world, busy, cast, envType, settings.eventFrequency, useAi, writeWithAi],
+    [selected, world, busy, cast, envType, settings.eventFrequency, useAi, writeWithAi, stage, getStory, setStoryState, behave, logLines],
   );
   const cycle = useCallback(
     (dir: 1 | -1) => {
@@ -154,7 +537,8 @@ export default function PlayPage() {
   // Desktop keyboard controls. Ignored while typing (incl. IME composition) or when a menu is open.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (anyModal || e.isComposing || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      if (anyModal || menuOpen || e.isComposing || (e.target instanceof Element && e.target.closest("[data-speech-bubble]")) || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      const inTalk = !!talkRef.current?.session;
       const onButton = e.target instanceof HTMLButtonElement || e.target instanceof HTMLAnchorElement;
       const k = e.key.toLowerCase();
       const map: Record<string, () => void> = {
@@ -170,9 +554,16 @@ export default function PlayPage() {
         escape: () => setPauseOpen(true),
         p: () => setPauseOpen(true),
       };
+      if (inTalk) {
+        // During a walk-and-talk: Esc cancels / ends it; the story actions wait until it's over.
+        for (const k2 of ["z", "x", "c", "v"]) delete map[k2];
+        map.escape = () => talkRef.current?.cancel();
+      }
       if (!onButton) {
-        map.enter = () => act("talk");
-        map[" "] = () => act("talk");
+        // Enter / Space read through the current conversation first, then start a new one.
+        const next = () => (lineInProgress ? advance() : inTalk ? undefined : act("talk"));
+        map.enter = next;
+        map[" "] = next;
       }
       if (map[k]) {
         e.preventDefault();
@@ -181,7 +572,24 @@ export default function PlayPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [anyModal, act, cycle]);
+  }, [anyModal, menuOpen, act, cycle, advance, lineInProgress]);
+
+  // Who is speaking right now (narration has no bubble; it stays in the panel).
+  const sp = !busy && current?.speaker.kind === "character" ? current.speaker : null;
+  const speakerId = sp ? (sp.id && cast.some((c) => c.id === sp.id) ? sp.id : (cast.find((c) => c.name.trim() === sp.name)?.id ?? null)) : null;
+  // SPEAKING lasts while their line is being read; when the conversation is over everyone relaxes.
+  const speakingNow = lineInProgress ? speakerId : null;
+  useEffect(() => stage.setSpeaker(speakingNow), [stage, speakingNow]);
+  useEffect(() => {
+    // A walk-and-talk keeps the pair together between lines; it ends the conversation itself.
+    if (!lineInProgress && !talking) stage.endConversation();
+  }, [stage, lineInProgress, talking]);
+  // On phones the view is nearly square and pans to whoever is speaking (or selected), following them as they walk.
+  const focusPoint = useStagePoint(stage, speakerId ?? selected?.id ?? null, 8);
+  // While a character is being dragged the camera holds still (the finger is aiming at something).
+  const heldFocus = useRef<number | undefined>(undefined);
+  if (!drag.dragging) heldFocus.current = focusPoint?.x;
+  const cameraFocus = heldFocus.current;
 
   if (!hydrated) return <LoadingState label={t("common.loadingSave")} />;
 
@@ -205,11 +613,88 @@ export default function PlayPage() {
   const worldName = t(`worlds.list.${world.id}.name` as const);
   const envName = t(`environments.${envType}.name` as const);
   const selectedName = selected ? selected.name.trim() || t("common.unnamed") : null;
+  // Photos and gifts belong to a saved character in the active world save (not the demo cast or a debug scenario).
+  const interactWith = interaction ? (cast.find((c) => c.id === interaction.characterId) ?? null) : null;
+  const interactName = interactWith ? interactWith.name.trim() || t("common.unnamed") : "";
+  const canKeep = !isDemo && !sandbox && !!interactWith && save.characters.some((c) => c.id === interactWith.id);
+  const keepWorldId = canKeep ? activeWorldId() : null;
+  /** Saved photos are shown (from this world only) outside the demo cast and debug scenarios. */
+  const keepPhotosWorld = !isDemo && !sandbox ? activeWorldId() : null;
+
+
+  // Emotion & movement test panel: beside the stage on desktop, under the dialogue on phones
+  // (where the stage then stays pinned at the top so you can watch while you tap).
+  const testPanel = settings.testPanel ? (
+    <StageTestPanel
+      stage={stage}
+      cast={onStage}
+      selectedId={selected?.id ?? null}
+      frozen={frozen}
+      onFreeze={setFrozen}
+      onTalk={() => act("talk")}
+      compact={wide}
+      onClose={() => {
+        setFrozen(false);
+        updateSettings({ testPanel: false });
+      }}
+    />
+  ) : null;
+
+  // Behavior Debug Panel (developers only): same column as the test panel.
+  const debugPanel =
+    devMode && settings.behaviorDebug ? (
+      <BehaviorDebugPanel
+        cast={onStage}
+        story={story}
+        selectedId={selected?.id ?? null}
+        decisions={decisions}
+        sandboxKey={sandbox?.key ?? null}
+        compact={wide}
+        onRun={(event, rng) => {
+          const r = behave(event, "story", { rng });
+          if (r) showLines(r.lines);
+          return r?.decision ?? null;
+        }}
+        onPreview={(event, rng) => behave(event, "story", { rng, apply: false })?.decision ?? null}
+        onLoadScenario={(key) => {
+          const sc = scenarioByKey(key);
+          if (!sc) return;
+          const built = buildScenario(sc, locale);
+          stage.cancelAll();
+          setDecisions([]);
+          setQueue([]);
+          setSandbox({ key, cast: built.cast, story: built.story });
+          setPickedId(built.reactorId);
+          return { reactorId: built.reactorId, otherId: built.otherId, trigger: sc.trigger };
+        }}
+        onExitScenario={() => {
+          stage.cancelAll();
+          setDecisions([]);
+          setQueue([]);
+          setSandbox(null);
+          setPickedId(null);
+        }}
+        onPassTime={() => {
+          const s = getStory();
+          setStoryState({ ...s, turn: s.turn + 1, characters: Object.fromEntries(Object.entries(s.characters).map(([id, st]) => [id, fadeEmotion(st)])) });
+        }}
+        onClose={() => updateSettings({ behaviorDebug: false })}
+      />
+    ) : null;
+  const sidePanels = testPanel || debugPanel ? (
+    <>
+      {debugPanel}
+      {testPanel}
+    </>
+  ) : null;
+
+  // Phones: keep the stage pinned at the top while a side panel or a conversation is open below it.
+  const pinStage = !wide && (!!sidePanels || talking);
 
   return (
-    <main className="gutter mx-auto w-full max-w-[1600px] flex-1 pt-3 sm:pt-4" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
+    <main data-layout="wide" className="content-grid flex-1 pt-3 sm:pt-4" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
       {/* HUD */}
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="content-block mb-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-label text-[10px] uppercase" style={{ color: world.accent }}>
             {worldName}
@@ -230,16 +715,20 @@ export default function PlayPage() {
         </div>
       </div>
 
-      {isDemo && (
-        <p className="mb-4 flex items-center gap-2 bg-butter-hi px-3 py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
+      {isDemo && !sandbox && (
+        <p className="content-block plain-pad-x mb-4 flex flex-wrap items-center gap-2 bg-butter-hi py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
           <PixelIcon name="star" size={12} className="shrink-0 text-label" />
-          {t("play.demoNotice")}
+          <span className="min-w-0 flex-1">{t("play.demoNotice")}</span>
+          <PixelButton size="sm" variant="calm" icon="user" onClick={() => gameActions.addSampleCast(locale)} className="shrink-0 px-2" data-sample-cast>
+            {t("play.sampleCast")}
+          </PixelButton>
         </p>
       )}
 
       {/* Desktop: viewport ≈78% / character sidebar ≈21%. Phones: viewport first, character sheet in a bottom drawer. */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(14.5rem,21%)] xl:gap-5">
-        <div className="flex min-w-0 flex-col gap-3">
+      <div className="content-block grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(14.5rem,21%)] xl:gap-5">
+        <div className="content-stack">
+          <div className={pinStage ? "sticky z-30" : undefined} style={pinStage ? { top: headerH } : undefined}>
           <PixelStage
             art={environmentArt[world.id][envType]}
             label={t("play.viewportAlt", { place: envName, world: worldName })}
@@ -247,43 +736,141 @@ export default function PlayPage() {
             tag={t("common.placeholder")}
             fit="device"
             maxHeight={stageMax}
-            overlay={<SceneLabels characters={cast} selectedId={selected?.id ?? null} />}
+            squareOnPhones={0.92}
+            focusX={cameraFocus}
+            overlay={
+              <StageOverlay
+                stage={stage}
+                characters={cast}
+                selectedId={selected?.id ?? null}
+                speakerId={speakerId}
+                bubble={{ lineId, speaker: shownLine.speaker, typer, more, onAdvance: advance }}
+                drag={drag.store}
+                chooser={talk.session?.phase === "SELECT_TARGET" ? { actorId: talk.session.actorId, choices: onStage.filter((c) => c.id !== talk.session!.actorId).map((c) => c.id) } : null}
+              />
+            }
           >
-            <SceneSprites characters={cast} selectedId={selected?.id ?? null} onSelect={setPickedId} />
+            <StageGifts placed={placeDisplayed(story, spots)} nameOf={(id) => cast.find((c) => c.id === id)?.name.trim() ?? ""} />
+            <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={onStageSelect} onPressStart={drag.onPressStart} reducedMotion={reducedMotion} />
           </PixelStage>
+          </div>
           <ControlPad
             name={selectedName}
-            mood={selected ? tx(`moods.${(save.story.characters[selected.id] ?? neutralState()).mood}`) : null}
+            mood={selected ? tx(`moods.${(story.characters[selected.id] ?? neutralState()).mood}`) : null}
             onPrev={() => cycle(-1)}
             onNext={() => cycle(1)}
             onInteract={() => act("talk")}
             onInfo={() => setSheetOpen(true)}
-            disabled={cast.length === 0 || busy}
+            disabled={cast.length === 0 || busy || !!talk.session}
           />
           <DialogueBox
             speaker={busy ? t("scene.narrator") : shownLine.speaker}
             text={busy ? "" : shownLine.text}
-            msPerChar={TEXT_SPEED_MS[settings.textSpeed]}
+            typer={typer}
+            onAdvance={advance}
             targetName={selectedName}
             onAction={act}
             index={lineIndex}
             total={Math.max(1, queue.length)}
-            onNext={() => setLineIndex((i) => Math.min(queue.length - 1, i + 1))}
             busy={busy}
             note={note}
+            hideActions={talking}
+            actionsDisabled={!!talk.session}
           />
+          {photoMoment.moment?.played && (
+            <PhotoMomentCard
+              moment={photoMoment.moment}
+              onSave={async () => {
+                const m = photoMoment.moment;
+                if (m && (await photoMoment.save())) logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: "keepsakes.log.photoSaved", params: { name: m.name } }]);
+              }}
+              onDismiss={photoMoment.dismiss}
+              onOpenMemories={() => {
+                setPickedId(photoMoment.moment!.characterId);
+                setInfoTab({ tab: "memories", n: Date.now() });
+                if (!wide) setSheetOpen(true);
+              }}
+            />
+          )}
+          {giftMoment.moment?.played && (
+            <GiftMomentCard
+              moment={giftMoment.moment}
+              onDismiss={giftMoment.dismiss}
+              onOpenThings={() => {
+                setPickedId(giftMoment.moment!.characterId);
+                setInfoTab({ tab: "things", n: Date.now() });
+                if (!wide) setSheetOpen(true);
+              }}
+            />
+          )}
+          <ConversationPanel talk={talk} cast={onStage} story={story} lineInProgress={lineInProgress || busy} aiMode={aiTalk} />
+          <TalkStrip talk={talk} cast={onStage} selectedId={selected?.id ?? null} touch={touch} />
           <p className="hidden font-label text-[10px] uppercase text-ink-mute lg:block">{t("play.keyboardHint")}</p>
+          {sidePanels && !wide && sidePanels}
         </div>
         <div className="hidden min-w-0 lg:block">
-          <div className="lg:sticky lg:top-20">
-            <CharacterInfoPanel character={selected} cast={cast} story={save.story} isDemo={isDemo} />
+          <div className={`lg:sticky lg:top-20 ${sidePanels ? "flex max-h-[calc(100dvh-6rem)] flex-col gap-4 overflow-y-auto overscroll-contain pb-2" : ""}`}>
+            {sidePanels && wide && sidePanels}
+            <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} onEditMemory={editMemoryFor} photoWorldId={keepPhotosWorld} onDeletePhoto={deletePhotoFor} showTab={infoTab} />
           </div>
         </div>
       </div>
 
+      {/* Personal interactions: Photo / Gift menu next to the character, and the windows it opens */}
+      {interactWith && interaction?.kind === "menu" && (
+        <InteractionMenu
+          characterId={interactWith.id}
+          name={interactName}
+          unavailable={canKeep ? null : t("keepsakes.menu.demo")}
+          onClose={() => setInteraction(null)}
+          onPick={(kind) => setInteraction({ kind, characterId: interactWith.id })}
+        />
+      )}
+      {interactWith && (
+        <>
+          <PhotoPanel
+            open={interaction?.kind === "photo"}
+            canKeep={canKeep}
+            ai={aiTalk}
+            characterId={interactWith.id}
+            name={interactName}
+            onClose={() => setInteraction(null)}
+            onSend={async (shot, caption, signal) => {
+              const id = interactWith.id;
+              const r = await photoMoment.send(id, shot, caption, signal);
+              if (r.ok) {
+                logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: caption.trim() ? "keepsakes.log.photoCaption" : "keepsakes.log.photo", params: { name: interactWith.name.trim(), caption: caption.trim() } }]);
+                setPickedId(id);
+                setInteraction(null);
+              }
+              return r;
+            }}
+          />
+          <GiftCreator
+            open={interaction?.kind === "gift"}
+            worldId={keepWorldId}
+            world={world.id}
+            characterId={interactWith.id}
+            name={interactName}
+            ai={aiTalk}
+            onClose={() => setInteraction(null)}
+            onGive={async (g, signal) => {
+              const id = interactWith.id;
+              const r = await giftMoment.give(id, g, signal);
+              if (r.ok) {
+                logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: "refused" in r && r.refused ? "keepsakes.log.giftRefused" : "keepsakes.log.gift", params: { name: interactWith.name.trim(), gift: g.name } }]);
+                setPickedId(id);
+                setInteraction(null);
+              }
+              return r;
+            }}
+          />
+        </>
+      )}
+
       {/* Phone / tablet character sheet */}
       <Modal open={sheetOpen} onClose={() => setSheetOpen(false)} title={t("play.character")} closeLabel={t("play.sidebar.close")}>
-        <CharacterInfoPanel character={selected} cast={cast} story={save.story} isDemo={isDemo} framed={false} />
+        <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} framed={false} onEditMemory={editMemoryFor} photoWorldId={keepPhotosWorld} onDeletePhoto={deletePhotoFor} showTab={infoTab} />
       </Modal>
 
       {/* Story log */}
@@ -315,6 +902,7 @@ export default function PlayPage() {
                   <p className="font-label text-[10px] uppercase text-rose">
                     {r.speaker} · {new Date(e.at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                     {"source" in e && e.source === "ai" && <span className="ml-1 bg-lavender-hi px-1 text-label">AI</span>}
+                    {"source" in e && e.source === "mock" && <span className="ml-1 bg-butter-hi px-1 text-ink" title={t("talk.ai.testTag")}>TEST</span>}
                   </p>
                   <p className="text-lg leading-snug">{r.text}</p>
                 </li>

@@ -40,6 +40,30 @@ export const AnalyzeRequestSchema = z.object({
 });
 export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
 
+/** A behavior the game engine already decided (src/lib/mind). The AI voices it; it can't change it. */
+export const BehaviorBriefSchema = z.object({
+  characterId: text(64),
+  trigger: text(40),
+  causedBy: text(64).nullable(),
+  intent: text(40),
+  style: z.object({
+    length: z.enum(["silent", "terse", "short", "full"]),
+    tone: z.enum(["warm", "cool", "tense", "playful", "nervous", "flat"]),
+    directness: z.number().min(0).max(1),
+    humor: z.number().min(0).max(1),
+    formality: z.number().min(0).max(1),
+    disclosure: z.number().min(0).max(1),
+    hesitant: z.boolean(),
+    useName: z.boolean(),
+  }),
+  shows: z.object({ emotion: text(20), level: z.number().int().min(1).max(3) }).nullable(),
+  hiddenFeeling: text(20).nullable(),
+  feelings: z.array(z.object({ feeling: text(20), value: z.number().min(0).max(100) })).max(4),
+  movement: text(20),
+  speaks: z.boolean(),
+});
+export type BehaviorBriefInput = z.infer<typeof BehaviorBriefSchema>;
+
 export const TurnRequestSchema = z.object({
   locale,
   world,
@@ -63,5 +87,7 @@ export const TurnRequestSchema = z.object({
   memories: z.array(MemoryBrief).max(8),
   /** The last lines shown, so the AI doesn't repeat itself. */
   recentLines: z.array(text(400)).max(12),
+  /** Behaviors the engine decided for this beat (who reacts how). Optional for older clients. */
+  behaviors: z.array(BehaviorBriefSchema).max(3).optional(),
 });
 export type TurnRequest = z.infer<typeof TurnRequestSchema>;
