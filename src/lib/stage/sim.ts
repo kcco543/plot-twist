@@ -185,6 +185,40 @@ export class StageSim {
     return !!goal && !!this.plan(a, goal);
   }
 
+  /**
+   * Drag preview: the route `actorId` would walk to stand `distance` from
+   * `targetId` (same planner and collision rules as a real walk). [] when
+   * they are already close enough, null when there is no way to get there.
+   */
+  previewApproach(actorId: string, targetId: string, distance = 30, opts: { ignorePeople?: boolean } = {}): Point[] | null {
+    const a = this.actors.get(actorId);
+    const t = this.actors.get(targetId);
+    if (!a || !t || a === t) return null;
+    if (standGap(a, t) <= distance + 4) return [];
+    const goal = this.approachGoal(a, t, distance);
+    // ignorePeople: would the way be open if nobody were standing in it? (tells "a wall" from "someone in the way")
+    return goal ? this.plan(a, goal, opts.ignorePeople ? [...this.actors.keys()] : []) : null;
+  }
+
+  /** The walk a character is on (or has paused), if any. */
+  walkOf(id: string): { kind: Move["kind"]; targetId: string | null; paused: boolean } | null {
+    const a = this.actors.get(id);
+    const m = a?.move ?? a?.suspended;
+    return a && m ? { kind: m.kind, targetId: m.targetId, paused: !a.move } : null;
+  }
+
+  /** Drop one character's walk for good (the player cancelled it). Unlike stop(), it won't resume. */
+  cancelWalk(id: string): boolean {
+    const a = this.actors.get(id);
+    if (!a || (!a.move && !a.suspended)) return false;
+    a.move = null;
+    a.suspended = null;
+    this.endCommand(a);
+    if (a.state === "moving") this.setState(a, this.convo.has(a.id) ? "interacting" : "idle");
+    this.emit();
+    return true;
+  }
+
   constructor(opts: SimOptions) {
     this.room = opts.room;
     this.reducedMotion = !!opts.reducedMotion;

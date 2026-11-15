@@ -10,6 +10,8 @@ import { MAX_ON_STAGE } from "@/components/game/SceneSprites";
 import { StageActors, StageOverlay } from "@/components/game/StageLayers";
 import { StageTestPanel } from "@/components/game/StageTestPanel";
 import { BehaviorDebugPanel } from "@/components/game/BehaviorDebugPanel";
+import { useCharacterDrag } from "@/components/game/CharacterDrag";
+import { ConversationPanel, TalkStrip } from "@/components/game/ConversationPanel";
 import { SettingsModal } from "@/components/SettingsModal";
 import { LoadingState } from "@/components/ui/LoadingDots";
 import { Modal } from "@/components/ui/Modal";
@@ -33,6 +35,8 @@ import type { Priority } from "@/lib/stage/actions";
 import { applyDevParam, useDevMode } from "@/lib/devMode";
 import { roomFor } from "@/lib/stage/room";
 import { useReducedMotion, useStagePoint, useStageSim } from "@/lib/stage/useStage";
+import { useTalk } from "@/lib/talk/useTalk";
+import { TALKING_PHASES } from "@/lib/talk/flow";
 import type { Character, StoryLine, StoryState } from "@/lib/types";
 import { useI18n } from "@/i18n";
 
@@ -78,6 +82,7 @@ export default function PlayPage() {
   useEffect(() => applyDevParam(), []);
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [pickedId, setPickedId] = useState<string | null>(null);
+  const talkRef = useRef<ReturnType<typeof useTalk> | null>(null);
   const selectedIndex = Math.max(0, cast.findIndex((c) => c.id === pickedId));
   const selected = cast[selectedIndex] ?? null;
 
@@ -134,14 +139,14 @@ export default function PlayPage() {
    * other can be reached), decides, writes the result to story state, and
    * plays it through the validated stage actions. Returns the lines to show.
    */
-  const behave = useCallback(
-    (event: BehaviorEvent, priority: Priority, opts: { rng?: Rng; apply?: boolean } = {}): { decision: Decision; lines: StoryLine[] } | null => {
+  const decideFor = useCallback(
+    (event: BehaviorEvent, rng?: Rng): Decision | null => {
       const s = getStory();
       const castNow = castRef.current;
       const me = castNow.find((c) => c.id === event.reactorId);
       if (!me) return null;
       const otherId = event.otherId;
-      const decision = decide({
+      return decide({
         story: s,
         cast: castNow,
         event,
@@ -153,13 +158,21 @@ export default function PlayPage() {
           commanded: stage.isCommanded(me.id),
           canReach: otherId ? stage.canReach(me.id, otherId) : true,
         },
-        rng: opts.rng ?? rngFrom(`${s.turn}:${me.id}:${event.trigger}:${Date.now()}`),
+        rng: rng ?? rngFrom(`${s.turn}:${me.id}:${event.trigger}:${Date.now()}`),
       });
-      if (opts.apply === false) return { decision, lines: [] };
+    },
+    [getStory, stage, envType],
+  );
+  /** Apply a decision: story state (feelings, relations, memory), the visible emotion and the movement. */
+  const commitDecision = useCallback(
+    (decision: Decision, priority: Priority = "story") => {
+      const s = getStory();
+      const castNow = castRef.current;
       const next = applyDecision(s, decision, castNow);
       setStoryState(next);
-      const e = emotionOf(next.characters[me.id]);
-      stage.syncEmotion(me.id, e.emotion, e.level, e.at);
+      const id = decision.event.reactorId;
+      const e = emotionOf(next.characters[id]);
+      stage.syncEmotion(id, e.emotion, e.level, e.at);
       // Walks start now: if the character's own line begins first, the walk pauses while they speak and resumes
       // afterwards (the stage's normal rule). Small gestures wait for the hesitation pause.
       for (const m of decision.movement) {
@@ -167,9 +180,20 @@ export default function PlayPage() {
         stage.schedule(travels ? 0 : m.delay, m.action, "event", priority);
       }
       setDecisions((list) => [decision, ...list].slice(0, 12));
-      return { decision, lines: decisionLines(decision, castNow, (next.decisions?.length ?? 0) + s.turn) };
+      return next;
     },
-    [getStory, setStoryState, stage, envType],
+    [getStory, setStoryState, stage],
+  );
+  const behave = useCallback(
+    (event: BehaviorEvent, priority: Priority, opts: { rng?: Rng; apply?: boolean } = {}): { decision: Decision; lines: StoryLine[] } | null => {
+      const s = getStory();
+      const decision = decideFor(event, opts.rng);
+      if (!decision) return null;
+      if (opts.apply === false) return { decision, lines: [] };
+      const next = commitDecision(decision, priority);
+      return { decision, lines: decisionLines(decision, castRef.current, (next.decisions?.length ?? 0) + s.turn) };
+    },
+    [getStory, decideFor, commitDecision],
   );
 
   // One typewriter for the current line, shared by the speech bubble and the dialogue panel.
@@ -189,6 +213,71 @@ export default function PlayPage() {
   const lineInProgressRef = useRef(lineInProgress);
   lineInProgressRef.current = lineInProgress || busy;
 
+  // ---- Walk-and-talk (Step 3): drag a character onto another (or tap-to-target), they walk over and talk.
+  const talk = useTalk({
+    stage,
+    cast: onStage,
+    world: world?.id ?? "otherworld",
+    place: envType,
+    locale,
+    getStory,
+    setStoryState,
+    decideOnly: (event) => decideFor(event),
+    commit: (d) => commitDecision(d, "story"),
+    showLines: (lines) => {
+      setQueue(lines);
+      setBeatNo((n) => n + 1);
+      setLineIndex(0);
+      logLines(lines);
+    },
+    beatNo,
+    lineIndex,
+    lineInProgress: lineInProgress || busy,
+    recentText: () => getSave().log.slice(-6).map((e) => renderLine(e, locale).text),
+    onSelect: setPickedId,
+    // Ending mid-line: the unread lines go away with the conversation (no stale, half-read reply).
+    onEnd: () => {
+      if (lineInProgressRef.current) setQueue([]);
+    },
+  });
+  talkRef.current = talk;
+  // Developer builds: expose the stage to browser tests (e.g. to put a wall in the way).
+  useEffect(() => {
+    if (!devMode) return;
+    (window as unknown as { __plotTwistStage?: typeof stage }).__plotTwistStage = stage;
+  }, [devMode, stage]);
+  const talkPhase = talk.session?.phase ?? null;
+  const talking = talkPhase !== null && TALKING_PHASES.includes(talkPhase);
+  const blockDrag = useRef(false);
+  blockDrag.current = anyModal || frozen;
+  const drag = useCharacterDrag({
+    stage,
+    canDrag: () => !blockDrag.current && !isTyping(document.activeElement) && !talkRef.current?.session?.composing,
+    distanceFor: (a, b) => {
+      const s = getStory();
+      const me = castRef.current.find((c) => c.id === a);
+      return me ? Math.max(22, talkDistance(me, bondBetween(s, a, b), emotionOf(s.characters[a]).emotion)) : 30;
+    },
+    onDrop: (a, b) => talk.startWalk(a, b, "drag"),
+    onDropEmpty: (a) => talk.tell("emptySpace", a, null),
+  });
+  /** Click / tap on a character: select it, or (choosing a target) walk over to it. */
+  const onStageSelect = useCallback(
+    (id: string) => {
+      if (drag.swallowClick()) return;
+      const s = talkRef.current?.session;
+      if (s?.phase === "SELECT_TARGET") {
+        if (id === s.actorId) talkRef.current?.cancel();
+        else talkRef.current?.startWalk(s.actorId, id, "tap");
+        return;
+      }
+      setPickedId(id);
+    },
+    [drag],
+  );
+  const [touch, setTouch] = useState(false);
+  useEffect(() => setTouch(window.matchMedia("(pointer: coarse)").matches), []);
+
   /** Show a reaction's lines right away (bubble + panel). */
   const showLines = useCallback(
     (lines: StoryLine[]) => {
@@ -207,7 +296,7 @@ export default function PlayPage() {
   const lastArrive = useRef(new Map<string, number>());
   useEffect(() => {
     stage.onArrive = (actorId, targetId) => {
-      if (lineInProgressRef.current) return;
+      if (lineInProgressRef.current || talkRef.current?.involves(actorId, targetId)) return;
       const key = `${actorId}>${targetId}`;
       const now = performance.now();
       if (now - (lastArrive.current.get(key) ?? -1e9) < 6000) return;
@@ -277,7 +366,7 @@ export default function PlayPage() {
 
   const act = useCallback(
     async (action: Action) => {
-      if (!selected || !world || busy) return;
+      if (!selected || !world || busy || talkRef.current?.active()) return;
       setNote(null);
       // 1. Game rules decide what happens and update state (mood, bonds, memories).
       const { beat, story } = plan({
@@ -332,6 +421,7 @@ export default function PlayPage() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (anyModal || e.isComposing || (e.target instanceof Element && e.target.closest("[data-speech-bubble]")) || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      const inTalk = !!talkRef.current?.session;
       const onButton = e.target instanceof HTMLButtonElement || e.target instanceof HTMLAnchorElement;
       const k = e.key.toLowerCase();
       const map: Record<string, () => void> = {
@@ -347,9 +437,14 @@ export default function PlayPage() {
         escape: () => setPauseOpen(true),
         p: () => setPauseOpen(true),
       };
+      if (inTalk) {
+        // During a walk-and-talk: Esc cancels / ends it; the story actions wait until it's over.
+        for (const k2 of ["z", "x", "c", "v"]) delete map[k2];
+        map.escape = () => talkRef.current?.cancel();
+      }
       if (!onButton) {
         // Enter / Space read through the current conversation first, then start a new one.
-        const next = () => (lineInProgress ? advance() : act("talk"));
+        const next = () => (lineInProgress ? advance() : inTalk ? undefined : act("talk"));
         map.enter = next;
         map[" "] = next;
       }
@@ -369,11 +464,15 @@ export default function PlayPage() {
   const speakingNow = lineInProgress ? speakerId : null;
   useEffect(() => stage.setSpeaker(speakingNow), [stage, speakingNow]);
   useEffect(() => {
-    if (!lineInProgress) stage.endConversation();
-  }, [stage, lineInProgress]);
+    // A walk-and-talk keeps the pair together between lines; it ends the conversation itself.
+    if (!lineInProgress && !talking) stage.endConversation();
+  }, [stage, lineInProgress, talking]);
   // On phones the view is nearly square and pans to whoever is speaking (or selected), following them as they walk.
   const focusPoint = useStagePoint(stage, speakerId ?? selected?.id ?? null, 8);
-  const cameraFocus = focusPoint?.x;
+  // While a character is being dragged the camera holds still (the finger is aiming at something).
+  const heldFocus = useRef<number | undefined>(undefined);
+  if (!drag.dragging) heldFocus.current = focusPoint?.x;
+  const cameraFocus = heldFocus.current;
 
   if (!hydrated) return <LoadingState label={t("common.loadingSave")} />;
 
@@ -465,6 +564,9 @@ export default function PlayPage() {
     </>
   ) : null;
 
+  // Phones: keep the stage pinned at the top while a side panel or a conversation is open below it.
+  const pinStage = !wide && (!!sidePanels || talking);
+
   return (
     <main data-layout="wide" className="content-grid flex-1 pt-3 sm:pt-4" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
       {/* HUD */}
@@ -499,7 +601,7 @@ export default function PlayPage() {
       {/* Desktop: viewport ≈78% / character sidebar ≈21%. Phones: viewport first, character sheet in a bottom drawer. */}
       <div className="content-block grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(14.5rem,21%)] xl:gap-5">
         <div className="content-stack">
-          <div className={sidePanels && !wide ? "sticky z-30" : undefined} style={sidePanels && !wide ? { top: headerH } : undefined}>
+          <div className={pinStage ? "sticky z-30" : undefined} style={pinStage ? { top: headerH } : undefined}>
           <PixelStage
             art={environmentArt[world.id][envType]}
             label={t("play.viewportAlt", { place: envName, world: worldName })}
@@ -516,10 +618,12 @@ export default function PlayPage() {
                 selectedId={selected?.id ?? null}
                 speakerId={speakerId}
                 bubble={{ lineId, speaker: shownLine.speaker, typer, more, onAdvance: advance }}
+                drag={drag.store}
+                chooser={talk.session?.phase === "SELECT_TARGET" ? { actorId: talk.session.actorId, choices: onStage.filter((c) => c.id !== talk.session!.actorId).map((c) => c.id) } : null}
               />
             }
           >
-            <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={setPickedId} reducedMotion={reducedMotion} />
+            <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={onStageSelect} onPressStart={drag.onPressStart} reducedMotion={reducedMotion} />
           </PixelStage>
           </div>
           <ControlPad
@@ -529,7 +633,7 @@ export default function PlayPage() {
             onNext={() => cycle(1)}
             onInteract={() => act("talk")}
             onInfo={() => setSheetOpen(true)}
-            disabled={cast.length === 0 || busy}
+            disabled={cast.length === 0 || busy || !!talk.session}
           />
           <DialogueBox
             speaker={busy ? t("scene.narrator") : shownLine.speaker}
@@ -542,7 +646,11 @@ export default function PlayPage() {
             total={Math.max(1, queue.length)}
             busy={busy}
             note={note}
+            hideActions={talking}
+            actionsDisabled={!!talk.session}
           />
+          <ConversationPanel talk={talk} cast={onStage} story={story} lineInProgress={lineInProgress || busy} />
+          <TalkStrip talk={talk} cast={onStage} selectedId={selected?.id ?? null} touch={touch} />
           <p className="hidden font-label text-[10px] uppercase text-ink-mute lg:block">{t("play.keyboardHint")}</p>
           {sidePanels && !wide && sidePanels}
         </div>

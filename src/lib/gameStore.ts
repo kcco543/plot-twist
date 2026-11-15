@@ -28,6 +28,9 @@ function normalizeStory(raw: unknown): StoryState {
     characters: r.characters && typeof r.characters === "object" ? r.characters : {},
     bonds: r.bonds && typeof r.bonds === "object" ? r.bonds : {},
     events: Array.isArray(r.events) ? r.events : [],
+    // Behavior engine state (relationships, recent decisions) must survive a reload too.
+    ...(r.relations && typeof r.relations === "object" ? { relations: r.relations } : {}),
+    ...(Array.isArray(r.decisions) ? { decisions: r.decisions } : {}),
   };
 }
 
