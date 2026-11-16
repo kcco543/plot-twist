@@ -32,7 +32,7 @@ export function Panel({
   return (
     <Tag
       aria-label={ariaLabel}
-      className={`px-frame px-shadow relative ${title ? "mt-5" : ""} ${className}`}
+      className={`px-frame px-shadow px-panel relative ${title ? "mt-5" : ""} ${className}`}
       style={{ "--frame": `var(--frame-${frame})` } as CSSProperties}
     >
       {sparkles && <CornerSparkles />}

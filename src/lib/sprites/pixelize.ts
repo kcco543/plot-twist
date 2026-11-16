@@ -231,6 +231,20 @@ export function makePortrait(src: Img, opts: ConvertOptions = DEFAULT_CONVERT): 
   return upscale(grid, 2);
 }
 
+/** Full editable portrait: the whole figure on a 64×64 grid (the player crops the avatar from it). */
+export const FULL_PORTRAIT_SIZE = 64;
+export function makeFullPortrait(src: Img, opts: ConvertOptions = DEFAULT_CONVERT): Img | null {
+  const img = opts.removeBackground ? removeFlatBackground(src) : src;
+  const box = contentBox(img);
+  if (!box) return null;
+  const N = FULL_PORTRAIT_SIZE;
+  const pad = opts.outline ? 1 : 0;
+  const { w, h } = fit(box, N - 4 - pad * 2, N - 4 - pad * 2);
+  let out = place(quantize(downsample(img, box, w, h), Math.min(16, opts.colors + 4)), N, N, Math.floor((N - w) / 2), N - 2 - pad - h);
+  if (opts.outline) out = addOutline(out);
+  return out;
+}
+
 /** Distinct opaque colors (for the pixel editor palette). */
 export function paletteOf(img: Img, max = 24): string[] {
   const seen = new Map<string, number>();

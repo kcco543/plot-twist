@@ -3,6 +3,7 @@
  * "inputs hash" that tells when a personality analysis is out of date.
  * Pure functions (no React, no storage) so they are easy to test.
  */
+import { normalizePortraits } from "../portraits/model";
 import { makeId } from "../id";
 import { BOUNDARY_KINDS, CHARACTER_TEXT_FIELDS, TRAIT_IDS, type BoundaryKind, type Character, type CharacterBoundary, type CharacterTextField, type Traits } from "../types";
 import { normalizeGender } from "./gender";
@@ -63,6 +64,7 @@ export function normalizeCharacter(raw: unknown): Character {
     ...(typeof r.templateId === "string" && r.templateId ? { templateId: r.templateId } : {}),
     ...(Array.isArray(r.boundaries) ? { boundaries: normalizeBoundaries(r.boundaries) } : {}),
     ...(normalizeGender(r.gender) ? { gender: normalizeGender(r.gender) } : {}),
+    ...(normalizePortraits(r.portraits) ? { portraits: normalizePortraits(r.portraits)! } : {}),
   };
 }
 
