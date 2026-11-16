@@ -1,5 +1,6 @@
 import { AnalyzeRequestSchema } from "@/lib/ai/contracts";
 import { aiErrorResponse, structuredCall } from "@/lib/ai/server/claude";
+import { TEXT_MODEL } from "@/lib/ai/server/config";
 import { ANALYSIS_SYSTEM, analysisUser } from "@/lib/ai/server/prompts";
 import { BehaviorProfileSchema, finishProfile } from "@/lib/behavior/schema";
 
@@ -11,7 +12,7 @@ export async function POST(req: Request) {
   const body = AnalyzeRequestSchema.safeParse(await req.json().catch(() => null));
   if (!body.success) return Response.json({ error: "bad_request", message: "Invalid analysis request" }, { status: 400 });
   try {
-    const raw = await structuredCall({ schema: BehaviorProfileSchema, system: ANALYSIS_SYSTEM, user: analysisUser(body.data), effort: "medium" });
+    const raw = await structuredCall({ feature: "analyze", schema: BehaviorProfileSchema, system: ANALYSIS_SYSTEM, user: analysisUser(body.data), effort: "medium", maxTokens: 12000, model: TEXT_MODEL, reuse: false });
     const profile = finishProfile(raw);
     return Response.json({ profile });
   } catch (err) {

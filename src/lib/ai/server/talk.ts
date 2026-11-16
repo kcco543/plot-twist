@@ -111,7 +111,18 @@ function decisionBlock(req: TalkRequest, L: string): string {
     .join("\n");
 }
 
+/** The whole user turn (prefix + rest). */
 export function talkUser(req: TalkRequest): string {
+  const { prefix, rest } = talkParts(req);
+  return `${prefix}\n\n${rest}`;
+}
+
+/**
+ * The user turn in two parts: `prefix` (language, world, both characters'
+ * profiles) stays identical for every reply in a conversation and is cached;
+ * `rest` is what changed since the last reply.
+ */
+export function talkParts(req: TalkRequest): { prefix: string; rest: string } {
   const L = req.listener;
   const S = req.speaker;
   const listenerName = L.fields.name?.trim() || "(unnamed)";
@@ -124,11 +135,13 @@ export function talkUser(req: TalkRequest): string {
       .join("\n");
   const listenerMem = mem("listener");
   const speakerMem = mem("speaker");
-  return [
+  const prefix = [
     `<game_language>${LANGUAGE[req.locale]}</game_language>`,
     `<world>${WORLD_RULES[req.world]}\nPlace type: ${req.place}${req.placeDescription.trim() ? `\nAs the player described it: ${req.placeDescription.trim()}` : ""}</world>`,
     characterBlock(L, "listener"),
     characterBlock(S, "speaker"),
+  ].join("\n\n");
+  const rest = [
     `<listener_view of="${speakerName}">\n${listenerName} → ${speakerName}: ${viewLine(req.listenerView)}\n(${speakerName} → ${listenerName}, which ${listenerName} can only guess at: ${viewLine(req.speakerView)})\n</listener_view>`,
     `<listener_state>\nShows: ${req.listenerState.emotion} (strength ${req.listenerState.level}/3)\nFeels: ${req.listenerState.feelings.map((f) => `${f.feeling} ${Math.round(f.value)}`).join(", ") || "nothing strong"}\n</listener_state>`,
     listenerMem ? `<memories holder="${listenerName}">\n${listenerMem}\n</memories>` : `<memories holder="${listenerName}">none yet</memories>`,
@@ -154,6 +167,7 @@ export function talkUser(req: TalkRequest): string {
   ]
     .filter(Boolean)
     .join("\n\n");
+  return { prefix, rest };
 }
 
 // ---------------------------------------------------------------- developer test double

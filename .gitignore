@@ -47,3 +47,6 @@ next-env.d.ts
 /tests/live/photos/
 /tests/live/images/
 /tests/live/refine-last-run.md
+
+# AI usage mode + limits saved by the dev usage dashboard
+/.plot-twist-ai.json

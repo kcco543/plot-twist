@@ -42,6 +42,14 @@ The two keys are separate: an Anthropic key can't stand in for an OpenAI one. Pa
 
 Restart `npm run dev` afterwards. Settings → AI services shows what is set up, and **Test connections** there checks each key against its provider (it never shows the key). An empty credit balance only shows up when something is actually generated, and is reported as a billing problem, not as "rate limited". Live checks that spend a few cents: `RUN_LIVE_IMAGES=1 npx vitest run tests/live/image.live.test.ts` (character from a reference image, map from text) and `RUN_LIVE_AI=1 npx vitest run tests/live/refine.live.test.ts`. Keys are read only by the server routes in `src/app/api/ai/`, never sent to the browser. On Vercel, add the same variables under Project → Settings → Environment Variables.
 
+### AI costs, modes and the usage dashboard
+
+The game only calls Claude when you do something: send a message, show a photo, give a gift, run or refine an analysis, or press **Talk** / **Twist!** with AI story writing on. Idle screens, walking and characters acting on their own never call it (checked by `scripts/usage-check/`). Details and numbers: `docs/AI_COSTS.md`.
+
+- **AI mode** (default **Balanced**): *Offline* sends nothing; *Balanced* uses AI only for what you start (Observe/Wait beats use built-in lines); *Full AI* also words Observe/Wait. Switch it on the dashboard below, or set `AI_MODE` in `.env.local`.
+- **Models**: conversations, photo and gift reactions use `claude-sonnet-5-5` (`ANTHROPIC_TALK_MODEL`); story-beat wording uses `claude-haiku-5-5` (`ANTHROPIC_STORY_MODEL`); personality analysis and refinement use `claude-opus-5-5` (`ANTHROPIC_MODEL`).
+- **API Usage dashboard** (development only): open <http://localhost:3000/dev/usage> (or Settings → *Open the API usage dashboard*). It shows requests, tokens, cache use, estimated cost and time per feature, lets you switch the mode, and set limits: requests per minute, requests at once, max output tokens, and a spending budget per session. When a limit is reached the request is refused before anything is sent. The budget is the app's own estimate, not a billing cap: set a real monthly limit in the Anthropic Console (Settings → Limits).
+
 ### Tests
 
 ```bash
@@ -142,7 +150,7 @@ Relationships develop gradually and are enforced by game rules, not the AI: ever
 
 ## AI photo reactions
 
-Click a character → **Photo** → take or upload a photo (optional caption) → **Show** → **Send**. Show first explains that the photo goes to Anthropic's Claude; nothing leaves the device before Send. The character looks at the photo through Claude (the same model as conversations, `ANTHROPIC_TALK_MODEL` → `ANTHROPIC_MODEL` → `claude-opus-5-5`; the route checks the model accepts images) and reacts in the speech bubble, with an emotion, a small validated movement and sometimes a follow-up question.
+Click a character → **Photo** → take or upload a photo (optional caption) → **Show** → **Send**. Show first explains that the photo goes to Anthropic's Claude; nothing leaves the device before Send. The character looks at the photo through Claude (the same model as conversations, `ANTHROPIC_TALK_MODEL`, default `claude-sonnet-5-5`; the route checks the model accepts images) and reacts in the speech bubble, with an emotion, a small validated movement and sometimes a follow-up question.
 
 - What the AI sees: the re-encoded JPEG (≤1280 px, no metadata), the caption, the character's profile, emotion, how they feel about the player ("the visitor" in-world), a few memories and their last photo reactions. Rules: only what is visible, uncertainty allowed, never identify people or infer sensitive traits.
 - Nothing is stored unless the player presses **Save as memory**. Then the photo goes to IndexedDB (this world, this character) and the memory (story state) keeps the AI's short description, why it mattered, the caption and what was said, linked to the photo by id. **Delete photo** in the memory inspector removes the file and the link (the memory stays); **Forget** removes both. The server never stores or logs the image.

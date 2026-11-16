@@ -104,7 +104,9 @@ export type PhotoErrorCode =
   | "bad_image"
   | "too_large"
   | "cancelled"
-  | "billing";
+  | "billing"
+  | "ai_off"
+  | "budget";
 export type PhotoResult = { ok: true; data: PhotoResponse } | { ok: false; code: PhotoErrorCode };
 
 export const PHOTO_CLIENT_TIMEOUT_MS = 60_000;

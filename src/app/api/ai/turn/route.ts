@@ -1,5 +1,6 @@
 import { TurnRequestSchema } from "@/lib/ai/contracts";
 import { AiError, aiErrorResponse, structuredCall } from "@/lib/ai/server/claude";
+import { STORY_MODEL } from "@/lib/ai/server/config";
 import { TURN_SYSTEM, turnUser } from "@/lib/ai/server/prompts";
 import { TurnOutputSchema } from "@/lib/behavior/schema";
 import { isRepeat } from "@/lib/story/similarity";
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
   const r = body.data;
   const allowed = new Set(["narrator", r.actor.id, ...(r.other ? [r.other.id] : [])]);
   try {
-    const out = await structuredCall({ schema: TurnOutputSchema, system: TURN_SYSTEM, user: turnUser(r), effort: "low", maxTokens: 8000 });
+    const out = await structuredCall({ feature: "turn", detail: r.beat.kind, schema: TurnOutputSchema, system: TURN_SYSTEM, user: turnUser(r), effort: "low", maxTokens: 1500, model: STORY_MODEL });
     const lines = out.lines
       .filter((l) => allowed.has(l.speaker))
       .map((l) => ({ speaker: l.speaker, text: l.text.trim().slice(0, 320) }))

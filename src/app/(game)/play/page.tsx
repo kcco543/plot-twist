@@ -583,9 +583,11 @@ export default function PlayPage() {
     [world, envType, locale, t, getStory],
   );
 
+  // A ref, not just state: two key presses in the same frame must not start two paid AI requests.
+  const actingRef = useRef(false);
   const act = useCallback(
     async (action: Action) => {
-      if (!selected || !world || busy || talkRef.current?.active()) return;
+      if (!selected || !world || busy || actingRef.current || talkRef.current?.active()) return;
       setNote(null);
       // 1. Game rules decide what happens and update state (mood, bonds, memories).
       const { beat, story } = plan({
@@ -615,10 +617,16 @@ export default function PlayPage() {
       const other = listenerId ? (cast.find((c) => c.id === listenerId) ?? null) : null;
       // 2. A writer puts it into words: the AI if available (told what the engine decided), otherwise built-in templates.
       let lines: StoryLine[] | null = null;
-      if (useAi) {
+      // Balanced mode (the default) words only Talk and story-event beats with AI; Observe/Wait use built-in lines.
+      if (useAi && (ai?.mode === "full" || (beat.kind !== "observe" && beat.kind !== "wait"))) {
+        actingRef.current = true;
         setBusy(true);
-        lines = await writeWithAi(beat, selected, other, response ? [response.decision] : []);
-        setBusy(false);
+        try {
+          lines = await writeWithAi(beat, selected, other, response ? [response.decision] : []);
+        } finally {
+          setBusy(false);
+          actingRef.current = false;
+        }
       }
       lines ??= [...beatToLines(beat, cast, envType, world.id), ...(response?.lines ?? [])];
       setQueue(lines);
@@ -626,7 +634,7 @@ export default function PlayPage() {
       setLineIndex(0);
       logLines(lines);
     },
-    [selected, world, busy, cast, envType, settings.eventFrequency, useAi, writeWithAi, stage, getStory, setStoryState, behave, logLines],
+    [selected, world, busy, cast, envType, settings.eventFrequency, useAi, ai?.mode, writeWithAi, stage, getStory, setStoryState, behave, logLines],
   );
   const cycle = useCallback(
     (dir: 1 | -1) => {

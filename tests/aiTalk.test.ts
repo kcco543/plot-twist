@@ -364,7 +364,12 @@ describe("/api/ai/talk", () => {
     expect(data).toMatchObject({ source: "ai", attempts: 1 });
     expect(data.reply.dialogue).toMatch(/Thank you/);
     const call = mocked.mock.calls[0][0];
-    expect(call.user).toContain("Strangers who stand too close");
+    // The character profiles go in the cached prefix; what changed goes in the rest.
+    expect(call.cachePrefix).toContain("Strangers who stand too close");
+    expect(call.user).toContain("<speaker_says");
+    expect(call.user).not.toContain("Strangers who stand too close");
+    expect(call.feature).toBe("talk");
+    expect(call.model).toBe("claude-sonnet-5-5");
     expect(call.effort).toBe("low");
   });
 
