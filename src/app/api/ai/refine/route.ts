@@ -1,6 +1,6 @@
 import { RefineRequestSchema } from "@/lib/ai/contracts";
 import { AiError, aiErrorResponse, structuredCall } from "@/lib/ai/server/claude";
-import { talkMock, textConfigured } from "@/lib/ai/server/config";
+import { TEXT_MODEL, talkMock, textConfigured } from "@/lib/ai/server/config";
 import { mockRefine, REFINE_SYSTEM, refineUser } from "@/lib/ai/server/refine";
 import { canonSentences, pinLockedCanon, reconcileChanges, RefineOutputSchema } from "@/lib/behavior/refine";
 import { finishProfile } from "@/lib/behavior/schema";
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   }
   const mock = !textConfigured() && talkMock();
   try {
-    const raw = mock ? mockRefine(body.data, current) : await structuredCall({ schema: RefineOutputSchema, system: REFINE_SYSTEM, user: refineUser(body.data, current), effort: "medium" });
+    const raw = mock ? mockRefine(body.data, current) : await structuredCall({ feature: "refine", schema: RefineOutputSchema, system: REFINE_SYSTEM, user: refineUser(body.data, current), effort: "medium", maxTokens: 12000, model: TEXT_MODEL, reuse: false });
     const out = RefineOutputSchema.parse(raw);
     let revised;
     try {

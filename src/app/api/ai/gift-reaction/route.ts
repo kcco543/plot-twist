@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     let extra = "";
     for (let attempt = 1; attempt <= 2; attempt++) {
       const reply = sanitizeGiftReply(
-        await structuredCall({ schema: GiftReactionReplySchema, system: GIFT_SYSTEM, user: giftContent(r, extra), effort: "low", maxTokens: 4000, timeoutMs: CALL_TIMEOUT_MS, maxRetries: 0, model: TALK_MODEL }),
+        await structuredCall({ feature: "gift_reaction", schema: GiftReactionReplySchema, system: GIFT_SYSTEM, user: giftContent(r, extra), effort: "low", maxTokens: 3000, timeoutMs: CALL_TIMEOUT_MS, maxRetries: 0, model: TALK_MODEL }),
         r,
       );
       const problem = giftProblem(reply, r);

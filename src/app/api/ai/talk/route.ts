@@ -1,7 +1,7 @@
 import { AiError, aiErrorResponse, structuredCall } from "@/lib/ai/server/claude";
 import { TALK_MODEL, textConfigured } from "@/lib/ai/server/config";
 import { takeTalkSlot, visitorKey } from "@/lib/ai/server/limits";
-import { mockEnabled, mockReply, TALK_SYSTEM, talkUser } from "@/lib/ai/server/talk";
+import { mockEnabled, mockReply, TALK_SYSTEM, talkParts } from "@/lib/ai/server/talk";
 import { PROBLEM_FEEDBACK, replyProblem, sanitizeReply } from "@/lib/talk/ai/checks";
 import { TalkReplySchema, TalkRequestSchema, type TalkResponse } from "@/lib/talk/ai/contract";
 
@@ -47,15 +47,17 @@ export async function POST(req: Request) {
       const out: TalkResponse = { reply: sanitizeReply(mockReply(r), r), source: "mock", model: "test-double", attempts: 1 };
       return Response.json(out);
     }
-    let user = talkUser(r);
+    // The character profiles stay the same for the whole conversation, so they are sent as a cached prefix.
+    const { prefix, rest } = talkParts(r);
+    let user = rest;
     for (let attempt = 1; attempt <= 2; attempt++) {
-      const reply = sanitizeReply(await structuredCall({ schema: TalkReplySchema, system: TALK_SYSTEM, user, effort: "low", maxTokens: 4000, timeoutMs: CALL_TIMEOUT_MS, maxRetries: 0, model: TALK_MODEL }), r);
+      const reply = sanitizeReply(await structuredCall({ feature: "talk", schema: TalkReplySchema, system: TALK_SYSTEM, cachePrefix: prefix, user, effort: "low", maxTokens: 3000, timeoutMs: CALL_TIMEOUT_MS, maxRetries: 0, model: TALK_MODEL }), r);
       const problem = replyProblem(reply, r);
       if (!problem) {
         const out: TalkResponse = { reply, source: "ai", model: TALK_MODEL, attempts: attempt };
         return Response.json(out);
       }
-      user = `${talkUser(r)}\n\n<rejected_reply reason="${problem}">\n${PROBLEM_FEEDBACK[problem]}\n</rejected_reply>`;
+      user = `${rest}\n\n<rejected_reply reason="${problem}">\n${PROBLEM_FEEDBACK[problem]}\n</rejected_reply>`;
     }
     throw new AiError("invalid_output", "The reply did not fit the character, even after a retry");
   } catch (err) {

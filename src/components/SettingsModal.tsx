@@ -139,6 +139,16 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 ))}
               </ul>
               <AiConnectionCheck />
+              {ai?.mode && (
+                <p className="mt-3 text-sm text-ink-soft" data-ai-mode={ai.mode}>
+                  {t("settings.aiMode", { mode: t(`settings.aiModes.${ai.mode}`) })}
+                </p>
+              )}
+              {process.env.NODE_ENV !== "production" && (
+                <a href="/dev/usage" target="_blank" rel="noopener" className="mt-1 inline-block text-sm underline">
+                  {t("settings.usageDashboard")}
+                </a>
+              )}
             </div>
           </div>
         </Section>

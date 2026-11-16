@@ -13,8 +13,9 @@ import type { AnalyzeRequest, CharacterBrief, RefineRequest, TurnRequest } from 
 import type { AnalysisProposal } from "../behavior/refine";
 import { activeWorldId } from "../saves/worldSaves";
 
-export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null; talk?: "ai" | "mock" | null };
-export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "timeout" | "busy" | "limit" | "unsupported" | "billing";
+export type AiMode = "offline" | "balanced" | "full";
+export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null; talk?: "ai" | "mock" | null; mode?: AiMode };
+export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "timeout" | "busy" | "limit" | "unsupported" | "billing" | "ai_off" | "budget";
 
 export class AiRequestError extends Error {
   constructor(public code: AiErrorCode, message: string) {

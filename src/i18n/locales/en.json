@@ -695,7 +695,14 @@
       "model_missing": "Model not available",
       "unreachable": "Couldn't reach"
     },
-    "aiCheckNote": "This checks the key and model without making anything. Running out of credits only shows up when something is generated."
+    "aiCheckNote": "This checks the key and model without making anything. Running out of credits only shows up when something is generated.",
+    "aiMode": "AI mode: {mode}",
+    "aiModes": {
+      "offline": "Offline (no AI requests)",
+      "balanced": "Balanced (AI only when you start it)",
+      "full": "Full AI"
+    },
+    "usageDashboard": "Open the API usage dashboard (development)"
   },
   "traits": {
     "extroversion": {
@@ -959,7 +966,9 @@
       "limit": "the conversation limit was reached, try again later",
       "cancelled": "the conversation ended",
       "unsupported": "this image service can't edit part of a map",
-      "billing": "the AI account has run out of credits or hit its spending limit (add credits in the provider's billing page, then try again)"
+      "billing": "the AI account has run out of credits or hit its spending limit (add credits in the provider's billing page, then try again)",
+      "ai_off": "AI is switched off in the current AI mode (Offline). The built-in lines are used instead",
+      "budget": "the development AI budget for this session is used up (raise it or reset it in the API Usage dashboard)"
     },
     "errorTitle": "That didn't work: {reason}."
   },
@@ -2267,7 +2276,9 @@
         "bad_image": "The photo couldn't be read. Try another one.",
         "too_large": "That photo is too detailed to send. Try another one.",
         "cancelled": "Stopped.",
-        "billing": "The AI account is out of credits. Add credits, then try again."
+        "billing": "The AI account is out of credits. Add credits, then try again.",
+        "ai_off": "AI reactions are off in Offline mode, so {name} didn't see the photo. Switch to Balanced in the API Usage dashboard to use them.",
+        "budget": "The development AI budget for this session is used up, so {name} didn't react. Raise or reset it in the API Usage dashboard."
       }
     },
     "gift": {
@@ -2339,7 +2350,9 @@
         "bad_image": "The gift picture couldn't be read. Try another one.",
         "too_large": "That gift picture is too big to send.",
         "cancelled": "Stopped.",
-        "billing": "The AI account is out of credits. Add credits, then try again."
+        "billing": "The AI account is out of credits. Add credits, then try again.",
+        "ai_off": "AI reactions are off in Offline mode, so {name} didn't get the gift. Switch to Balanced in the API Usage dashboard to use them.",
+        "budget": "The development AI budget for this session is used up, so {name} didn't get the gift. Raise or reset it in the API Usage dashboard."
       }
     },
     "log": {

@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     let extra = "";
     for (let attempt = 1; attempt <= 2; attempt++) {
       const reply = sanitizePhotoReply(
-        await structuredCall({ schema: PhotoReplySchema, system: PHOTO_SYSTEM, user: photoContent(r, extra), effort: "low", maxTokens: 4000, timeoutMs: CALL_TIMEOUT_MS, maxRetries: 0, model: TALK_MODEL }),
+        await structuredCall({ feature: "photo", schema: PhotoReplySchema, system: PHOTO_SYSTEM, user: photoContent(r, extra), effort: "low", maxTokens: 3000, timeoutMs: CALL_TIMEOUT_MS, maxRetries: 0, model: TALK_MODEL }),
         r,
       );
       const problem = photoProblem(reply, r);
