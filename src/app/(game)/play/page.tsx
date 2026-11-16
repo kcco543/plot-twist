@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { CharacterInfoPanel } from "@/components/game/CharacterInfoPanel";
 import { ControlPad } from "@/components/game/ControlPad";
 import { DialogueBox } from "@/components/game/DialogueBox";
-import { PixelStage } from "@/components/game/PixelStage";
 import { MAX_ON_STAGE } from "@/components/game/SceneSprites";
 import { StageActors, StageOverlay } from "@/components/game/StageLayers";
 import { StageTestPanel } from "@/components/game/StageTestPanel";
@@ -38,9 +37,11 @@ import type { Priority } from "@/lib/stage/actions";
 import { applyDevParam, useDevMode } from "@/lib/devMode";
 import { RelationshipInspector } from "@/components/game/RelationshipInspector";
 import { roomFor, type Point } from "@/lib/stage/room";
-import { giftObject, objectsFor, type ObjectAction } from "@/lib/stage/objects";
+import { giftObject, hitObject, objectsFor, type ObjectAction } from "@/lib/stage/objects";
+import { emptyAgency } from "@/lib/autonomy/types";
+import { nameFromDescription } from "@/lib/scene/layout";
 import { moveGift } from "@/lib/gifts/apply";
-import { useReducedMotion, useStagePoint, useStageSim } from "@/lib/stage/useStage";
+import { useReducedMotion, useStageSim } from "@/lib/stage/useStage";
 import { useTalk } from "@/lib/talk/useTalk";
 import { editMemory, type MemoryPatch } from "@/lib/talk/ai/apply";
 import { TALKING_PHASES } from "@/lib/talk/flow";
@@ -61,6 +62,38 @@ import { activeWorldId } from "@/lib/saves/worldSaves";
 import { useActiveScene } from "@/lib/scene/useScene";
 import { SceneFronts, SceneLoading, SceneNotice } from "@/components/game/SceneLayers";
 import { SceneEditor } from "@/components/game/SceneEditor";
+import { WorldViewport, type ViewportApi } from "@/components/game/WorldViewport";
+import { ObjectActionMenu } from "@/components/explore/ObjectActionMenu";
+import { CurtainStatus, FadeCurtain, LeaveAreaDialog, ScenePicker, SceneTitleCard, type NewSceneDraft } from "@/components/explore/TravelUI";
+import { WorldMarks } from "@/components/explore/WorldMarks";
+import { availability, keeperOf, resolve as resolveInteraction, stateOf as objectStateOf, type InteractContext } from "@/lib/explore/interact";
+import { FIRST_SCENE_ID, activeScene, addMarker, addScene, connect, linkAt, linkKindFor, neighbours, newScene, normalizeScenes, presentIn, sceneById, setObjectState, twoWayByDefault, type SceneRecord, type WorldScenes } from "@/lib/explore/scenes";
+import { travel as travelScenes } from "@/lib/explore/scenes";
+import { generateSceneMap, useMapStudio } from "@/lib/mapGenerator";
+import { mapDisplayName, sceneForMap } from "@/lib/scene/useScene";
+import { nearestFree, spawnPoints } from "@/lib/stage/path";
+import { roomSize as roomSizeOf } from "@/lib/stage/room";
+import { makeId } from "@/lib/id";
+import { placeGift } from "@/lib/gifts/apply";
+import { AiRequestError as ImageError } from "@/lib/ai/client";
+import { ZOOMS, type Zoom } from "@/lib/camera/camera";
+import type { WorldObject } from "@/lib/stage/objects";
+import type { EnvironmentTypeId } from "@/lib/types";
+
+type Travel = {
+  phase: "confirm" | "black" | "pick" | "generating" | "arriving";
+  /** Who is at the exit. */
+  actorId: string;
+  exitId: string;
+  /** Where it leads, when it's already connected. */
+  to: string | null;
+  entrance: string | null;
+  /** Who goes (the one at the exit always does). */
+  party: string[];
+  /** A plan said in dialogue led here (not the player's own command). */
+  fromDialogue: boolean;
+  error: string | null;
+};
 
 const isTyping = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
 /** Ignore a second "advance" this soon after the last one (double-clicks / key bounce never skip two lines). */
@@ -77,9 +110,30 @@ export default function PlayPage() {
   const scene = useActiveScene(save.worldId, save.environment.type, save.environment.mapId);
   const envType = scene.place;
   const placeDescription = scene.kind === "map" ? scene.map.description : save.environment.description;
+  // ---- Connected scenes of this world (explore/scenes.ts). The active scene's map is save.environment.
+  const scenes = useMemo<WorldScenes>(() => save.scenes ?? normalizeScenes(undefined, save.environment), [save.scenes, save.environment]);
+  const scenesRef = useRef(scenes);
+  scenesRef.current = scenes;
+  const here = activeScene(scenes);
+  const sceneId = here.id;
+  const firstSceneId = scenes.list[0]?.id ?? FIRST_SCENE_ID;
+  // The first scene keeps its old key, so positions saved before scenes existed still come back.
+  const roomKey = sceneId === FIRST_SCENE_ID ? scene.key : `${sceneId}|${scene.key}`;
+  const mapStudio = useMapStudio();
+  const sceneLabel = useCallback(
+    (sc: SceneRecord) => {
+      if (sc.name.trim()) return sc.name.trim();
+      const m = sc.mapId ? mapStudio.maps.find((x) => x.id === sc.mapId) : null;
+      return (m ? mapDisplayName(m) : "") || t(`environments.${sc.envType}.name` as const);
+    },
+    [mapStudio.maps, t],
+  );
 
   const isDemo = save.characters.length === 0;
-  const baseCast = useMemo(() => (isDemo ? demoCast(locale) : save.characters), [isDemo, save.characters, locale]);
+  const isDemoRef = useRef(isDemo);
+  isDemoRef.current = isDemo;
+  // Only the characters in this scene are here; everyone else stays where they were.
+  const baseCast = useMemo(() => (isDemo ? demoCast(locale) : presentIn(scenes, sceneId, save.characters)), [isDemo, save.characters, locale, scenes, sceneId]);
   // Behavior Debug Panel scenarios run on this stage with their own sample cast + story, never touching the save.
   const [sandbox, setSandboxState] = useState<{ key: string; cast: Character[]; story: StoryState } | null>(null);
   const sandboxRef = useRef(sandbox);
@@ -163,7 +217,19 @@ export default function PlayPage() {
   /** Personal interactions: the Photo / Gift menu next to a character, or the window it opened. */
   const [interaction, setInteraction] = useState<{ kind: "menu" | InteractionKind; characterId: string } | null>(null);
   const menuOpen = interaction?.kind === "menu";
-  const anyModal = logOpen || pauseOpen || settingsOpen || sheetOpen || areaOpen || (!!interaction && !menuOpen);
+  /** Leaving an area: confirmation → fade to black → choose / create the destination → arrive. */
+  const [travel, setTravel] = useState<Travel | null>(null);
+  const travelRef = useRef(travel);
+  travelRef.current = travel;
+  const anyModal = logOpen || pauseOpen || settingsOpen || sheetOpen || areaOpen || (!!interaction && !menuOpen) || !!travel;
+  /** The action menu next to an object (who would do it, and to what). */
+  const [objMenu, setObjMenu] = useState<{ actorId: string; objectId: string } | null>(null);
+  const viewportApi = useRef<ViewportApi>(null);
+  const zoom: Zoom = settings.cameraZoom ?? "normal";
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const getZoom = useCallback(() => zoomRef.current, []);
+  const [titleKey, setTitleKey] = useState("");
 
   // Desktop layout (sidebar) vs phone / tablet, and the sticky header's height (to pin the stage under it).
   const [wide, setWide] = useState(false);
@@ -183,16 +249,51 @@ export default function PlayPage() {
   const reducedMotion = useReducedMotion(settings.reduceMotion);
   const onStage = useMemo(() => cast.slice(0, MAX_ON_STAGE), [cast]);
   const builtinRoom = useMemo(() => roomFor(world?.id ?? "otherworld", envType), [world?.id, envType]);
-  const room = scene.kind === "loading" ? builtinRoom : scene.room;
+  const baseRoom = scene.kind === "loading" ? builtinRoom : scene.room;
+  // The scene's own objects (annotated map objects or the built-in room's) + exit markers the game added.
+  const ownObjects = useMemo<WorldObject[]>(() => {
+    const w = world?.id ?? "otherworld";
+    const base = scene.kind === "map" ? scene.built.objects : scene.kind === "builtin" ? objectsFor(w, envType) : [];
+    const { width, height } = roomSizeOf(baseRoom);
+    const markers: WorldObject[] = here.markers.map((m) => {
+      const x = m.at.x * width;
+      const y = m.at.y * height;
+      const anchor = nearestFree(baseRoom, { x, y }, [], 0, 48) ?? { x, y };
+      return { id: m.id, type: "exit", name: "custom", world: "default", place: envType, bounds: { x0: anchor.x - 8, y0: anchor.y - 24, x1: anchor.x + 8, y1: anchor.y + 2 }, collider: null, anchors: [anchor], radius: 6, actions: ["leave"], tags: ["exit", "way back", "出口"], exit: true, marker: true };
+    });
+    // Exits know where they lead, so "I'm going to the library" finds the right door.
+    return [...base, ...markers].map((o) => {
+      if (!o.exit) return o;
+      const l = linkAt(scenes, sceneId, o.id);
+      const dest = l ? sceneById(scenes, l.to) : null;
+      if (!dest) return o.marker ? { ...o, label: t("explore.marker.back") } : o;
+      const name = sceneLabel(dest);
+      return { ...o, tags: [...o.tags, name.toLowerCase(), ...name.toLowerCase().split(/\s+/).filter((x) => x.length > 2)], label: o.marker ? t("explore.marker.to", { scene: name }) : o.label };
+    });
+  }, [scene, world?.id, envType, baseRoom, here.markers, scenes, sceneId, sceneLabel, t]);
+  const objectStates = here.objects;
+  const objectStatesRef = useRef(objectStates);
+  objectStatesRef.current = objectStates;
+  // Open doors don't block the way: their collider leaves the room (the same place, so nobody is moved).
+  const openColliders = ownObjects
+    .filter((o) => o.type === "door" && o.collider && objectStateOf(o, objectStates[o.id]).open)
+    .map((o) => o.collider!)
+    .sort()
+    .join("|");
+  const room = useMemo(() => {
+    if (!openColliders) return baseRoom;
+    const open = new Set(openColliders.split("|"));
+    return { ...baseRoom, obstacles: baseRoom.obstacles.filter((x) => !open.has(x.id)) };
+  }, [baseRoom, openColliders]);
   const bondOf = useCallback((a: string, b: string) => bondBetween(getStory(), a, b), [getStory]);
   // Where everyone stood last time in this room (saved with the world), so a reload puts them back.
   const roomKeyRef = useRef("");
-  roomKeyRef.current = scene.key;
+  roomKeyRef.current = roomKey;
   const savedSpots = useCallback(() => {
     const sp = getStory().agency?.spots;
     return sp && sp.place === roomKeyRef.current ? sp.at : {};
   }, [getStory]);
-  const stage = useStageSim({ cast: onStage, room, paused: anyModal || frozen, reducedMotion, bondOf, savedSpots });
+  const stage = useStageSim({ cast: onStage, room, roomKey, paused: anyModal || frozen, reducedMotion, bondOf, savedSpots });
   // Show each character's current emotion (story state is the source of truth; also covers loading a save).
   useEffect(() => {
     for (const c of onStage) {
@@ -351,9 +452,11 @@ export default function PlayPage() {
     onDropEmpty: (a) => talk.tell("emptySpace", a, null),
     onDropObject: (a, o) => sendToRef.current(a, { objectId: o }),
     onDropGround: (a, p) => sendToRef.current(a, { point: p }),
+    // Pointer → world through the camera (correct after any pan or zoom).
+    toWorld: (x, y) => viewportApi.current?.toWorld(x, y) ?? null,
   });
   /** Set below, once the room's objects are known (the drag callbacks run long after render). */
-  const sendToRef = useRef<(actorId: string, to: { objectId: string } | { point: Point }) => boolean>(() => false);
+  const sendToRef = useRef<(actorId: string, to: { objectId: string; action?: ObjectAction } | { point: Point }) => boolean>(() => false);
   /**
    * Click / tap on a character: select it and open the Photo / Gift menu next to it
    * (clicking them again closes it). While choosing who to talk to (tap-to-target)
@@ -409,6 +512,7 @@ export default function PlayPage() {
   });
   // ---- Gifts (AI reactions + world-specific gift instances shown on the stage's display spots).
   const spots = useMemo(() => displaySpots(room), [room]);
+  const sceneOfGifts = useMemo(() => ({ id: sceneId, first: firstSceneId }), [sceneId, firstSceneId]);
   const giftMoment = useGiftMoment({
     stage,
     cast: onStage,
@@ -429,9 +533,8 @@ export default function PlayPage() {
   const objects = useMemo(() => {
     const w = world?.id ?? "otherworld";
     const group = w === "otherworld" ? "otherworld" : "default";
-    const own = scene.kind === "map" ? scene.built.objects : scene.kind === "builtin" ? objectsFor(w, envType) : [];
-    return [...own, ...placeDisplayed(story, spots).map(({ gift, spot }) => giftObject(gift, spot, room, group, envType))];
-  }, [world?.id, envType, story, spots, room, scene]);
+    return [...ownObjects, ...placeDisplayed(story, spots, sceneOfGifts).map(({ gift, spot }) => giftObject(gift, spot, room, group, envType))];
+  }, [world?.id, envType, story, spots, room, ownObjects, sceneOfGifts]);
   useEffect(() => stage.setObjects(objects), [stage, objects]);
   const objectName = useCallback(
     (id: string) => {
@@ -447,7 +550,7 @@ export default function PlayPage() {
     stage,
     cast: onStage,
     objects,
-    roomKey: scene.key,
+    roomKey,
     getStory,
     setStoryState,
     enabled: !isDemo && !sandbox && !anyModal && !frozen,
@@ -457,6 +560,41 @@ export default function PlayPage() {
     nameOf: (id) => castRef.current.find((c) => c.id === id)?.name.trim() ?? "",
   });
   autonomyRef.current = autonomy;
+  // ---- Object interactions (explore/interact.ts): what can be done right now, and what doing it really does.
+  const objectState = useCallback((o: WorldObject) => objectStateOf(o, objectStatesRef.current[o.id]), []);
+  const interactCtx = useCallback(
+    (actorId: string, o: WorldObject, priority: Priority): InteractContext => {
+      const l = o.exit ? linkAt(scenesRef.current, scenesRef.current.active, o.id) : null;
+      const dest = l ? sceneById(scenesRef.current, l.to) : null;
+      return {
+        actorId,
+        carrying: Object.values(getStory().gifts ?? {})
+          .filter((g) => g.owner === actorId && g.display === "carried")
+          .map((g) => ({ id: g.id, name: g.name })),
+        keeperId: keeperOf(o, stage.getSnapshot().actors, actorId),
+        destination: dest ? sceneLabel(dest) : null,
+        priority,
+      };
+    },
+    [getStory, stage, sceneLabel],
+  );
+  const actionsFor = useCallback((actorId: string, o: WorldObject) => availability(o, objectState(o), interactCtx(actorId, o, "player")), [objectState, interactCtx]);
+  // The stage only accepts object actions that make sense in the object's current state (a locked door can't be opened).
+  useEffect(() => {
+    stage.objectGuard = (actor, o, action) => {
+      if (o.type === "gift") return true;
+      return !!actionsFor(actor, o).find((a) => a.action === action && a.ok);
+    };
+    return () => {
+      stage.objectGuard = null;
+    };
+  }, [stage, actionsFor]);
+  /** Save a change to an object's state in this scene (doors, chests). */
+  const patchObjectState = useCallback((objectId: string, patch: Partial<import("@/lib/explore/interact").ObjectState>) => {
+    const sc = getSave().scenes ?? normalizeScenes(undefined, getSave().environment);
+    gameActions.setScenes(setObjectState(sc, sc.active, objectId, patch));
+  }, []);
+
   /** Player command: walk to a floor spot or to an object (never a conversation). Returns false with a notice when impossible. */
   sendToRef.current = (actorId, to) => {
     const s = talkRef.current?.session;
@@ -464,7 +602,25 @@ export default function PlayPage() {
     const who = castRef.current.find((c) => c.id === actorId)?.name.trim() ?? "";
     setPickedId(actorId);
     if ("objectId" in to) {
-      const r = stage.request({ type: "use_object", actor: actorId, object: to.objectId }, "test", "player");
+      const o = stage.objectById(to.objectId);
+      if (!o) return false;
+      let action = to.action;
+      if (!action && o.type !== "gift") {
+        // Several things to do here: ask with the compact menu instead of guessing.
+        const list = actionsFor(actorId, o);
+        const ok = list.filter((a) => a.ok);
+        if (list.length > 1) {
+          setObjMenu({ actorId, objectId: o.id });
+          return true;
+        }
+        if (!ok.length) {
+          const blocked = list[0];
+          talk.tellNames("unreachableObject", who, blocked && !blocked.ok ? `${objectName(o.id)} (${t(`explore.unavailable.${blocked.reason}`)})` : objectName(o.id));
+          return false;
+        }
+        action = ok[0].action;
+      }
+      const r = stage.request({ type: "use_object", actor: actorId, object: to.objectId, ...(action ? { action } : {}) }, "test", "player");
       if (!r.ok) talk.tellNames(r.reason === "busy" ? "busy" : "unreachableObject", who, objectName(to.objectId));
       return r.ok;
     }
@@ -473,21 +629,238 @@ export default function PlayPage() {
     else if (r.note === "nearby") talk.tellNames("nearby", who, "");
     return r.ok;
   };
-  /** Someone reached an object: say what they did (and for their own displayed gift, picking it up really moves it). */
+  const proposeExitRef = useRef<(actorId: string, objectId: string, fromDialogue: boolean) => void>(() => {});
+  /**
+   * Someone reached an object and used it. Game rules decide what actually
+   * happened (door opened / locked, stairs climbed, bartender called over),
+   * the object's state is saved, and the character animates, sits, talks or
+   * is offered the way out. Only the player's commands and genuine plans from
+   * dialogue can lead out of the scene; autonomous habits never do.
+   */
   useEffect(() => {
-    stage.onObject = (actorId: string, objectId: string, action: ObjectAction) => {
+    stage.onObject = (actorId: string, objectId: string, action: ObjectAction, priority: Priority) => {
       const o = stage.objectById(objectId);
       const me = castRef.current.find((c) => c.id === actorId);
       if (!o || !me) return;
-      if (o.type === "gift" && action === "pick_up" && o.giftId && o.ownerId === actorId) setStoryState(moveGift(getStory(), o.giftId, "carried", "picked_up", [actorId]));
-      const line: StoryLine = { speaker: { kind: "narrator" }, key: "tpl", tpl: `objects.do.${action}`, params: { name: me.name.trim(), object: objectName(objectId) }, source: "builtin" };
-      if (lineInProgressRef.current) logLines([line]);
-      else showLines([line]);
+      const say = (line: StoryLine) => (lineInProgressRef.current ? logLines([line]) : showLines([line]));
+      if (o.type === "gift") {
+        if (action === "pick_up" && o.giftId && o.ownerId === actorId) setStoryState(moveGift(getStory(), o.giftId, "carried", "picked_up", [actorId]));
+        say({ speaker: { kind: "narrator" }, key: "tpl", tpl: `objects.do.${action}`, params: { name: me.name.trim(), object: objectName(objectId) }, source: "builtin" });
+        return;
+      }
+      const ctx = interactCtx(actorId, o, priority);
+      const out = resolveInteraction(o, action, objectState(o), ctx);
+      if (out.patch && !sandboxRef.current) patchObjectState(o.id, out.patch);
+      if (out.anim) stage.perform(actorId, out.anim, out.anim === "climb" ? 900 : 700);
+      if (out.pose !== undefined) stage.setPose(actorId, out.pose);
+      const keeper = ctx.keeperId ? (castRef.current.find((c) => c.id === ctx.keeperId)?.name.trim() ?? "") : "";
+      say({ speaker: { kind: "narrator" }, key: "tpl", tpl: out.line.tpl, params: { name: me.name.trim(), object: objectName(objectId), other: keeper, ...(out.line.params ?? {}) }, source: "builtin" });
+      const f = out.follow;
+      if (!f) return;
+      if (f.kind === "talk" && priority === "player") window.setTimeout(() => talkRef.current?.talkHere(actorId, f.target, "drag"), 650);
+      else if (f.kind === "exit" && priority !== "auto" && !sandboxRef.current && !isDemoRef.current) window.setTimeout(() => proposeExitRef.current(actorId, o.id, priority !== "player"), out.anim === "climb" ? 700 : 450);
+      else if (f.kind === "place" && !sandboxRef.current) setStoryState(placeGift(getStory(), f.itemId, scenesRef.current.active, o.collider, castRef.current.map((c) => c.id)));
     };
     return () => {
       stage.onObject = null;
     };
-  }, [stage, objectName, getStory, setStoryState, logLines, showLines]);
+  }, [stage, objectName, getStory, setStoryState, logLines, showLines, interactCtx, objectState, patchObjectState]);
+  // ---- Leaving an area (explore/scenes.ts): confirm → fade to black → destination → arrive at its entrance.
+  const fadeMs = reducedMotion ? 0 : 420;
+  const onStageRef = useRef(onStage);
+  onStageRef.current = onStage;
+  proposeExitRef.current = (actorId, objectId, fromDialogue) => {
+    if (travelRef.current) return;
+    const l = linkAt(scenesRef.current, scenesRef.current.active, objectId);
+    setObjMenu(null);
+    setInteraction(null);
+    setTravel({ phase: "confirm", actorId, exitId: objectId, to: l?.to ?? null, entrance: l?.entrance ?? null, party: [actorId], fromDialogue, error: null });
+  };
+  const currentScenes = useCallback(() => getSave().scenes ?? normalizeScenes(undefined, getSave().environment), []);
+  /** The key Play will use for a scene's room (so positions saved for it come back). */
+  const roomKeyFor = useCallback((sc: SceneRecord) => {
+    const base = sc.mapId ? `map:${sc.mapId}` : `${world?.id ?? "otherworld"}:${sc.envType}`;
+    return sc.id === FIRST_SCENE_ID ? base : `${sc.id}|${base}`;
+  }, [world?.id]);
+  const arrivalRef = useRef<{ sceneId: string; entrance: string | null; travellers: string[]; at: number } | null>(null);
+  const failTravel = useCallback(
+    (sceneName: string) => {
+      setTravel(null);
+      logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: "explore.travel.failed", params: { scene: sceneName } }]);
+      setNote(t("explore.travel.failed", { scene: sceneName }));
+    },
+    [logLines, t],
+  );
+  /** Move the travellers into `destId` (saving this scene first) and switch the view there. */
+  const arriveAt = useCallback(
+    (destId: string, entrance: string | null, tv: Travel, sc: WorldScenes = currentScenes()) => {
+      const s = getSave();
+      const fromName = sceneLabel(activeScene(sc));
+      const r = travelScenes(sc, { to: destId, travellers: tv.party, leftSpots: stage.spots(), env: s.environment, presentIds: onStageRef.current.map((c) => c.id) });
+      const dest = r ? sceneById(r.scenes, destId) : null;
+      if (!r || !dest) return failTravel(sceneById(sc, destId) ? sceneLabel(sceneById(sc, destId)!) : "?");
+      const story = getStory();
+      const agency = { ...emptyAgency(), ...(story.agency ?? {}), spots: { place: roomKeyFor(dest), at: dest.spots } };
+      arrivalRef.current = { sceneId: destId, entrance, travellers: tv.party, at: performance.now() };
+      gameActions.setScenesAndStory(r.scenes, { ...story, agency }, r.env);
+      setTravel({ ...tv, phase: "arriving", to: destId, entrance });
+      const names = tv.party.map((id) => castRef.current.find((c) => c.id === id)?.name.trim() ?? "").filter(Boolean).join(locale === "zh-CN" ? "、" : ", ");
+      logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: "explore.travel.log", params: { names, from: fromName, to: sceneLabel(dest) } }]);
+    },
+    [currentScenes, getStory, stage, failTravel, roomKeyFor, sceneLabel, logLines, locale],
+  );
+  /** A destination's room and objects, to find where travellers arrive (an exit of the same kind, or a new marker). */
+  const destLayout = useCallback(
+    (dest: SceneRecord, fresh?: { id: string } & Parameters<typeof sceneForMap>[0]) => {
+      const w = world?.id ?? "otherworld";
+      const m = fresh && fresh.id === dest.mapId ? fresh : dest.mapId ? mapStudio.maps.find((x) => x.id === dest.mapId) : null;
+      if (m) {
+        const sc = sceneForMap(m);
+        return { room: sc.room, objects: sc.built.objects };
+      }
+      return { room: roomFor(w, dest.envType), objects: objectsFor(w, dest.envType) };
+    },
+    [world?.id, mapStudio.maps],
+  );
+  /** Connect the exit being used to `destId` (and a way back, if asked). */
+  const linkExit = useCallback(
+    (sc: WorldScenes, tv: Travel, destId: string, twoWay: boolean, fresh?: Parameters<typeof destLayout>[1]): { scenes: WorldScenes; entrance: string | null } | null => {
+      const exitObj = stage.objectById(tv.exitId);
+      const kind = linkKindFor(exitObj?.type ?? "exit");
+      const dest = sceneById(sc, destId);
+      if (!dest) return null;
+      const info = destLayout(dest, fresh);
+      let next = sc;
+      // The natural way back: an exit of the same kind over there that leads nowhere yet (stairs ↔ stairs, door ↔ door).
+      const free = info.objects.find((o) => o.exit && linkKindFor(o.type) === kind && !linkAt(sc, destId, o.id));
+      let entrance: string | null = free?.id ?? null;
+      if (!free && twoWay) {
+        const sp = spawnPoints(info.room, 1)[0];
+        const size = roomSizeOf(info.room);
+        entrance = makeId("exit");
+        next = addMarker(next, destId, { id: entrance, kind, at: { x: sp.x / size.width, y: sp.y / size.height } });
+      }
+      const res = connect(next, { id: makeId("link"), from: sc.active, fromExit: tv.exitId, to: destId, toEntrance: entrance, kind, twoWay, createdAt: Date.now() });
+      return res.ok ? { scenes: res.scenes, entrance } : null;
+    },
+    [stage, destLayout],
+  );
+  const leaveNow = useCallback(() => {
+    const tv = travelRef.current;
+    if (!tv) return;
+    setTravel({ ...tv, phase: "black" });
+    window.setTimeout(() => {
+      const cur = travelRef.current;
+      if (!cur || cur.phase !== "black") return;
+      if (cur.to && sceneById(currentScenes(), cur.to)) arriveAt(cur.to, cur.entrance, cur);
+      else setTravel({ ...cur, phase: "pick" });
+    }, fadeMs);
+  }, [arriveAt, currentScenes, fadeMs]);
+  const stayHere = useCallback(() => {
+    const tv = travelRef.current;
+    setTravel(null);
+    if (!tv) return;
+    const who = castRef.current.find((c) => c.id === tv.actorId)?.name.trim() ?? "";
+    logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: "explore.travel.stayed", params: { name: who, exit: objectName(tv.exitId) } }]);
+  }, [logLines, objectName]);
+  const chooseScene = useCallback(
+    (destId: string, twoWay: boolean) => {
+      const tv = travelRef.current;
+      if (!tv) return;
+      const r = linkExit(currentScenes(), tv, destId, twoWay);
+      if (!r) return failTravel("?");
+      arriveAt(destId, r.entrance, tv, r.scenes);
+    },
+    [linkExit, currentScenes, arriveAt, failTravel],
+  );
+  const createScene = useCallback(
+    async (d: NewSceneDraft, how: "generate" | "placeholder", twoWay: boolean) => {
+      const tv = travelRef.current;
+      if (!tv || !world) return;
+      let map: Awaited<ReturnType<typeof generateSceneMap>> | null = null;
+      if (how === "generate") {
+        setTravel({ ...tv, phase: "generating", error: null });
+        try {
+          map = await generateSceneMap({ worldId: world.id, type: d.envType, description: d.description });
+        } catch (e) {
+          // Generation failed: nothing changes, the player can retry, use a placeholder, or cancel.
+          if (travelRef.current?.phase === "generating") setTravel({ ...tv, phase: "pick", error: t(`ai.errors.${e instanceof ImageError ? e.code : "failed"}` as "ai.errors.failed") });
+          return;
+        }
+        if (travelRef.current?.phase !== "generating") return;
+      }
+      const id = makeId("scene");
+      const rec = newScene({ id, name: d.name.trim() || nameFromDescription(d.description), description: d.description.trim(), envType: d.envType, mapId: map?.id ?? null, placeholder: !map });
+      const sc = addScene(currentScenes(), rec);
+      if (!sceneById(sc, id)) return setTravel({ ...tv, phase: "pick", error: t("explore.picker.full") });
+      const r = linkExit(sc, tv, id, twoWay, map ?? undefined);
+      if (!r) return failTravel(rec.name);
+      arriveAt(id, r.entrance, tv, r.scenes);
+    },
+    [world, currentScenes, linkExit, arriveAt, failTravel, t],
+  );
+  // Arrival: once the destination's map is ready, the travellers appear at its entrance and the curtain lifts.
+  useEffect(() => {
+    const a = arrivalRef.current;
+    if (!travel || travel.phase !== "arriving" || !a) return;
+    const ready = scene.kind !== "loading" && sceneId === a.sceneId;
+    const late = performance.now() - a.at > 6000;
+    if (!ready && !late) {
+      const id = window.setTimeout(() => setTravel((tv) => (tv ? { ...tv } : tv)), 500);
+      return () => window.clearTimeout(id);
+    }
+    const id = window.setTimeout(() => {
+      const ent = a.entrance ? ownObjects.find((o) => o.id === a.entrance) : null;
+      const at = ent?.anchors[0];
+      if (at) for (const cid of a.travellers) stage.spawnAt(cid, at);
+      arrivalRef.current = null;
+      setPickedId(travel.actorId);
+      setTravel(null);
+      setTitleKey(`${a.sceneId}:${Date.now()}`);
+    }, 80);
+    return () => window.clearTimeout(id);
+  }, [travel, scene.kind, sceneId, ownObjects, stage]);
+  // Gifts that become displayed while the player is here belong to this scene.
+  const shownGifts = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    const now = new Set(Object.values(save.story.gifts ?? {}).filter((g) => g.display === "displayed").map((g) => g.id));
+    const before = shownGifts.current;
+    shownGifts.current = now;
+    if (!before || sandbox) return;
+    const fresh = [...now].filter((id) => !before.has(id) && !save.story.gifts?.[id]?.sceneId);
+    if (!fresh.length) return;
+    const st = getStory();
+    setStoryState({ ...st, gifts: Object.fromEntries(Object.entries(st.gifts ?? {}).map(([id, g]) => [id, fresh.includes(id) ? { ...g, sceneId } : g])) });
+  }, [save.story.gifts, sandbox, sceneId, getStory, setStoryState]);
+
+  /** Tap / click on the map: an object opens its action menu for the selected character. */
+  const onMapTap = useCallback(
+    (p: Point) => {
+      if (drag.swallowClick()) return;
+      setInteraction((cur) => (cur?.kind === "menu" ? null : cur));
+      const o = hitObject(stage.objects, p, touch ? 4 : 2);
+      const actor = selected?.id;
+      if (!o || !actor || talkRef.current?.session) return setObjMenu(null);
+      if (o.type === "gift") return sendToRef.current(actor, { objectId: o.id });
+      setObjMenu({ actorId: actor, objectId: o.id });
+    },
+    [drag, stage, selected?.id, touch],
+  );
+  /** What dropping a character on this object will do (shown while dragging). */
+  const objectHint = useCallback(
+    (actorId: string, o: WorldObject) => {
+      if (o.type === "gift") return null;
+      const list = actionsFor(actorId, o);
+      const ok = list.filter((a) => a.ok);
+      const name = objectName(o.id);
+      if (list.length > 1) return { label: t("explore.drag.choose", { object: name }), ok: ok.length > 0 };
+      if (ok.length) return { label: t("objects.drag.use", { action: t(`objects.actions.${ok[0].action}`), object: name }), ok: true };
+      const b = list[0];
+      return b && !b.ok ? { label: t("explore.drag.blocked", { reason: t(`explore.unavailable.${b.reason}`), object: name }), ok: false } : null;
+    },
+    [actionsFor, objectName, t],
+  );
+
   // Characters handle their gifts by plain rules, once per story turn (never every frame, never AI).
   // The first turn seen after the save loads is only remembered: opening or reloading a world moves nothing.
   const giftTurn = useRef<number | null>(null);
@@ -671,6 +1044,11 @@ export default function PlayPage() {
         c: () => act("wait"),
         v: () => act("twist"),
         l: () => setLogOpen(true),
+        // Camera: zoom out / in, and follow the selected character again.
+        "-": () => updateSettings({ cameraZoom: ZOOMS[Math.max(0, ZOOMS.indexOf(getZoom()) - 1)] }),
+        "=": () => updateSettings({ cameraZoom: ZOOMS[Math.min(ZOOMS.length - 1, ZOOMS.indexOf(getZoom()) + 1)] }),
+        "+": () => updateSettings({ cameraZoom: ZOOMS[Math.min(ZOOMS.length - 1, ZOOMS.indexOf(getZoom()) + 1)] }),
+        f: () => viewportApi.current?.recenter(),
         escape: () => setPauseOpen(true),
         p: () => setPauseOpen(true),
       };
@@ -692,7 +1070,7 @@ export default function PlayPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [anyModal, menuOpen, act, cycle, advance, lineInProgress]);
+  }, [anyModal, menuOpen, act, cycle, advance, lineInProgress, getZoom]);
 
   // Who is speaking right now (narration has no bubble; it stays in the panel).
   const sp = !busy && current?.speaker.kind === "character" ? current.speaker : null;
@@ -704,12 +1082,8 @@ export default function PlayPage() {
     // A walk-and-talk keeps the pair together between lines; it ends the conversation itself.
     if (!lineInProgress && !talking) stage.endConversation();
   }, [stage, lineInProgress, talking]);
-  // On phones the view is nearly square and pans to whoever is speaking (or selected), following them as they walk.
-  const focusPoint = useStagePoint(stage, speakerId ?? selected?.id ?? null, 8);
-  // While a character is being dragged the camera holds still (the finger is aiming at something).
-  const heldFocus = useRef<number | undefined>(undefined);
-  if (!drag.dragging) heldFocus.current = focusPoint?.x;
-  const cameraFocus = heldFocus.current;
+  // The camera follows whoever is speaking, otherwise the selected character (WorldViewport).
+  const cameraFocusId = speakerId ?? selected?.id ?? null;
 
   if (!hydrated) return <LoadingState label={t("common.loadingSave")} />;
 
@@ -731,7 +1105,19 @@ export default function PlayPage() {
   }
 
   const worldName = t(`worlds.list.${world.id}.name` as const);
-  const envName = scene.kind === "map" ? scene.name || t("playArea.untitled") : t(`environments.${envType}.name` as const);
+  const envName = here.name.trim() || (scene.kind === "map" ? scene.name || t("playArea.untitled") : t(`environments.${envType}.name` as const));
+  // Leaving an area: the confirmation's wording and who could come along.
+  const tvActor = travel ? castRef.current.find((c) => c.id === travel.actorId) : null;
+  const tvDest = travel?.to ? sceneById(scenes, travel.to) : null;
+  const leaveBody = travel
+    ? travel.fromDialogue && tvDest
+      ? t("explore.leave.npc", { name: tvActor?.name.trim() ?? "", scene: sceneLabel(tvDest), exit: objectName(travel.exitId) })
+      : tvDest
+        ? t("explore.leave.bodyTo", { name: tvActor?.name.trim() ?? "", exit: objectName(travel.exitId), scene: sceneLabel(tvDest) })
+        : t("explore.leave.bodyNew", { name: tvActor?.name.trim() ?? "", exit: objectName(travel.exitId) })
+    : "";
+  const menuObj = objMenu ? stage.objectById(objMenu.objectId) : null;
+  const menuActor = objMenu ? cast.find((c) => c.id === objMenu.actorId) : null;
   const selectedName = selected ? selected.name.trim() || t("common.unnamed") : null;
   // Photos and gifts belong to a saved character in the active world save (not the demo cast or a debug scenario).
   const interactWith = interaction ? (cast.find((c) => c.id === interaction.characterId) ?? null) : null;
@@ -858,12 +1244,17 @@ export default function PlayPage() {
           {t("playArea.missingNotice")}
         </SceneNotice>
       )}
-      {scene.kind === "map" && !scene.layout.reviewed && (
-        <SceneNotice action={<PixelButton size="sm" variant="calm" icon="pencil" onClick={() => setAreaOpen(true)} data-edit-play-area>{t("playArea.edit")}</PixelButton>}>
-          {t("playArea.guessNotice", { name: envName })}
+      {here.placeholder && scene.kind === "builtin" && !scene.missingMapId && (
+        <SceneNotice action={<PixelLink href="/builder" size="sm" variant="ghost" icon="map">{t("playArea.openBuilder")}</PixelLink>}>
+          {t("explore.scene.placeholder", { name: envName })}
         </SceneNotice>
       )}
-      {scene.kind === "map" && <SceneEditor open={areaOpen} map={scene.map} onClose={() => setAreaOpen(false)} />}
+      {scene.kind === "map" && !scene.layout.reviewed && (
+        <SceneNotice action={<PixelButton size="sm" variant="calm" icon="pencil" onClick={() => setAreaOpen(true)} data-edit-play-area>{t("playArea.edit")}</PixelButton>}>
+          {sceneId !== firstSceneId ? t("explore.scene.incomplete", { name: envName }) : t("playArea.guessNotice", { name: envName })}
+        </SceneNotice>
+      )}
+      {scene.kind === "map" && <SceneEditor open={areaOpen} map={scene.map} onClose={() => setAreaOpen(false)} cast={save.characters.map((c) => ({ id: c.id, name: c.name.trim() || t("common.unnamed") }))} />}
 
       {isDemo && !sandbox && (
         <p className="content-block plain-pad-x mb-4 flex flex-wrap items-center gap-2 bg-butter-hi py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
@@ -879,15 +1270,27 @@ export default function PlayPage() {
       <div className="content-block grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(14.5rem,21%)] xl:gap-5">
         <div className="content-stack">
           <div className={pinStage ? "sticky z-30" : undefined} style={pinStage ? { top: headerH } : undefined}>
-          <PixelStage
+          <div className="relative">
+          <SceneTitleCard k={titleKey} title={envName} subtitle={worldName} />
+          <WorldViewport
+            apiRef={viewportApi}
             art={scene.kind === "loading" ? environmentArt[world.id][envType] : scene.art}
+            imageWidth={scene.kind === "map" ? scene.map.width : undefined}
             label={t("play.viewportAlt", { place: envName, world: worldName })}
             frame={world.frame}
-            tag={t("common.placeholder")}
-            fit="device"
+            tag={here.placeholder ? t("explore.picker.placeholderTag") : t("common.placeholder")}
+            stage={stage}
+            focusId={cameraFocusId}
+            zoom={zoom}
+            onZoom={(z) => updateSettings({ cameraZoom: z })}
+            followSpeed={settings.cameraFollow ?? "normal"}
+            reducedMotion={reducedMotion}
             maxHeight={stageMax}
-            squareOnPhones={0.92}
-            focusX={cameraFocus}
+            drag={drag.store}
+            onDragScroll={drag.refresh}
+            onTap={onMapTap}
+            locked={anyModal}
+            sceneKey={roomKey}
             overlay={
               <StageOverlay
                 stage={stage}
@@ -898,14 +1301,17 @@ export default function PlayPage() {
                 drag={drag.store}
                 showNav={!!settings.testPanel}
                 chooser={talk.session?.phase === "SELECT_TARGET" ? { actorId: talk.session.actorId, choices: onStage.filter((c) => c.id !== talk.session!.actorId).map((c) => c.id) } : null}
+                objectHint={objectHint}
+                extra={<WorldMarks objects={ownObjects} stateOf={objectState} labelOf={(o) => o.label ?? null} reducedMotion={reducedMotion} />}
               />
             }
           >
             {scene.kind === "map" && <SceneFronts src={scene.art.src} size={scene.built.size} fronts={scene.built.fronts} />}
             {scene.kind === "loading" && <SceneLoading />}
-            <StageGifts placed={placeDisplayed(story, spots)} nameOf={(id) => cast.find((c) => c.id === id)?.name.trim() ?? ""} />
+            <StageGifts placed={placeDisplayed(story, spots, sceneOfGifts)} nameOf={(id) => cast.find((c) => c.id === id)?.name.trim() ?? ""} />
             <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={onStageSelect} onPressStart={drag.onPressStart} reducedMotion={reducedMotion} />
-          </PixelStage>
+          </WorldViewport>
+          </div>
           </div>
           <ControlPad
             name={selectedName}
@@ -1020,6 +1426,60 @@ export default function PlayPage() {
           />
         </>
       )}
+
+      {/* Explorable world: the object action menu, leaving an area, the fade and the destination picker */}
+      {objMenu && menuObj && menuActor && !travel && (
+        <ObjectActionMenu
+          title={t("explore.menu.title", { name: menuActor.name.trim() || t("common.unnamed"), object: objectName(menuObj.id) })}
+          actions={actionsFor(menuActor.id, menuObj)}
+          anchor={() => {
+            const api = viewportApi.current;
+            const o = stage.objectById(objMenu.objectId);
+            if (!api || !o) return null;
+            const a = api.toScreen({ x: o.bounds.x0, y: o.bounds.y0 });
+            const b = api.toScreen({ x: o.bounds.x1, y: o.bounds.y1 });
+            return a && b ? { left: a.x, top: a.y, right: b.x, bottom: b.y } : null;
+          }}
+          onPick={(action) => {
+            const m = objMenu;
+            setObjMenu(null);
+            sendToRef.current(m.actorId, { objectId: m.objectId, action });
+          }}
+          onClose={() => setObjMenu(null)}
+        />
+      )}
+      <LeaveAreaDialog
+        open={travel?.phase === "confirm"}
+        body={leaveBody}
+        party={onStage.map((c) => ({ id: c.id, name: c.name.trim() || t("common.unnamed"), fixed: c.id === travel?.actorId }))
+          .sort((a, b) => Number(b.fixed) - Number(a.fixed))}
+        chosen={travel?.party ?? []}
+        onToggle={(id) => setTravel((tv) => (tv ? { ...tv, party: tv.party.includes(id) ? tv.party.filter((x) => x !== id) : [...tv.party, id] } : tv))}
+        onStay={stayHere}
+        onLeave={leaveNow}
+      />
+      <FadeCurtain shown={!!travel && travel.phase !== "confirm"} reducedMotion={reducedMotion}>
+        {travel?.phase === "arriving" && <CurtainStatus busy text={t("explore.travel.loading", { scene: tvDest ? sceneLabel(tvDest) : "" })} />}
+      </FadeCurtain>
+      <ScenePicker
+        open={travel?.phase === "pick" || travel?.phase === "generating"}
+        worldName={worldName}
+        scenes={scenes.list}
+        currentId={sceneId}
+        connectedIds={neighbours(scenes, sceneId)}
+        sceneName={sceneLabel}
+        thumbOf={(sc) => (sc.mapId ? (mapStudio.maps.find((m) => m.id === sc.mapId)?.url ?? environmentArt[world.id][sc.envType].src) : environmentArt[world.id][sc.envType].src)}
+        presentCount={(sc) => presentIn(scenes, sc.id, save.characters).length}
+        canGenerate={!!ai?.image}
+        generating={travel?.phase === "generating"}
+        error={travel?.error ?? null}
+        defaultType={envType as EnvironmentTypeId}
+        twoWayDefault={twoWayByDefault(linkKindFor(travel ? (stage.objectById(travel.exitId)?.type ?? "exit") : "exit"))}
+        full={scenes.list.length >= 24}
+        onCreate={(d, how, twoWay) => void createScene(d, how, twoWay)}
+        onChoose={chooseScene}
+        onCancel={() => setTravel(null)}
+      />
 
       {/* Phone / tablet character sheet */}
       <Modal open={sheetOpen} onClose={() => setSheetOpen(false)} title={t("play.character")} closeLabel={t("play.sidebar.close")}>

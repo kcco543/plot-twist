@@ -50,7 +50,7 @@ The references were used for **principles only**. No characters, compositions or
 Contrast: `ink` on `surface` is about 11:1, `ink-soft` on `surface` about 6:1, and `ink` on every candy base color is above 7:1.
 
 ### Worlds
-Every world keeps the same UI. Only the environment art, rim frame and accent change.
+Every world keeps the same UI geometry. Inside a world (Studio, World Builder, Play) the UI wears that world's **skin**: colours, frame materials, motifs and motion flavour change, layout and behaviour never do. See [WORLD_THEMES.md](WORLD_THEMES.md). The brand palette below is what the title screen, My Worlds and the Character Library always use.
 
 | World | Accent (text-safe) | Rim frame | Art status |
 | --- | --- | --- | --- |

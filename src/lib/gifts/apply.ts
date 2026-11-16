@@ -69,10 +69,29 @@ export const displayedGifts = (story: StoryState) => giftsOf(story).filter((g) =
 export const freeSpotCount = (story: StoryState, spots: number) => Math.max(0, spots - displayedGifts(story).length);
 
 /** Displayed gifts placed on the scene's spots (oldest first; extra ones aren't drawn). */
-export function placeDisplayed(story: StoryState, spots: DisplaySpot[]): { gift: GiftInstance; spot: DisplaySpot }[] {
-  return displayedGifts(story)
-    .slice(0, spots.length)
-    .map((gift, i) => ({ gift, spot: spots[i] }));
+export function placeDisplayed(story: StoryState, spots: DisplaySpot[], scene?: { id: string; first: string }): { gift: GiftInstance; spot: DisplaySpot }[] {
+  // Only the gifts displayed in THIS scene (older gifts, without a scene, belong to the world's first scene).
+  const here = displayedGifts(story).filter((g) => !scene || (g.sceneId ?? scene.first) === scene.id);
+  // Gifts put on a particular spot (a table) get it first; the rest fill the free spots in order.
+  const out: { gift: GiftInstance; spot: DisplaySpot }[] = [];
+  const free = [...spots];
+  for (const g of here) {
+    const i = g.spotId ? free.findIndex((s) => s.id === g.spotId) : -1;
+    if (i >= 0) out.push({ gift: g, spot: free.splice(i, 1)[0] });
+  }
+  for (const g of here) {
+    if (out.some((o) => o.gift.id === g.id) || !free.length) continue;
+    out.push({ gift: g, spot: free.shift()! });
+  }
+  return out;
+}
+
+/** A carried gift is put down on a spot in a scene (a character placing it on a table). */
+export function placeGift(story: StoryState, id: string, sceneId: string, spotId: string | null, present: string[], now = Date.now()): StoryState {
+  const moved = moveGift(story, id, "displayed", "placed", present, now);
+  const g = moved.gifts?.[id];
+  if (!g) return story;
+  return { ...moved, gifts: { ...moved.gifts, [id]: { ...g, sceneId, ...(spotId ? { spotId } : {}) } } };
 }
 
 // ---------------------------------------------------------------- transfer

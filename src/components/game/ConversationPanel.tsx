@@ -178,7 +178,7 @@ export function ConversationPanel({
             : null;
 
   return (
-    <section ref={box} aria-label={t("talk.panel.title")} className="content-block px-frame px-shadow relative mt-6" style={{ "--frame": "var(--frame-card)" } as CSSProperties} data-conversation-panel>
+    <section ref={box} aria-label={t("talk.panel.title")} className="content-block px-frame px-shadow px-panel relative mt-6" style={{ "--frame": "var(--frame-card)" } as CSSProperties} data-conversation-panel>
       <span className="px-tab absolute -top-7 left-[calc(var(--u)*-4)] sm:-top-8" style={{ borderImageSource: "var(--frame-lavender)" }}>
         {t("talk.panel.title")}
       </span>

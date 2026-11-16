@@ -24,7 +24,7 @@ import {
   type SceneObject,
 } from "@/lib/scene/layout";
 import type { Point, Rect } from "@/lib/stage/room";
-import type { ObjectType } from "@/lib/stage/objects";
+import { EXIT_TYPES, type ObjectType } from "@/lib/stage/objects";
 
 type Tool = "floor" | "wall" | "object" | "spawn";
 const BRUSHES = { s: 1, m: 2, l: 4 } as const;
@@ -43,7 +43,7 @@ const sizeOf = (w: number): CharacterSize => (Object.entries(STAGE_WIDTHS).reduc
  * behind it; every object is something characters can be dragged to and use),
  * and spawn points. Saved with the map, so every save using it plays the same.
  */
-export function SceneEditor({ open, map, onClose, onSaved }: { open: boolean; map: GeneratedMap; onClose: () => void; onSaved?: () => void }) {
+export function SceneEditor({ open, map, onClose, onSaved, cast = [] }: { open: boolean; map: GeneratedMap; onClose: () => void; onSaved?: () => void; cast?: { id: string; name: string }[] }) {
   const { t } = useI18n();
   const [layout, setLayout] = useState<SceneLayout>(() => readLayout(map.scene, map.width, map.height));
   const [name, setName] = useState(() => mapDisplayName(map));
@@ -361,6 +361,62 @@ export function SceneEditor({ open, map, onClose, onSaved }: { open: boolean; ma
                   <input type="checkbox" disabled={!sel.solid} checked={sel.front} onChange={(e) => patchObject(sel.id, { front: e.target.checked })} className="size-5" />
                   {t("playArea.front")}
                 </label>
+                {/* Explorable world: how this object behaves when used. */}
+                {(EXIT_TYPES.includes(sel.type) || sel.type === "exit") && (
+                  <label className="flex items-center gap-2 text-base">
+                    <input type="checkbox" checked={sel.exit ?? EXIT_TYPES.includes(sel.type)} onChange={(e) => patchObject(sel.id, { exit: e.target.checked })} className="size-5" data-object-exit />
+                    {t("playArea.exitField")}
+                  </label>
+                )}
+                {sel.type === "counter" && (
+                  <label className="flex flex-col gap-1">
+                    <span className="font-label text-[10px] uppercase text-label">{t("playArea.keeper")}</span>
+                    <select value={sel.keeper ?? ""} onChange={(e) => patchObject(sel.id, { keeper: e.target.value || null })} className="px-input min-h-11 px-2" data-object-keeper>
+                      <option value="">{t("playArea.keeperAuto")}</option>
+                      {cast.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {(sel.type === "door" || sel.type === "chest") && (
+                  <>
+                    <label className="flex items-center gap-2 text-base">
+                      <input type="checkbox" checked={!!sel.startsOpen} onChange={(e) => patchObject(sel.id, { startsOpen: e.target.checked, locked: e.target.checked ? false : sel.locked })} className="size-5" />
+                      {t("playArea.startsOpen")}
+                    </label>
+                    <label className="flex items-center gap-2 text-base">
+                      <input type="checkbox" checked={!!sel.locked} onChange={(e) => patchObject(sel.id, { locked: e.target.checked, startsOpen: e.target.checked ? false : sel.startsOpen })} className="size-5" data-object-locked />
+                      {t("playArea.locked")}
+                    </label>
+                    {sel.locked && (
+                      <label className="flex flex-col gap-1">
+                        <span className="font-label text-[10px] uppercase text-label">{t("playArea.keyName")}</span>
+                        <input value={sel.keyName ?? ""} maxLength={30} placeholder={t("playArea.keyNamePlaceholder")} onChange={(e) => patchObject(sel.id, { keyName: e.target.value })} className="px-input min-h-11 px-2" />
+                      </label>
+                    )}
+                  </>
+                )}
+                {sel.type === "chest" && (
+                  <label className="flex flex-col gap-1">
+                    <span className="font-label text-[10px] uppercase text-label">{t("playArea.contents")}</span>
+                    <input
+                      value={(sel.contents ?? []).join(", ")}
+                      maxLength={200}
+                      placeholder={t("playArea.contentsPlaceholder")}
+                      onChange={(e) => patchObject(sel.id, { contents: e.target.value.split(/[,，、]/).map((x) => x.trim()).filter(Boolean) })}
+                      className="px-input min-h-11 px-2"
+                    />
+                  </label>
+                )}
+                {(sel.type === "sign" || sel.type === "book" || sel.type === "painting" || sel.type === "feature" || sel.type === "item" || sel.type === "window") && (
+                  <label className="flex flex-col gap-1">
+                    <span className="font-label text-[10px] uppercase text-label">{t("playArea.note")}</span>
+                    <input value={sel.note ?? ""} maxLength={280} placeholder={t("playArea.notePlaceholder")} onChange={(e) => patchObject(sel.id, { note: e.target.value })} className="px-input min-h-11 px-2" data-object-note />
+                  </label>
+                )}
                 {unreachable.has(sel.id) && <p className="text-sm text-coral-deep">{t("playArea.unreachable")}</p>}
                 <PixelButton
                   size="sm"

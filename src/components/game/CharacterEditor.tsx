@@ -146,7 +146,7 @@ export function CharacterEditor({
         <Panel title={t("studio.sections.identity")}>
           <div className="flex flex-col gap-6 md:flex-row md:items-start">
             {library ? (
-              <PortraitSlot character={character} onChange={(portrait) => onChange({ portrait })} onClearArt={() => onChange({ art: null })} />
+              <PortraitSlot character={character} onChange={(portrait) => onChange({ portrait })} onClearArt={() => onChange({ art: null, portraits: undefined })} />
             ) : (
               <PortraitSlot character={character} onChange={(portrait) => onChange({ portrait })} onMakeSprite={() => setTab("look")} />
             )}

@@ -6,12 +6,12 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type C
  * What part of the stage is on screen, in CSS px of the scaled stage.
  * Without a camera the whole stage is visible (offsetX 0, viewW = stage width).
  */
-export type StageView = { offsetX: number; viewW: number } | null;
-const StageViewContext = createContext<StageView>(null);
+export type StageView = { offsetX: number; viewW: number; offsetY?: number; viewH?: number } | null;
+export const StageViewContext = createContext<StageView>(null);
 export const useStageView = () => useContext(StageViewContext);
 
 /** The stage's size in art px (320×192 for built-in rooms; generated maps have their own). */
-const StageSizeContext = createContext({ width: 320, height: 192 });
+export const StageSizeContext = createContext({ width: 320, height: 192 });
 export const useStageSize = () => useContext(StageSizeContext);
 
 /** Below this container width, `squareOnPhones` switches to the taller, panning view. */

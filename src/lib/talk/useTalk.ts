@@ -220,6 +220,27 @@ export function useTalk(d: TalkDeps) {
     [end, set, tell],
   );
 
+  /**
+   * Open a conversation with someone across something (the bartender behind
+   * the bar counter) without walking up to them: the caller already walked
+   * the actor to a valid spot at the counter.
+   */
+  const talkHere = useCallback(
+    (actorId: string, targetId: string, via: TalkSession["via"]): boolean => {
+      const { stage, cast } = deps.current;
+      if (actorId === targetId || !cast.some((c) => c.id === actorId) || !cast.some((c) => c.id === targetId)) return false;
+      if (!stage.position(actorId) || !stage.position(targetId)) return false;
+      if (ref.current) end();
+      setNotice(null);
+      walk.current = { started: performance.now(), dist: 999 };
+      deps.current.onSelect(actorId);
+      const s0 = newSession(nextId.current++, actorId, via);
+      set(goTo(goTo(s0, "MOVE_TO_TARGET", { targetId }), "FACE_TARGET"));
+      return true;
+    },
+    [end, set],
+  );
+
   // ---- MOVE_TO_TARGET: watch the walk (re-aims happen inside the sim when the target moves).
   const phase = session?.phase ?? null;
   useEffect(() => {
@@ -624,6 +645,7 @@ export function useTalk(d: TalkDeps) {
     tellNames: useCallback((kind: TalkNoticeKind, actor: string, other: string) => setNotice({ kind, actor, target: other, at: Date.now() }), []),
     beginSelect,
     startWalk,
+    talkHere,
     /** Cancel the target choice or the walk, or end the conversation. */
     cancel: useCallback(() => end(ref.current && TALKING_PHASES.includes(ref.current.phase) ? "ended" : "cancelled"), [end]),
     endConversation: useCallback(() => end("ended"), [end]),

@@ -7,7 +7,10 @@ import { makeId } from "./id";
 import { emptyAgency } from "./autonomy/types";
 import { createBlankCharacter, normalizeCharacter } from "./character/model";
 import { emptyStory, neutralState, withMemoryNote } from "./story/engine";
+import { sanitizeUiTheme, type WorldUiTheme } from "./theme/themes";
+import type { CharacterPortraits } from "./portraits/model";
 import { withEmotion, type Emotion } from "./emotion/emotions";
+import { normalizeScenes, syncActive, type WorldScenes } from "./explore/scenes";
 import type { Character, CharacterArt, EnvironmentDraft, SaveData, SpriteAsset, StoryLine, StoryState, WorldId } from "./types";
 
 /**
@@ -62,6 +65,10 @@ export function migrateSave(raw: unknown): SaveData {
     log: Array.isArray(r.log) ? r.log : [],
     story: normalizeStory(r.story),
     sprites: Array.isArray(r.sprites) ? r.sprites.filter((s) => s && typeof s.sprite === "string") : [],
+    // Versioned, validated: an unknown or mismatched theme falls back to the world type's default (never reset to nothing).
+    uiTheme: sanitizeUiTheme(r.uiTheme, (r.worldId as WorldId | null) ?? null) ?? undefined,
+    // Connected scenes: validated, and older saves get one scene made from their environment (nothing is lost).
+    scenes: normalizeScenes(r.scenes, { ...emptySave.environment, ...(r.environment ?? {}) }),
   };
 }
 
@@ -78,7 +85,12 @@ export { CHARACTER_TEXT_FIELDS, createBlankCharacter } from "./character/model";
 
 export const gameActions = {
   selectWorld(worldId: WorldId) {
-    touch((s) => ({ ...s, worldId }));
+    // A different world type starts from that type's own default skin.
+    touch((s) => ({ ...s, worldId, uiTheme: s.uiTheme?.baseTheme === worldId ? s.uiTheme : undefined }));
+  },
+  /** Save this world's UI skin (World Builder → Look & feel). Only changes the UI: maps and art are untouched. */
+  setUiTheme(theme: WorldUiTheme | null) {
+    touch((s) => ({ ...s, uiTheme: theme ? (sanitizeUiTheme({ ...theme, updatedAt: Date.now() }, s.worldId) ?? undefined) : undefined }));
   },
   addCharacter(): Character {
     // Give each new character the first placeholder portrait nobody is using yet.
@@ -107,7 +119,19 @@ export const gameActions = {
     touch((s) => ({ ...s, characters: s.characters.filter((c) => c.id !== id) }));
   },
   updateEnvironment(patch: Partial<EnvironmentDraft>) {
-    touch((s) => ({ ...s, environment: { ...s.environment, ...patch } }));
+    // The active scene mirrors the environment (World Builder changes the map of the scene being played).
+    touch((s) => {
+      const environment = { ...s.environment, ...patch };
+      return { ...s, environment, scenes: s.scenes ? syncActive(s.scenes, environment) : s.scenes };
+    });
+  },
+  /** Replace this world's scenes (and, when travelling, the environment shown) in one save. */
+  setScenes(scenes: WorldScenes, environment?: EnvironmentDraft) {
+    touch((s) => ({ ...s, scenes, ...(environment ? { environment } : {}) }));
+  },
+  /** Scenes + story in one write (travelling also moves saved positions in the story's agency state). */
+  setScenesAndStory(scenes: WorldScenes, story: StoryState, environment?: EnvironmentDraft) {
+    touch((s) => ({ ...s, scenes, story, ...(environment ? { environment } : {}) }));
   },
   appendLog(line: StoryLine) {
     gameActions.appendLines([line]);
@@ -145,6 +169,21 @@ export const gameActions = {
       characters: characterId ? s.characters.map((c) => (c.id === characterId ? { ...c, art: pick(asset), updatedAt: Date.now() } : c)) : s.characters,
     }));
     return asset;
+  },
+  /**
+   * Save a character's portrait stack (versions + avatar crop) in THIS world
+   * only. null removes the custom portrait (the sprite / placeholder shows again).
+   */
+  setPortraits(characterId: string, portraits: CharacterPortraits | null) {
+    touch((s) => ({
+      ...s,
+      characters: s.characters.map((c) => {
+        if (c.id !== characterId) return c;
+        const { portraits: _old, ...rest } = c;
+        void _old;
+        return { ...rest, ...(portraits ? { portraits } : {}), updatedAt: Date.now() };
+      }),
+    }));
   },
   applySprite(characterId: string, asset: SpriteAsset | null) {
     gameActions.updateCharacter(characterId, { art: asset ? pick(asset) : null });

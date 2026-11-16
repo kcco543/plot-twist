@@ -17,9 +17,16 @@ export function useStageSim({
   reducedMotion,
   bondOf,
   savedSpots,
+  roomKey,
 }: {
   cast: Character[];
   room: RoomLayout;
+  /**
+   * Which place `room` is. A new key = a different place (everyone is placed
+   * again); the same key with a new room = the same place with changed
+   * collision (a door opened), and nobody moves. Missing = every new room is a new place.
+   */
+  roomKey?: string;
   paused: boolean;
   reducedMotion: boolean;
   bondOf: (a: string, b: string) => Bond;
@@ -33,7 +40,12 @@ export function useStageSim({
 
   const spotsRef = useRef(savedSpots);
   spotsRef.current = savedSpots;
-  useEffect(() => sim.setRoom(room, spotsRef.current?.()), [sim, room]);
+  const lastKey = useRef<string | undefined>(roomKey);
+  useEffect(() => {
+    if (roomKey !== undefined && roomKey === lastKey.current) sim.patchRoom(room);
+    else sim.setRoom(room, spotsRef.current?.());
+    lastKey.current = roomKey;
+  }, [sim, room, roomKey]);
   useEffect(() => {
     if (spotsRef.current) sim.setSavedSpots(spotsRef.current());
     sim.setCast(cast);

@@ -205,7 +205,7 @@ describe("scenario 6–8: following through on what was said", () => {
 describe("scenario 9–10: priorities", () => {
   it("9. the player can interrupt an autonomous walk (the intent ends as interrupted)", () => {
     const { sim, env } = setup();
-    const r = submit(emptyAgency(), newIntent({ actor: "c-juniper", kind: "inspect_object", object: "door", reason: "curious", source: "rules" }, T0), env(T0));
+    const r = submit(emptyAgency(), newIntent({ actor: "c-juniper", kind: "inspect_object", object: "window", reason: "curious", source: "rules" }, T0), env(T0));
     expect(r.intent.status).toBe("executing");
     let a = r.agency;
     sim.onWalkEnd = (actor, outcome) => (a = walkEnded(a, actor, outcome, T0 + 5));
@@ -218,7 +218,7 @@ describe("scenario 9–10: priorities", () => {
   it("10. autonomy never overrides the player's command", () => {
     const { sim, env } = setup();
     sim.request({ type: "walk_to", actor: "c-juniper", x: 60, y: 170 }, "test", "player");
-    const r = submit(emptyAgency(), newIntent({ actor: "c-juniper", kind: "inspect_object", object: "door", reason: "curious", source: "rules" }, T0), env(T0));
+    const r = submit(emptyAgency(), newIntent({ actor: "c-juniper", kind: "inspect_object", object: "window", reason: "curious", source: "rules" }, T0), env(T0));
     expect(r.intent.status).toBe("failed");
     expect(["player_command", "busy"]).toContain(r.intent.note);
   });

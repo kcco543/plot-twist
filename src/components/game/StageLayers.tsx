@@ -50,6 +50,8 @@ export function StageOverlay({
   drag,
   chooser = null,
   showNav = false,
+  objectHint,
+  extra,
 }: {
   stage: StageSim;
   characters: Character[];
@@ -61,6 +63,9 @@ export function StageOverlay({
   chooser?: { actorId: string; choices: string[] } | null;
   /** Developer view: the walkable floor, obstacles and object anchors the planner uses. */
   showNav?: boolean;
+  objectHint?: ComponentProps<typeof DragOverlay>["objectHint"];
+  /** More overlay content in world coordinates (exit markers, open doors, the action menu). */
+  extra?: React.ReactNode;
 }) {
   const snap = useStageSnapshot(stage);
   const size = useStageSize();
@@ -68,7 +73,8 @@ export function StageOverlay({
   return (
     <>
       {showNav && <NavLayer stage={stage} />}
-      {drag && <DragLayer store={drag} actors={snap.actors} characters={characters} chooser={chooser} objects={stage.objects} />}
+      {extra}
+      {drag && <DragLayer store={drag} actors={snap.actors} characters={characters} chooser={chooser} objects={stage.objects} objectHint={objectHint} />}
       <SceneLabels characters={characters} actors={snap.actors} selectedId={selectedId} speakingId={anchor ? speakerId : null} />
       {anchor && <SpeechBubble {...bubble} anchor={anchor} />}
     </>

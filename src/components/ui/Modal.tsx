@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { PixelIcon } from "./PixelIcon";
 
 /** Menu window: plum frame, pink nameplate title, Esc / backdrop to close. Bottom sheet on phones. */
@@ -39,10 +40,12 @@ export function Modal({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
   const width = size === "sm" ? "sm:max-w-sm" : size === "lg" ? "sm:max-w-2xl" : size === "xl" ? "sm:max-w-4xl" : size === "2xl" ? "sm:max-w-6xl" : "sm:max-w-lg";
 
-  return (
+  // Portalled to <body>: a parent with a filter or transform (framed panels use drop-shadow
+  // filters) would otherwise trap a fixed-position window inside itself.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
@@ -53,7 +56,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`px-frame relative mt-10 flex max-h-[85dvh] w-full ${width} animate-pop flex-col`}
+        className={`px-frame px-panel relative mt-10 flex max-h-[85dvh] w-full ${width} animate-pop flex-col`}
         style={{ "--frame": "var(--frame-panel)" } as React.CSSProperties}
       >
         <div className="absolute -top-8 left-1 right-0 flex items-start justify-between gap-2">
@@ -67,6 +70,7 @@ export function Modal({
         <div className="overflow-y-auto overscroll-contain px-2 pt-6 pb-3 sm:px-3">{children}</div>
         {footer && <footer className="flex flex-wrap justify-end gap-3 border-t-[3px] border-dashed border-line px-2 pt-3 pb-1">{footer}</footer>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
