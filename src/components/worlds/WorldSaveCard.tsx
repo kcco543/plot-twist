@@ -13,6 +13,9 @@ import type { Character } from "@/lib/types";
 import { getWorld } from "@/lib/worlds";
 import { useI18n } from "@/i18n";
 
+/** Where this world is saved, shown while signed in to cloud saves. */
+export type CardSync = "cloud" | "device" | "conflict" | null;
+
 type Props = {
   world: WorldSave;
   name: string;
@@ -25,10 +28,13 @@ type Props = {
   onRename: (name: string) => boolean;
   onDuplicate: () => void;
   onDelete: () => void;
+  sync?: CardSync;
+  onExport?: () => void;
+  onResolve?: () => void;
 };
 
 /** One world save on the My Worlds shelf. */
-export function WorldSaveCard({ world, name, current, cast, thumbnail, busy, onContinue, onRename, onDuplicate, onDelete }: Props) {
+export function WorldSaveCard({ world, name, current, cast, thumbnail, busy, onContinue, onRename, onDuplicate, onDelete, sync = null, onExport, onResolve }: Props) {
   const { t, tx, locale } = useI18n();
   const theme = getWorld(world.theme);
   const themeName = theme ? tx(`worlds.list.${theme.id}.name`) : t("myWorlds.noTheme");
@@ -144,11 +150,27 @@ export function WorldSaveCard({ world, name, current, cast, thumbnail, busy, onC
           <dd className="tabular-nums text-ink-soft">{played}</dd>
         </dl>
 
+        {sync && (
+          <p
+            data-testid="card-sync"
+            data-sync={sync}
+            className={`flex items-center gap-1.5 font-label text-[10px] uppercase ${sync === "conflict" ? "text-coral-deep" : sync === "cloud" ? "text-mint-deep" : "text-ink-soft"}`}
+          >
+            <PixelIcon name={sync === "conflict" ? "layers" : sync === "cloud" ? "cloud" : "phone"} size={10} />
+            {sync === "conflict" ? t("sync.cardConflict") : sync === "cloud" ? t("sync.cardCloud") : t("sync.cardDevice")}
+            {sync === "conflict" && onResolve && (
+              <button type="button" className="px-focus ml-auto underline underline-offset-2" onClick={onResolve}>
+                {t("sync.cardResolve")}
+              </button>
+            )}
+          </p>
+        )}
+
         <div className="mt-auto flex flex-col gap-2 border-t-[3px] border-dashed border-line pt-3">
           <PixelButton variant="primary" icon="play" onClick={onContinue} disabled={busy !== null}>
             {t("myWorlds.continue")}
           </PixelButton>
-          <div role="group" aria-label={t("myWorlds.actions", { name })} className="grid grid-cols-3 gap-1.5">
+          <div role="group" aria-label={t("myWorlds.actions", { name })} className={`grid gap-1.5 ${onExport ? "grid-cols-2" : "grid-cols-3"}`}>
             <PixelButton id={`rename-btn-${world.id}`} size="sm" variant="ghost" icon="pencil" onClick={startRename} disabled={editing || busy !== null} className="px-1 text-sm">
               {t("myWorlds.rename")}
             </PixelButton>
@@ -158,6 +180,11 @@ export function WorldSaveCard({ world, name, current, cast, thumbnail, busy, onC
             <PixelButton size="sm" variant="ghost" icon="trash" onClick={onDelete} disabled={busy !== null} className="px-1 text-sm text-coral-deep">
               {t("myWorlds.delete")}
             </PixelButton>
+            {onExport && (
+              <PixelButton size="sm" variant="ghost" icon="down" onClick={onExport} disabled={busy !== null} className="px-1 text-sm">
+                {t("sync.exportWorld")}
+              </PixelButton>
+            )}
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { LanguageSwitch } from "./LanguageSwitch";
 import { PixelButton } from "./ui/PixelButton";
 import { PixelIcon } from "./ui/PixelIcon";
 import { SettingsModal } from "./SettingsModal";
+import { SyncBadge } from "./sync/SyncBadge";
 import { useI18n, type MessageKey } from "@/i18n";
 import { useOnline } from "@/lib/useOnline";
 
@@ -67,6 +68,8 @@ export function AppBar() {
               {t("nav.offline")}
             </span>
           )}
+          {/* Offline already says it all; otherwise the cloud save state (Saving / Synced / Sync failed…). */}
+          {online && <SyncBadge compact />}
           <LanguageSwitch />
           <PixelButton size="sm" variant="ghost" icon="gear" onClick={() => setSettingsOpen(true)} aria-label={t("common.settings")} className="min-w-11" />
         </div>

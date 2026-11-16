@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoadingState } from "@/components/ui/LoadingDots";
 import { Modal } from "@/components/ui/Modal";
@@ -24,7 +24,11 @@ import {
   type WorldSave,
 } from "@/lib/saves/worldSaves";
 import { useI18n } from "@/i18n";
-import { WorldSaveCard } from "./WorldSaveCard";
+import { useSyncStatus } from "@/lib/sync/client";
+import { SyncBadge } from "@/components/sync/SyncBadge";
+import { openCloudSaves } from "@/components/sync/cloudSavesStore";
+import { useTransferActions } from "@/components/sync/transferActions";
+import { WorldSaveCard, type CardSync } from "./WorldSaveCard";
 import { useMapThumbnails, useWorldName } from "./worldNames";
 
 /** Most recently played first. */
@@ -60,6 +64,13 @@ export function MyWorlds({ showHeading = true }: { showHeading?: boolean }) {
   const [busy, setBusy] = useState<{ id: string; kind: "copying" | "deleting" } | null>(null);
   const [status, setStatus] = useState<{ text: string; error?: boolean } | null>(null);
   const [confirm, setConfirm] = useState<WorldSave | null>(null);
+  const sync = useSyncStatus();
+  const signedIn = Boolean(sync.account) && sync.phase !== "signed-out" && sync.phase !== "unconfigured";
+  const conflictIds = useMemo(() => new Set(sync.conflicts.map((c) => c.worldId)), [sync.conflicts]);
+  const cardSync = (w: WorldSave): CardSync => (!signedIn ? null : conflictIds.has(w.id) ? "conflict" : w.owner ? "cloud" : "device");
+  const { exportWorlds, importFile } = useTransferActions();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
 
   const worlds = useMemo(() => [...index.worlds].sort(byLastPlayed), [index.worlds]);
   const thumbs = useMapThumbnails(worlds.map((w) => w.mapId));
@@ -122,10 +133,55 @@ export function MyWorlds({ showHeading = true }: { showHeading?: boolean }) {
         ) : (
           <p className="max-w-xl text-lg leading-snug text-ink-soft">{t("myWorlds.intro")}</p>
         )}
-        <PixelButton variant="magic" icon="plus" onClick={create} className="w-full sm:w-auto">
-          {t("myWorlds.create")}
-        </PixelButton>
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <PixelButton variant="ghost" size="sm" icon="upload" loading={importing} onClick={() => fileInput.current?.click()} data-testid="my-worlds-import">
+            {importing ? t("sync.importing") : t("sync.importSave")}
+          </PixelButton>
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".json,.plottwist.json,application/json"
+            className="sr-only"
+            aria-label={t("sync.importSave")}
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (!f) return;
+              setImporting(true);
+              setStatus(await importFile(f));
+              setImporting(false);
+            }}
+          />
+          <PixelButton variant="magic" icon="plus" onClick={create} className="w-full sm:w-auto">
+            {t("myWorlds.create")}
+          </PixelButton>
+        </div>
       </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <SyncBadge />
+        {signedIn && sync.account && <span className="text-base text-ink-soft [overflow-wrap:anywhere]">{t("sync.signedInAs", { email: sync.account.email })}</span>}
+      </div>
+
+      {signedIn && sync.conflicts.length > 0 && (
+        <p className="flex flex-wrap items-center gap-3 bg-pink-hi px-3 py-2 text-base leading-snug shadow-[inset_4px_0_0_var(--color-rose)]" role="alert">
+          <PixelIcon name="layers" size={12} className="shrink-0" />
+          <span className="min-w-0 flex-1">{t("sync.statusConflict")}</span>
+          <PixelButton size="sm" variant="primary" onClick={() => openCloudSaves()}>
+            {t("sync.cardResolve")}
+          </PixelButton>
+        </p>
+      )}
+
+      {signedIn && sync.deviceWorlds > 0 && (
+        <p className="flex flex-wrap items-center gap-3 bg-lavender-hi px-3 py-2 text-base leading-snug shadow-[inset_4px_0_0_var(--color-lavender)]" role="note" data-testid="device-worlds-banner">
+          <PixelIcon name="cloud" size={12} className="shrink-0 text-label" />
+          <span className="min-w-0 flex-1">{t("sync.deviceBanner", { count: sync.deviceWorlds })}</span>
+          <PixelButton size="sm" variant="secondary" onClick={() => openCloudSaves()}>
+            {t("sync.deviceBannerAction")}
+          </PixelButton>
+        </p>
+      )}
 
       {migrated && (
         <p className="flex flex-wrap items-center gap-3 bg-mint-hi px-3 py-2 text-base leading-snug shadow-[inset_4px_0_0_var(--color-mint)]" role="note">
@@ -175,6 +231,9 @@ export function MyWorlds({ showHeading = true }: { showHeading?: boolean }) {
                 onRename={(name) => rename(w, name)}
                 onDuplicate={() => void duplicate(w)}
                 onDelete={() => setConfirm(w)}
+                sync={cardSync(w)}
+                onExport={() => void exportWorlds([w.id], nameOf(w)).then(setStatus)}
+                onResolve={() => openCloudSaves()}
               />
             </li>
           ))}

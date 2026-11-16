@@ -99,7 +99,7 @@ export function setCopyNamer(fn: (name: string) => string) {
   copyName = fn;
 }
 
-function useAccount(a: AccountInfo | null) {
+function switchAccount(a: AccountInfo | null) {
   const before = currentAccount()?.id ?? null;
   setCurrentAccount(a);
   engine = a && client ? new SyncEngine(supabaseCloud(client, a.id), { device: deviceName(), copyName: (n) => copyName(n) }) : null;
@@ -117,16 +117,16 @@ export function startSync() {
   }
   // Signed-in state is known right away from storage, even offline.
   const known = currentAccount();
-  if (known) useAccount(known);
+  if (known) switchAccount(known);
   setStatus({ phase: known ? (navigator.onLine ? "saving" : "offline") : "signed-out" });
 
   sb.auth.onAuthStateChange((event, session) => {
     if (session?.user) {
       const a = { id: session.user.id, email: session.user.email ?? "" };
-      if (currentAccount()?.id !== a.id || !engine) useAccount(a);
+      if (currentAccount()?.id !== a.id || !engine) switchAccount(a);
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION") schedule(0);
     } else if (event === "SIGNED_OUT") {
-      useAccount(null);
+      switchAccount(null);
       setStatus({ phase: "signed-out", lastSyncedAt: null, error: null, lastReport: null });
     }
   });
@@ -207,7 +207,7 @@ export async function signIn(email: string, password: string): Promise<AuthResul
   try {
     const { data, error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
     if (error || !data.user) return authError(error);
-    useAccount({ id: data.user.id, email: data.user.email ?? "" });
+    switchAccount({ id: data.user.id, email: data.user.email ?? "" });
     schedule(0);
     return { ok: true };
   } catch (e) {
@@ -224,7 +224,7 @@ export async function signUp(email: string, password: string): Promise<AuthResul
     // Supabase answers a sign-up for an existing address with a user that has no identities.
     if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) return { ok: false, reason: "exists" };
     if (data.session && data.user) {
-      useAccount({ id: data.user.id, email: data.user.email ?? "" });
+      switchAccount({ id: data.user.id, email: data.user.email ?? "" });
       schedule(0);
       return { ok: true };
     }
@@ -244,7 +244,7 @@ export async function signOut(): Promise<void> {
   try {
     await supabase()?.auth.signOut({ scope: "local" });
   } catch {}
-  useAccount(null);
+  switchAccount(null);
   setStatus({ phase: "signed-out", lastSyncedAt: null, error: null, lastReport: null });
   window.location.assign("/");
 }

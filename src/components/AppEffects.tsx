@@ -2,12 +2,20 @@
 
 import { useEffect } from "react";
 import { useSettings } from "@/lib/settingsStore";
-import { useLocale } from "@/i18n";
+import { useI18n, useLocale } from "@/i18n";
+import { setCopyNamer, startSync } from "@/lib/sync/client";
 
 /** Mirrors settings + language onto <html>, and registers the service worker. */
 export function AppEffects() {
   const { crt, reduceMotion } = useSettings();
   const locale = useLocale();
+  const { t } = useI18n();
+
+  // Cloud saves: sign-in state, automatic sync, sync status (src/lib/sync/client.ts).
+  useEffect(() => {
+    setCopyNamer((name) => t("sync.copyName", { name: name || t("sync.unnamed") }));
+    startSync();
+  }, [t]);
 
   useEffect(() => {
     const el = document.documentElement;

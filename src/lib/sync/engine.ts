@@ -70,7 +70,13 @@ function saveState(uid: string, s: SyncState) {
   } catch {}
 }
 
-const asCloudError = (e: unknown) => (e instanceof CloudError ? e : new CloudError("server", e instanceof Error ? e.message : String(e)));
+const KINDS = ["network", "auth", "server", "invalid"];
+const asCloudError = (e: unknown): CloudError => {
+  if (e instanceof CloudError) return e;
+  const k = (e as { kind?: unknown } | null)?.kind;
+  const msg = e instanceof Error ? e.message : String(e);
+  return new CloudError(typeof k === "string" && KINDS.includes(k) ? (k as CloudError["kind"]) : "server", msg);
+};
 
 export type EngineOptions = {
   device: string;
