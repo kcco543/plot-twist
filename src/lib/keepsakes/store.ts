@@ -214,3 +214,21 @@ export function __resetKeepsakesForTests() {
   memory = [];
   dbPromise = null;
 }
+
+// ---------------------------------------------------------------- cloud sync, import and backups (src/lib/sync/)
+
+/** Every photo and gift of one world, as stored. */
+export async function listWorldKeepsakes(worldId: string): Promise<Keepsake[]> {
+  return (await all()).filter((k) => k.worldId === worldId);
+}
+
+/** Store keepsakes exactly as given (they already carry their world id). */
+export async function putKeepsakes(items: Keepsake[]): Promise<void> {
+  await put(items);
+  if (items.length) changed();
+}
+
+export async function removeKeepsakes(ids: string[]): Promise<void> {
+  await remove(ids);
+  if (ids.length) changed();
+}

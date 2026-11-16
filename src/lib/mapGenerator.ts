@@ -83,6 +83,12 @@ function load() {
   return loading;
 }
 
+/** Re-read the map list (after cloud sync or an import replaced this world's maps). */
+export function reloadMapStudio() {
+  loading = null;
+  if (listeners.size) void load();
+}
+
 const subscribe = (l: () => void) => {
   listeners.add(l);
   void load();
