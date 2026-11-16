@@ -438,7 +438,8 @@
       "feeling": "情绪",
       "howSees": "{name}怎么看其他人",
       "stageLine": "信任：{trust} · 好感：{affection} · 尊重：{respect}",
-      "visitor": "访客"
+      "visitor": "访客",
+      "hide": "收起信息"
     },
     "test": {
       "open": "测试面板",
@@ -531,7 +532,10 @@
       },
       "close": "隐藏测试面板"
     },
-    "sampleCast": "加入示例角色（米拉、雯雯、托比）"
+    "sampleCast": "加入示例角色（米拉、雯雯、托比）",
+    "earlierLines": "之前的台词",
+    "details": "角色详情",
+    "detailsHint": "关于{name}的全部信息。打开时上方的对话不会中断。"
   },
   "scene": {
     "narrator": "旁白",
@@ -1891,7 +1895,8 @@
       "end": "结束对话",
       "speaking": "点一下对话框，听听{other}怎么回答。",
       "answering": "{other}正在回答…",
-      "continue": "继续聊，或者结束对话。"
+      "continue": "继续聊，或者结束对话。",
+      "endShort": "结束"
     },
     "relation": {
       "labels": {
@@ -3294,6 +3299,7 @@
       "normal": "标准",
       "snappy": "灵敏"
     },
-    "followSpeedDesc": "游戏镜头追上所跟随角色的速度。"
+    "followSpeedDesc": "游戏镜头追上所跟随角色的速度。",
+    "followTalk": "回到对话"
   }
 }

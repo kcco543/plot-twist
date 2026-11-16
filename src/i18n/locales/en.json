@@ -438,7 +438,8 @@
       "feeling": "Feeling",
       "howSees": "How {name} sees others",
       "stageLine": "Trust: {trust} · Affection: {affection} · Respect: {respect}",
-      "visitor": "The visitor"
+      "visitor": "The visitor",
+      "hide": "Hide info"
     },
     "test": {
       "open": "Test panel",
@@ -531,7 +532,10 @@
       },
       "close": "Hide test panel"
     },
-    "sampleCast": "Add the sample cast (Mira, Wren, Tobi)"
+    "sampleCast": "Add the sample cast (Mira, Wren, Tobi)",
+    "earlierLines": "Earlier lines",
+    "details": "Character details",
+    "detailsHint": "Everything about {name}. The conversation above keeps going while this is open."
   },
   "scene": {
     "narrator": "Narrator",
@@ -1891,7 +1895,8 @@
       "end": "End conversation",
       "speaking": "Tap the dialogue to hear {other}'s answer.",
       "answering": "{other} is answering…",
-      "continue": "Keep talking, or end the conversation."
+      "continue": "Keep talking, or end the conversation.",
+      "endShort": "End"
     },
     "relation": {
       "labels": {
@@ -3294,6 +3299,7 @@
       "normal": "Normal",
       "snappy": "Snappy"
     },
-    "followSpeedDesc": "How quickly the Play Mode camera catches up with the character it follows."
+    "followSpeedDesc": "How quickly the Play Mode camera catches up with the character it follows.",
+    "followTalk": "Speakers"
   }
 }

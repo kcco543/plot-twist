@@ -507,3 +507,10 @@ html[data-motion="reduced"] .skin-ambient { display: none; }
 .skin-ambient[data-preset="slide"] > span { animation: skin-status 3s steps(1) infinite; }
 .skin-ambient[data-preset="ink"] > span { animation: skin-cloud 14s steps(8) infinite; }
 .skin-ambient[data-preset="float"] > span { animation: skin-bob 4s steps(4) infinite, twinkle 3.2s steps(1) infinite; }
+
+/* Play Mode gives the setup-step row (phones / tablets) to the game, and on windows up to 860px tall the
+   world strip too. The world name stays in the Play header; the title screen still switches worlds. */
+:root:has([data-play-area]) [data-step-row] { display: none; }
+@media (max-height: 860px) {
+  :root:has([data-play-area]) [data-world-strip] { display: none; }
+}

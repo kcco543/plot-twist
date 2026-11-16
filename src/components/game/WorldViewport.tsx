@@ -76,6 +76,7 @@ export function WorldViewport({
   followSpeed = "normal",
   reducedMotion,
   maxHeight,
+  followLabel,
   drag,
   onDragScroll,
   onTap,
@@ -98,8 +99,10 @@ export function WorldViewport({
   onZoom: (z: Zoom) => void;
   followSpeed?: FollowSpeed;
   reducedMotion: boolean;
-  /** Desktop: tallest the viewport may be (CSS px). Phones use a near-square view. */
+  /** Tallest the viewport may be (CSS px), from the play layout. Phones are also capped near square. */
   maxHeight?: number;
+  /** Label for the Follow button (e.g. "Back to the conversation" while two characters talk). */
+  followLabel?: string;
   /** The character drag in progress (edge scrolling, and the camera holds still). */
   drag?: { get: () => DragView };
   /** The camera scrolled under a held drag: re-aim the drag preview. */
@@ -131,7 +134,12 @@ export function WorldViewport({
   }, []);
 
   const phone = boxW > 0 && boxW < PHONE_MAX;
-  const maxH = phone ? Math.round(boxW * 0.92) : Math.round(Math.min(maxHeight ?? boxW * 0.62, boxW * 0.75));
+  // The play layout passes the height it can spare (beside or above the dialogue dock); without it the
+  // view keeps its old proportions. Phones never get taller than about square, wide screens than 0.85.
+  const maxH = Math.max(
+    120,
+    phone ? Math.round(Math.min(boxW * 0.92, maxHeight ?? Infinity)) : Math.round(Math.min(maxHeight ?? boxW * 0.62, boxW * (maxHeight ? 0.85 : 0.75))),
+  );
   const scales = useMemo(() => (boxW ? zoomScales(world, { width: boxW, height: maxH }, phone, dpr) : null), [boxW, maxH, phone, dpr, world]);
   const scale = scales ? scales[zoom] : 0;
   const viewH = scale ? viewportHeight(world, scale, maxH) : 0;
@@ -376,7 +384,7 @@ export function WorldViewport({
             {!following && (
               <button type="button" onClick={recenter} className="px-focus flex min-h-9 items-center gap-1 bg-butter px-2 font-label text-[10px] uppercase text-ink shadow-[inset_0_-3px_0_var(--color-butter-lo)]" data-camera-follow>
                 <PixelIcon name="eye" size={12} />
-                <span>{t("camera.follow")}</span>
+                <span>{followLabel ?? t("camera.follow")}</span>
               </button>
             )}
             <div className="flex items-stretch bg-white/90 shadow-[inset_0_-3px_0_rgb(0_0_0/0.12)]">

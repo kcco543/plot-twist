@@ -1,47 +1,53 @@
 "use client";
 
 import { PixelButton } from "@/components/ui/PixelButton";
+import { PixelIcon } from "@/components/ui/PixelIcon";
 import { useI18n } from "@/i18n";
 
 /**
- * Touch controls for phones/tablets. ◀ ▶ choose a character, A talks to them,
- * the info button opens the character sheet. (No free movement in this version.)
+ * Character row at the bottom of the dialogue dock (every screen size):
+ * ◀ ▶ choose a character, the middle button opens their character info
+ * (a drawer on phones, the details panel under the play area on desktop).
  */
 export function ControlPad({
   name,
   mood,
   onPrev,
   onNext,
-  onInteract,
   onInfo,
+  infoOpen = false,
   disabled,
 }: {
   name: string | null;
   mood: string | null;
   onPrev: () => void;
   onNext: () => void;
-  onInteract: () => void;
   onInfo: () => void;
+  /** The details panel is open (desktop): the button reads "hide". */
+  infoOpen?: boolean;
   disabled: boolean;
 }) {
   const { t } = useI18n();
   return (
-    <div role="group" aria-label={t("play.controls")} className="flex items-center justify-between gap-2 border-t-[3px] border-dashed border-line pt-3 lg:hidden">
-      <div className="flex min-w-0 items-center gap-1.5">
-        <PixelButton size="lg" variant="secondary" icon="left" aria-label={t("play.prevCharacter")} onClick={onPrev} disabled={disabled} className="size-14 shrink-0 px-0" />
-        <button type="button" onClick={onInfo} disabled={!name} className="px-focus flex min-h-14 w-20 min-w-0 flex-col items-center justify-center text-center min-[400px]:w-28" aria-label={t("play.sidebar.open")}>
-          <span className="w-full truncate font-head text-sm font-bold text-label">{name ?? "—"}</span>
-          {mood && <span className="w-full truncate text-xs text-ink-soft">{mood}</span>}
-          <span className="font-label text-[9px] uppercase text-ink-mute underline underline-offset-2">{t("play.sidebar.open")}</span>
-        </button>
-        <PixelButton size="lg" variant="secondary" icon="right" aria-label={t("play.nextCharacter")} onClick={onNext} disabled={disabled} className="size-14 shrink-0 px-0" />
-      </div>
-      <PixelButton size="lg" variant="primary" aria-label={t("play.interact")} onClick={onInteract} disabled={disabled} className="h-16 min-w-16 shrink-0 px-2">
-        <span className="flex flex-col items-center leading-none">
-          <span className="font-shout text-lg">A</span>
-          <span className="mt-1 text-xs">{t("play.actions.talk")}</span>
+    <div role="group" aria-label={t("play.controls")} className="panel-pad-x flex items-center gap-1.5 py-1" data-control-pad>
+      <PixelButton size="sm" variant="secondary" icon="left" aria-label={t("play.prevCharacter")} onClick={onPrev} disabled={disabled} className="size-11 shrink-0 px-0" />
+      <button
+        type="button"
+        onClick={onInfo}
+        disabled={!name}
+        aria-expanded={infoOpen}
+        className="px-focus flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 px-1 text-center hover:bg-well disabled:opacity-50"
+        aria-label={infoOpen ? t("play.sidebar.close") : t("play.sidebar.open")}
+        data-character-info-toggle
+      >
+        <span className="min-w-0 truncate font-head text-[15px] font-bold leading-tight text-label">{name ?? "—"}</span>
+        {mood && <span className="min-w-0 shrink truncate text-sm text-ink-soft">{mood}</span>}
+        <span className="flex shrink-0 items-center gap-1 font-label text-[9px] uppercase text-ink-mute">
+          <PixelIcon name="user" size={10} />
+          <span className="hidden @[20rem]:inline">{infoOpen ? t("play.sidebar.hide") : t("play.sidebar.open")}</span>
         </span>
-      </PixelButton>
+      </button>
+      <PixelButton size="sm" variant="secondary" icon="right" aria-label={t("play.nextCharacter")} onClick={onNext} disabled={disabled} className="size-11 shrink-0 px-0" />
     </div>
   );
 }

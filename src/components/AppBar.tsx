@@ -72,7 +72,7 @@ export function AppBar() {
         </div>
       </div>
       {current >= 0 && (
-        <div className="border-t border-line bg-well/80 lg:hidden">
+        <div className="border-t border-line bg-well/80 lg:hidden" data-step-row>
           <div className="content-grid flex items-center justify-between gap-3 py-1.5">
           <span className="font-label text-[10px] uppercase text-ink-soft">{t("nav.stepOf", { n: current + 1, total: STEPS.length })}</span>
           <span className="font-head text-sm font-semibold text-label">{t(STEPS[current].label)}</span>

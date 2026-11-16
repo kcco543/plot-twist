@@ -61,6 +61,14 @@ export function typingDuration(text: string, msPerChar: number): number {
   return total;
 }
 
+/**
+ * Display cleanup for a dialogue line: no leading / trailing blank lines, no
+ * runs of empty lines, no spaces before a line break. Keeps single line breaks.
+ */
+export function tidyLine(text: string): string {
+  return text.replace(/\r\n?/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n{2,}/g, "\n").trim();
+}
+
 /** Split off trailing whitespace so the caret sits after the last word, not alone on the next line. */
 export function splitTrailingSpace(shown: string): [string, string] {
   const m = /\s+$/.exec(shown);

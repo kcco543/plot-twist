@@ -77,6 +77,8 @@ import { makeId } from "@/lib/id";
 import { placeGift } from "@/lib/gifts/apply";
 import { AiRequestError as ImageError } from "@/lib/ai/client";
 import { ZOOMS, type Zoom } from "@/lib/camera/camera";
+import { sideDockMin, stackDockHeight, usePlayLayout } from "@/lib/playLayout";
+import { tidyLine } from "@/lib/dialogue/typewriter";
 import type { WorldObject } from "@/lib/stage/objects";
 import type { EnvironmentTypeId } from "@/lib/types";
 
@@ -98,6 +100,9 @@ type Travel = {
 const isTyping = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
 /** Ignore a second "advance" this soon after the last one (double-clicks / key bounce never skip two lines). */
 const ADVANCE_GUARD_MS = 250;
+
+/** Space kept under the play area (the page ends exactly at the window's bottom edge). */
+const PAGE_BOTTOM_GAP = 12;
 
 export default function PlayPage() {
   const { t, tx, locale } = useI18n();
@@ -199,7 +204,14 @@ export default function PlayPage() {
   const [beatNo, setBeatNo] = useState(0);
   const [lineIndex, setLineIndex] = useState(0);
   const current = queue[lineIndex] ?? null;
-  const shownLine = renderLine(current ?? introLine(placeDescription, envType), locale);
+  const rawLine = renderLine(current ?? introLine(placeDescription, envType), locale);
+  // No stray blank lines (AI replies sometimes have them): the text starts at the top of the dock.
+  const shownLine = { ...rawLine, text: tidyLine(rawLine.text) };
+  // Lines already read in this exchange (scroll up in the dock to reread them).
+  const history = queue.slice(Math.max(0, lineIndex - 8), lineIndex).map((l) => {
+    const r = renderLine(l, locale);
+    return { speaker: r.speaker, text: tidyLine(r.text) };
+  });
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const ai = useAiStatus();
@@ -231,18 +243,15 @@ export default function PlayPage() {
   const getZoom = useCallback(() => zoomRef.current, []);
   const [titleKey, setTitleKey] = useState("");
 
-  // Desktop layout (sidebar) vs phone / tablet, and the sticky header's height (to pin the stage under it).
-  const [wide, setWide] = useState(false);
-  const [headerH, setHeaderH] = useState(0);
-  useEffect(() => {
-    const update = () => {
-      setWide(window.innerWidth >= 1024);
-      setHeaderH(document.querySelector("header")?.getBoundingClientRect().height ?? 0);
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
+  // Play layout: viewport beside the dialogue dock ("side") or above it ("stack"), sized to the window
+  // so the scene and the response choices are visible together (lib/playLayout.ts).
+  const playRef = useRef<HTMLDivElement>(null);
+  const layout = usePlayLayout(playRef, PAGE_BOTTOM_GAP);
+  const wide = layout.shape === "side";
+  const headerH = layout.headerH;
+  /** Desktop: character details open in the secondary panel under the play area. */
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsRef = useRef<HTMLElement>(null);
 
   // ---- Stage: positions, movement, emotions (Step 2). Paused with the game.
   const [frozen, setFrozen] = useState(false);
@@ -911,14 +920,6 @@ export default function PlayPage() {
     };
   }, [stage, behave, showLines]);
 
-  // Keep the stage + dialogue on screen: the stage may use the window height minus the HUD and dialogue.
-  const [stageMax, setStageMax] = useState<number | undefined>(undefined);
-  useEffect(() => {
-    const update = () => setStageMax(window.innerWidth >= 1024 ? Math.max(300, window.innerHeight - 250) : undefined);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
 
   /** Ask the AI to word a beat. Returns null if it can't, so the built-in lines are used instead. */
   const writeWithAi = useCallback(
@@ -1207,18 +1208,49 @@ export default function PlayPage() {
     </>
   ) : null;
 
-  // Phones: keep the stage pinned at the top while a side panel or a conversation is open below it.
-  const pinStage = !wide && (!!sidePanels || talking);
+  // Phones: keep the stage pinned at the top while a developer panel is open below the dock.
+  const pinStage = !wide && !!sidePanels;
+  const playH = layout.height;
+  // Stacked: the dock keeps a fixed share under the viewport. Side by side: the viewport may use the full
+  // height (minus the keyboard hint) and the dock matches it.
+  const dockH = stackDockHeight(playH);
+  const hintH = wide && !layout.short ? 18 : 0;
+  // Stacked during a conversation: the character row (disabled then anyway) gives its room to the choices;
+  // character info stays one tap away from the conversation header.
+  /** Small windows: tighter dock, and "Talk to…" moves into the dock header. */
+  const compactDock = layout.short || (!wide && playH < 600);
+  const hidePad = !!talk.session && (!wide || layout.short);
+  // The viewport's own pixel frame sits outside the height it is given.
+  const viewportMax = playH ? (wide ? playH - hintH : playH - dockH - 8) - layout.frame : undefined;
+
+  /** Character info: the details panel under the play area (side by side) or the drawer (phones). */
+  const openInfo = (tab?: SideTab) => {
+    if (tab) setInfoTab({ tab, n: Date.now() });
+    if (!wide) {
+      setSheetOpen(true);
+      return;
+    }
+    setDetailsOpen(true);
+    // Bring the top of the panel up to just under the middle of the window: the scene stays partly in view.
+    requestAnimationFrame(() => {
+      const el = detailsRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      if (top > window.innerHeight * 0.85) window.scrollBy({ top: top - window.innerHeight * 0.55, behavior: reducedMotion ? "auto" : "smooth" });
+    });
+  };
 
   return (
-    <main data-layout="wide" className="content-grid flex-1 pt-3 sm:pt-4" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
+    <main data-layout="wide" className={`content-grid flex-1 ${layout.short ? "pt-1.5" : "pt-2 sm:pt-3"}`} style={{ paddingBottom: `max(${PAGE_BOTTOM_GAP}px, env(safe-area-inset-bottom, 0px))` }}>
       {/* HUD */}
-      <div className="content-block mb-3 flex items-center justify-between gap-3">
+      <div className={`content-block flex items-center justify-between gap-3 ${layout.short ? "mb-1.5" : "mb-2"}`}>
         <div className="min-w-0">
-          <p className="truncate font-label text-[10px] uppercase" style={{ color: world.accent }}>
-            {worldName}
-          </p>
-          <h1 className="truncate font-head text-xl font-bold sm:text-2xl">{envName}</h1>
+          {!layout.short && (
+            <p className="truncate font-label text-[10px] uppercase" style={{ color: world.accent }}>
+              {worldName}
+            </p>
+          )}
+          <h1 className={`truncate font-head font-bold ${layout.short ? "text-lg" : "text-xl sm:text-2xl"}`}>{envName}</h1>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span className="hidden font-label text-[10px] uppercase text-ink-mute md:inline" title={t("settings.aiStoryDesc")}>
@@ -1266,67 +1298,91 @@ export default function PlayPage() {
         </p>
       )}
 
-      {/* Desktop: viewport ≈78% / character sidebar ≈21%. Phones: viewport first, character sheet in a bottom drawer. */}
-      <div className="content-block grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(14.5rem,21%)] xl:gap-5">
-        <div className="content-stack">
-          <div className={pinStage ? "sticky z-30" : undefined} style={pinStage ? { top: headerH } : undefined}>
+      {/* Play area: the world and the dialogue dock as one screen (lib/playLayout.ts). Side by side on wide
+          windows, stacked on tall ones, and sized to end at the window's bottom edge so the scene and the
+          response choices are visible together. What doesn't fit scrolls inside the dock, not the page. */}
+      {(() => {
+        const viewport = (
           <div className="relative">
-          <SceneTitleCard k={titleKey} title={envName} subtitle={worldName} />
-          <WorldViewport
-            apiRef={viewportApi}
-            art={scene.kind === "loading" ? environmentArt[world.id][envType] : scene.art}
-            imageWidth={scene.kind === "map" ? scene.map.width : undefined}
-            label={t("play.viewportAlt", { place: envName, world: worldName })}
-            frame={world.frame}
-            tag={here.placeholder ? t("explore.picker.placeholderTag") : t("common.placeholder")}
-            stage={stage}
-            focusId={cameraFocusId}
-            zoom={zoom}
-            onZoom={(z) => updateSettings({ cameraZoom: z })}
-            followSpeed={settings.cameraFollow ?? "normal"}
-            reducedMotion={reducedMotion}
-            maxHeight={stageMax}
-            drag={drag.store}
-            onDragScroll={drag.refresh}
-            onTap={onMapTap}
-            locked={anyModal}
-            sceneKey={roomKey}
-            overlay={
-              <StageOverlay
-                stage={stage}
-                characters={cast}
-                selectedId={selected?.id ?? null}
-                speakerId={speakerId}
-                bubble={{ lineId, speaker: shownLine.speaker, typer, more, onAdvance: advance }}
-                drag={drag.store}
-                showNav={!!settings.testPanel}
-                chooser={talk.session?.phase === "SELECT_TARGET" ? { actorId: talk.session.actorId, choices: onStage.filter((c) => c.id !== talk.session!.actorId).map((c) => c.id) } : null}
-                objectHint={objectHint}
-                extra={<WorldMarks objects={ownObjects} stateOf={objectState} labelOf={(o) => o.label ?? null} reducedMotion={reducedMotion} />}
+            <SceneTitleCard k={titleKey} title={envName} subtitle={worldName} />
+            <WorldViewport
+              apiRef={viewportApi}
+              art={scene.kind === "loading" ? environmentArt[world.id][envType] : scene.art}
+              imageWidth={scene.kind === "map" ? scene.map.width : undefined}
+              label={t("play.viewportAlt", { place: envName, world: worldName })}
+              frame={world.frame}
+              tag={here.placeholder ? t("explore.picker.placeholderTag") : t("common.placeholder")}
+              stage={stage}
+              focusId={cameraFocusId}
+              zoom={zoom}
+              onZoom={(z) => updateSettings({ cameraZoom: z })}
+              followSpeed={settings.cameraFollow ?? "normal"}
+              reducedMotion={reducedMotion}
+              maxHeight={viewportMax}
+              followLabel={talking ? t("camera.followTalk") : undefined}
+              drag={drag.store}
+              onDragScroll={drag.refresh}
+              onTap={onMapTap}
+              locked={anyModal}
+              sceneKey={roomKey}
+              overlay={
+                <StageOverlay
+                  stage={stage}
+                  characters={cast}
+                  selectedId={selected?.id ?? null}
+                  speakerId={speakerId}
+                  bubble={{ lineId, speaker: shownLine.speaker, typer, more, onAdvance: advance }}
+                  drag={drag.store}
+                  showNav={!!settings.testPanel}
+                  chooser={talk.session?.phase === "SELECT_TARGET" ? { actorId: talk.session.actorId, choices: onStage.filter((c) => c.id !== talk.session!.actorId).map((c) => c.id) } : null}
+                  objectHint={objectHint}
+                  extra={<WorldMarks objects={ownObjects} stateOf={objectState} labelOf={(o) => o.label ?? null} reducedMotion={reducedMotion} />}
+                />
+              }
+            >
+              {scene.kind === "map" && <SceneFronts src={scene.art.src} size={scene.built.size} fronts={scene.built.fronts} />}
+              {scene.kind === "loading" && <SceneLoading />}
+              <StageGifts placed={placeDisplayed(story, spots, sceneOfGifts)} nameOf={(id) => cast.find((c) => c.id === id)?.name.trim() ?? ""} />
+              <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={onStageSelect} onPressStart={drag.onPressStart} reducedMotion={reducedMotion} />
+            </WorldViewport>
+          </div>
+        );
+        const moments = (photoMoment.moment?.played || giftMoment.moment?.played) ? (
+          <>
+            {photoMoment.moment?.played && (
+              <PhotoMomentCard
+                moment={photoMoment.moment}
+                onSave={async () => {
+                  const m = photoMoment.moment;
+                  if (m && (await photoMoment.save())) logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: "keepsakes.log.photoSaved", params: { name: m.name } }]);
+                }}
+                onDismiss={photoMoment.dismiss}
+                onOpenMemories={() => {
+                  setPickedId(photoMoment.moment!.characterId);
+                  openInfo("memories");
+                }}
               />
-            }
-          >
-            {scene.kind === "map" && <SceneFronts src={scene.art.src} size={scene.built.size} fronts={scene.built.fronts} />}
-            {scene.kind === "loading" && <SceneLoading />}
-            <StageGifts placed={placeDisplayed(story, spots, sceneOfGifts)} nameOf={(id) => cast.find((c) => c.id === id)?.name.trim() ?? ""} />
-            <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={onStageSelect} onPressStart={drag.onPressStart} reducedMotion={reducedMotion} />
-          </WorldViewport>
-          </div>
-          </div>
-          <ControlPad
-            name={selectedName}
-            mood={selected ? tx(`moods.${(story.characters[selected.id] ?? neutralState()).mood}`) : null}
-            onPrev={() => cycle(-1)}
-            onNext={() => cycle(1)}
-            onInteract={() => act("talk")}
-            onInfo={() => setSheetOpen(true)}
-            disabled={cast.length === 0 || busy || !!talk.session}
-          />
+            )}
+            {giftMoment.moment?.played && (
+              <GiftMomentCard
+                moment={giftMoment.moment}
+                onDismiss={giftMoment.dismiss}
+                onOpenThings={() => {
+                  setPickedId(giftMoment.moment!.characterId);
+                  openInfo("things");
+                }}
+              />
+            )}
+          </>
+        ) : null;
+        const dock = (
           <DialogueBox
             speaker={busy ? t("scene.narrator") : shownLine.speaker}
             text={busy ? "" : shownLine.text}
             typer={typer}
             onAdvance={advance}
+            lineId={lineId}
+            history={busy ? [] : history}
             targetName={selectedName}
             onAction={act}
             index={lineIndex}
@@ -1335,45 +1391,88 @@ export default function PlayPage() {
             note={note}
             hideActions={talking}
             actionsDisabled={!!talk.session}
+            compact={compactDock}
+            headerAction={
+              compactDock && !talk.session ? (
+                <PixelButton size="sm" variant="calm" icon="chat" disabled={!selected || onStage.length < 2} onClick={() => selected && talk.beginSelect(selected.id)} className="!min-h-9 shrink-0 px-2 text-[13px]" data-talk-to>
+                  {t("talk.chooseButton")}
+                </PixelButton>
+              ) : undefined
+            }
+            extra={moments}
+            talk={
+              <>
+                <TalkStrip talk={talk} cast={onStage} selectedId={selected?.id ?? null} touch={touch} idle={!compactDock} />
+                <ConversationPanel talk={talk} cast={onStage} story={story} lineInProgress={lineInProgress || busy} aiMode={aiTalk} onInfo={hidePad ? () => openInfo() : undefined} />
+              </>
+            }
+            footer={
+              hidePad ? null : <ControlPad
+                name={selectedName}
+                mood={selected ? tx(`moods.${(story.characters[selected.id] ?? neutralState()).mood}`) : null}
+                onPrev={() => cycle(-1)}
+                onNext={() => cycle(1)}
+                onInfo={() => (wide && detailsOpen ? setDetailsOpen(false) : openInfo())}
+                infoOpen={wide && detailsOpen}
+                disabled={cast.length === 0 || busy || !!talk.session}
+              />
+            }
           />
-          {photoMoment.moment?.played && (
-            <PhotoMomentCard
-              moment={photoMoment.moment}
-              onSave={async () => {
-                const m = photoMoment.moment;
-                if (m && (await photoMoment.save())) logLines([{ speaker: { kind: "narrator" }, key: "tpl", tpl: "keepsakes.log.photoSaved", params: { name: m.name } }]);
-              }}
-              onDismiss={photoMoment.dismiss}
-              onOpenMemories={() => {
-                setPickedId(photoMoment.moment!.characterId);
-                setInfoTab({ tab: "memories", n: Date.now() });
-                if (!wide) setSheetOpen(true);
-              }}
-            />
-          )}
-          {giftMoment.moment?.played && (
-            <GiftMomentCard
-              moment={giftMoment.moment}
-              onDismiss={giftMoment.dismiss}
-              onOpenThings={() => {
-                setPickedId(giftMoment.moment!.characterId);
-                setInfoTab({ tab: "things", n: Date.now() });
-                if (!wide) setSheetOpen(true);
-              }}
-            />
-          )}
-          <ConversationPanel talk={talk} cast={onStage} story={story} lineInProgress={lineInProgress || busy} aiMode={aiTalk} />
-          <TalkStrip talk={talk} cast={onStage} selectedId={selected?.id ?? null} touch={touch} />
-          <p className="hidden font-label text-[10px] uppercase text-ink-mute lg:block">{t("play.keyboardHint")}</p>
-          {sidePanels && !wide && sidePanels}
-        </div>
-        <div className="hidden min-w-0 lg:block">
-          <div className={`lg:sticky lg:top-20 ${sidePanels ? "flex max-h-[calc(100dvh-6rem)] flex-col gap-4 overflow-y-auto overscroll-contain pb-2" : ""}`}>
-            {sidePanels && wide && sidePanels}
-            <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} onEditMemory={editMemoryFor} photoWorldId={keepPhotosWorld} onDeletePhoto={deletePhotoFor} showTab={infoTab} />
+        );
+        return (
+          <div
+            ref={playRef}
+            data-play-area={layout.shape}
+            className="content-block"
+            style={wide || !playH ? undefined : pinStage ? { minHeight: playH } : { height: playH }}
+          >
+            {wide ? (
+              <div className="grid items-start gap-3 xl:gap-4" style={{ gridTemplateColumns: layout.short ? "minmax(0, 1fr) clamp(18rem, 40%, 24rem)" : "minmax(0, 1fr) clamp(18rem, 31%, 28rem)" }}>
+                <div className="flex min-w-0 flex-col gap-1">
+                  {viewport}
+                  {hintH > 0 && <p className="truncate font-label text-[10px] uppercase leading-[14px] text-ink-mute">{t("play.keyboardHint")}</p>}
+                </div>
+                <div className="relative min-w-0 self-stretch" style={{ minHeight: playH ? sideDockMin(playH) : 360 }}>
+                  <div className="absolute inset-0">{dock}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-full min-h-0 flex-col gap-2">
+                <div className={pinStage ? "sticky z-30" : undefined} style={pinStage ? { top: headerH } : undefined}>
+                  {viewport}
+                </div>
+                <div className="min-h-0 flex-1" style={pinStage ? { flex: "0 0 auto", height: dockH } : { minHeight: Math.min(dockH, 300) }}>
+                  {dock}
+                </div>
+                {sidePanels && <div className="content-stack mt-2">{sidePanels}</div>}
+              </div>
+            )}
           </div>
-        </div>
-      </div>
+        );
+      })()}
+
+      {/* Desktop: character details and developer panels live under the play area, opened on demand. */}
+      {wide && (detailsOpen || sidePanels) && (
+        <section ref={detailsRef} aria-label={t("play.details")} className="content-block mt-6 grid items-start gap-x-4 gap-y-8 scroll-mt-24 lg:grid-cols-2 2xl:grid-cols-3" data-character-details>
+          {detailsOpen && (
+            <div className="flex min-w-0 flex-col gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="min-w-0 font-head text-lg font-bold leading-tight">
+                  {t("play.details")}
+                  <span className="block text-sm font-normal text-ink-soft">{t("play.detailsHint", { name: selectedName ?? t("common.unnamed") })}</span>
+                </h2>
+                <PixelButton size="sm" variant="ghost" icon="close" onClick={() => setDetailsOpen(false)} className="shrink-0 px-2" data-details-close>
+                  {t("play.sidebar.hide")}
+                </PixelButton>
+              </div>
+              <div className="pt-4">
+                <CharacterInfoPanel character={selected} cast={cast} story={story} isDemo={isDemo && !sandbox} onEditMemory={editMemoryFor} photoWorldId={keepPhotosWorld} onDeletePhoto={deletePhotoFor} showTab={infoTab} />
+              </div>
+            </div>
+          )}
+          {sidePanels}
+        </section>
+      )}
 
       {/* Personal interactions: Photo / Gift menu next to the character, and the windows it opens */}
       {interactWith && interaction?.kind === "menu" && (
