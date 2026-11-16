@@ -51,6 +51,13 @@ export type WorldSave = {
   storageKey: string;
   /** Set on duplicates. */
   copiedFrom?: string;
+  /**
+   * The cloud account this world belongs to (see src/lib/sync/). Missing =
+   * this device's own world: always shown, never uploaded until the player
+   * adds it to an account. Worlds of an account are shown only while it is
+   * signed in on this device.
+   */
+  owner?: string;
 };
 
 export type MigrationRecord = {
@@ -131,6 +138,7 @@ function sanitizeWorld(raw: unknown, now: number): WorldSave | null {
     mapId: typeof r.mapId === "string" ? r.mapId : null,
     storageKey: typeof r.storageKey === "string" && r.storageKey ? r.storageKey : worldKey(r.id),
     ...(typeof r.copiedFrom === "string" ? { copiedFrom: r.copiedFrom } : {}),
+    ...(typeof r.owner === "string" && r.owner ? { owner: r.owner } : {}),
   };
 }
 

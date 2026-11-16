@@ -22,6 +22,8 @@ import { INDEX_KEY, LEGACY_SAVE_KEY, SESSION_ACTIVE_KEY, WORLD_KEY_PREFIX, clean
 import { characterIdMap, remapIds } from "./remap";
 import { copyWorldMaps, deleteWorldMaps, removeMapCopies } from "./worldMaps";
 import { copyWorldKeepsakes, deleteWorldKeepsakes } from "../keepsakes/store";
+import { currentAccountId, subscribeAccount, visibleTo } from "../sync/account";
+import { recordCloudDelete } from "../sync/pendingDeletes";
 
 export type { WorldSave, SaveIndex } from "./format";
 
@@ -82,14 +84,20 @@ function writeIndex(next: SaveIndex) {
 }
 
 const findWorld = (id: string | null | undefined) => (id ? (getIndex().worlds.find((w) => w.id === id) ?? null) : null);
+/** Shown in this tab: the device's own worlds, plus those of the account signed in here. */
+const isVisible = (w: WorldSave) => visibleTo(w.owner, currentAccountId());
+const findVisible = (id: string | null | undefined) => {
+  const w = findWorld(id);
+  return w && isVisible(w) ? w : null;
+};
 const legacyOwner = () => getIndex().migration?.worldId ?? null;
 
 /** The world this tab is playing, or null. */
 export function activeWorldId(): string | null {
   if (typeof window === "undefined") return null;
   if (current !== undefined) {
-    if (current !== null && !findWorld(current)) {
-      // Deleted in another tab: stop saving here rather than write into some other world.
+    if (current !== null && !findVisible(current)) {
+      // Deleted in another tab (or its account signed out): stop saving here rather than write into some other world.
       current = null;
       leaving = true;
     }
@@ -100,7 +108,7 @@ export function activeWorldId(): string | null {
   try {
     id = session()?.getItem(SESSION_ACTIVE_KEY) ?? null;
   } catch {}
-  if (!findWorld(id)) id = findWorld(idx.activeWorldId) ? idx.activeWorldId : null;
+  if (!findVisible(id)) id = findVisible(idx.activeWorldId) ? idx.activeWorldId : null;
   current = id;
   return id;
 }
@@ -120,6 +128,11 @@ function subscribe(listener: () => void) {
   if (!listening && typeof window !== "undefined") {
     listening = true;
     // Another tab changed something: re-read what changed.
+    subscribeAccount(() => {
+      visibleCache = null;
+      invalidators.forEach((f) => f());
+      emit();
+    });
     window.addEventListener("storage", (e) => {
       if (e.key === INDEX_KEY || e.key === null) index = null;
       const mine = findWorld(activeWorldId());
@@ -132,8 +145,30 @@ function subscribe(listener: () => void) {
   };
 }
 
+let visibleCache: { index: SaveIndex; account: string | null; out: SaveIndex } | null = null;
+/** The index as this tab shows it: worlds of other (signed-out) accounts are left out. */
+export function getVisibleIndex(): SaveIndex {
+  const idx = getIndex();
+  const account = currentAccountId();
+  if (visibleCache && visibleCache.index === idx && visibleCache.account === account) return visibleCache.out;
+  const worlds = idx.worlds.filter((w) => visibleTo(w.owner, account));
+  const out = worlds.length === idx.worlds.length ? idx : { ...idx, worlds, activeWorldId: worlds.some((w) => w.id === idx.activeWorldId) ? idx.activeWorldId : null };
+  visibleCache = { index: idx, account, out };
+  return out;
+}
+
 export function useWorldIndex(): SaveIndex {
-  return useSyncExternalStore(subscribe, getIndex, () => SERVER_INDEX);
+  return useSyncExternalStore(subscribe, getVisibleIndex, () => SERVER_INDEX);
+}
+
+/** Worlds on this device that belong to an account that is not signed in here (hidden, not deleted). */
+export function hiddenWorldCount(): number {
+  return getIndex().worlds.filter((w) => !isVisible(w)).length;
+}
+
+/** Re-render on any change to the world list or the active world's data. */
+export function subscribeWorlds(listener: () => void) {
+  return subscribe(listener);
 }
 
 export function useActiveWorld(): WorldSave | null {
@@ -227,6 +262,8 @@ export function createWorld(): WorldSave {
     envType: "interior",
     mapId: null,
     storageKey: worldKey(id),
+    // Made while signed in: it belongs to that account and is saved to the cloud.
+    ...(currentAccountId() ? { owner: currentAccountId()! } : {}),
   };
   writeIndex({ ...idx, nextNumber: idx.nextNumber + 1, worlds: [...idx.worlds, w] });
   return w;
@@ -315,6 +352,9 @@ export async function duplicateWorld(id: string, name: string): Promise<WorldSav
     storageKey: key,
     copiedFrom: id,
   };
+  // The copy belongs to whoever is signed in now (or to this device).
+  delete copy.owner;
+  if (currentAccountId()) copy.owner = currentAccountId()!;
   const at = idx.worlds.findIndex((w) => w.id === id);
   const worlds = [...idx.worlds];
   worlds.splice(at < 0 ? worlds.length : at + 1, 0, copy);
@@ -332,6 +372,8 @@ export async function deleteWorld(id: string): Promise<void> {
   const w = findWorld(id);
   if (!w) return;
   const wasCurrent = activeWorldId() === id;
+  // A world of an account: remember to delete it from the cloud too (sync/engine.ts does it, also later if offline).
+  if (w.owner) recordCloudDelete(w.id, w.owner);
   const idx = getIndex();
   const rest = idx.worlds.filter((x) => x.id !== id);
   writeIndex({ ...idx, worlds: rest, activeWorldId: idx.activeWorldId === id ? null : idx.activeWorldId });
@@ -382,9 +424,93 @@ export function eraseAllWorlds() {
   writeIndex(empty);
 }
 
+// ---------------------------------------------------------------- used by cloud sync, import and backups (src/lib/sync/)
+
+/** Every world entry on this device, including ones hidden because their account is signed out. */
+export function allWorlds(): WorldSave[] {
+  return getIndex().worlds;
+}
+
+/** A world's data exactly as stored, or null. */
+export function readWorldText(id: string): string | null {
+  const w = findWorld(id);
+  if (!w) return null;
+  try {
+    return local()?.getItem(w.storageKey) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Create or replace one world from a cloud copy, an import or a backup. The
+ * old single save (the pre-v1.2 backup) is never written: a world that still
+ * used it gets its own entry. Throws storage_full and changes nothing when the
+ * browser has no room.
+ */
+export function putWorldFromSync(entry: Omit<WorldSave, "storageKey" | "number"> & { number?: number }, data: object | null): WorldSave {
+  const idx = getIndex();
+  const existing = idx.worlds.find((w) => w.id === entry.id);
+  const key = worldKey(entry.id);
+  if (data) {
+    const text = JSON.stringify(data);
+    try {
+      local()?.setItem(key, text);
+      if (local() && local()!.getItem(key) !== text) throw new Error("not stored");
+    } catch {
+      throw new WorldSaveError("storage_full");
+    }
+  }
+  const number = existing?.number ?? idx.nextNumber;
+  const next: WorldSave = { ...entry, ...(data ? summarize(data) : {}), number, storageKey: data || !existing ? key : existing.storageKey };
+  if (!entry.owner) delete next.owner;
+  if (!entry.copiedFrom) delete next.copiedFrom;
+  const worlds = existing ? idx.worlds.map((w) => (w.id === entry.id ? next : w)) : [...idx.worlds, next];
+  writeIndex({ ...idx, nextNumber: existing ? idx.nextNumber : idx.nextNumber + 1, worlds });
+  if (activeWorldId() === entry.id) invalidators.forEach((f) => f());
+  emit();
+  return next;
+}
+
+/** Remove a world from this device only (its cloud copy is untouched). Maps and keepsakes: see sync/local.ts. */
+export function removeWorldFromSync(id: string) {
+  const w = findWorld(id);
+  if (!w) return;
+  const wasCurrent = activeWorldId() === id;
+  const idx = getIndex();
+  writeIndex({ ...idx, worlds: idx.worlds.filter((x) => x.id !== id), activeWorldId: idx.activeWorldId === id ? null : idx.activeWorldId });
+  if (w.storageKey !== LEGACY_SAVE_KEY) {
+    try {
+      local()?.removeItem(w.storageKey);
+    } catch {}
+  }
+  if (wasCurrent) {
+    leaving = true;
+    setCurrent(null);
+    window.location.assign("/");
+  }
+}
+
+/** Give worlds to an account (adding this device's worlds to it), or back to the device (owner undefined). */
+export function setWorldOwner(ids: string[], owner: string | undefined) {
+  const set = new Set(ids);
+  const idx = getIndex();
+  writeIndex({
+    ...idx,
+    worlds: idx.worlds.map((w) => {
+      if (!set.has(w.id)) return w;
+      const next = { ...w };
+      if (owner) next.owner = owner;
+      else delete next.owner;
+      return next;
+    }),
+  });
+}
+
 /** Tests only: forget everything cached in memory, as if the page had reloaded. */
 export function __resetForTests() {
   index = null;
+  visibleCache = null;
   current = undefined;
   leaving = false;
   invalidators.forEach((f) => f());
