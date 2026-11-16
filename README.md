@@ -38,7 +38,9 @@ Everything works without keys: the game uses its built-in analysis and story wri
 | `ANTHROPIC_API_KEY` | Personality analysis and AI-written dialogue/events (Claude) | console.anthropic.com → API Keys |
 | `OPENAI_API_KEY` | "Generate Pixel Character" in the Sprite Studio and "Generate Map" and "Edit Selected Area" in the World Builder (OpenAI Images) | platform.openai.com → API keys |
 
-Restart `npm run dev` afterwards. Settings → AI services shows what is connected. Keys are read only by the server routes in `src/app/api/ai/`, never sent to the browser. On Vercel, add the same variables under Project → Settings → Environment Variables.
+The two keys are separate: an Anthropic key can't stand in for an OpenAI one. Paste them into `.env.local` in your own editor (it is git-ignored); never share them in chat.
+
+Restart `npm run dev` afterwards. Settings → AI services shows what is set up, and **Test connections** there checks each key against its provider (it never shows the key). An empty credit balance only shows up when something is actually generated, and is reported as a billing problem, not as "rate limited". Live checks that spend a few cents: `RUN_LIVE_IMAGES=1 npx vitest run tests/live/image.live.test.ts` (character from a reference image, map from text) and `RUN_LIVE_AI=1 npx vitest run tests/live/refine.live.test.ts`. Keys are read only by the server routes in `src/app/api/ai/`, never sent to the browser. On Vercel, add the same variables under Project → Settings → Environment Variables.
 
 ### Tests
 
@@ -95,6 +97,35 @@ Drag a character onto another one (phones: touch and hold, then drag). While dra
 - Topic library (16 rule-based topics, no AI): `src/lib/talk/topics.ts`, wording under `talk.*` in both locale files. The listener's answer comes from the behavior engine with the topic's trigger.
 - Custom messages: `src/lib/talk/customReply.ts` (length limit + cleanup). With AI conversations on, the listener answers them (below); with AI off the game says plainly that nobody can answer typed messages.
 - Tests: `tests/talk.test.ts`
+
+### Drag onto objects and the floor
+
+Dropping a character on an **object** (bookshelf, door, rug, window…) makes them walk to its interaction point and use it (read, open, sit, look out…). Dropping on the **floor** makes them walk there; a blocked spot is moved to the nearest reachable one ("going as close as possible"), and an unreachable one is explained instead of attempted. Objects come from a hand-written annotation layer per room (`src/lib/stage/objects.ts`: id, type, bounds, collider, interaction anchors outside colliders, radius, actions, tags, world), never from the image's pixels; collision is the room's floor rectangle + obstacle list (`src/lib/stage/room.ts`) turned into an A* grid (`src/lib/stage/path.ts`). Settings → test panel draws the walk area, obstacles, objects and anchors on the stage. Generated maps have no such annotations, which is why Play Mode keeps the annotated built-in rooms. Tests: `tests/objects.test.ts`.
+
+## Characters acting on their own
+
+`src/lib/autonomy/`. A character's own action is a structured **intent** (approach, move away, go to a place, look at / use / sit on an object, turn away, leave a conversation…), never free text and never a direct position change. Every intent goes proposed → validated → queued → executing → completed / interrupted / failed (`lifecycle.ts`) and runs only through the stage's validated actions, so pathfinding, collision and priorities always apply.
+
+- **Planner** (`planner.ts`): plain rules, no AI. Feelings × personality × relationships × what's in the room decide what (if anything) someone does; the same feeling leads different people to different things, and gender is never an input. Each character thinks at most every ~9 s and acts at most every ~14 s; at most two autonomous walks at once; repeats are discouraged.
+- **Priorities:** the player can interrupt any autonomous walk; autonomy never overrides a player command; nobody can override a character's boundary.
+- **Ending a conversation** (`convoBoundary.ts`): the listener turns away and walks to a quiet spot or away, and a boundary is recorded. Trying again too soon is refused (and recorded as a boundary push, which costs a little trust and makes the wait longer); retrying can't get round it. Talking again needs **all** of: the cooldown has passed (longer for a more serious ending, each push, and a character who holds on to things), they've calmed down, a repair after an upset ending (an apology, help, a gift… or a long trusting history after a severity-2 ending, never after severity 3), trust above −40 and no fear.
+- **Plans said out loud** (`goals.ts`): "I'm heading to the window" / "我去书架那边看看" becomes a destination after the conversation only if it's a genuine intention; hypotheticals, past events, jokes, questions and negations are ignored. A place that isn't in the room is reported ("there's no such place here"), never faked.
+- **Saved per world** in `StoryState.agency`: intents, boundaries, goals and where everyone stands (restored on reload). The test panel shows a live view of all of it.
+- Tests: `tests/autonomy.test.ts`
+
+## Gender and pronouns
+
+Character Studio → Identity: gender (unspecified, female, male, non-binary, self-described) and pronouns (unspecified, she/her, he/him, they/them, custom) are separate settings, saved on each world's own copy of the character. Older characters load as unspecified. They are only used to refer to the character (built-in English narration uses the chosen pronouns; unspecified uses "they"); the AI is told never to infer personality or behavior from them. `src/lib/character/gender.ts`, tests in `tests/gender.test.ts`.
+
+## Refining an analysis with feedback
+
+Character Studio → Behavior → **Refine This Analysis**: write what the analysis got wrong ("reserved with strangers, playful with close friends; not timid") and press **Apply Feedback**. The AI proposes a revised profile with a list of every change, what it kept, anything it read more than one way (confirm before accepting) and anything that contradicts locked canon (resolve before accepting). Nothing changes until you **Accept**; **Reject** keeps the old one; **Restore previous version** and the history undo any accepted change. Locked canon is quoted word for word, enforced in code (`pinLockedCanon`), even when the feedback is in another language. Only the active world's copy changes; dialogue uses the latest accepted version. `src/lib/behavior/refine.ts`, `src/app/api/ai/refine/route.ts`, tests in `tests/refine.test.ts`.
+
+## Pixel editor colour picker
+
+Hue strip + saturation/value square (mouse, touch, keyboard), HEX / RGB / HSL, current vs previous colour, canvas eyedropper (and screen eyedropper in browsers that support it), limited-palette mode, recent colours and saved swatches (remembered in this browser), Undo and Redo. `src/components/game/ColorPicker.tsx`, `src/lib/color/color.ts`.
+
+**Pantone:** the game ships no Pantone data and never invents codes; without a licensed library it says so. With a licence, register a provider in `src/lib/color/pantone.ts`; an unofficial approximation is always labelled "unverified".
 
 ## AI conversations (Step 4)
 
