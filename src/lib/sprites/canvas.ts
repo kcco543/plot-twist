@@ -1,7 +1,7 @@
 "use client";
 
 /** Browser glue for the pixel converter: files ↔ images ↔ RGBA buffers ↔ PNG data URLs. */
-import { DEFAULT_CONVERT, makePortrait, makeSprite, type ConvertOptions, type Img } from "./pixelize";
+import { DEFAULT_CONVERT, makeFullPortrait, makePortrait, makeSprite, type ConvertOptions, type Img } from "./pixelize";
 
 export const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
 export const MAX_FILE_BYTES = 8 * 1024 * 1024;
@@ -74,11 +74,12 @@ export async function prepareUpload(file: File): Promise<Blob> {
   }
 }
 
-/** Source picture → { sprite 32×32, portrait 96×96 } as PNG data URLs. */
-export async function convertToGameArt(srcUrl: string, opts: ConvertOptions = DEFAULT_CONVERT): Promise<{ sprite: string; portrait: string; spriteImg: Img } | null> {
+/** Source picture → { sprite 32×32, portrait 96×96, full editable portrait 64×64 } as PNG data URLs. */
+export async function convertToGameArt(srcUrl: string, opts: ConvertOptions = DEFAULT_CONVERT): Promise<{ sprite: string; portrait: string; spriteImg: Img; fullImg: Img } | null> {
   const src = await dataURLToImg(srcUrl, 512);
   const sprite = makeSprite(src, opts);
   const portrait = makePortrait(src, opts);
-  if (!sprite || !portrait) return null;
-  return { sprite: imgToDataURL(sprite), portrait: imgToDataURL(portrait), spriteImg: sprite };
+  const full = makeFullPortrait(src, opts);
+  if (!sprite || !portrait || !full) return null;
+  return { sprite: imgToDataURL(sprite), portrait: imgToDataURL(portrait), spriteImg: sprite, fullImg: full };
 }

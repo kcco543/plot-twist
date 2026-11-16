@@ -54,7 +54,7 @@ export function DialogueBox({
   return (
     <section aria-label={t("play.dialogue")} className={`mt-5 grid gap-[var(--stack-gap)] ${hideActions ? "" : "xl:grid-cols-[minmax(0,1fr)_16rem]"} xl:items-start xl:gap-4`}>
       <div className="flex min-w-0 flex-col gap-2">
-        <div className="content-block px-frame px-shadow relative" style={{ "--frame": "var(--frame-cream)" } as React.CSSProperties}>
+        <div className="content-block px-frame px-shadow px-panel relative" style={{ "--frame": "var(--frame-cream)" } as React.CSSProperties}>
           <span className="px-tab absolute -top-7 left-[calc(var(--u)*-4)] sm:-top-8" style={{ borderImageSource: "var(--frame-pink)" }}>
             {speaker}
           </span>
