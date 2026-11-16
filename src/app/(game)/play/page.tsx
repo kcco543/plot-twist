@@ -23,18 +23,23 @@ import { AiRequestError, briefFor, memoryBrief, requestTurn, useAiStatus } from 
 import { gameActions, getSave, useSave } from "@/lib/gameStore";
 import { useHydrated } from "@/lib/persistentStore";
 import { useTypewriter } from "@/lib/useTypewriter";
-import { demoCast, introLine, renderLine } from "@/lib/scenes";
+import { demoCast, introLine, renderLine, setPronounLookup } from "@/lib/scenes";
+import { englishPronouns } from "@/lib/character/gender";
 import { TEXT_SPEED_MS, updateSettings, useSettings } from "@/lib/settingsStore";
 import { neutralState, plan, type Action, type Beat } from "@/lib/story/engine";
 import { beatToLines } from "@/lib/story/localWriter";
 import { getWorld } from "@/lib/worlds";
 import { emotionOf, fadeEmotion } from "@/lib/emotion/emotions";
 import { bondBetween, choreographBeat, rngFrom, talkDistance } from "@/lib/stage/behavior";
+import { useAutonomy, type AutonomyController } from "@/lib/autonomy/useAutonomy";
+import { AutonomyDebug } from "@/components/game/AutonomyDebug";
 import { applyDecision, behaviorBrief, buildScenario, decide, decisionLines, scenarioByKey, triggerForBeat, type BehaviorEvent, type Decision, type Rng } from "@/lib/mind";
 import type { Priority } from "@/lib/stage/actions";
 import { applyDevParam, useDevMode } from "@/lib/devMode";
 import { RelationshipInspector } from "@/components/game/RelationshipInspector";
-import { roomFor } from "@/lib/stage/room";
+import { roomFor, type Point } from "@/lib/stage/room";
+import { giftObject, objectsFor, type ObjectAction } from "@/lib/stage/objects";
+import { moveGift } from "@/lib/gifts/apply";
 import { useReducedMotion, useStagePoint, useStageSim } from "@/lib/stage/useStage";
 import { useTalk } from "@/lib/talk/useTalk";
 import { editMemory, type MemoryPatch } from "@/lib/talk/ai/apply";
@@ -80,6 +85,14 @@ export default function PlayPage() {
   const story = sandbox?.story ?? save.story;
   const castRef = useRef(cast);
   castRef.current = cast;
+  // Built-in English narration uses each character's chosen pronouns (unspecified: singular "they").
+  useEffect(() => {
+    setPronounLookup((name) => {
+      const c = castRef.current.find((x) => x.name.trim() === name.trim());
+      return c ? englishPronouns(c.gender) : null;
+    });
+    return () => setPronounLookup(null);
+  }, []);
   /** Story state the rules read from / write to (the sandbox's while a debug scenario is loaded). */
   const getStory = useCallback(() => sandboxRef.current?.story ?? getSave().story, []);
   const setStoryState = useCallback(
@@ -163,7 +176,14 @@ export default function PlayPage() {
   const onStage = useMemo(() => cast.slice(0, MAX_ON_STAGE), [cast]);
   const room = useMemo(() => roomFor(world?.id ?? "otherworld", envType), [world?.id, envType]);
   const bondOf = useCallback((a: string, b: string) => bondBetween(getStory(), a, b), [getStory]);
-  const stage = useStageSim({ cast: onStage, room, paused: anyModal || frozen, reducedMotion, bondOf });
+  // Where everyone stood last time in this room (saved with the world), so a reload puts them back.
+  const roomKeyRef = useRef("");
+  roomKeyRef.current = `${world?.id ?? "otherworld"}:${envType}`;
+  const savedSpots = useCallback(() => {
+    const sp = getStory().agency?.spots;
+    return sp && sp.place === roomKeyRef.current ? sp.at : {};
+  }, [getStory]);
+  const stage = useStageSim({ cast: onStage, room, paused: anyModal || frozen, reducedMotion, bondOf, savedSpots });
   // Show each character's current emotion (story state is the source of truth; also covers loading a save).
   useEffect(() => {
     for (const c of onStage) {
@@ -252,6 +272,19 @@ export default function PlayPage() {
   const lineInProgressRef = useRef(lineInProgress);
   lineInProgressRef.current = lineInProgress || busy;
 
+  // Character autonomy is set up further down (it needs the room's objects); the talk flow reaches it through this bridge.
+  const autonomyRef = useRef<AutonomyController | null>(null);
+  const autonomyBridge = useMemo(
+    () => ({
+      refusesTalk: (l: string, sp: string) => autonomyRef.current?.refusesTalk(l, sp) ?? null,
+      refused: (l: string, sp: string) => autonomyRef.current?.refused(l, sp),
+      talking: (a: string, b: string) => void autonomyRef.current?.talking(a, b),
+      endedConversation: (l: string, sp: string) => autonomyRef.current?.endedConversation(l, sp),
+      heard: (id: string, text: string) => autonomyRef.current?.heard(id, text),
+      conversationOver: (ids: string[]) => autonomyRef.current?.conversationOver(ids),
+    }),
+    [],
+  );
   // ---- Walk-and-talk (Step 3): drag a character onto another (or tap-to-target), they walk over and talk.
   const talk = useTalk({
     stage,
@@ -285,6 +318,7 @@ export default function PlayPage() {
     onEnd: () => {
       if (lineInProgressRef.current) setQueue([]);
     },
+    autonomy: autonomyBridge,
   });
   talkRef.current = talk;
   // Developer builds: expose the stage to browser tests (e.g. to put a wall in the way).
@@ -306,7 +340,11 @@ export default function PlayPage() {
     },
     onDrop: (a, b) => talk.startWalk(a, b, "drag"),
     onDropEmpty: (a) => talk.tell("emptySpace", a, null),
+    onDropObject: (a, o) => sendToRef.current(a, { objectId: o }),
+    onDropGround: (a, p) => sendToRef.current(a, { point: p }),
   });
+  /** Set below, once the room's objects are known (the drag callbacks run long after render). */
+  const sendToRef = useRef<(actorId: string, to: { objectId: string } | { point: Point }) => boolean>(() => false);
   /**
    * Click / tap on a character: select it and open the Photo / Gift menu next to it
    * (clicking them again closes it). While choosing who to talk to (tap-to-target)
@@ -377,6 +415,69 @@ export default function PlayPage() {
     paused: anyModal,
   });
   const [infoTab, setInfoTab] = useState<{ tab: SideTab; n: number } | null>(null);
+
+  // ---- Interactive objects (hand-annotated per room, plus gifts on display) and drag-to-place / drag-to-object.
+  const objects = useMemo(() => {
+    const w = world?.id ?? "otherworld";
+    const group = w === "otherworld" ? "otherworld" : "default";
+    return [...objectsFor(w, envType), ...placeDisplayed(story, spots).map(({ gift, spot }) => giftObject(gift, spot, room, group, envType))];
+  }, [world?.id, envType, story, spots, room]);
+  useEffect(() => stage.setObjects(objects), [stage, objects]);
+  const objectName = useCallback(
+    (id: string) => {
+      const o = stage.objectById(id);
+      if (!o) return "";
+      return o.type === "gift" ? (getStory().gifts?.[o.giftId ?? ""]?.name ?? t("objects.names.gift")) : t(`objects.names.${o.name}` as "objects.names.door");
+    },
+    [stage, getStory, t],
+  );
+  // ---- Character autonomy: characters act on their own (rules, not AI), keep their distance after a
+  // conversation ends, and follow through on plans they said out loud. Off in the demo and debug scenarios.
+  const autonomy = useAutonomy({
+    stage,
+    cast: onStage,
+    objects,
+    roomKey: `${world?.id ?? "otherworld"}:${envType}`,
+    getStory,
+    setStoryState,
+    enabled: !isDemo && !sandbox && !anyModal && !frozen,
+    inConversation: (id) => !!talkRef.current?.session && (talkRef.current.session.actorId === id || talkRef.current.session.targetId === id),
+    notify: (kind, actorId, other) => talk.tellNames(kind, castRef.current.find((c) => c.id === actorId)?.name.trim() ?? "", other),
+    objectName,
+    nameOf: (id) => castRef.current.find((c) => c.id === id)?.name.trim() ?? "",
+  });
+  autonomyRef.current = autonomy;
+  /** Player command: walk to a floor spot or to an object (never a conversation). Returns false with a notice when impossible. */
+  sendToRef.current = (actorId, to) => {
+    const s = talkRef.current?.session;
+    if (s && (s.actorId === actorId || s.targetId === actorId)) talkRef.current?.cancel();
+    const who = castRef.current.find((c) => c.id === actorId)?.name.trim() ?? "";
+    setPickedId(actorId);
+    if ("objectId" in to) {
+      const r = stage.request({ type: "use_object", actor: actorId, object: to.objectId }, "test", "player");
+      if (!r.ok) talk.tellNames(r.reason === "busy" ? "busy" : "unreachableObject", who, objectName(to.objectId));
+      return r.ok;
+    }
+    const r = stage.request({ type: "walk_to", actor: actorId, x: Math.round(to.point.x), y: Math.round(to.point.y) }, "test", "player");
+    if (!r.ok) talk.tellNames(r.reason === "busy" ? "busy" : "unreachablePlace", who, "");
+    else if (r.note === "nearby") talk.tellNames("nearby", who, "");
+    return r.ok;
+  };
+  /** Someone reached an object: say what they did (and for their own displayed gift, picking it up really moves it). */
+  useEffect(() => {
+    stage.onObject = (actorId: string, objectId: string, action: ObjectAction) => {
+      const o = stage.objectById(objectId);
+      const me = castRef.current.find((c) => c.id === actorId);
+      if (!o || !me) return;
+      if (o.type === "gift" && action === "pick_up" && o.giftId && o.ownerId === actorId) setStoryState(moveGift(getStory(), o.giftId, "carried", "picked_up", [actorId]));
+      const line: StoryLine = { speaker: { kind: "narrator" }, key: "tpl", tpl: `objects.do.${action}`, params: { name: me.name.trim(), object: objectName(objectId) }, source: "builtin" };
+      if (lineInProgressRef.current) logLines([line]);
+      else showLines([line]);
+    };
+    return () => {
+      stage.onObject = null;
+    };
+  }, [stage, objectName, getStory, setStoryState, logLines, showLines]);
   // Characters handle their gifts by plain rules, once per story turn (never every frame, never AI).
   // The first turn seen after the save loads is only remembered: opening or reloading a world moves nothing.
   const giftTurn = useRef<number | null>(null);
@@ -698,6 +799,7 @@ export default function PlayPage() {
       {debugPanel}
       {relPanel}
       {testPanel}
+      {settings.testPanel && !isDemo && !sandbox ? <AutonomyDebug story={story} cast={onStage} objectName={objectName} /> : null}
     </>
   ) : null;
 
@@ -759,6 +861,7 @@ export default function PlayPage() {
                 speakerId={speakerId}
                 bubble={{ lineId, speaker: shownLine.speaker, typer, more, onAdvance: advance }}
                 drag={drag.store}
+                showNav={!!settings.testPanel}
                 chooser={talk.session?.phase === "SELECT_TARGET" ? { actorId: talk.session.actorId, choices: onStage.filter((c) => c.id !== talk.session!.actorId).map((c) => c.id) } : null}
               />
             }

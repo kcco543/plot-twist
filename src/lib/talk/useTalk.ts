@@ -67,6 +67,15 @@ export type TalkDeps = {
   onSelect: (id: string) => void;
   /** The conversation ended (or was cancelled) while its lines may still be playing. */
   onEnd?: () => void;
+  /** Character autonomy (src/lib/autonomy/useAutonomy.ts): boundaries after an ending, plans said out loud. */
+  autonomy?: {
+    refusesTalk: (listenerId: string, speakerId: string) => unknown;
+    refused: (listenerId: string, speakerId: string) => void;
+    talking: (a: string, b: string) => void;
+    endedConversation: (listenerId: string, speakerId: string) => void;
+    heard: (speakerId: string, text: string) => void;
+    conversationOver: (ids: string[]) => void;
+  };
 };
 
 export type TalkController = ReturnType<typeof useTalk>;
@@ -154,6 +163,8 @@ export function useTalk(d: TalkDeps) {
       if (TALKING_PHASES.includes(s.phase)) {
         stage.endConversation();
         deps.current.onEnd?.();
+        // Plans someone said during the conversation ("I'm going to the window") are carried out now.
+        deps.current.autonomy?.conversationOver([s.actorId, ...(s.targetId ? [s.targetId] : [])]);
       }
       convo.current.job?.abort.abort();
       convo.current = emptyConvo();
@@ -314,6 +325,7 @@ export function useTalk(d: TalkDeps) {
           job.state = "shown";
           convo.current.beat = beatNo + 1;
           showLines([{ speaker: { kind: "character", name: them.name.trim(), id: them.id }, key: "custom", params: { text: v.dialogue }, source: r.data.source }]);
+          deps.current.autonomy?.heard(them.id, v.dialogue);
           set({ ...cur, aiTopics: v.suggestions, replySource: r.data.source, aiError: null, canRetry: false });
           return;
         }
@@ -404,7 +416,15 @@ export function useTalk(d: TalkDeps) {
   useEffect(() => {
     if (phase !== "FACE_TARGET") return;
     const s = ref.current!;
-    const { stage } = deps.current;
+    const { stage, autonomy } = deps.current;
+    // They ended the last conversation and aren't ready to talk again: no conversation. Asking again can't get round it.
+    if (autonomy?.refusesTalk(s.targetId!, s.actorId)) {
+      convo.current = emptyConvo();
+      set(null);
+      autonomy.refused(s.targetId!, s.actorId);
+      return;
+    }
+    autonomy?.talking(s.actorId, s.targetId!);
     stage.request({ type: "face_target", actor: s.actorId, target: s.targetId! }, "conversation", "story");
     stage.request({ type: "face_target", actor: s.targetId!, target: s.actorId }, "conversation", "story");
     stage.beginConversation([s.actorId, s.targetId!]);
@@ -552,6 +572,7 @@ export function useTalk(d: TalkDeps) {
       // The listener ended it: once their line has been read, the conversation is over.
       if (s.phase === "WAIT_FOR_RESPONSE" && job.state === "shown" && done && c.closing) {
         end("listenerEnded");
+        deps.current.autonomy?.endedConversation(job.themId, job.meId);
         return;
       }
       // The speaker has finished: wait for (or show) the AI's answer.
@@ -599,6 +620,8 @@ export function useTalk(d: TalkDeps) {
     notice,
     dismissNotice: useCallback(() => setNotice(null), []),
     tell,
+    /** A notice with names already written out (objects, places). */
+    tellNames: useCallback((kind: TalkNoticeKind, actor: string, other: string) => setNotice({ kind, actor, target: other, at: Date.now() }), []),
     beginSelect,
     startWalk,
     /** Cancel the target choice or the walk, or end the conversation. */

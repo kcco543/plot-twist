@@ -94,7 +94,10 @@ export function CharacterInfoPanel({
         </div>
         <div className="min-w-0">
           <p className="truncate font-head text-lg font-bold leading-tight text-label">{character.name.trim() || t("common.unnamed")}</p>
-          <p className="truncate text-sm text-ink-soft">{character.age.trim() ? t("common.ageValue", { age: character.age.trim() }) : t("common.ageUnknown")}</p>
+          <p className="truncate text-sm text-ink-soft">
+            {character.age.trim() ? t("common.ageValue", { age: character.age.trim() }) : t("common.ageUnknown")}
+            {pronounTag(character, t) && <span className="ml-1.5 bg-well px-1 font-label text-[9px] uppercase text-ink-soft" data-pronouns>{pronounTag(character, t)}</span>}
+          </p>
           {(() => {
             const s = story.characters[character.id] ?? neutralState();
             const feel = emotionOf(s);
@@ -460,4 +463,15 @@ function RelationshipList({ character, cast, story }: { character: Character; ca
       })}
     </ul>
   );
+}
+
+/** "she/her", "they/them", custom pronouns, or the gender in the player's words when only that is set. */
+function pronounTag(c: Character, t: (k: never, p?: Record<string, string>) => string): string {
+  const g = c.gender;
+  if (!g) return "";
+  if (g.pronouns === "custom" && g.customPronouns?.trim()) return g.customPronouns.trim();
+  if (g.pronouns !== "unspecified" && g.pronouns !== "custom") return t(`character.pronouns.options.${g.pronouns}` as never);
+  if (g.identity === "custom" && g.custom?.trim()) return g.custom.trim();
+  if (g.identity !== "unspecified" && g.identity !== "custom") return t(`character.gender.options.${g.identity}` as never);
+  return "";
 }

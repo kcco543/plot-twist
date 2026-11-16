@@ -3,7 +3,7 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import type { Bond, Character } from "../types";
 import type { RoomLayout } from "./room";
-import { StageSim, type StageSnapshot } from "./sim";
+import { StageSim, type SavedSpot, type StageSnapshot } from "./sim";
 
 /**
  * One StageSim for the play screen, driven by requestAnimationFrame.
@@ -16,12 +16,15 @@ export function useStageSim({
   paused,
   reducedMotion,
   bondOf,
+  savedSpots,
 }: {
   cast: Character[];
   room: RoomLayout;
   paused: boolean;
   reducedMotion: boolean;
   bondOf: (a: string, b: string) => Bond;
+  /** Saved positions for characters as they're added (the world save). */
+  savedSpots?: () => Record<string, SavedSpot>;
 }): StageSim {
   const ref = useRef<StageSim | null>(null);
   if (!ref.current) ref.current = new StageSim({ room, reducedMotion });
@@ -29,7 +32,12 @@ export function useStageSim({
   sim.bondOf = bondOf;
 
   useEffect(() => sim.setRoom(room), [sim, room]);
-  useEffect(() => sim.setCast(cast), [sim, cast]);
+  const spotsRef = useRef(savedSpots);
+  spotsRef.current = savedSpots;
+  useEffect(() => {
+    if (spotsRef.current) sim.setSavedSpots(spotsRef.current());
+    sim.setCast(cast);
+  }, [sim, cast]);
   useEffect(() => {
     sim.reducedMotion = reducedMotion;
   }, [sim, reducedMotion]);

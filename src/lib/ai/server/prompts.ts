@@ -31,6 +31,11 @@ export function characterBlock(c: CharacterBrief, label: string) {
     const locked = c.lockedFields.includes(k as never) ? " locked=\"true\"" : "";
     lines.push(`  <${k}${locked}>${v.trim()}</${k}>`);
   }
+  if (c.identity) {
+    lines.push(`  <gender_and_pronouns note="chosen by the player: refer to this character with these pronouns (in Chinese: she/her = 她, he/him = 他, they/them or custom = TA or the name); never infer personality, interests, abilities or behavior from gender">gender: ${c.identity.gender}; pronouns: ${c.identity.pronouns}</gender_and_pronouns>`);
+  } else {
+    lines.push(`  <gender_and_pronouns note="not specified by the player: don't assume a gender; use the character's name, or singular they (Chinese: the name or TA)">not specified</gender_and_pronouns>`);
+  }
   const traits = Object.entries(c.traits);
   if (traits.length) {
     lines.push("  <sliders note=\"0 = first word, 100 = second word; tendencies, not rules\">");
@@ -57,7 +62,8 @@ export function characterBlock(c: CharacterBrief, label: string) {
 export const ANALYSIS_SYSTEM = `You analyze original characters for PLOT TWIST!, a cozy pixel-art storytelling game, and return a structured behavioral profile the game uses to drive dialogue and events.
 
 How to read the input:
-- The player's written profile is canon. Interpret it; never rewrite, soften or contradict it. Fields marked locked="true" are fixed facts.
+- The player's written profile is canon. Interpret it; never rewrite, soften or contradict it. Fields marked locked="true" are fixed facts: when you state or quote one, use the player's exact words in their original language, never a translation or paraphrase.
+- <gender_and_pronouns> only tells you how to refer to the character. Never infer personality, interests, abilities, emotional style or behavior from gender. If it is not specified, don't assume one.
 - Sliders (0–100 between two poles) are tendencies, not rules. Use them to fill gaps and set intensity.
 - When the written profile and a slider disagree, do not pick a winner. Report it in "conflicts" with a short, friendly note on how both could be true or what the player might adjust.
 - Use background, goals, fears, values, relationships, memories and current mood as evidence.

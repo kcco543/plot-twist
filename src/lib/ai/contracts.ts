@@ -17,6 +17,8 @@ export const CharacterBriefSchema = z.object({
   lockedFields: z.array(z.enum(CHARACTER_TEXT_FIELDS)).max(CHARACTER_TEXT_FIELDS.length),
   /** Personal boundaries from the Character Studio (hard never change in play; soft may, for one person). */
   boundaries: z.array(z.object({ strength: z.enum(["hard", "soft"]), kind: z.enum(["secret", "topic", "principle"]), text: text(240) })).max(12).optional(),
+  /** Gender and pronouns the player chose (absent = not specified: don't assume). */
+  identity: z.object({ gender: text(80), pronouns: text(80) }).optional(),
   /** Approved behavioral profile (summary + speech), if any. */
   profile: z
     .object({
@@ -93,3 +95,18 @@ export const TurnRequestSchema = z.object({
   behaviors: z.array(BehaviorBriefSchema).max(3).optional(),
 });
 export type TurnRequest = z.infer<typeof TurnRequestSchema>;
+
+/** Feedback refinement of an existing behavioral profile (/api/ai/refine). */
+export const RefineRequestSchema = z.object({
+  locale,
+  world: world.nullable(),
+  character: CharacterBriefSchema,
+  /** The profile being refined (the active one). Validated as a profile on the server. */
+  profile: z.unknown(),
+  feedback: z.string().trim().min(1).max(1500),
+  /** The player chose to keep locked canon: leave out whatever in the feedback contradicts it. */
+  keepCanon: z.boolean(),
+  /** Earlier feedback on this character (most recent last), so a rejected reading isn't proposed again. */
+  earlier: z.array(z.object({ feedback: text(1500), status: z.enum(["accepted", "rejected"]) })).max(6),
+});
+export type RefineRequest = z.infer<typeof RefineRequestSchema>;

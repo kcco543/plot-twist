@@ -6,13 +6,15 @@
  */
 import { useEffect, useState } from "react";
 import { approvedBehavior } from "../character/model";
+import { genderForPrompt } from "../character/gender";
 import { finishProfile } from "../behavior/schema";
 import { CHARACTER_TEXT_FIELDS, type BehaviorProfile, type Character, type Memory } from "../types";
-import type { AnalyzeRequest, CharacterBrief, TurnRequest } from "./contracts";
+import type { AnalyzeRequest, CharacterBrief, RefineRequest, TurnRequest } from "./contracts";
+import type { AnalysisProposal } from "../behavior/refine";
 import { activeWorldId } from "../saves/worldSaves";
 
 export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null; talk?: "ai" | "mock" | null };
-export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "timeout" | "busy" | "limit" | "unsupported";
+export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "timeout" | "busy" | "limit" | "unsupported" | "billing";
 
 export class AiRequestError extends Error {
   constructor(public code: AiErrorCode, message: string) {
@@ -88,6 +90,7 @@ export function briefFor(c: Character): CharacterBrief {
     fields,
     traits: { ...c.traits },
     lockedFields: c.lockedFields,
+    ...(genderForPrompt(c.gender) ? { identity: genderForPrompt(c.gender)! } : {}),
     ...(c.boundaries?.length ? { boundaries: c.boundaries.filter((b) => b.text.trim()).slice(0, 12).map((b) => ({ strength: b.strength, kind: b.kind, text: b.text.slice(0, 240) })) } : {}),
     profile: approved
       ? {
@@ -108,6 +111,18 @@ export async function requestAnalysis(req: AnalyzeRequest): Promise<BehaviorProf
   const data = await post<{ profile: unknown }>("/api/ai/analyze", req);
   try {
     return finishProfile(data.profile);
+  } catch {
+    throw new AiRequestError("invalid_output", "Profile failed validation");
+  }
+}
+
+export type RefineResult = Omit<AnalysisProposal, "id" | "at" | "feedback" | "sourceVersion" | "keepCanon">;
+
+/** Feedback → a proposed revision (nothing is applied until the player accepts it). */
+export async function requestRefine(req: RefineRequest): Promise<RefineResult> {
+  const data = await post<RefineResult>("/api/ai/refine", req);
+  try {
+    return { ...data, profile: finishProfile(data.profile) };
   } catch {
     throw new AiRequestError("invalid_output", "Profile failed validation");
   }

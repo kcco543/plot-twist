@@ -248,6 +248,31 @@
       "lockField": "Lock {field}",
       "unlockField": "Unlock {field}",
       "hint": "Locked details are canon. The AI must keep them exactly as written."
+    },
+    "gender": {
+      "label": "Gender",
+      "options": {
+        "unspecified": "Unspecified",
+        "female": "Female",
+        "male": "Male",
+        "nonbinary": "Non-binary",
+        "custom": "Self-describe"
+      },
+      "customLabel": "In your words",
+      "customPlaceholder": "e.g. genderfluid, a sentient cloud",
+      "note": "Optional. Only used to refer to the character correctly. It never changes their personality, interests or behavior. Saved for this version of the character only."
+    },
+    "pronouns": {
+      "label": "Pronouns",
+      "options": {
+        "unspecified": "Unspecified",
+        "she": "she/her",
+        "he": "he/him",
+        "they": "they/them",
+        "custom": "Custom"
+      },
+      "customLabel": "Custom pronouns",
+      "customPlaceholder": "e.g. xe/xem/xyr"
     }
   },
   "builder": {
@@ -284,7 +309,8 @@
       "download": "Download",
       "remove": "Remove",
       "usePlaceholder": "Use built-in art",
-      "keepHint": "Your current map stays until the new one is ready."
+      "keepHint": "You're still looking at your current map until the new one is ready.",
+      "showingWhileDrawing": "Drawing new · showing v{n}"
     },
     "edit": {
       "enter": "Edit region",
@@ -309,7 +335,10 @@
       "editedFrom": "Edited from version {n}: “{instruction}”",
       "editedFromRemoved": "Edited: “{instruction}”",
       "editedTag": "Edited"
-    }
+    },
+    "sampleTag": "Built-in sample",
+    "sampleNotice": "This is the game's built-in sample art for “{place}”. It was not made from your description. Generate a map to draw one from your words.",
+    "notDrawnYet": "Your description (not drawn yet): “{text}”"
   },
   "environments": {
     "interior": {
@@ -460,7 +489,11 @@
         "retreat": "Step back",
         "face_target": "Turn to face",
         "idle_reaction": "Idle animation",
-        "show_emotion": "Show emotion"
+        "show_emotion": "Show emotion",
+        "walk_to": "Walk to a spot",
+        "use_object": "Use an object",
+        "turn_away": "Turn away",
+        "stand_up": "Stand up"
       },
       "reasons": {
         "invalid": "the request wasn't valid",
@@ -473,7 +506,9 @@
         "cornered": "there's nowhere to back away to, so they turned away instead",
         "paused": "everyone is frozen",
         "player_command": "you're steering them right now, so their own reaction waits",
-        "outranked": "they're busy with something more important (your command or the story)"
+        "outranked": "they're busy with something more important (your command or the story)",
+        "unknown_object": "there's no such object here",
+        "not_allowed": "that isn't something they can do with it"
       },
       "notes": {
         "moving": "on the way",
@@ -481,7 +516,9 @@
         "facing": "turned to face them",
         "emoting": "showing the feeling",
         "idle": "playing an idle animation",
-        "shortened": "only a short step was possible"
+        "shortened": "only a short step was possible",
+        "nearby": "that exact spot was blocked, so they're going to the nearest reachable spot",
+        "arrived": "already there"
       },
       "idleKinds": {
         "look_around": "Look around",
@@ -636,7 +673,7 @@
     "aiTitle": "AI services",
     "aiText": "Personality analysis & dialogue",
     "aiImage": "Pixel character & map generation",
-    "aiReady": "Ready",
+    "aiReady": "Key added",
     "aiMissing": "Not configured",
     "aiChecking": "Checking",
     "testPanel": "Emotion & movement test panel",
@@ -644,7 +681,21 @@
     "behaviorDebug": "Behavior debug panel (developers)",
     "behaviorDebugDesc": "Shows why each character chose what they did: personality, feelings, relationship, memories and every option's weight. Hidden from players.",
     "relationshipInspector": "Relationship inspector",
-    "relationshipInspectorDesc": "Developer tool: long-term relationship values, stages, milestones and why each change was accepted or refused."
+    "relationshipInspectorDesc": "Developer tool: long-term relationship values, stages, milestones and why each change was accepted or refused.",
+    "aiCheck": "Test connections",
+    "aiCheckFailed": "Couldn't reach the app's server.",
+    "aiService": {
+      "anthropic": "Claude (dialogue, analysis)",
+      "openai": "OpenAI images (characters, maps)"
+    },
+    "aiResult": {
+      "ok": "Key works",
+      "missing": "No key",
+      "auth": "Key rejected",
+      "model_missing": "Model not available",
+      "unreachable": "Couldn't reach"
+    },
+    "aiCheckNote": "This checks the key and model without making anything. Running out of credits only shows up when something is generated."
   },
   "traits": {
     "extroversion": {
@@ -907,7 +958,8 @@
       "busy": "a reply is already being written",
       "limit": "the conversation limit was reached, try again later",
       "cancelled": "the conversation ended",
-      "unsupported": "this image service can't edit part of a map"
+      "unsupported": "this image service can't edit part of a map",
+      "billing": "the AI account has run out of credits or hit its spending limit (add credits in the provider's billing page, then try again)"
     },
     "errorTitle": "That didn't work: {reason}."
   },
@@ -977,7 +1029,32 @@
     "canvas": "Sprite pixels, 32 by 32. Use the pointer to draw.",
     "apply": "Apply edits",
     "note": "Edits change the sprite. The portrait stays as it was.",
-    "clear": "Clear"
+    "clear": "Clear",
+    "redo": "Redo",
+    "colorPicker": {
+      "sv": "Saturation and brightness",
+      "saturation": "saturation",
+      "value": "brightness",
+      "hue": "Hue",
+      "current": "Current",
+      "previous": "Previous",
+      "usePrevious": "Go back to the previous color",
+      "screen": "Pick from screen",
+      "limited": "Limited palette",
+      "limitedNote": "Limited palette: every color snaps to the nearest of these {n} colors.",
+      "palette": "Palette",
+      "recent": "Recent",
+      "saved": "Saved swatches",
+      "save": "Save",
+      "unsave": "Remove",
+      "savedEmpty": "Save colors you like to find them again. They're remembered in this browser."
+    },
+    "pantone": {
+      "unavailable": "No licensed Pantone library is installed, so no Pantone match is shown. Pantone codes are proprietary; the game won't guess one.",
+      "verified": "From {source}.",
+      "unverified": "Unverified approximation ({source}). Not an official Pantone match.",
+      "none": "No close match in {source}."
+    }
   },
   "story": {
     "talk": {
@@ -1028,12 +1105,12 @@
         "{name} seems settled for now. {detail}"
       ],
       "happy": [
-        "{name} is humming under their breath. {detail}",
+        "{name} is humming under {their} breath. {detail}",
         "Something has put {name} in a good mood. {detail}"
       ],
       "anxious": [
         "{name} keeps glancing at the door. {detail}",
-        "{name} looks like they're bracing for something. {detail}"
+        "{name} looks like {theyre} bracing for something. {detail}"
       ],
       "irritated": [
         "{name}'s jaw is set. Best tread lightly. {detail}",
@@ -1049,7 +1126,7 @@
       ],
       "suspicious": [
         "{name} is watching everyone a little too carefully. {detail}",
-        "{name} narrows their eyes at nothing. {detail}"
+        "{name} narrows {their} eyes at nothing. {detail}"
       ],
       "embarrassed": [
         "{name} is pretending very hard that nothing happened. {detail}",
@@ -1099,7 +1176,7 @@
       ],
       "temptation": [
         "An easy shortcut appears, but it would mean going against this: ‘{text}’.",
-        "Someone offers {name} exactly what they want, if they bend ‘{text}’. Just once.",
+        "Someone offers {name} exactly what {name} has always wanted, on one condition: bend ‘{text}’. Just once.",
         "No one is watching. {name} could ignore ‘{text}’ and nobody would know."
       ],
       "goalStep": [
@@ -1118,7 +1195,7 @@
         "A smell, a sound, and {name} is back in {memory}."
       ],
       "quietMoment": [
-        "A quiet moment. {name} does what they always do: ‘{text}’.",
+        "A quiet moment. {name} does the usual: ‘{text}’.",
         "Nothing happens, and {name} slips into an old habit: ‘{text}’.",
         "The {place} goes quiet. You notice something about {name}: ‘{text}’."
       ],
@@ -1161,7 +1238,7 @@
           "{name} finds a ribbon tied around a tree, very deliberately."
         ],
         "ruins": [
-          "{name} uncovers a mural of someone who looks a lot like them.",
+          "{name} uncovers a mural of someone who looks a lot like {them}.",
           "{name} finds a lantern that's still warm.",
           "A loose stone reveals a hollow with a sealed letter inside."
         ],
@@ -1553,7 +1630,7 @@
         "{name} edges away, putting a little space between themself and {other}."
       ],
       "stay_still": [
-        "{name} stays exactly where they are.",
+        "{name} stays right where {theyAre}.",
         "{name} doesn't move."
       ],
       "face_target": [
@@ -1562,7 +1639,7 @@
       ],
       "stay_silent": [
         "{name} says nothing.",
-        "{name} presses their lips together and stays quiet."
+        "{name} presses {their} lips together and stays quiet."
       ]
     },
     "hidden": {
@@ -1572,7 +1649,7 @@
       ],
       "fear": [
         "{name}'s hands aren't quite steady.",
-        "{name} keeps their voice level. Mostly."
+        "{name} keeps {their} voice level. Mostly."
       ],
       "sadness": [
         "Something in {name}'s face closes, just for a second.",
@@ -1750,8 +1827,8 @@
     }
   },
   "talk": {
-    "hint": "Drag a character onto someone to walk over and talk.",
-    "hintTouch": "Touch and hold a character, then drag onto someone.",
+    "hint": "Drag a character onto someone to talk, onto an object to use it, or onto the floor to walk there.",
+    "hintTouch": "Touch and hold a character, then drag onto someone, an object, or the floor.",
     "orTap": "Or:",
     "chooseButton": "Talk to…",
     "chooseNeedsSelection": "Select a character first",
@@ -1776,7 +1853,14 @@
       "cancelled": "Cancelled. Nobody moved.",
       "emptySpace": "To start a conversation, drop {name} onto another character.",
       "ended": "{name} and {other} finished talking.",
-      "listenerEnded": "{other} ended the conversation."
+      "listenerEnded": "{other} ended the conversation.",
+      "unreachablePlace": "{name} can't get there. Something is in the way.",
+      "unreachableObject": "{name} can't reach the {other}.",
+      "nearby": "That spot is blocked, so {name} is going as close as possible.",
+      "refused": "{other} doesn't want to talk to {name} right now.",
+      "walkedAway": "{other} walked away from {name}.",
+      "goingTo": "{name} is heading to the {other}, as they said.",
+      "noSuchPlace": "{name} meant to go to “{other}”, but there's no such place here, so {name} stays put."
     },
     "dismiss": "Dismiss",
     "panel": {
@@ -2182,7 +2266,8 @@
         "bad_request": "The photo couldn't be sent. Try another one.",
         "bad_image": "The photo couldn't be read. Try another one.",
         "too_large": "That photo is too detailed to send. Try another one.",
-        "cancelled": "Stopped."
+        "cancelled": "Stopped.",
+        "billing": "The AI account is out of credits. Add credits, then try again."
       }
     },
     "gift": {
@@ -2213,7 +2298,8 @@
         "offline": "You're offline. Connect and try again.",
         "rate_limited": "A picture is already being drawn. Try again in a moment.",
         "refused": "The image service declined this description. Try different words.",
-        "failed": "The picture couldn't be made. Try again."
+        "failed": "The picture couldn't be made. Try again.",
+        "billing": "The image account is out of credits, so no picture was made. Add credits on platform.openai.com → Billing."
       },
       "needName": "Give the gift a name first.",
       "preview": "Item preview",
@@ -2252,7 +2338,8 @@
         "bad_request": "The gift couldn't be sent. Try another one.",
         "bad_image": "The gift picture couldn't be read. Try another one.",
         "too_large": "That gift picture is too big to send.",
-        "cancelled": "Stopped."
+        "cancelled": "Stopped.",
+        "billing": "The AI account is out of credits. Add credits, then try again."
       }
     },
     "log": {
@@ -2264,7 +2351,7 @@
       "giftMoved": {
         "displayed": "{name} put the {gift} on display.",
         "carried": "{name} started carrying the {gift} around.",
-        "private": "{name} tucked the {gift} away among their things.",
+        "private": "{name} tucked the {gift} away among {their} things.",
         "hidden": "{name} hid the {gift} where no one will find it.",
         "stored": "{name} put the {gift} away in storage."
       }
@@ -2570,5 +2657,208 @@
     "runSimulation": "20-interaction simulation",
     "passed": "{n} of {total} passed",
     "simSummary": "Mira's view of Tobi: {start} → {end}; label {from} → {to}."
+  },
+  "objects": {
+    "names": {
+      "window": "window",
+      "bookshelf": "bookshelf",
+      "wallArt": "picture on the wall",
+      "door": "door",
+      "tableNote": "note on the table",
+      "rug": "rug",
+      "plant": "potted plant",
+      "shopSign": "shop sign",
+      "shopDoor": "shop door",
+      "lamp": "street lamp",
+      "mushroom": "mushroom",
+      "bigMushroom": "big mushroom",
+      "rubble": "pile of rubble",
+      "oldStone": "old stone",
+      "roundWindow": "round window",
+      "potionShelf": "potion shelf",
+      "cushion": "cushion",
+      "lantern": "lantern",
+      "crystals": "crystals",
+      "slime": "slime",
+      "tinyHouse": "tiny house",
+      "pond": "pond",
+      "steps": "old steps",
+      "potion": "potion",
+      "gift": "gift"
+    },
+    "actions": {
+      "read": "Read",
+      "examine": "Examine",
+      "sit": "Sit",
+      "open": "Open",
+      "inspect": "Inspect",
+      "pick_up": "Pick up",
+      "look_out": "Look out",
+      "admire": "Admire"
+    },
+    "do": {
+      "read": "{name} pulls something from the {object} and reads a few lines.",
+      "examine": "{name} takes a closer look at the {object}.",
+      "sit": "{name} sits down on the {object}.",
+      "open": "{name} opens the {object} a crack and looks out.",
+      "inspect": "{name} inspects the {object}.",
+      "pick_up": "{name} picks up the {object} and keeps it close.",
+      "look_out": "{name} looks out of the {object} for a while.",
+      "admire": "{name} stops to admire the {object}."
+    },
+    "drag": {
+      "use": "{action}: {object}",
+      "walkHere": "Walk here",
+      "nearby": "Blocked, will stop as close as possible",
+      "noWay": "Can't get there",
+      "objectNoWay": "Can't reach the {object}",
+      "busy": "Busy"
+    },
+    "notice": {
+      "unreachablePlace": "{actor} can't get there. Something is in the way.",
+      "unreachableObject": "{actor} can't reach the {object}.",
+      "nearby": "That spot is blocked, so {actor} went as close as possible."
+    }
+  },
+  "refine": {
+    "title": "Refine This Analysis",
+    "intro": "Tell the AI what it got wrong or missed. It proposes a revised analysis and shows exactly what it would change. Nothing changes until you accept it, and your locked canon always wins.",
+    "current": "Current · v{n}",
+    "label": "Refine This Analysis",
+    "placeholder": "The character is reserved around strangers, but becomes playful and talkative around close friends. They are not timid or passive.",
+    "hint": "Only this world's version of the character is changed.",
+    "apply": "Apply Feedback",
+    "applying": "Revising the analysis",
+    "testMode": "Test replies (no AI)",
+    "unavailable": "Refining needs the AI (ANTHROPIC_API_KEY).",
+    "restorePrevious": "Restore Previous Version",
+    "proposalTitle": "Proposed revision",
+    "yourFeedback": "Your feedback:",
+    "understood": "How it was understood:",
+    "conflictTitle": "This feedback contradicts locked canon",
+    "keepCanon": "Keep canon, revise without that part",
+    "editCanon": "Edit the canon instead",
+    "keptCanon": "Revised while keeping your locked canon: the conflicting part of the feedback was left out.",
+    "ambiguousTitle": "Please check this reading",
+    "confirmReading": "Yes, that's what I meant",
+    "changes": "What changes",
+    "noChanges": "Nothing would change.",
+    "why": "Why: {why}",
+    "kept": "Kept as it was",
+    "preview": "Show the full revised analysis",
+    "stale": "The analysis changed since this was proposed. Apply your feedback again.",
+    "accept": "Accept Changes",
+    "reject": "Reject Changes",
+    "blockedCanon": "Resolve the canon conflict first.",
+    "blockedAmbiguous": "Confirm the reading above first.",
+    "history": "Revision history ({n})",
+    "status": {
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "restored": "Restored"
+    },
+    "restoreEntry": "Restored an earlier version (from v{n})",
+    "useThis": "Use this version",
+    "useBefore": "Restore the version before",
+    "sections": {
+      "summary": "Summary",
+      "coreTraits": "Core traits",
+      "speech": "Speech",
+      "emotionalPatterns": "Emotional patterns",
+      "decisionStyle": "Decisions",
+      "socialStyle": "Social style",
+      "motivations": "Motivations",
+      "boundaries": "Boundaries",
+      "dialogueApproaches": "Dialogue approaches",
+      "reactionTendencies": "Reaction tendencies",
+      "storyHooks": "Story hooks"
+    }
+  },
+  "autonomy": {
+    "title": "Autonomy",
+    "intro": "What characters are doing on their own, and why. Rules only, no AI; a player command always comes first, but a character's boundaries can't be overridden.",
+    "active": "Now",
+    "recent": "Recently",
+    "nothing": "Nothing yet.",
+    "boundaries": "Conversation boundaries",
+    "boundary": "{who} ↛ {other} · severity {severity} · pushed {pushes}×",
+    "ready": "ready to talk again",
+    "goals": "Plans said out loud",
+    "kinds": {
+      "approach": "go up to {target}",
+      "move_away": "move away from {target}",
+      "go_to_place": "go to the {object}",
+      "inspect_object": "look at the {object}",
+      "use_object": "use the {object}",
+      "sit": "sit on the {object}",
+      "stand": "stand up",
+      "turn_toward": "turn to {target}",
+      "turn_away": "turn away from {target}",
+      "pause": "pause",
+      "leave_conversation": "leave the conversation",
+      "decline": "decline",
+      "seek_privacy": "find a quiet spot ({object})",
+      "return_to_task": "go back to the {object}",
+      "stay_still": "stay put",
+      "observe": "watch the room"
+    },
+    "status": {
+      "proposed": "proposed",
+      "validated": "validated",
+      "queued": "queued",
+      "executing": "doing it",
+      "completed": "done",
+      "interrupted": "interrupted",
+      "failed": "didn't happen"
+    },
+    "goalStatus": {
+      "pending": "after the conversation",
+      "started": "on the way",
+      "done": "arrived",
+      "unavailable": "no such place here",
+      "failed": "couldn't get there"
+    },
+    "reasons": {
+      "keepingDistance": "keeping their distance after a conversation ended badly",
+      "standingGround": "upset, but not one to walk away",
+      "coolingOff": "upset; wants a quiet moment",
+      "seeksComfort": "wants to be near someone they trust",
+      "needsQuiet": "low; wants somewhere quiet to sit",
+      "embarrassed": "embarrassed",
+      "wantsCompany": "in a good mood and wants company",
+      "contentAlone": "in a good mood, happy pottering about",
+      "curious": "something caught their attention",
+      "takingItIn": "taking in what just happened",
+      "backToIt": "going back to what they were doing",
+      "idleCuriosity": "idly curious",
+      "stretchLegs": "stretching their legs",
+      "content": "content where they are",
+      "endedConversation": "ended the conversation and stepped away",
+      "saidSo": "said they would"
+    },
+    "why": {
+      "cooldown": "needs more time",
+      "upset": "still upset",
+      "repair": "waiting for an apology or a kind gesture",
+      "trust": "trust has broken down",
+      "fear": "afraid of them"
+    },
+    "notes": {
+      "in_conversation": "in a conversation",
+      "player_command": "the player is steering them",
+      "busy": "busy",
+      "boundary": "a boundary stands in the way",
+      "too_many_walks": "enough people are walking around",
+      "unknown_object": "not in this room",
+      "not_allowed": "not theirs to use",
+      "no_path": "blocked",
+      "timeout": "took too long",
+      "expired": "never got the chance",
+      "replaced": "something else came first",
+      "resumed": "picked up again after loading",
+      "no_room": "no room",
+      "unknown_target": "they left",
+      "outranked": "something more important is happening"
+    }
   }
 }

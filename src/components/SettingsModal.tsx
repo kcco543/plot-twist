@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal } from "./ui/Modal";
 import { Choice, Toggle } from "./ui/Choice";
+import { AiConnectionCheck } from "./AiConnectionCheck";
 import { PixelButton } from "./ui/PixelButton";
 import { PixelIcon } from "./ui/PixelIcon";
 import { LanguageSwitch } from "./LanguageSwitch";
@@ -137,6 +138,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                   </li>
                 ))}
               </ul>
+              <AiConnectionCheck />
             </div>
           </div>
         </Section>

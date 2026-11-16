@@ -5,6 +5,7 @@
  */
 import { makeId } from "../id";
 import { BOUNDARY_KINDS, CHARACTER_TEXT_FIELDS, TRAIT_IDS, type BoundaryKind, type Character, type CharacterBoundary, type CharacterTextField, type Traits } from "../types";
+import { normalizeGender } from "./gender";
 
 export { CHARACTER_TEXT_FIELDS };
 
@@ -61,6 +62,7 @@ export function normalizeCharacter(raw: unknown): Character {
     updatedAt: typeof r.updatedAt === "number" ? r.updatedAt : base.updatedAt,
     ...(typeof r.templateId === "string" && r.templateId ? { templateId: r.templateId } : {}),
     ...(Array.isArray(r.boundaries) ? { boundaries: normalizeBoundaries(r.boundaries) } : {}),
+    ...(normalizeGender(r.gender) ? { gender: normalizeGender(r.gender) } : {}),
   };
 }
 

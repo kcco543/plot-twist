@@ -7,6 +7,7 @@ import { PixelIcon } from "@/components/ui/PixelIcon";
 import { TabPanel, Tabs } from "@/components/ui/Tabs";
 import { AnalysisPanel } from "./AnalysisPanel";
 import { BoundaryEditor } from "./BoundaryEditor";
+import { GenderFields } from "./GenderFields";
 import { PersonalitySliders } from "./PersonalitySliders";
 import { PortraitSlot } from "./PortraitSlot";
 import { SpriteStudio } from "./SpriteStudio";
@@ -152,6 +153,7 @@ export function CharacterEditor({
             <div className="flex min-w-0 flex-1 flex-col gap-4">
               <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">{IDENTITY.slice(0, 2).map(field)}</div>
               {field(IDENTITY[2])}
+              <GenderFields character={character} onChange={onChange} />
               {field(IDENTITY[3])}
             </div>
           </div>
@@ -170,7 +172,7 @@ export function CharacterEditor({
 
       {!library && (
         <TabPanel id="analysis" base={base} active={tab === "analysis"}>
-          <AnalysisPanel character={character} onChange={onChange} />
+          <AnalysisPanel character={character} onChange={onChange} onEditField={editText} />
         </TabPanel>
       )}
 

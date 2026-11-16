@@ -248,6 +248,31 @@
       "lockField": "锁定{field}",
       "unlockField": "解锁{field}",
       "hint": "锁定的内容是固定设定，AI 必须原样保留。"
+    },
+    "gender": {
+      "label": "性别",
+      "options": {
+        "unspecified": "未指定",
+        "female": "女性",
+        "male": "男性",
+        "nonbinary": "非二元",
+        "custom": "自我描述"
+      },
+      "customLabel": "用你的话描述",
+      "customPlaceholder": "例如：性别流动、一朵有意识的云",
+      "note": "可选。只用于正确称呼角色，绝不会改变角色的性格、兴趣或行为。只保存在这个版本的角色上。"
+    },
+    "pronouns": {
+      "label": "代词",
+      "options": {
+        "unspecified": "未指定",
+        "she": "她（she/her）",
+        "he": "他（he/him）",
+        "they": "TA（they/them）",
+        "custom": "自定义"
+      },
+      "customLabel": "自定义代词",
+      "customPlaceholder": "例如：xe/xem/xyr"
     }
   },
   "builder": {
@@ -284,7 +309,8 @@
       "download": "下载",
       "remove": "删除",
       "usePlaceholder": "使用内置图片",
-      "keepHint": "新地图完成前，当前地图会一直保留。"
+      "keepHint": "新地图完成前，你看到的仍是当前地图。",
+      "showingWhileDrawing": "正在生成 · 当前显示 v{n}"
     },
     "edit": {
       "enter": "编辑区域",
@@ -309,7 +335,10 @@
       "editedFrom": "由版本 {n} 修改：“{instruction}”",
       "editedFromRemoved": "已修改：“{instruction}”",
       "editedTag": "已修改"
-    }
+    },
+    "sampleTag": "内置示例",
+    "sampleNotice": "这是游戏内置的「{place}」示例图，并不是根据你的描述生成的。点击生成地图，才会按你的文字绘制。",
+    "notDrawnYet": "你的描述（尚未生成）：“{text}”"
   },
   "environments": {
     "interior": {
@@ -460,7 +489,11 @@
         "retreat": "后退",
         "face_target": "转向对方",
         "idle_reaction": "待机动作",
-        "show_emotion": "显示情绪"
+        "show_emotion": "显示情绪",
+        "walk_to": "走到某处",
+        "use_object": "使用物品",
+        "turn_away": "转过身去",
+        "stand_up": "站起来"
       },
       "reasons": {
         "invalid": "请求无效",
@@ -473,7 +506,9 @@
         "cornered": "已经无路可退，于是转过身去",
         "paused": "全员已定格",
         "player_command": "你正在操控他们，所以他们自己的反应会先等等",
-        "outranked": "他们正忙着更重要的事（你的指令或剧情）"
+        "outranked": "他们正忙着更重要的事（你的指令或剧情）",
+        "unknown_object": "这里没有这个物品",
+        "not_allowed": "不能对它这样做"
       },
       "notes": {
         "moving": "出发了",
@@ -481,7 +516,9 @@
         "facing": "转向了对方",
         "emoting": "显示情绪中",
         "idle": "播放待机动作",
-        "shortened": "只能退一小步"
+        "shortened": "只能退一小步",
+        "nearby": "那个位置走不过去，改去最近能到的地方",
+        "arrived": "已经在那里了"
       },
       "idleKinds": {
         "look_around": "东张西望",
@@ -636,7 +673,7 @@
     "aiTitle": "AI 服务",
     "aiText": "性格分析与对话",
     "aiImage": "像素形象与地图生成",
-    "aiReady": "可用",
+    "aiReady": "已添加密钥",
     "aiMissing": "未配置",
     "aiChecking": "检查中",
     "testPanel": "情绪与移动测试面板",
@@ -644,7 +681,21 @@
     "behaviorDebug": "行为调试面板（开发者）",
     "behaviorDebugDesc": "显示每个角色为什么这样做：性格、情绪、关系、记忆，以及每个选项的权重。玩家看不到。",
     "relationshipInspector": "关系检查器",
-    "relationshipInspectorDesc": "开发者工具：长期关系数值、阶段、里程碑，以及每次变化被接受或拒绝的原因。"
+    "relationshipInspectorDesc": "开发者工具：长期关系数值、阶段、里程碑，以及每次变化被接受或拒绝的原因。",
+    "aiCheck": "测试连接",
+    "aiCheckFailed": "无法连接到应用服务器。",
+    "aiService": {
+      "anthropic": "Claude（对话、分析）",
+      "openai": "OpenAI 图像（角色、地图）"
+    },
+    "aiResult": {
+      "ok": "密钥有效",
+      "missing": "没有密钥",
+      "auth": "密钥被拒绝",
+      "model_missing": "模型不可用",
+      "unreachable": "无法连接"
+    },
+    "aiCheckNote": "这里只检查密钥和模型，不会生成任何内容。余额不足只有在实际生成时才会显示。"
   },
   "traits": {
     "extroversion": {
@@ -907,7 +958,8 @@
       "busy": "上一个回复还在写",
       "limit": "已达到对话次数上限，请稍后再试",
       "cancelled": "对话已结束",
-      "unsupported": "当前的图像服务不支持局部修改"
+      "unsupported": "当前的图像服务不支持局部修改",
+      "billing": "AI 账户余额不足或已达到消费上限（请在服务商的账单页面充值后再试）"
     },
     "errorTitle": "没有成功：{reason}。"
   },
@@ -977,7 +1029,32 @@
     "canvas": "形象像素，32×32。用指针绘制。",
     "apply": "应用修改",
     "note": "修改只作用于形象，头像保持不变。",
-    "clear": "清空"
+    "clear": "清空",
+    "redo": "重做",
+    "colorPicker": {
+      "sv": "饱和度与明度",
+      "saturation": "饱和度",
+      "value": "明度",
+      "hue": "色相",
+      "current": "当前",
+      "previous": "上一个",
+      "usePrevious": "换回上一个颜色",
+      "screen": "从屏幕取色",
+      "limited": "限定调色板",
+      "limitedNote": "限定调色板：每个颜色都会贴到这 {n} 个颜色里最接近的一个。",
+      "palette": "调色板",
+      "recent": "最近使用",
+      "saved": "收藏的色块",
+      "save": "收藏",
+      "unsave": "移除",
+      "savedEmpty": "收藏喜欢的颜色，方便下次再用。只保存在这个浏览器里。"
+    },
+    "pantone": {
+      "unavailable": "没有安装获得授权的 Pantone 色库，所以不显示 Pantone 匹配。Pantone 色号是专有数据，游戏不会猜测色号。",
+      "verified": "来自 {source}。",
+      "unverified": "未经验证的近似值（{source}），不是官方 Pantone 匹配。",
+      "none": "{source} 里没有接近的颜色。"
+    }
   },
   "story": {
     "talk": {
@@ -1750,8 +1827,8 @@
     }
   },
   "talk": {
-    "hint": "把一个角色拖到另一个角色身上，就会走过去聊天。",
-    "hintTouch": "长按一个角色，然后拖到另一个角色身上。",
+    "hint": "把角色拖到别人身上会去聊天，拖到物品上会去使用它，拖到地面上会走过去。",
+    "hintTouch": "长按角色，然后拖到别人、物品或地面上。",
     "orTap": "或者：",
     "chooseButton": "找人聊天…",
     "chooseNeedsSelection": "请先选择一个角色",
@@ -1776,7 +1853,14 @@
       "cancelled": "已取消，没有人移动。",
       "emptySpace": "要开始对话，请把{name}放到另一个角色身上。",
       "ended": "{name}和{other}聊完了。",
-      "listenerEnded": "{other}结束了这次对话。"
+      "listenerEnded": "{other}结束了这次对话。",
+      "unreachablePlace": "{name}到不了那里，有东西挡住了。",
+      "unreachableObject": "{name}够不到{other}。",
+      "nearby": "那个位置被挡住了，{name}会走到最近能到的地方。",
+      "refused": "{other}现在不想和{name}说话。",
+      "walkedAway": "{other}从{name}身边走开了。",
+      "goingTo": "{name}照自己说的，往{other}那边走去。",
+      "noSuchPlace": "{name}本想去“{other}”，但这里没有那个地方，所以留在原地。"
     },
     "dismiss": "关闭",
     "panel": {
@@ -2182,7 +2266,8 @@
         "bad_request": "照片没能发出去。换一张试试。",
         "bad_image": "照片读不出来。换一张试试。",
         "too_large": "这张照片太复杂，发不出去。换一张试试。",
-        "cancelled": "已停止。"
+        "cancelled": "已停止。",
+        "billing": "AI 账户余额不足。充值后再试。"
       }
     },
     "gift": {
@@ -2213,7 +2298,8 @@
         "offline": "你已离线，请联网后再试。",
         "rate_limited": "已经在画一张图了，请稍后再试。",
         "refused": "图像服务拒绝了这个描述，换个说法试试。",
-        "failed": "图案没能生成，请再试一次。"
+        "failed": "图案没能生成，请再试一次。",
+        "billing": "图像服务账户余额不足，没有生成图片。请到 platform.openai.com → Billing 充值。"
       },
       "needName": "请先给礼物起个名字。",
       "preview": "物品预览",
@@ -2252,7 +2338,8 @@
         "bad_request": "礼物没能送出去。",
         "bad_image": "礼物图片读不出来。",
         "too_large": "这份礼物太复杂，发不出去。换一张试试。",
-        "cancelled": "已停止。"
+        "cancelled": "已停止。",
+        "billing": "AI 账户余额不足。充值后再试。"
       }
     },
     "log": {
@@ -2570,5 +2657,208 @@
     "runSimulation": "20 次互动模拟",
     "passed": "通过 {n}/{total}",
     "simSummary": "米拉对托比的看法：{start} → {end}；关系 {from} → {to}。"
+  },
+  "objects": {
+    "names": {
+      "window": "窗户",
+      "bookshelf": "书架",
+      "wallArt": "墙上的画",
+      "door": "门",
+      "tableNote": "桌上的纸条",
+      "rug": "地毯",
+      "plant": "盆栽",
+      "shopSign": "店铺招牌",
+      "shopDoor": "店门",
+      "lamp": "路灯",
+      "mushroom": "蘑菇",
+      "bigMushroom": "大蘑菇",
+      "rubble": "碎石堆",
+      "oldStone": "古老的石头",
+      "roundWindow": "圆窗",
+      "potionShelf": "药水架",
+      "cushion": "坐垫",
+      "lantern": "灯笼",
+      "crystals": "水晶",
+      "slime": "史莱姆",
+      "tinyHouse": "小房子",
+      "pond": "池塘",
+      "steps": "旧台阶",
+      "potion": "药水",
+      "gift": "礼物"
+    },
+    "actions": {
+      "read": "阅读",
+      "examine": "查看",
+      "sit": "坐下",
+      "open": "打开",
+      "inspect": "观察",
+      "pick_up": "拿起",
+      "look_out": "向外看",
+      "admire": "欣赏"
+    },
+    "do": {
+      "read": "{name}从{object}上取下一本，读了几行。",
+      "examine": "{name}凑近仔细看了看{object}。",
+      "sit": "{name}在{object}上坐了下来。",
+      "open": "{name}把{object}推开一条缝，向外望去。",
+      "inspect": "{name}仔细观察着{object}。",
+      "pick_up": "{name}拿起{object}，小心地带在身边。",
+      "look_out": "{name}在{object}边望了好一会儿。",
+      "admire": "{name}停下来欣赏{object}。"
+    },
+    "drag": {
+      "use": "{action}：{object}",
+      "walkHere": "走到这里",
+      "nearby": "被挡住了，会停在最近的地方",
+      "noWay": "到不了那里",
+      "objectNoWay": "够不到{object}",
+      "busy": "正忙"
+    },
+    "notice": {
+      "unreachablePlace": "{actor}到不了那里，有东西挡住了。",
+      "unreachableObject": "{actor}够不到{object}。",
+      "nearby": "那个位置被挡住了，{actor}走到了最近的地方。"
+    }
+  },
+  "refine": {
+    "title": "反馈与修正",
+    "intro": "告诉 AI 它哪里理解错了或漏掉了。它会提出修订后的分析，并清楚列出要改什么。你接受之前什么都不会改变，而且你锁定的设定永远优先。",
+    "current": "当前 · v{n}",
+    "label": "反馈与修正",
+    "placeholder": "虽然这个角色不擅长表达感情，但他并不冷漠。他会通过实际行动表达关心，不应该总是拒绝他人的帮助。",
+    "hint": "只会修改这个世界里的角色版本。",
+    "apply": "根据反馈重新分析",
+    "applying": "正在修订分析",
+    "testMode": "测试回复（非 AI）",
+    "unavailable": "修订需要 AI（ANTHROPIC_API_KEY）。",
+    "restorePrevious": "恢复上一版本",
+    "proposalTitle": "修订建议",
+    "yourFeedback": "你的反馈：",
+    "understood": "AI 的理解：",
+    "conflictTitle": "这条反馈与锁定设定冲突",
+    "keepCanon": "保留设定，去掉冲突部分再修订",
+    "editCanon": "改为修改设定",
+    "keptCanon": "已在保留锁定设定的前提下修订：反馈中冲突的部分没有采用。",
+    "ambiguousTitle": "请确认这样理解是否正确",
+    "confirmReading": "是的，我就是这个意思",
+    "changes": "将要修改",
+    "noChanges": "没有需要修改的地方。",
+    "why": "原因：{why}",
+    "kept": "保持不变",
+    "preview": "查看完整的修订分析",
+    "stale": "提出建议之后分析已经改变，请重新提交反馈。",
+    "accept": "接受修改",
+    "reject": "拒绝修改",
+    "blockedCanon": "请先解决与设定的冲突。",
+    "blockedAmbiguous": "请先确认上面的理解。",
+    "history": "修订记录（{n}）",
+    "status": {
+      "accepted": "已接受",
+      "rejected": "已拒绝",
+      "restored": "已恢复"
+    },
+    "restoreEntry": "恢复了较早的版本（从 v{n}）",
+    "useThis": "使用这个版本",
+    "useBefore": "恢复到这之前的版本",
+    "sections": {
+      "summary": "概述",
+      "coreTraits": "核心特质",
+      "speech": "说话方式",
+      "emotionalPatterns": "情绪模式",
+      "decisionStyle": "决策方式",
+      "socialStyle": "社交风格",
+      "motivations": "动机",
+      "boundaries": "界限",
+      "dialogueApproaches": "对话方式",
+      "reactionTendencies": "反应倾向",
+      "storyHooks": "故事钩子"
+    }
+  },
+  "autonomy": {
+    "title": "自主行动",
+    "intro": "角色自己在做什么、为什么。只用规则，不调用 AI；玩家的指令总是优先，但不能越过角色的边界。",
+    "active": "现在",
+    "recent": "最近",
+    "nothing": "暂时没有。",
+    "boundaries": "对话边界",
+    "boundary": "{who} ↛ {other} · 严重程度 {severity} · 被追问 {pushes} 次",
+    "ready": "愿意再聊了",
+    "goals": "说出口的打算",
+    "kinds": {
+      "approach": "走向{target}",
+      "move_away": "离{target}远一点",
+      "go_to_place": "去{object}",
+      "inspect_object": "看看{object}",
+      "use_object": "使用{object}",
+      "sit": "坐到{object}上",
+      "stand": "站起来",
+      "turn_toward": "转向{target}",
+      "turn_away": "背对{target}",
+      "pause": "停一下",
+      "leave_conversation": "离开对话",
+      "decline": "拒绝",
+      "seek_privacy": "找个安静的地方（{object}）",
+      "return_to_task": "回到{object}那边",
+      "stay_still": "待在原地",
+      "observe": "观察四周"
+    },
+    "status": {
+      "proposed": "提出",
+      "validated": "已核实",
+      "queued": "排队中",
+      "executing": "进行中",
+      "completed": "完成",
+      "interrupted": "被打断",
+      "failed": "没有发生"
+    },
+    "goalStatus": {
+      "pending": "对话结束后",
+      "started": "在路上",
+      "done": "到了",
+      "unavailable": "这里没有那个地方",
+      "failed": "去不了"
+    },
+    "reasons": {
+      "keepingDistance": "对话不欢而散后，和对方保持距离",
+      "standingGround": "很不高兴，但不是会走开的人",
+      "coolingOff": "心情不好，想一个人静一静",
+      "seeksComfort": "想待在信任的人身边",
+      "needsQuiet": "情绪低落，想找个安静的地方坐坐",
+      "embarrassed": "不好意思",
+      "wantsCompany": "心情好，想找人作伴",
+      "contentAlone": "心情好，自己随便看看",
+      "curious": "有东西引起了注意",
+      "takingItIn": "在消化刚才发生的事",
+      "backToIt": "回去继续刚才的事",
+      "idleCuriosity": "随便看看",
+      "stretchLegs": "活动一下",
+      "content": "待在原地挺好",
+      "endedConversation": "结束了对话，走开了",
+      "saidSo": "说过要去"
+    },
+    "why": {
+      "cooldown": "还需要一点时间",
+      "upset": "还在生气或难过",
+      "repair": "在等一句道歉或一个善意的举动",
+      "trust": "信任已经破裂",
+      "fear": "害怕对方"
+    },
+    "notes": {
+      "in_conversation": "正在对话",
+      "player_command": "玩家正在指挥",
+      "busy": "忙着",
+      "boundary": "有边界挡着",
+      "too_many_walks": "走动的人已经够多了",
+      "unknown_object": "这个房间里没有",
+      "not_allowed": "不是自己的东西",
+      "no_path": "被挡住了",
+      "timeout": "太久了",
+      "expired": "一直没轮到",
+      "replaced": "有更重要的事先发生了",
+      "resumed": "读档后继续",
+      "no_room": "没有空间",
+      "unknown_target": "对方离开了",
+      "outranked": "有更重要的事在发生"
+    }
   }
 }

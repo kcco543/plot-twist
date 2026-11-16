@@ -61,12 +61,18 @@ export function SceneSprites({
             data-actor={c.id}
             data-state={a.state}
             data-emotion={a.emotion}
+            data-pose={a.pose ?? undefined}
             className="group absolute cursor-grab select-none focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-label"
             // Touching a character never scrolls the page: touch-and-hold drags them instead.
             style={{ left: a.x - STAGE.sprite / 2, top: a.y - STAGE.sprite, width: STAGE.sprite, height: STAGE.sprite, zIndex: a.y, touchAction: onPressStart ? "none" : undefined, WebkitTouchCallout: "none" } as CSSProperties}
           >
             <span className="absolute bottom-0 left-1/2 h-[3px] w-6 -translate-x-1/2 bg-ink/40" aria-hidden />
-            <span key={`${a.body ?? (a.walking ? "walk" : "")}:${a.bodyKey}`} className={`relative block ${motion}`} style={{ transformOrigin: "50% 100%" }}>
+            <span
+              key={`${a.body ?? (a.walking ? "walk" : "")}:${a.bodyKey}`}
+              className={`relative block ${motion}`}
+              // Sitting: the legs fold out of sight and the body drops a few pixels (whole art pixels, so edges stay crisp).
+              style={{ transformOrigin: "50% 100%", ...(a.pose === "sit" && !a.walking ? { transform: "translateY(5px)", clipPath: "inset(0 0 7px 0)" } : {}) }}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={art.src}

@@ -157,7 +157,7 @@ describe("stage actions (the interface a future AI will use)", () => {
   const facts = { onStage: (id: string) => ["a", "b"].includes(id), stateOf: (id: string) => (id === "b" ? ("speaking" as const) : ("idle" as const)) };
 
   it("validates shape, characters and state", () => {
-    expect(STAGE_ACTION_TYPES).toEqual(["approach", "retreat", "face_target", "idle_reaction", "show_emotion"]);
+    expect(STAGE_ACTION_TYPES).toEqual(["approach", "retreat", "face_target", "idle_reaction", "show_emotion", "walk_to", "use_object", "turn_away", "stand_up"]);
     expect(validateStageAction({ type: "teleport", actor: "a" }, facts)).toMatchObject({ ok: false, reason: "invalid" });
     expect(validateStageAction({ type: "approach", actor: "a" }, facts)).toMatchObject({ ok: false, reason: "invalid" });
     expect(validateStageAction({ type: "approach", actor: "z", target: "a" }, facts)).toMatchObject({ ok: false, reason: "unknown_actor" });

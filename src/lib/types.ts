@@ -86,6 +86,11 @@ export type Character = Record<CharacterTextField, string> & {
    * Missing in older saves = none written (locked canon still counts).
    */
   boundaries?: CharacterBoundary[];
+  /**
+   * Gender and pronouns (src/lib/character/gender.ts). Missing in older saves
+   * = unspecified (never guessed). Each world's copy has its own value.
+   */
+  gender?: import("./character/gender").GenderInfo;
 };
 
 export const BOUNDARY_KINDS = ["secret", "topic", "principle"] as const;
@@ -138,6 +143,12 @@ export type BehaviorRecord = {
   locale: string;
   createdAt: number;
   approvedAt: number | null;
+  /** Profile version, + 1 for every accepted feedback change or restore. Missing = 1. */
+  version?: number;
+  /** Feedback refinement history (src/lib/behavior/refine.ts), oldest first, capped. */
+  revisions?: import("./behavior/refine").AnalysisRevision[];
+  /** A revised profile proposed from feedback, waiting for Accept / Reject. */
+  proposal?: import("./behavior/refine").AnalysisProposal | null;
 };
 
 // ---------------------------------------------------------------- story state
@@ -356,6 +367,12 @@ export type StoryState = {
    * inspector's change log. Missing = nothing recorded yet (older saves).
    */
   progress?: Record<string, import("./relationships/types").RelProgress>;
+  /**
+   * Character autonomy (src/lib/autonomy): intents and their lifecycle,
+   * stated goals, conversation boundaries and where everyone stands.
+   * Missing = nothing yet (older saves).
+   */
+  agency?: import("./autonomy/types").AgencyState;
 };
 
 // ---------------------------------------------------------------- save
