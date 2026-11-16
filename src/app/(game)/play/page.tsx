@@ -1340,7 +1340,7 @@ export default function PlayPage() {
                 />
               }
             >
-              {scene.kind === "map" && <SceneFronts src={scene.art.src} size={scene.built.size} fronts={scene.built.fronts} />}
+              {scene.kind === "map" && <SceneFronts src={scene.art.src} size={scene.built.size} fronts={scene.built.fronts} pixelated={!scene.art.smooth} stage={stage} actorIds={cast.map((c) => c.id)} />}
               {scene.kind === "loading" && <SceneLoading />}
               <StageGifts placed={placeDisplayed(story, spots, sceneOfGifts)} nameOf={(id) => cast.find((c) => c.id === id)?.name.trim() ?? ""} />
               <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={onStageSelect} onPressStart={drag.onPressStart} reducedMotion={reducedMotion} />

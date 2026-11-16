@@ -22,6 +22,8 @@ export type StoredMap = {
   /** Set when this version came from editing part of another one (Undo goes back to it). */
   parentId?: string;
   edit?: { instruction: string; region: { x: number; y: number; w: number; h: number } };
+  /** Set on a pixel-grid copy of an older high-resolution map (the id it was converted from). */
+  pixelGridFrom?: string;
   /** The player's name for this map (missing = made from the description). */
   name?: string;
   /** Where characters can walk on it, its objects and spawn points (scene/layout.ts). Missing = not set up yet. */

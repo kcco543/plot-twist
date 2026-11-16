@@ -310,7 +310,10 @@
       "remove": "Remove",
       "usePlaceholder": "Use built-in art",
       "keepHint": "You're still looking at your current map until the new one is ready.",
-      "showingWhileDrawing": "Drawing new · showing v{n}"
+      "showingWhileDrawing": "Drawing new · showing v{n}",
+      "pixelGridCopy": "Pixel-grid copy",
+      "pixelGridCopyHint": "Older maps are high-resolution pictures. This makes a copy on the game's pixel grid, as a new version. The original stays as it is, and it costs nothing.",
+      "pixelGridFailed": "The pixel-grid copy couldn't be made in this browser."
     },
     "edit": {
       "enter": "Edit region",
@@ -3005,7 +3008,9 @@
     "note": "What it says / a note about it",
     "notePlaceholder": "e.g. “Rooms upstairs, 2 coins a night”",
     "contents": "What's inside (comma separated)",
-    "contentsPlaceholder": "e.g. old map, silver bell"
+    "contentsPlaceholder": "e.g. old map, silver bell",
+    "pixelGridSize": "Characters match this map's pixel grid: one map pixel is one character pixel, so the size is fixed.",
+    "groundHint": "Readable maps keep about two thirds of the playable view as open, connected ground."
   },
   "theme": {
     "title": "Look & feel",
