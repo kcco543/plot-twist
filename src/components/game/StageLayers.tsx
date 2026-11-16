@@ -8,6 +8,8 @@ import type { Character } from "@/lib/types";
 import { EmotionEffects } from "./EmotionEffects";
 import { anchorOf, SceneLabels, SceneSprites } from "./SceneSprites";
 import { SpeechBubble } from "./SpeechBubble";
+import { useStageSize } from "./PixelStage";
+import { roomSize, type NavMask } from "@/lib/stage/room";
 
 /**
  * The parts of the stage that move every frame subscribe to the simulation
@@ -61,7 +63,8 @@ export function StageOverlay({
   showNav?: boolean;
 }) {
   const snap = useStageSnapshot(stage);
-  const anchor = anchorOf(speakerId ? snap.actors.find((a) => a.id === speakerId) : null);
+  const size = useStageSize();
+  const anchor = anchorOf(speakerId ? snap.actors.find((a) => a.id === speakerId) : null, size);
   return (
     <>
       {showNav && <NavLayer stage={stage} />}
@@ -77,16 +80,20 @@ function DragLayer({ store, ...rest }: { store: { subscribe: (l: () => void) => 
   return <DragOverlay view={view} {...rest} />;
 }
 
-const pctX = (x: number) => `${(x / 320) * 100}%`;
-const pctY = (y: number) => `${(y / 192) * 100}%`;
-
 /** The explicit navigation layer (test panel): floor in green, obstacles in red, objects dashed, anchors as dots. */
 function NavLayer({ stage }: { stage: StageSim }) {
   const r = stage.room;
+  const { width, height } = roomSize(r);
+  const pctX = (x: number) => `${(x / width) * 100}%`;
+  const pctY = (y: number) => `${(y / height) * 100}%`;
   const box = (x0: number, y0: number, x1: number, y1: number) => ({ left: pctX(x0), top: pctY(y0), width: pctX(x1 - x0), height: pctY(y1 - y0) });
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0" data-nav-layer>
-      <span className="absolute bg-mint/25 outline outline-1 outline-mint-deep" style={box(r.walk.x0, r.walk.y0, r.walk.x1, r.walk.y1)} />
+      {r.mask ? (
+        <MaskCells mask={r.mask} width={width} height={height} />
+      ) : (
+        <span className="absolute bg-mint/25 outline outline-1 outline-mint-deep" style={box(r.walk.x0, r.walk.y0, r.walk.x1, r.walk.y1)} />
+      )}
       {r.obstacles.map((o) => (
         <span key={o.id} className="absolute bg-coral-deep/30 outline outline-1 outline-coral-deep" style={box(o.x0, o.y0, o.x1, o.y1)} />
       ))}
@@ -99,5 +106,17 @@ function NavLayer({ stage }: { stage: StageSim }) {
         </span>
       ))}
     </div>
+  );
+}
+
+/** A free-form floor (generated maps), drawn as one SVG path of its cells. */
+function MaskCells({ mask, width, height }: { mask: NavMask; width: number; height: number }) {
+  let d = "";
+  for (let r = 0; r < mask.rows; r++)
+    for (let c = 0; c < mask.cols; c++) if (mask.cells[r * mask.cols + c]) d += `M${c * mask.cw} ${r * mask.ch}h${mask.cw}v${mask.ch}h${-mask.cw}z`;
+  return (
+    <svg className="absolute inset-0 size-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+      <path d={d} className="fill-mint/30" />
+    </svg>
   );
 }

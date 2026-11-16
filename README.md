@@ -108,7 +108,7 @@ Drag a character onto another one (phones: touch and hold, then drag). While dra
 
 ### Drag onto objects and the floor
 
-Dropping a character on an **object** (bookshelf, door, rug, window…) makes them walk to its interaction point and use it (read, open, sit, look out…). Dropping on the **floor** makes them walk there; a blocked spot is moved to the nearest reachable one ("going as close as possible"), and an unreachable one is explained instead of attempted. Objects come from a hand-written annotation layer per room (`src/lib/stage/objects.ts`: id, type, bounds, collider, interaction anchors outside colliders, radius, actions, tags, world), never from the image's pixels; collision is the room's floor rectangle + obstacle list (`src/lib/stage/room.ts`) turned into an A* grid (`src/lib/stage/path.ts`). Settings → test panel draws the walk area, obstacles, objects and anchors on the stage. Generated maps have no such annotations, which is why Play Mode keeps the annotated built-in rooms. Tests: `tests/objects.test.ts`.
+Dropping a character on an **object** (bookshelf, door, rug, window…) makes them walk to its interaction point and use it (read, open, sit, look out…). Dropping on the **floor** makes them walk there; a blocked spot is moved to the nearest reachable one ("going as close as possible"), and an unreachable one is explained instead of attempted. Objects come from a hand-written annotation layer per room (`src/lib/stage/objects.ts`: id, type, bounds, collider, interaction anchors outside colliders, radius, actions, tags, world), never from the image's pixels; collision is the room's floor rectangle + obstacle list (`src/lib/stage/room.ts`) turned into an A* grid (`src/lib/stage/path.ts`). Settings → test panel draws the walk area, obstacles, objects and anchors on the stage. Generated maps get the same kind of layer from the player instead (see *Playing inside generated maps*). Tests: `tests/objects.test.ts`.
 
 ## Characters acting on their own
 
@@ -229,6 +229,19 @@ Replace a file with the same name and size, or point the manifest at a new one, 
 - **Flow:** World Builder button → `src/lib/mapGenerator.ts` (browser: one job at a time, history) → `POST /api/ai/map` (`src/app/api/ai/map/route.ts`, validates input, max 2 at once) → `src/lib/ai/server/mapPrompt.ts` (adds the fixed art style, environment layout and world flavor) → `src/lib/ai/server/image.ts` (OpenAI Images, 1536×1024 WebP).
 - **Style:** edit `MAP_STYLE` in `mapPrompt.ts` to change how every future map looks. The player's text decides the content, never the style.
 - **Storage:** maps are kept in the browser's IndexedDB (last 24, edits included), not in the save, so they don't fill `localStorage`. The save remembers which map is in use.
+
+## Playing inside generated maps
+
+The map shown in World Builder is the map Play Mode uses. The single source of truth is the active world save's `environment.mapId` (set when a map is generated or picked, cleared by "Use built-in picture"); the image itself is kept in IndexedDB (`src/lib/mapLibrary.ts`), so it survives reloads, and every world save keeps its own selection. `src/lib/scene/useScene.ts` decides what Play shows: the generated picture when the map is found, the built-in room when no map is selected, and the built-in room with a notice (without clearing the reference) when the selected map is missing from this browser.
+
+A generated picture says nothing about where the floor or the furniture is, so each map carries a **play area** (`src/lib/scene/layout.ts`), stored with the map and edited under **Play area** in World Builder or Play Mode:
+
+- **Floor**: a 96-column grid painted with the Floor / Not floor brushes. Feet must be on painted cells, so any floor shape works (the diamond floor of an angled room too). Until it is saved the floor is a rough guess, and Play says so.
+- **Objects**: boxes the player names (bar counter, Christmas tree…) with a type that sets the action (sit, read, open, examine…). Solid objects block walking (the lower part of the box is the footprint) and can hide characters standing behind them: that part of the picture is drawn again over sprites whose feet are behind its base. Every object is a drag target, and its anchors are worked out automatically on reachable floor; unreachable ones are flagged.
+- **Start spots**: where characters appear; spots inside furniture move to the nearest free floor.
+- **Character size**: sets the stage width in art px (characters are always 32 px), so characters match the scale of the picture. The stage height follows the image's aspect ratio; nothing is stretched or cropped.
+
+Everything is stored as fractions of the image, then turned into the stage's units by `buildScene()` for the same A* planner, simulation, drag-to-talk, objects, autonomy and gifts the built-in rooms use. Region edits keep the parent map's play area; duplicated worlds copy it. Tests: `tests/scene.test.ts`.
 
 ## Region editing (local map edits)
 

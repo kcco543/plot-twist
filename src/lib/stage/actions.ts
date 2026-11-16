@@ -26,7 +26,7 @@ export const StageActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("face_target"), actor: charId, target: charId }),
   z.object({ type: z.literal("idle_reaction"), actor: charId, kind: z.enum(IDLE_KINDS) }),
   /** Walk to a spot on the floor (art px, feet). A blocked spot is moved to the nearest reachable one. */
-  z.object({ type: z.literal("walk_to"), actor: charId, x: z.number().min(0).max(320), y: z.number().min(0).max(192) }),
+  z.object({ type: z.literal("walk_to"), actor: charId, x: z.number().min(0).max(4000), y: z.number().min(0).max(4000) }),
   /** Walk to an object's interaction point and use it (read a book, sit, open a door…). */
   z.object({ type: z.literal("use_object"), actor: charId, object: z.string().min(1).max(120), action: z.enum(OBJECT_ACTIONS).optional() }),
   /** Turn one's back on someone (and stop looking at them). */

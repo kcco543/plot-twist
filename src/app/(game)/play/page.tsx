@@ -58,6 +58,9 @@ import { deletePhoto, prunePhotos } from "@/lib/keepsakes/store";
 import { linkedPhotoIds, unlinkPhoto } from "@/lib/photo/apply";
 import { GiftCreator } from "@/components/keepsakes/GiftCreator";
 import { activeWorldId } from "@/lib/saves/worldSaves";
+import { useActiveScene } from "@/lib/scene/useScene";
+import { SceneFronts, SceneLoading, SceneNotice } from "@/components/game/SceneLayers";
+import { SceneEditor } from "@/components/game/SceneEditor";
 
 const isTyping = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
 /** Ignore a second "advance" this soon after the last one (double-clicks / key bounce never skip two lines). */
@@ -70,7 +73,10 @@ export default function PlayPage() {
   const save = useSave();
   const settings = useSettings();
   const world = getWorld(save.worldId);
-  const envType = save.environment.type;
+  // The scene comes from the active world save's selected map (or the built-in room when there is none).
+  const scene = useActiveScene(save.worldId, save.environment.type, save.environment.mapId);
+  const envType = scene.place;
+  const placeDescription = scene.kind === "map" ? scene.map.description : save.environment.description;
 
   const isDemo = save.characters.length === 0;
   const baseCast = useMemo(() => (isDemo ? demoCast(locale) : save.characters), [isDemo, save.characters, locale]);
@@ -139,7 +145,7 @@ export default function PlayPage() {
   const [beatNo, setBeatNo] = useState(0);
   const [lineIndex, setLineIndex] = useState(0);
   const current = queue[lineIndex] ?? null;
-  const shownLine = renderLine(current ?? introLine(save.environment.description, envType), locale);
+  const shownLine = renderLine(current ?? introLine(placeDescription, envType), locale);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const ai = useAiStatus();
@@ -152,10 +158,12 @@ export default function PlayPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [resetDone, setResetDone] = useState(false);
+  /** The play-area editor for the generated map in use. */
+  const [areaOpen, setAreaOpen] = useState(false);
   /** Personal interactions: the Photo / Gift menu next to a character, or the window it opened. */
   const [interaction, setInteraction] = useState<{ kind: "menu" | InteractionKind; characterId: string } | null>(null);
   const menuOpen = interaction?.kind === "menu";
-  const anyModal = logOpen || pauseOpen || settingsOpen || sheetOpen || (!!interaction && !menuOpen);
+  const anyModal = logOpen || pauseOpen || settingsOpen || sheetOpen || areaOpen || (!!interaction && !menuOpen);
 
   // Desktop layout (sidebar) vs phone / tablet, and the sticky header's height (to pin the stage under it).
   const [wide, setWide] = useState(false);
@@ -174,11 +182,12 @@ export default function PlayPage() {
   const [frozen, setFrozen] = useState(false);
   const reducedMotion = useReducedMotion(settings.reduceMotion);
   const onStage = useMemo(() => cast.slice(0, MAX_ON_STAGE), [cast]);
-  const room = useMemo(() => roomFor(world?.id ?? "otherworld", envType), [world?.id, envType]);
+  const builtinRoom = useMemo(() => roomFor(world?.id ?? "otherworld", envType), [world?.id, envType]);
+  const room = scene.kind === "loading" ? builtinRoom : scene.room;
   const bondOf = useCallback((a: string, b: string) => bondBetween(getStory(), a, b), [getStory]);
   // Where everyone stood last time in this room (saved with the world), so a reload puts them back.
   const roomKeyRef = useRef("");
-  roomKeyRef.current = `${world?.id ?? "otherworld"}:${envType}`;
+  roomKeyRef.current = scene.key;
   const savedSpots = useCallback(() => {
     const sp = getStory().agency?.spots;
     return sp && sp.place === roomKeyRef.current ? sp.at : {};
@@ -311,7 +320,7 @@ export default function PlayPage() {
         .map((e) => renderLine(e, locale))
         .map((r) => `${r.speaker}: ${r.text}`),
     ai: aiTalk,
-    placeDescription: save.environment.description,
+    placeDescription: placeDescription,
     renderText: (line) => renderLine(line, locale).text,
     onSelect: setPickedId,
     // Ending mid-line: the unread lines go away with the conversation (no stale, half-read reply).
@@ -394,7 +403,7 @@ export default function PlayPage() {
     locale,
     world: world?.id ?? "otherworld",
     place: envType,
-    placeDescription: save.environment.description,
+    placeDescription: placeDescription,
     worldId: !isDemo && !sandbox ? activeWorldId() : null,
     paused: anyModal,
   });
@@ -409,7 +418,7 @@ export default function PlayPage() {
     locale,
     world: world?.id ?? "otherworld",
     place: envType,
-    placeDescription: save.environment.description,
+    placeDescription: placeDescription,
     worldId: !isDemo && !sandbox ? activeWorldId() : null,
     spots: spots.length,
     paused: anyModal,
@@ -420,14 +429,15 @@ export default function PlayPage() {
   const objects = useMemo(() => {
     const w = world?.id ?? "otherworld";
     const group = w === "otherworld" ? "otherworld" : "default";
-    return [...objectsFor(w, envType), ...placeDisplayed(story, spots).map(({ gift, spot }) => giftObject(gift, spot, room, group, envType))];
-  }, [world?.id, envType, story, spots, room]);
+    const own = scene.kind === "map" ? scene.built.objects : scene.kind === "builtin" ? objectsFor(w, envType) : [];
+    return [...own, ...placeDisplayed(story, spots).map(({ gift, spot }) => giftObject(gift, spot, room, group, envType))];
+  }, [world?.id, envType, story, spots, room, scene]);
   useEffect(() => stage.setObjects(objects), [stage, objects]);
   const objectName = useCallback(
     (id: string) => {
       const o = stage.objectById(id);
       if (!o) return "";
-      return o.type === "gift" ? (getStory().gifts?.[o.giftId ?? ""]?.name ?? t("objects.names.gift")) : t(`objects.names.${o.name}` as "objects.names.door");
+      return o.type === "gift" ? (getStory().gifts?.[o.giftId ?? ""]?.name ?? t("objects.names.gift")) : (o.label ?? t(`objects.names.${o.name}` as "objects.names.door"));
     },
     [stage, getStory, t],
   );
@@ -437,7 +447,7 @@ export default function PlayPage() {
     stage,
     cast: onStage,
     objects,
-    roomKey: `${world?.id ?? "otherworld"}:${envType}`,
+    roomKey: scene.key,
     getStory,
     setStoryState,
     enabled: !isDemo && !sandbox && !anyModal && !frozen,
@@ -549,7 +559,7 @@ export default function PlayPage() {
           locale,
           world: world.id,
           place: envType,
-          placeDescription: save.environment.description.slice(0, 1200),
+          placeDescription: placeDescription.slice(0, 1200),
           beat: {
             kind: beat.kind,
             type: beat.type,
@@ -580,7 +590,7 @@ export default function PlayPage() {
         return null;
       }
     },
-    [world, envType, locale, t, getStory],
+    [world, envType, placeDescription, locale, t, getStory],
   );
 
   // A ref, not just state: two key presses in the same frame must not start two paid AI requests.
@@ -721,7 +731,7 @@ export default function PlayPage() {
   }
 
   const worldName = t(`worlds.list.${world.id}.name` as const);
-  const envName = t(`environments.${envType}.name` as const);
+  const envName = scene.kind === "map" ? scene.name || t("playArea.untitled") : t(`environments.${envType}.name` as const);
   const selectedName = selected ? selected.name.trim() || t("common.unnamed") : null;
   // Photos and gifts belong to a saved character in the active world save (not the demo cast or a debug scenario).
   const interactWith = interaction ? (cast.find((c) => c.id === interaction.characterId) ?? null) : null;
@@ -828,6 +838,11 @@ export default function PlayPage() {
           <span className="hidden font-label text-[10px] uppercase text-ink-mute md:inline" title={t("settings.aiStoryDesc")}>
             {useAi ? t("play.writer.ai") : t("play.writer.builtin")}
           </span>
+          {scene.kind === "map" && scene.layout.reviewed && (
+            <PixelButton size="sm" variant="ghost" icon="pencil" onClick={() => setAreaOpen(true)} aria-label={t("playArea.edit")} data-edit-play-area>
+              <span className="hidden xl:inline">{t("playArea.title")}</span>
+            </PixelButton>
+          )}
           <PixelButton size="sm" variant="magic" icon="book" onClick={() => setLogOpen(true)} aria-label={t("play.storyLog")}>
             <span className="hidden min-[420px]:inline">{t("play.storyLog")}</span>
             <span className="bg-lavender-hi px-1 text-[11px] text-label tabular-nums">{save.log.length}</span>
@@ -837,6 +852,18 @@ export default function PlayPage() {
           </PixelButton>
         </div>
       </div>
+
+      {scene.kind === "builtin" && scene.missingMapId && (
+        <SceneNotice tone="warn" action={<PixelLink href="/builder" size="sm" variant="ghost" icon="map">{t("playArea.openBuilder")}</PixelLink>}>
+          {t("playArea.missingNotice")}
+        </SceneNotice>
+      )}
+      {scene.kind === "map" && !scene.layout.reviewed && (
+        <SceneNotice action={<PixelButton size="sm" variant="calm" icon="pencil" onClick={() => setAreaOpen(true)} data-edit-play-area>{t("playArea.edit")}</PixelButton>}>
+          {t("playArea.guessNotice", { name: envName })}
+        </SceneNotice>
+      )}
+      {scene.kind === "map" && <SceneEditor open={areaOpen} map={scene.map} onClose={() => setAreaOpen(false)} />}
 
       {isDemo && !sandbox && (
         <p className="content-block plain-pad-x mb-4 flex flex-wrap items-center gap-2 bg-butter-hi py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
@@ -853,7 +880,7 @@ export default function PlayPage() {
         <div className="content-stack">
           <div className={pinStage ? "sticky z-30" : undefined} style={pinStage ? { top: headerH } : undefined}>
           <PixelStage
-            art={environmentArt[world.id][envType]}
+            art={scene.kind === "loading" ? environmentArt[world.id][envType] : scene.art}
             label={t("play.viewportAlt", { place: envName, world: worldName })}
             frame={world.frame}
             tag={t("common.placeholder")}
@@ -874,6 +901,8 @@ export default function PlayPage() {
               />
             }
           >
+            {scene.kind === "map" && <SceneFronts src={scene.art.src} size={scene.built.size} fronts={scene.built.fronts} />}
+            {scene.kind === "loading" && <SceneLoading />}
             <StageGifts placed={placeDisplayed(story, spots)} nameOf={(id) => cast.find((c) => c.id === id)?.name.trim() ?? ""} />
             <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={onStageSelect} onPressStart={drag.onPressStart} reducedMotion={reducedMotion} />
           </PixelStage>

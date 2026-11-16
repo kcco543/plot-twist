@@ -18,7 +18,7 @@ import { defaultWorld, environmentArt, type ArtAsset } from "@/assets/manifest";
 import { AiRequestError, requestMap, requestMapEdit, type AiErrorCode } from "./ai/client";
 import { gameActions, getSave } from "./gameStore";
 import { makeId } from "./id";
-import { MAP_HISTORY_LIMIT, clearAllMaps, deleteMaps, listMaps, putMap, type StoredMap } from "./mapLibrary";
+import { MAP_HISTORY_LIMIT, clearAllMaps, deleteMaps, listMaps, patchMap, putMap, type StoredMap } from "./mapLibrary";
 import { compositeRegion } from "./mapComposite";
 import { regionIsUsable, type Region } from "./mapSelection";
 import type { EnvironmentTypeId, WorldId } from "./types";
@@ -183,6 +183,9 @@ export async function editMapRegion(job: MapEditJob): Promise<boolean> {
       createdAt: Date.now(),
       parentId: source.id,
       edit: { instruction: job.instruction.trim(), region: job.region },
+      // Same picture with one area repainted: keep its name and play area (the player can adjust it).
+      ...(source.name ? { name: source.name } : {}),
+      ...(source.scene ? { scene: source.scene } : {}),
     };
     await addMap(stored);
     set({ editing: null });
@@ -191,6 +194,18 @@ export async function editMapRegion(job: MapEditJob): Promise<boolean> {
     set({ editing: null, editError: e instanceof AiRequestError ? e.code : "failed" });
     return false;
   }
+}
+
+/** Save a map's name and/or play area (World Builder → Play area). The change shows everywhere at once. */
+export async function updateMapDetails(id: string, patch: { name?: string; scene?: unknown }): Promise<boolean> {
+  const ok = await patchMap(id, patch);
+  if (ok) set({ maps: state.maps.map((m) => (m.id === id ? { ...m, ...patch } : m)) });
+  return ok;
+}
+
+/** Map library finished loading (Play waits for it before deciding the selected map is missing). */
+export function mapsLoaded(): Promise<void> {
+  return load();
 }
 
 export function dismissMapEditError() {

@@ -3,7 +3,7 @@
 import { memo, type CSSProperties } from "react";
 import { effectFor, glyphPixels, particlesFor, type FxSlot, type GlyphId } from "@/lib/emotion/effects";
 import type { ActorView } from "@/lib/stage/sim";
-import { STAGE } from "./SceneSprites";
+import { useStageSize } from "./PixelStage";
 
 /**
  * Emotion effects for every character, drawn inside the scaled stage in art
@@ -17,6 +17,7 @@ import { STAGE } from "./SceneSprites";
  * - Reduced motion: the same symbols, standing still.
  */
 export function EmotionEffects({ actors, reducedMotion }: { actors: ActorView[]; reducedMotion: boolean }) {
+  const stageW = useStageSize().width;
   return (
     <div className="pointer-events-none absolute inset-0" style={{ zIndex: 500 }} aria-hidden data-emotion-layer>
       {actors.map((a) => {
@@ -27,7 +28,7 @@ export function EmotionEffects({ actors, reducedMotion }: { actors: ActorView[];
         // Keep every particle on screen near the stage edges.
         const minX = Math.min(...slots.map((s) => s.x)) - 6;
         const maxX = Math.max(...slots.map((s) => s.x)) + 6;
-        const headX = Math.max(2 - minX, Math.min(STAGE.width - 2 - maxX, a.x));
+        const headX = Math.max(2 - minX, Math.min(stageW - 2 - maxX, a.x));
         const headY = Math.max(16, a.y - 30);
         return (
           <div key={a.id} data-fx={a.emotion} className="absolute" style={{ left: headX, top: headY, zIndex: 1000 + a.y }}>

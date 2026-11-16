@@ -2873,5 +2873,82 @@
       "unknown_target": "they left",
       "outranked": "something more important is happening"
     }
+  },
+  "playArea": {
+    "title": "Play area",
+    "edit": "Edit play area",
+    "untitled": "Your map",
+    "loadingMap": "Loading your map",
+    "intro": "The picture can't tell the game where the floor or the furniture is, so mark it here. Paint the floor green where characters may walk, draw a box around furniture and things they can use, and add a few starting spots.",
+    "toolsLabel": "Play area tools",
+    "tools": {
+      "floor": "Floor",
+      "wall": "Not floor",
+      "object": "Object",
+      "spawn": "Start spot"
+    },
+    "hints": {
+      "floor": "Drag over the picture to paint where characters can walk.",
+      "wall": "Drag to remove floor: walls, the top of the picture, anything nobody should stand on.",
+      "object": "Drag a box around a piece of furniture or something to use. Click a box to change it.",
+      "spawn": "Click to add a place where characters start. Click one again to remove it."
+    },
+    "brush": "Brush",
+    "brushes": {
+      "s": "S",
+      "m": "M",
+      "l": "L"
+    },
+    "name": "Map name",
+    "perspective": "View",
+    "perspectives": {
+      "angled": "Angled / top-down",
+      "side": "Side view"
+    },
+    "characterSize": "Character size",
+    "sizes": {
+      "large": "Large",
+      "medium": "Medium",
+      "small": "Small",
+      "tiny": "Tiny"
+    },
+    "floor": "Floor",
+    "resetGuess": "Rough guess",
+    "fillAll": "All floor",
+    "clearAll": "No floor",
+    "startOver": "Start over",
+    "noFloor": "There's almost no floor yet, so characters have nowhere to stand.",
+    "objects": "Objects",
+    "noObjects": "No objects yet. Choose Object and drag a box around the bar, a table or the fireplace.",
+    "objectName": "Name",
+    "objectNamePlaceholder": "e.g. bar counter",
+    "objectType": "What it is",
+    "solid": "Solid (characters walk around it)",
+    "front": "Hide characters standing behind it",
+    "unreachable": "Nobody can reach this: paint some floor next to it.",
+    "deleteObject": "Delete object",
+    "spawnCount": "Start spots: {n} (without any, characters gather in the middle of the floor)",
+    "save": "Save play area",
+    "saveFailed": "Couldn't save. Try again.",
+    "types": {
+      "feature": "Thing",
+      "seat": "Seat",
+      "item": "Item",
+      "book": "Books",
+      "door": "Door",
+      "window": "Window",
+      "painting": "Picture",
+      "plant": "Plant",
+      "light": "Light",
+      "sign": "Sign",
+      "gift": "Gift"
+    },
+    "guessNotice": "“{name}” is your generated map. Where people can walk is only a rough guess so far.",
+    "missingNotice": "The map this save uses isn't in this browser any more, so the built-in scene is shown.",
+    "openBuilder": "World Builder",
+    "inPlay": "Used in Play",
+    "notInPlay": "Play uses the built-in picture",
+    "useInPlay": "Use in Play",
+    "builderHint": "Play uses this exact picture. Set where characters can walk under Play area."
   }
 }

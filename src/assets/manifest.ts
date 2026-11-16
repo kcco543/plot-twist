@@ -20,6 +20,12 @@ export type ArtAsset = {
   width: number;
   height: number;
   placeholder: boolean;
+  /**
+   * Drawn smoothly instead of nearest-neighbour (generated maps: a large
+   * picture shown on a smaller stage, where pixel-snapping would shimmer).
+   * `width`/`height` are then the STAGE size in art px, not the image's.
+   */
+  smooth?: boolean;
 };
 
 const ENV_SIZE = { width: 320, height: 192 };

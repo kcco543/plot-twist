@@ -22,6 +22,10 @@ export type StoredMap = {
   /** Set when this version came from editing part of another one (Undo goes back to it). */
   parentId?: string;
   edit?: { instruction: string; region: { x: number; y: number; w: number; h: number } };
+  /** The player's name for this map (missing = made from the description). */
+  name?: string;
+  /** Where characters can walk on it, its objects and spawn points (scene/layout.ts). Missing = not set up yet. */
+  scene?: unknown;
 };
 
 const DB = "plot-twist-maps";
@@ -76,6 +80,22 @@ export async function putMap(map: StoredMap): Promise<void> {
     await run(db, "readwrite", (s) => s.put(map));
   } catch {
     memory = [map, ...memory].slice(0, MAP_HISTORY_LIMIT); // quota or blocked: keep it for this visit
+  }
+}
+
+/** Change some fields of a stored map (its name or play-area layout). */
+export async function patchMap(id: string, patch: Partial<Omit<StoredMap, "id" | "blob">>): Promise<boolean> {
+  const db = await open();
+  const inMemory = memory.find((m) => m.id === id);
+  if (inMemory) memory = memory.map((m) => (m.id === id ? { ...m, ...patch } : m));
+  if (!db) return !!inMemory;
+  try {
+    const cur = (await run<StoredMap>(db, "readonly", (s) => s.get(id))) as StoredMap | undefined;
+    if (!cur) return !!inMemory;
+    await run(db, "readwrite", (s) => s.put({ ...cur, ...patch }));
+    return true;
+  } catch {
+    return false;
   }
 }
 
