@@ -5,13 +5,14 @@ import { Modal } from "@/components/ui/Modal";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { PixelIcon } from "@/components/ui/PixelIcon";
 import { paletteOf, type Img } from "@/lib/sprites/pixelize";
+import { hexToRgb } from "@/lib/color/color";
+import { ColorPicker } from "./ColorPicker";
 import { useI18n } from "@/i18n";
 
 const EXTRA = ["#5b4a86", "#fffaf3", "#3d3060", "#f5a8c5", "#ffe08a", "#9de3c8", "#aab8f5", "#c3b2f0", "#ffc3a0"];
 const SCALE = 10;
 type Tool = "pencil" | "eraser" | "picker";
 
-const hexToRgb = (h: string) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 
 /**
  * Tiny 32×32 pixel editor for touching up a generated sprite, in a menu window.
@@ -51,8 +52,9 @@ export function PixelEditor({ open, sprite, onClose, onApply }: { open: boolean;
 }
 
 /**
- * The pixel editor's drawing surface: canvas, pencil / eraser / picker, undo
- * and palette. Controlled: `value` in, every stroke out through `onChange`.
+ * The pixel editor's drawing surface: canvas (nearest-neighbour, transparent
+ * pixels shown on a checkerboard), pencil / eraser, undo / redo, and the
+ * colour picker (ColorPicker.tsx). Controlled: `value` in, every stroke out through `onChange`.
  * `note` replaces the hint under the palette; `onClear` adds a Clear button.
  */
 export function PixelCanvasEditor({
@@ -77,6 +79,12 @@ export function PixelCanvasEditor({
   const { t } = useI18n();
   const canvas = useRef<HTMLCanvasElement>(null);
   const [history, setHistory] = useState<Uint8ClampedArray[]>([]);
+  const [future, setFuture] = useState<Uint8ClampedArray[]>([]);
+  /** Before a change: remember the current pixels for Undo, and forget anything that could be redone. */
+  const checkpoint = () => {
+    setHistory((h) => [...h.slice(-30), img.data]);
+    setFuture([]);
+  };
   const [tool, setTool] = useState<Tool>("pencil");
   const [color, setColor] = useState("#5b4a86");
   const drawing = useRef(false);
@@ -125,7 +133,7 @@ export function PixelCanvasEditor({
     const data = new Uint8ClampedArray(img.data);
     if (tool === "eraser") data[i + 3] = 0;
     else {
-      const [r, g, b] = hexToRgb(color);
+      const { r, g, b } = hexToRgb(color);
       data.set([r, g, b, 255], i);
     }
     onChange({ ...img, data });
@@ -143,7 +151,7 @@ export function PixelCanvasEditor({
           onPointerDown={(e) => {
             e.currentTarget.setPointerCapture(e.pointerId);
             drawing.current = true;
-            setHistory((h) => [...h.slice(-30), img.data]);
+            if (tool !== "picker") checkpoint();
             paint(...at(e));
           }}
           onPointerMove={(e) => drawing.current && tool !== "picker" && paint(...at(e))}
@@ -152,8 +160,8 @@ export function PixelCanvasEditor({
         />
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("editor.title")}>
-            {(["pencil", "eraser", "picker"] as const).map((k) => (
-              <PixelButton key={k} size="sm" variant={tool === k ? "accent" : "ghost"} icon={k === "pencil" ? "pencil" : k === "eraser" ? "eraser" : "drop"} role="radio" aria-checked={tool === k} onClick={() => setTool(k)}>
+            {(["pencil", "eraser"] as const).map((k) => (
+              <PixelButton key={k} size="sm" variant={tool === k ? "accent" : "ghost"} icon={k === "pencil" ? "pencil" : "eraser"} role="radio" aria-checked={tool === k} onClick={() => setTool(k)}>
                 {t(`editor.${k}`)}
               </PixelButton>
             ))}
@@ -163,11 +171,25 @@ export function PixelCanvasEditor({
               icon="undo"
               disabled={history.length === 0}
               onClick={() => {
+                setFuture((f) => [...f, img.data]);
                 onChange({ ...img, data: history[history.length - 1] });
                 setHistory((h) => h.slice(0, -1));
               }}
             >
               {t("common.undo")}
+            </PixelButton>
+            <PixelButton
+              size="sm"
+              variant="ghost"
+              icon="redo"
+              disabled={future.length === 0}
+              onClick={() => {
+                setHistory((h) => [...h.slice(-30), img.data]);
+                onChange({ ...img, data: future[future.length - 1] });
+                setFuture((f) => f.slice(0, -1));
+              }}
+            >
+              {t("editor.redo")}
             </PixelButton>
             {onClear && (
               <PixelButton
@@ -175,7 +197,7 @@ export function PixelCanvasEditor({
                 variant="ghost"
                 icon="trash"
                 onClick={() => {
-                  setHistory((h) => [...h.slice(-30), img.data]);
+                  checkpoint();
                   onClear();
                 }}
               >
@@ -183,23 +205,16 @@ export function PixelCanvasEditor({
               </PixelButton>
             )}
           </div>
-          <div className="grid grid-cols-8 gap-1.5" role="radiogroup" aria-label={t("editor.picker")}>
-            {palette.map((hex) => (
-              <button
-                key={hex}
-                type="button"
-                role="radio"
-                aria-checked={color === hex}
-                aria-label={t("editor.color", { hex })}
-                onClick={() => {
-                  setColor(hex);
-                  setTool("pencil");
-                }}
-                className={`px-focus aspect-square min-h-8 ${color === hex ? "shadow-[0_0_0_3px_var(--color-ink)]" : "shadow-[0_0_0_2px_var(--color-line)]"}`}
-                style={{ background: hex }}
-              />
-            ))}
-          </div>
+          <ColorPicker
+            value={color}
+            palette={palette}
+            picking={tool === "picker"}
+            onPickFromCanvas={() => setTool((k) => (k === "picker" ? "pencil" : "picker"))}
+            onChange={(hex) => {
+              setColor(hex);
+              if (tool !== "pencil") setTool("pencil");
+            }}
+          />
           <p className="flex items-center gap-2 text-sm text-ink-soft">
             <PixelIcon name="pencil" size={10} className="shrink-0" /> {note ?? t("editor.note")}
           </p>

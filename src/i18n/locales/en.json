@@ -1029,7 +1029,32 @@
     "canvas": "Sprite pixels, 32 by 32. Use the pointer to draw.",
     "apply": "Apply edits",
     "note": "Edits change the sprite. The portrait stays as it was.",
-    "clear": "Clear"
+    "clear": "Clear",
+    "redo": "Redo",
+    "colorPicker": {
+      "sv": "Saturation and brightness",
+      "saturation": "saturation",
+      "value": "brightness",
+      "hue": "Hue",
+      "current": "Current",
+      "previous": "Previous",
+      "usePrevious": "Go back to the previous color",
+      "screen": "Pick from screen",
+      "limited": "Limited palette",
+      "limitedNote": "Limited palette: every color snaps to the nearest of these {n} colors.",
+      "palette": "Palette",
+      "recent": "Recent",
+      "saved": "Saved swatches",
+      "save": "Save",
+      "unsave": "Remove",
+      "savedEmpty": "Save colors you like to find them again. They're remembered in this browser."
+    },
+    "pantone": {
+      "unavailable": "No licensed Pantone library is installed, so no Pantone match is shown. Pantone codes are proprietary; the game won't guess one.",
+      "verified": "From {source}.",
+      "unverified": "Unverified approximation ({source}). Not an official Pantone match.",
+      "none": "No close match in {source}."
+    }
   },
   "story": {
     "talk": {

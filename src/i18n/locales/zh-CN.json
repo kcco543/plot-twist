@@ -1029,7 +1029,32 @@
     "canvas": "形象像素，32×32。用指针绘制。",
     "apply": "应用修改",
     "note": "修改只作用于形象，头像保持不变。",
-    "clear": "清空"
+    "clear": "清空",
+    "redo": "重做",
+    "colorPicker": {
+      "sv": "饱和度与明度",
+      "saturation": "饱和度",
+      "value": "明度",
+      "hue": "色相",
+      "current": "当前",
+      "previous": "上一个",
+      "usePrevious": "换回上一个颜色",
+      "screen": "从屏幕取色",
+      "limited": "限定调色板",
+      "limitedNote": "限定调色板：每个颜色都会贴到这 {n} 个颜色里最接近的一个。",
+      "palette": "调色板",
+      "recent": "最近使用",
+      "saved": "收藏的色块",
+      "save": "收藏",
+      "unsave": "移除",
+      "savedEmpty": "收藏喜欢的颜色，方便下次再用。只保存在这个浏览器里。"
+    },
+    "pantone": {
+      "unavailable": "没有安装获得授权的 Pantone 色库，所以不显示 Pantone 匹配。Pantone 色号是专有数据，游戏不会猜测色号。",
+      "verified": "来自 {source}。",
+      "unverified": "未经验证的近似值（{source}），不是官方 Pantone 匹配。",
+      "none": "{source} 里没有接近的颜色。"
+    }
   },
   "story": {
     "talk": {
