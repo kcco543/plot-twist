@@ -40,13 +40,8 @@ export function Modal({
     };
   }, [open, onClose]);
 
-<<<<<<< HEAD
-  if (!open) return null;
-  const width = size === "sm" ? "sm:max-w-sm" : size === "lg" ? "sm:max-w-2xl" : size === "xl" ? "sm:max-w-4xl" : size === "2xl" ? "sm:max-w-6xl" : "sm:max-w-lg";
-=======
   if (!open || typeof document === "undefined") return null;
-  const width = size === "sm" ? "sm:max-w-sm" : size === "lg" ? "sm:max-w-2xl" : size === "xl" ? "sm:max-w-4xl" : "sm:max-w-lg";
->>>>>>> origin/claude/project-thread-0h2qn1
+  const width = size === "sm" ? "sm:max-w-sm" : size === "lg" ? "sm:max-w-2xl" : size === "xl" ? "sm:max-w-4xl" : size === "2xl" ? "sm:max-w-6xl" : "sm:max-w-lg";
 
   // Portalled to <body>: a parent with a filter or transform (framed panels use drop-shadow
   // filters) would otherwise trap a fixed-position window inside itself.
