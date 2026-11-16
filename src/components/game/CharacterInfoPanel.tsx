@@ -87,7 +87,7 @@ export function CharacterInfoPanel({
   const body = character ? (
     <div className="flex min-w-0 flex-col gap-3">
       <div className="flex items-center gap-3">
-        <div className="px-frame shrink-0" style={{ "--frame": "var(--frame-gold)" } as React.CSSProperties}>
+        <div className="px-frame px-portrait relative shrink-0" style={{ "--frame": "var(--frame-portrait)" } as React.CSSProperties}>
           <div className="px-checker">
             <ArtImage art={artFor(character).portrait} alt="" showTag={false} className="w-16" />
           </div>

@@ -12,6 +12,7 @@ import { LoadingDots } from "@/components/ui/LoadingDots";
 import { Panel } from "@/components/ui/Panel";
 import { PixelButton, PixelLink, buttonStyle } from "@/components/ui/PixelButton";
 import { PixelIcon } from "@/components/ui/PixelIcon";
+import { ThemePanel } from "@/components/theme/ThemePanel";
 import { defaultWorld, environmentArt } from "@/assets/manifest";
 import { ENVIRONMENT_TYPES } from "@/lib/environments";
 import type { EnvironmentTypeId } from "@/lib/types";
@@ -267,6 +268,8 @@ export default function WorldBuilderPage() {
                 })}
               </div>
             </Panel>
+
+            <ThemePanel />
           </div>
 
           <div className="hidden min-w-0 lg:sticky lg:top-24 lg:block lg:self-start">{previewPanel}</div>

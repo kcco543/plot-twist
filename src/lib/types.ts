@@ -91,6 +91,12 @@ export type Character = Record<CharacterTextField, string> & {
    * = unspecified (never guessed). Each world's copy has its own value.
    */
   gender?: import("./character/gender").GenderInfo;
+  /**
+   * Editable pixel portrait with version history and the avatar crop
+   * (src/lib/portraits/model.ts). This world's copy only. Missing = the
+   * portrait from `art` (or the placeholder) is shown, as in older saves.
+   */
+  portraits?: import("./portraits/model").CharacterPortraits;
 };
 
 export const BOUNDARY_KINDS = ["secret", "topic", "principle"] as const;
@@ -419,6 +425,12 @@ export type SaveData = {
   /** Saved sprites, reusable by any character. */
   sprites: SpriteAsset[];
   updatedAt: number | null;
+  /**
+   * This world's UI skin (src/lib/theme/themes.ts): base theme (= worldId),
+   * mood variant, approved accent overrides, decorative motifs, density and
+   * themeVersion. Missing in older saves = the world type's default skin.
+   */
+  uiTheme?: import("./theme/themes").WorldUiTheme;
 };
 
 export type TextSpeed = "slow" | "normal" | "fast" | "instant";

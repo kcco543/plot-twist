@@ -980,7 +980,7 @@
     "replace": "换一张图片",
     "fileHint": "PNG、JPG 或 WebP · 不超过 8 MB",
     "reference": "你的参考图",
-    "referenceNote": "只在这里显示，不会被保存。你的原始文件不会被修改。",
+    "referenceNote": "保存时会随立绘保留一份小尺寸副本，方便你查看它是根据什么生成的。你的原始文件不会被修改。",
     "permission": "这张图是我画的，或我有权使用它。",
     "generate": "生成像素形象",
     "regenerate": "重新生成",
@@ -1027,7 +1027,8 @@
       "softEdges": "存在半透明边缘",
       "tooManyColors": "颜色太多"
     },
-    "nothingFound": "在图片中找不到角色。试试关闭“去除纯色背景”。"
+    "nothingFound": "在图片中找不到角色。试试关闭“去除纯色背景”。",
+    "savedNewVersion": "已保存到{name}。新图片作为新的立绘版本加入。"
   },
   "editor": {
     "title": "像素编辑器",
@@ -1063,7 +1064,13 @@
       "verified": "来自 {source}。",
       "unverified": "未经验证的近似值（{source}），不是官方 Pantone 匹配。",
       "none": "{source} 里没有接近的颜色。"
-    }
+    },
+    "fill": "填充",
+    "pan": "平移",
+    "mirror": "镜像绘制",
+    "zoom": "缩放",
+    "zoomIn": "放大",
+    "zoomOut": "缩小"
   },
   "story": {
     "talk": {
@@ -2872,6 +2879,163 @@
       "no_room": "没有空间",
       "unknown_target": "对方离开了",
       "outranked": "有更重要的事在发生"
+    }
+  },
+  "theme": {
+    "title": "界面风格",
+    "intro": "这个世界里窗口、按钮和边框的样子。它依然是 PLOT TWIST!，只是换上了「{world}」皮肤。更改风格不会重新绘制地图或角色。",
+    "mood": "氛围",
+    "motifsLabel": "小装饰（最多 {n} 个）",
+    "primary": "主色",
+    "accent": "点缀色",
+    "colorOption": "颜色选项 {n}：{hex}",
+    "colorsNote": "只提供为这个世界设计的颜色，文字始终清晰可读。",
+    "density": "装饰程度",
+    "densities": {
+      "minimal": "简洁",
+      "standard": "标准",
+      "decorative": "丰富"
+    },
+    "moods": {
+      "default": "原始设计",
+      "cozy": "温馨",
+      "cheerful": "欢快",
+      "dreamy": "梦幻",
+      "mysterious": "神秘",
+      "calm": "宁静",
+      "sacred": "庄严",
+      "moody": "阴郁",
+      "rustic": "质朴",
+      "elegant": "典雅"
+    },
+    "motifs": {
+      "leaf": "叶子",
+      "vine": "藤蔓",
+      "book": "书本",
+      "key": "钥匙",
+      "potion": "药水",
+      "quill": "羽毛笔",
+      "crest": "纹章",
+      "raindrop": "雨滴",
+      "window": "窗格",
+      "camera": "相机",
+      "message": "消息",
+      "folder": "文件夹",
+      "pin": "定位",
+      "citylight": "街灯",
+      "cloud": "祥云",
+      "lantern": "灯笼",
+      "bamboo": "竹子",
+      "seal": "印章",
+      "mountain": "山峦",
+      "fan": "折扇",
+      "scroll": "卷轴",
+      "jade": "玉璧",
+      "star": "星星",
+      "mushroom": "蘑菇",
+      "moon": "月亮",
+      "crystal": "水晶",
+      "bubble": "泡泡",
+      "sparkle": "闪光"
+    },
+    "suggest": {
+      "label": "建议",
+      "none": "在上方写下世界描述，就会据此建议氛围和装饰。在那之前使用这个世界自己的风格。",
+      "summary": "{mood}氛围 · {motifs}",
+      "because": "依据这些词：{words}。这是简单的关键词匹配，不是 AI。",
+      "baseHint": "有些词听起来像「{other}」，但风格仍是「{world}」，因为这是这个世界的类型。",
+      "use": "采用建议"
+    },
+    "preview": {
+      "label": "「{world}」皮肤预览",
+      "panel": "预览",
+      "tabA": "故事",
+      "tabB": "回忆",
+      "speaker": "米拉",
+      "line": "哇！这里一直这么漂亮吗？",
+      "primary": "继续",
+      "secondary": "观察"
+    },
+    "confirm": "使用这个风格",
+    "restore": "恢复基础风格",
+    "saved": "已为这个世界保存。",
+    "unsaved": "尚未保存。",
+    "defaultInUse": "正在使用世界默认风格。",
+    "mapNote": "只改变这个世界。其他世界、标题画面和角色库保持各自的样子。"
+  },
+  "portrait": {
+    "title": "立绘与头像",
+    "intro": "生成的图片只是起点。你可以修改任意像素、保留每个版本，并选择哪一部分作为头像。",
+    "emptyIntro": "在下方上传参考图并保存结果，即可得到可编辑的立绘。也可以从这个角色现有的图开始。",
+    "startFromArt": "让当前立绘可编辑",
+    "startFromPlaceholder": "从占位立绘开始",
+    "started": "立绘可以编辑了。旧图保留为第一个版本。",
+    "loadFailed": "无法读取这张立绘。",
+    "full": "完整立绘",
+    "fullAlt": "{name}的完整立绘",
+    "avatar": "头像",
+    "avatarAlt": "头像预览",
+    "referenceAlt": "你的参考图（小副本）",
+    "referenceNote": "你上传图片的小副本，不会被修改。",
+    "forgetReference": "删除参考图",
+    "outdated": "头像是从这张立绘的旧版本裁出的。可以用同样的裁剪框更新，或重新选择。",
+    "updateFromCrop": "用已保存的裁剪更新头像",
+    "recrop": "重新裁剪",
+    "keepAvatar": "保留当前头像",
+    "edit": "编辑立绘",
+    "editShort": "编辑立绘与头像",
+    "chooseAvatar": "选择头像",
+    "restoreGenerated": "恢复生成版本",
+    "restored": "已恢复生成版本。你的修改仍在列表中。",
+    "savedNew": "已另存为新版本。",
+    "savedChanges": "修改已保存。",
+    "avatarSaved": "头像已保存。",
+    "avatarUpdated": "已用保存的裁剪更新头像。",
+    "versions": "立绘版本",
+    "versionsCount": "版本（{n}）",
+    "original": "原始",
+    "use": "使用",
+    "inUse": "使用中",
+    "deleteVersion": "删除{kind}版本",
+    "kind": {
+      "generated": "AI 生成",
+      "converted": "转换",
+      "edited": "已编辑",
+      "legacy": "早期图"
+    },
+    "worldOnly": "这里的修改只属于这个世界里的版本。角色库原版和其他世界保持不变。",
+    "saveTemplate": "另存为新模板",
+    "remove": "移除立绘",
+    "removeTitle": "移除这张立绘？",
+    "removeConfirm": "移除立绘",
+    "removeBody": "这个世界中该角色的全部 {n} 个版本和头像裁剪将被移除。精灵图和其他世界不受影响。",
+    "customAvatar": "自定义头像",
+    "editor": {
+      "title": "编辑立绘",
+      "save": "保存修改",
+      "saveNew": "另存为新版本",
+      "editing": "正在编辑：{version}（{w}×{h}）。",
+      "inPlace": "「保存修改」会更新这个已编辑版本。",
+      "keepsOriginal": "原始版本保持不变：保存会新增一个版本。",
+      "canvas": "立绘像素，{w} × {h}。用指针绘制。",
+      "note": "快捷键：B 铅笔 · E 橡皮 · G 填充 · I 取色 · H 平移 · M 镜像 · +/− 缩放 · Ctrl+Z 撤销"
+    },
+    "crop": {
+      "title": "选择头像",
+      "confirm": "使用这个头像",
+      "presets": "裁剪预设",
+      "preset": {
+        "head": "仅头部",
+        "bust": "半身",
+        "square": "方形头像",
+        "custom": "自定义"
+      },
+      "auto": "自动头部裁剪",
+      "autoNote": "自动头部裁剪会把框放在人物轮廓的顶部。它不会识别人脸，位置不对时请拖动或调整大小。",
+      "area": "裁剪框位于 {x}, {y}，大小 {w} × {h} 像素。拖动可移动，拖角可缩放，方向键微调，Shift+方向键缩放。",
+      "hint": "拖动框、拉动四角，或重新画一个框。会对齐到整像素。",
+      "preview": "头像预览",
+      "thumb": "小列表图标"
     }
   }
 }
