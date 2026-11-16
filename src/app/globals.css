@@ -191,6 +191,18 @@ html[lang="zh-CN"] .font-display { font-weight: 400; }
 @keyframes body-droop { 0%, 100% { transform: translateY(0); } 30%, 80% { transform: translateY(1px) scaleY(0.97); } }
 @keyframes body-tilt { 0%, 100% { transform: translateX(0); } 30%, 80% { transform: translateX(1px) skewX(-4deg); } }
 @keyframes body-stretch { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.07); } }
+/* Explorable world: object actions (whole art pixels, stepped, so sprites stay crisp). */
+.body-climb { animation: body-climb 900ms steps(6) 1 both; }
+.body-push, .body-reach { animation: body-push 480ms steps(3) 1; }
+.body-rattle { animation: body-shake 90ms steps(1) 6; }
+.body-knock { animation: body-push 220ms steps(2) 3; }
+.body-lean { animation: body-lean 700ms steps(2) 1 both; }
+.body-read, .body-search { animation: body-droop 900ms steps(3) 1 both; }
+.body-rest { animation: body-droop 1200ms steps(3) 1 both; }
+@keyframes body-climb { 0% { transform: translateY(0); opacity: 1; } 60% { transform: translateY(-8px); opacity: 1; } 100% { transform: translateY(-12px); opacity: 0.35; } }
+@keyframes body-push { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(2px); } }
+@keyframes body-lean { 0%, 100% { transform: translateX(0); } 40%, 85% { transform: translateX(1px) skewX(-3deg); } }
+@keyframes door-swing { from { transform: scaleX(3.2); } to { transform: scaleX(1); } }
 /* Map region selection: dashed border (World Builder → Edit region). */
 .region-ants {
   background:

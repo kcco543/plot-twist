@@ -2714,7 +2714,19 @@
       "inspect": "观察",
       "pick_up": "拿起",
       "look_out": "向外看",
-      "admire": "欣赏"
+      "admire": "欣赏",
+      "climb": "爬上去",
+      "talk": "找店员说话",
+      "order": "点单",
+      "close": "关上",
+      "knock": "敲门",
+      "unlock": "开锁",
+      "browse": "翻看",
+      "place": "放下东西",
+      "rest": "休息",
+      "search": "翻找",
+      "leave": "离开",
+      "enter": "穿过去"
     },
     "do": {
       "read": "{name}从{object}上取下一本，读了几行。",
@@ -2724,7 +2736,19 @@
       "inspect": "{name}仔细观察着{object}。",
       "pick_up": "{name}拿起{object}，小心地带在身边。",
       "look_out": "{name}在{object}边望了好一会儿。",
-      "admire": "{name}停下来欣赏{object}。"
+      "admire": "{name}停下来欣赏{object}。",
+      "climb": "{name}爬上了{object}。",
+      "talk": "{name}在{object}边招呼了一下。",
+      "order": "{name}在{object}点了东西。",
+      "close": "{name}关上了{object}。",
+      "knock": "{name}敲了敲{object}。",
+      "unlock": "{name}打开了{object}的锁。",
+      "browse": "{name}翻看着{object}。",
+      "place": "{name}把东西放在{object}上。",
+      "rest": "{name}在{object}上休息。",
+      "search": "{name}翻找着{object}。",
+      "leave": "{name}从{object}走了出去。",
+      "enter": "{name}走向{object}。"
     },
     "drag": {
       "use": "{action}：{object}",
@@ -2854,7 +2878,9 @@
       "stretchLegs": "活动一下",
       "content": "待在原地挺好",
       "endedConversation": "结束了对话，走开了",
-      "saidSo": "说过要去"
+      "saidSo": "说过要去",
+      "wantsToLeave": "想离开这里",
+      "asksAround": "想向吧台的人打听点事"
     },
     "why": {
       "cooldown": "还需要一点时间",
@@ -2948,7 +2974,14 @@
       "plant": "植物",
       "light": "灯",
       "sign": "招牌",
-      "gift": "礼物"
+      "gift": "礼物",
+      "stairs": "楼梯",
+      "counter": "柜台 / 吧台",
+      "table": "桌子",
+      "bed": "床",
+      "chest": "箱子",
+      "exit": "出口",
+      "portal": "传送门"
     },
     "guessNotice": "“{name}”是你生成的地图。目前可行走区域只是粗略猜测。",
     "missingNotice": "这个存档使用的地图已不在这个浏览器中，所以显示内置场景。",
@@ -2956,7 +2989,18 @@
     "inPlay": "游戏中使用",
     "notInPlay": "游戏使用内置图片",
     "useInPlay": "在游戏中使用",
-    "builderHint": "游戏会使用这张图片本身。在“可玩区域”里设置角色能走的地方。"
+    "builderHint": "游戏会使用这张图片本身。在“可玩区域”里设置角色能走的地方。",
+    "exitField": "通往别的区域",
+    "keeper": "谁在这里工作",
+    "keeperAuto": "站在后面的人",
+    "locked": "上锁",
+    "keyName": "需要的物品名称",
+    "keyNamePlaceholder": "钥匙",
+    "startsOpen": "一开始是开着的",
+    "note": "上面写着什么 / 备注",
+    "notePlaceholder": "例如“楼上客房，一晚两枚铜币”",
+    "contents": "里面有什么（用逗号分隔）",
+    "contentsPlaceholder": "例如 旧地图，银铃铛"
   },
   "theme": {
     "title": "界面风格",
@@ -3114,5 +3158,142 @@
       "preview": "头像预览",
       "thumb": "小列表图标"
     }
+  },
+  "explore": {
+    "do": {
+      "openOther": "{name}打开了{object}。",
+      "throughDoor": "{name}走到敞开的{object}前。",
+      "alreadyOpen": "{object}已经开着了。",
+      "locked": "{name}试着推了推{object}，锁着的。",
+      "chestOpen": "{name}掀开了{object}的盖子。",
+      "chestOpenFull": "{name}掀开了{object}的盖子，里面有东西。",
+      "doorOpen": "{name}推开了{object}，现在可以走过去了。",
+      "doorOpenExit": "{name}拉开了{object}，门外的路通向别处。",
+      "alreadyClosed": "{object}已经关着了。",
+      "close": "{name}关上了{object}。",
+      "knock": "{name}敲了敲{object}，没有人应。",
+      "alreadyUnlocked": "{object}没有上锁。",
+      "noKey": "{name}身上没有能打开{object}的东西。",
+      "unlock": "{name}用{item}打开了{object}的锁。",
+      "notAnExit": "{object}不通往任何地方。",
+      "portal": "{name}把手伸进{object}，它轻轻嗡鸣，向里牵引。",
+      "leave": "{name}走到了{object}前。",
+      "climbExit": "{name}爬上了{object}。",
+      "climbStay": "{name}在{object}上走了几级，抬头看了看，又走了下来。",
+      "noKeeper": "{name}靠在{object}上，可是现在没人招呼。",
+      "chatKeeper": "{name}靠在{object}上，和{other}闲聊了几句。",
+      "callKeeper": "{name}靠在{object}上，朝{other}招了招手。",
+      "order": "{name}在{object}向{other}点了一杯，{other}把杯子推了过来。",
+      "sitBed": "{name}在{object}边上坐了下来。",
+      "rest": "{name}在{object}上躺下，小憩一会儿。",
+      "browse": "{name}的手指划过{object}，抽出了一本来看。",
+      "signText": "{object}上写着：“{text}”",
+      "signFaded": "{name}看了看{object}，上面的字已经褪得差不多了。",
+      "readText": "{name}读起{object}上的内容：“{text}”",
+      "chestClosed": "{object}关着，要先打开。",
+      "found": "{name}翻了翻{object}，找到了：{text}。",
+      "empty": "{name}翻了翻{object}，里面是空的。",
+      "nothingToPlace": "{name}手上没有可以放下的东西。",
+      "place": "{name}把{item}放在了{object}上。",
+      "noteLook": "{name}看着{object}。{text}"
+    },
+    "unavailable": {
+      "locked": "锁着",
+      "no_key": "没有钥匙",
+      "no_keeper": "没人招呼",
+      "closed": "关着",
+      "nothing_to_place": "手上没东西",
+      "not_owner": "不是自己的",
+      "already_open": "已经开着",
+      "already_closed": "已经关着",
+      "not_an_exit": "不通往别处"
+    },
+    "menu": {
+      "title": "{name}在{object}旁",
+      "cancel": "算了",
+      "label": "要{name}做什么？",
+      "noActor": "先选一个角色，再点{object}。"
+    },
+    "drag": {
+      "choose": "选择要做的事：{object}",
+      "blocked": "{reason}：{object}"
+    },
+    "leave": {
+      "title": "是否离开当前空间？",
+      "bodyTo": "{name}来到了{exit}前，这里通往{scene}。",
+      "bodyNew": "{name}来到了{exit}前。这里还没有通往任何地方，接下来由你选择或创建下一个区域。",
+      "npc": "{name}说要去{scene}，现在已经到了{exit}前。",
+      "stay": "留在这里",
+      "leave": "离开",
+      "party": "谁一起走",
+      "partyHint": "其他人留在原地，位置不变。",
+      "saved": "这个区域会按现在的样子保存。"
+    },
+    "travel": {
+      "loading": "正在前往{scene}…",
+      "failed": "无法打开{scene}。你仍在原地，什么都没有丢失。",
+      "arrived": "{names}到达了{scene}。",
+      "log": "{names}从{from}去了{to}。",
+      "stayed": "{name}留在了{exit}旁。"
+    },
+    "picker": {
+      "title": "这里通往哪里？",
+      "intro": "选择这个世界里的一个区域，或者创建一个新的。",
+      "tabNew": "创建新场景",
+      "tabExisting": "选择已有场景",
+      "name": "场景名称",
+      "namePlaceholder": "例如 楼上客房",
+      "description": "描述这个地方",
+      "descriptionPlaceholder": "一座安静的图书馆，高高的书架、温暖的灯光和一道螺旋楼梯。",
+      "type": "环境类型",
+      "theme": "沿用这个世界的主题（{world}）和 PLOT TWIST! 像素画风。",
+      "generate": "生成地图",
+      "usePlaceholder": "使用占位图",
+      "placeholderNote": "不会生成地图：使用这种地点类型的内置图片，并标注为占位图。之后可以在世界构建器里为它生成地图。",
+      "noImage": "现在无法生成地图，新场景会使用占位图。",
+      "generating": "正在绘制新地图…最多可能需要一分钟。",
+      "failed": "地图没能生成（{reason}）。你仍在原地，什么都没有丢失。",
+      "retry": "再试一次",
+      "cancel": "取消",
+      "back": "返回",
+      "noScenes": "这个世界里还没有其他场景。",
+      "connected": "已连接",
+      "notConnected": "尚未连接",
+      "twoWay": "添加返回的路",
+      "go": "去那里",
+      "here": "{n} 人在这里",
+      "nobody": "没有人",
+      "placeholderTag": "占位图",
+      "needsDescription": "请先描述这个地方。",
+      "full": "这个世界的场景数量已经到上限了。"
+    },
+    "scene": {
+      "incomplete": "“{name}”是一张新地图：哪里能走、里面有什么，目前都只是粗略的猜测。请在“可玩区域”里标出地面、家具和出口。",
+      "placeholder": "“{name}”使用的是占位图（没有生成地图）。随时可以在世界构建器里生成。",
+      "unnamed": "新区域",
+      "scenes": "区域"
+    },
+    "marker": {
+      "to": "通往{scene}",
+      "back": "回去的路"
+    }
+  },
+  "camera": {
+    "controls": "镜头",
+    "follow": "跟随",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "zooms": {
+      "wide": "远景",
+      "normal": "标准",
+      "close": "近景"
+    },
+    "followSpeed": "镜头跟随",
+    "speeds": {
+      "gentle": "柔和",
+      "normal": "标准",
+      "snappy": "灵敏"
+    },
+    "followSpeedDesc": "游戏镜头追上所跟随角色的速度。"
   }
 }

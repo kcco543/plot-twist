@@ -253,6 +253,9 @@ export type GiftInstance = {
   /** Who in the world knows this gift exists (the owner always does). */
   knownBy: string[];
   history: GiftEvent[];
+  /** Displayed gifts: the scene it's displayed in (missing = the world's first scene) and the spot (e.g. the table it was put on). */
+  sceneId?: string;
+  spotId?: string;
 };
 
 /** How a character feels about the player (photos and gifts). */
@@ -431,6 +434,12 @@ export type SaveData = {
    * themeVersion. Missing in older saves = the world type's default skin.
    */
   uiTheme?: import("./theme/themes").WorldUiTheme;
+  /**
+   * Connected scenes inside this world (src/lib/explore/scenes.ts): each
+   * scene's map, object states, where its characters stand, and the links
+   * between scenes. Missing in older saves = one scene made from `environment`.
+   */
+  scenes?: import("./explore/scenes").WorldScenes;
 };
 
 export type TextSpeed = "slow" | "normal" | "fast" | "instant";
@@ -450,4 +459,7 @@ export type Settings = {
   behaviorDebug?: boolean;
   /** Developer-only Relationship Inspector (same visibility rule as the Behavior Debug Panel). */
   relationshipInspector?: boolean;
+  /** Play Mode camera: zoom level and how quickly it follows (src/lib/camera/camera.ts). */
+  cameraZoom?: "wide" | "normal" | "close";
+  cameraFollow?: "gentle" | "normal" | "snappy";
 };

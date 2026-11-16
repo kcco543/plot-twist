@@ -2714,7 +2714,19 @@
       "inspect": "Inspect",
       "pick_up": "Pick up",
       "look_out": "Look out",
-      "admire": "Admire"
+      "admire": "Admire",
+      "climb": "Climb",
+      "talk": "Talk to staff",
+      "order": "Order",
+      "close": "Close",
+      "knock": "Knock",
+      "unlock": "Unlock",
+      "browse": "Browse",
+      "place": "Put something down",
+      "rest": "Rest",
+      "search": "Search",
+      "leave": "Leave",
+      "enter": "Step through"
     },
     "do": {
       "read": "{name} pulls something from the {object} and reads a few lines.",
@@ -2724,7 +2736,19 @@
       "inspect": "{name} inspects the {object}.",
       "pick_up": "{name} picks up the {object} and keeps it close.",
       "look_out": "{name} looks out of the {object} for a while.",
-      "admire": "{name} stops to admire the {object}."
+      "admire": "{name} stops to admire the {object}.",
+      "climb": "{name} climbs the {object}.",
+      "talk": "{name} waves someone over at the {object}.",
+      "order": "{name} orders something at the {object}.",
+      "close": "{name} closes the {object}.",
+      "knock": "{name} knocks on the {object}.",
+      "unlock": "{name} unlocks the {object}.",
+      "browse": "{name} browses the {object}.",
+      "place": "{name} puts something down on the {object}.",
+      "rest": "{name} rests on the {object}.",
+      "search": "{name} searches the {object}.",
+      "leave": "{name} heads out through the {object}.",
+      "enter": "{name} steps toward the {object}."
     },
     "drag": {
       "use": "{action}: {object}",
@@ -2854,7 +2878,9 @@
       "stretchLegs": "stretching their legs",
       "content": "content where they are",
       "endedConversation": "ended the conversation and stepped away",
-      "saidSo": "said they would"
+      "saidSo": "said they would",
+      "wantsToLeave": "wants to get out of here",
+      "asksAround": "has questions for the bartender"
     },
     "why": {
       "cooldown": "needs more time",
@@ -2948,7 +2974,14 @@
       "plant": "Plant",
       "light": "Light",
       "sign": "Sign",
-      "gift": "Gift"
+      "gift": "Gift",
+      "stairs": "Stairs",
+      "counter": "Counter / bar",
+      "table": "Table",
+      "bed": "Bed",
+      "chest": "Chest",
+      "exit": "Exit",
+      "portal": "Portal"
     },
     "guessNotice": "“{name}” is your generated map. Where people can walk is only a rough guess so far.",
     "missingNotice": "The map this save uses isn't in this browser any more, so the built-in scene is shown.",
@@ -2956,7 +2989,18 @@
     "inPlay": "Used in Play",
     "notInPlay": "Play uses the built-in picture",
     "useInPlay": "Use in Play",
-    "builderHint": "Play uses this exact picture. Set where characters can walk under Play area."
+    "builderHint": "Play uses this exact picture. Set where characters can walk under Play area.",
+    "exitField": "Leads to another area",
+    "keeper": "Who works here",
+    "keeperAuto": "Whoever stands behind it",
+    "locked": "Locked",
+    "keyName": "Opens with an item called",
+    "keyNamePlaceholder": "key",
+    "startsOpen": "Starts open",
+    "note": "What it says / a note about it",
+    "notePlaceholder": "e.g. “Rooms upstairs, 2 coins a night”",
+    "contents": "What's inside (comma separated)",
+    "contentsPlaceholder": "e.g. old map, silver bell"
   },
   "theme": {
     "title": "Look & feel",
@@ -3114,5 +3158,142 @@
       "preview": "Avatar preview",
       "thumb": "Small list icon"
     }
+  },
+  "explore": {
+    "do": {
+      "openOther": "{name} opens the {object}.",
+      "throughDoor": "{name} steps up to the open {object}.",
+      "alreadyOpen": "The {object} is already open.",
+      "locked": "{name} tries the {object}. It's locked.",
+      "chestOpen": "{name} lifts the lid of the {object}.",
+      "chestOpenFull": "{name} lifts the lid of the {object}. Something is inside.",
+      "doorOpen": "{name} pushes the {object} open. The way through is clear now.",
+      "doorOpenExit": "{name} pulls the {object} open. Beyond it, the way leads on.",
+      "alreadyClosed": "The {object} is already closed.",
+      "close": "{name} closes the {object}.",
+      "knock": "{name} knocks on the {object}. No answer.",
+      "alreadyUnlocked": "The {object} isn't locked.",
+      "noKey": "{name} has nothing that fits the lock of the {object}.",
+      "unlock": "{name} unlocks the {object} with the {item}.",
+      "notAnExit": "The {object} doesn't lead anywhere.",
+      "portal": "{name} reaches into the {object}. It hums and pulls gently.",
+      "leave": "{name} walks up to the {object}.",
+      "climbExit": "{name} climbs the {object}.",
+      "climbStay": "{name} climbs a few steps of the {object}, looks up, and comes back down.",
+      "noKeeper": "{name} leans on the {object}, but nobody is serving right now.",
+      "chatKeeper": "{name} leans on the {object} and chats with {other} for a moment.",
+      "callKeeper": "{name} leans on the {object} and catches {other}'s eye.",
+      "order": "{name} orders a drink from {other} at the {object}. {other} slides it across.",
+      "sitBed": "{name} sits on the edge of the {object}.",
+      "rest": "{name} lies down on the {object} for a short rest.",
+      "browse": "{name} runs a finger along the {object} and pulls out something to read.",
+      "signText": "The {object} reads: “{text}”",
+      "signFaded": "{name} reads the {object}. The paint has mostly faded.",
+      "readText": "{name} reads from the {object}: “{text}”",
+      "chestClosed": "The {object} is closed. Open it first.",
+      "found": "{name} searches the {object} and finds: {text}.",
+      "empty": "{name} searches the {object}. It's empty.",
+      "nothingToPlace": "{name} has nothing to put down.",
+      "place": "{name} puts the {item} down on the {object}.",
+      "noteLook": "{name} looks at the {object}. {text}"
+    },
+    "unavailable": {
+      "locked": "Locked",
+      "no_key": "No key",
+      "no_keeper": "Nobody serving",
+      "closed": "Closed",
+      "nothing_to_place": "Carrying nothing",
+      "not_owner": "Not theirs",
+      "already_open": "Already open",
+      "already_closed": "Already closed",
+      "not_an_exit": "Leads nowhere"
+    },
+    "menu": {
+      "title": "{name} at the {object}",
+      "cancel": "Never mind",
+      "label": "What should {name} do?",
+      "noActor": "Select a character first, then tap the {object}."
+    },
+    "drag": {
+      "choose": "Choose what to do: {object}",
+      "blocked": "{reason}: {object}"
+    },
+    "leave": {
+      "title": "Leave This Area?",
+      "bodyTo": "{name} is at the {exit}, which leads to {scene}.",
+      "bodyNew": "{name} is at the {exit}. It doesn't lead anywhere yet, so you'll choose or create the next area.",
+      "npc": "{name} said they'd go to {scene} and is at the {exit} now.",
+      "stay": "Stay Here",
+      "leave": "Leave",
+      "party": "Who's going",
+      "partyHint": "Everyone else stays here, exactly where they are.",
+      "saved": "This area is saved as it is now."
+    },
+    "travel": {
+      "loading": "Heading to {scene}…",
+      "failed": "Couldn't open {scene}. You're still here and nothing was lost.",
+      "arrived": "{names} arrived at {scene}.",
+      "log": "{names} went from {from} to {to}.",
+      "stayed": "{name} stays by the {exit}."
+    },
+    "picker": {
+      "title": "Where does it lead?",
+      "intro": "Pick an area of this world, or create a new one.",
+      "tabNew": "Create new scene",
+      "tabExisting": "Choose existing scene",
+      "name": "Scene name",
+      "namePlaceholder": "e.g. Upstairs rooms",
+      "description": "Describe the place",
+      "descriptionPlaceholder": "A quiet library filled with tall bookshelves, warm lamps, and a spiral staircase.",
+      "type": "Environment type",
+      "theme": "Uses this world's theme ({world}) and the PLOT TWIST! pixel-art style.",
+      "generate": "Generate map",
+      "usePlaceholder": "Use placeholder art",
+      "placeholderNote": "No map is generated: the built-in picture for this place type is used and marked as a placeholder. You can generate a map for it later in World Builder.",
+      "noImage": "Map generation isn't available right now, so the new scene will use placeholder art.",
+      "generating": "Drawing the new map… this can take up to a minute.",
+      "failed": "The map couldn't be generated ({reason}). You're still here and nothing was lost.",
+      "retry": "Try again",
+      "cancel": "Cancel",
+      "back": "Back",
+      "noScenes": "There are no other scenes in this world yet.",
+      "connected": "Connected",
+      "notConnected": "Not connected yet",
+      "twoWay": "Add a way back",
+      "go": "Go there",
+      "here": "{n} here",
+      "nobody": "Nobody here",
+      "placeholderTag": "Placeholder",
+      "needsDescription": "Describe the place first.",
+      "full": "This world already has the most scenes it can hold."
+    },
+    "scene": {
+      "incomplete": "“{name}” is a new map: where people can walk and what's in it is only a rough guess so far. Mark the floor, furniture and exits under Play area.",
+      "placeholder": "“{name}” uses placeholder art (no map was generated). Generate one in World Builder whenever you like.",
+      "unnamed": "New area",
+      "scenes": "Areas"
+    },
+    "marker": {
+      "to": "To {scene}",
+      "back": "Way back"
+    }
+  },
+  "camera": {
+    "controls": "Camera",
+    "follow": "Follow",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zooms": {
+      "wide": "Wide",
+      "normal": "Normal",
+      "close": "Close"
+    },
+    "followSpeed": "Camera follow",
+    "speeds": {
+      "gentle": "Gentle",
+      "normal": "Normal",
+      "snappy": "Snappy"
+    },
+    "followSpeedDesc": "How quickly the Play Mode camera catches up with the character it follows."
   }
 }

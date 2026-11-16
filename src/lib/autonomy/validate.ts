@@ -55,11 +55,15 @@ export function validateIntent(i: Intent, ctx: ValidateContext): Validation {
   return { ok: true };
 }
 
+/** Actions that change something or go somewhere: never picked just to "look at" an object. */
+const NOT_JUST_LOOKING: ObjectAction[] = ["sit", "pick_up", "open", "close", "leave", "enter", "climb", "knock", "unlock", "place", "talk", "order", "search", "rest"];
+
 /** Which object action an object intent means (inspect a book = read it, sit = sit…). */
 export function objectActionFor(kind: IntentKind, o: WorldObject, actor: string): ObjectAction | null {
   if (kind === "sit") return o.actions.includes("sit") ? "sit" : null;
-  if (kind === "inspect_object") return (o.actions.find((a) => a !== "sit" && a !== "pick_up" && a !== "open") ?? defaultAction(o, actor)) || null;
-  if (kind === "seek_privacy") return o.actions.includes("sit") ? "sit" : (o.actions.find((a) => a !== "pick_up" && a !== "open") ?? null);
+  // Looking at something never opens, leaves, climbs or takes anything (those need a reason or the player).
+  if (kind === "inspect_object") return (o.actions.find((a) => !NOT_JUST_LOOKING.includes(a)) ?? (o.exit ? null : defaultAction(o, actor))) || null;
+  if (kind === "seek_privacy") return o.actions.includes("sit") ? "sit" : (o.actions.find((a) => !NOT_JUST_LOOKING.includes(a)) ?? null);
   return defaultAction(o, actor) || null;
 }
 

@@ -48,6 +48,9 @@ export function SpeechBubble({
   const view = useStageView();
   const offsetX = view?.offsetX ?? 0;
   const viewW = view?.viewW ?? stage?.w ?? 0;
+  // The camera can also pan vertically on big maps: keep the bubble inside the visible part.
+  const offsetY = view?.offsetY ?? 0;
+  const viewH = view?.viewH ?? stage?.h ?? 0;
   const [place, setPlace] = useState<BubblePlacement | null>(null);
   const [edges, setEdges] = useState({ up: false, down: false });
 
@@ -70,10 +73,10 @@ export function SpeechBubble({
     const b = body.current;
     if (!b || !stage) return;
     // Place inside the visible part of the stage, then convert back to stage coordinates.
-    const inView = placeBubble({ stageW: viewW, stageH: stage.h, anchorX: anchor.x * stage.w - offsetX, anchorY: anchor.y * stage.h, width: b.offsetWidth, height: b.offsetHeight });
-    const next = { ...inView, left: inView.left + offsetX };
+    const inView = placeBubble({ stageW: viewW, stageH: viewH, anchorX: anchor.x * stage.w - offsetX, anchorY: anchor.y * stage.h - offsetY, width: b.offsetWidth, height: b.offsetHeight });
+    const next = { ...inView, left: inView.left + offsetX, top: inView.top + offsetY };
     setPlace((p) => (p && p.left === next.left && p.top === next.top && p.tailX === next.tailX && p.flipped === next.flipped ? p : next));
-  }, [stage, viewW, offsetX, anchor.x, anchor.y, lineId, typer.shown, typer.rest, speaker]);
+  }, [stage, viewW, viewH, offsetX, offsetY, anchor.x, anchor.y, lineId, typer.shown, typer.rest, speaker]);
 
   // ---- scrolling
   /** Bottom (px, inside the scroller) of the text revealed so far. */

@@ -26,7 +26,13 @@ import { activeWorldId, getIndex } from "./saves/worldSaves";
 import { mapOwner, tagMap, type OwnedMap } from "./saves/worldMaps";
 
 /** Only the active world's maps (each world save keeps its own map history). */
-const inActiveWorld = (m: OwnedMap) => mapOwner(m, getIndex().migration?.worldId ?? null) === activeWorldId() || m.id === getSave().environment.mapId;
+const inActiveWorld = (m: OwnedMap) => mapOwner(m, getIndex().migration?.worldId ?? null) === activeWorldId() || m.id === getSave().environment.mapId || sceneMapIds().has(m.id);
+/** Maps any scene of the active world uses: never dropped from the history while a scene needs them. */
+function sceneMapIds(): Set<string> {
+  const ids = new Set<string>();
+  for (const s of getSave().scenes?.list ?? []) if (s.mapId) ids.add(s.mapId);
+  return ids;
+}
 
 export type GeneratedMap = Omit<StoredMap, "blob"> & { url: string; ext: "png" | "webp" };
 
@@ -114,20 +120,37 @@ async function decode(dataUrl: string): Promise<{ blob: Blob; width: number; hei
   }
 }
 
-/** Store a new version, make it the map in use, and drop the oldest beyond the history limit. */
-async function addMap(stored: StoredMap) {
+/** Store a new version, make it the map in use (unless `activate` is false), and drop the oldest beyond the history limit. */
+async function addMap(stored: StoredMap, activate = true) {
   tagMap(stored, activeWorldId()); // each world save keeps its own maps
   await load();
   await putMap(stored);
   const all = [toGenerated(stored), ...state.maps];
-  const keep = new Set([stored.id, getSave().environment.mapId]);
+  const keep = new Set([stored.id, getSave().environment.mapId, ...sceneMapIds()]);
   const dropped = all.slice(MAP_HISTORY_LIMIT).filter((m) => !keep.has(m.id));
   if (dropped.length) {
     await deleteMaps(dropped.map((m) => m.id));
     release(dropped.map((m) => m.id));
   }
   set({ maps: all.filter((m) => !dropped.includes(m)) });
-  gameActions.updateEnvironment({ mapId: stored.id });
+  if (activate) gameActions.updateEnvironment({ mapId: stored.id });
+}
+
+/**
+ * Draw the map for a NEW scene (Play → leave the area → Create new scene).
+ * Same server route, art style and world theme as World Builder, but the map
+ * is only stored, not put in use: the scene picks it up once it exists.
+ * Throws an AiRequestError when generation isn't available or fails, so the
+ * caller can offer Retry / placeholder / Cancel (never a fake success).
+ */
+export async function generateSceneMap(req: MapRequest, signal?: AbortSignal): Promise<GeneratedMap> {
+  if (!req.description.trim()) throw new AiRequestError("invalid_output", "No description");
+  const out = await requestMap({ description: req.description.trim(), type: req.type, world: req.worldId });
+  if (signal?.aborted) throw new AiRequestError("failed", "Cancelled");
+  const { blob, width, height } = await decode(out.image);
+  const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model: out.model, createdAt: Date.now() };
+  await addMap(stored, false);
+  return toGenerated(stored);
 }
 
 /** Start drawing a map. Ignored while another one is in progress. */

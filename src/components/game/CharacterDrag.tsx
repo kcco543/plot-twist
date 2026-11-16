@@ -63,6 +63,9 @@ type Press = {
   adjusted: boolean;
   /** Last ground point a route was planned for (re-planned when the pointer moves on). */
   planned: Point | null;
+  /** Last pointer position (client px), to re-aim when the camera scrolls under a held drag. */
+  cx: number;
+  cy: number;
 };
 
 export function useCharacterDrag({
@@ -73,8 +76,14 @@ export function useCharacterDrag({
   onDropEmpty,
   onDropObject,
   onDropGround,
+  toWorld,
 }: {
   stage: StageSim;
+  /**
+   * Screen → world conversion from the camera viewport. Without it, the
+   * sprite layer's on-screen box is used (pages without a camera).
+   */
+  toWorld?: (clientX: number, clientY: number) => Point | null;
   /** False while a menu is open, the player is typing, etc. */
   canDrag: () => boolean;
   /** Conversation distance for a pair (for the route preview). */
@@ -89,8 +98,8 @@ export function useCharacterDrag({
   const store = useRef(new DragStore()).current;
   const press = useRef<Press | null>(null);
   const swallowClickUntil = useRef(0);
-  const cbs = useRef({ canDrag, distanceFor, onDrop, onDropEmpty, onDropObject, onDropGround });
-  cbs.current = { canDrag, distanceFor, onDrop, onDropEmpty, onDropObject, onDropGround };
+  const cbs = useRef({ canDrag, distanceFor, onDrop, onDropEmpty, onDropObject, onDropGround, toWorld });
+  cbs.current = { canDrag, distanceFor, onDrop, onDropEmpty, onDropObject, onDropGround, toWorld };
 
   const clear = useCallback(
     (swallow: boolean) => {
@@ -108,7 +117,10 @@ export function useCharacterDrag({
     (clientX: number, clientY: number) => {
       const p = press.current;
       if (!p || p.state !== "drag") return;
-      const pt = toStagePoint(clientX, clientY, p.box, roomSize(stage.room));
+      p.cx = clientX;
+      p.cy = clientY;
+      // Always through the camera (or the live layer box): the view may have moved or zoomed since the press.
+      const pt = cbs.current.toWorld?.(clientX, clientY) ?? toStagePoint(clientX, clientY, p.box, roomSize(stage.room));
       const target = hitCharacter(stage.getSnapshot().actors, pt, p.id, p.kind);
       const onSelf = !target && hitCharacter(stage.getSnapshot().actors, pt, null, p.kind) === p.id;
       const obj = !target && !onSelf && cbs.current.onDropObject ? hitObject(stage.objects, pt, p.kind === "touch" ? 4 : 2) : null;
@@ -213,7 +225,7 @@ export function useCharacterDrag({
       const layer = e.currentTarget.parentElement;
       if (!layer) return;
       const kind: PointerKind = e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse";
-      const p: Press = { id, pointerId: e.pointerId, kind, x0: e.clientX, y0: e.clientY, t0: performance.now(), state: "pending", box: layer.getBoundingClientRect(), hold: 0, lastTarget: null, route: null, adjusted: false, planned: null };
+      const p: Press = { id, pointerId: e.pointerId, kind, x0: e.clientX, y0: e.clientY, t0: performance.now(), state: "pending", box: layer.getBoundingClientRect(), hold: 0, lastTarget: null, route: null, adjusted: false, planned: null, cx: e.clientX, cy: e.clientY };
       press.current = p;
       if (kind === "touch") {
         const { clientX, clientY } = e;
@@ -230,7 +242,13 @@ export function useCharacterDrag({
   const swallowClick = useCallback(() => performance.now() < swallowClickUntil.current, []);
   const dragging = useSyncExternalStore(store.subscribe, () => store.get() !== null, () => false);
 
-  return { store, onPressStart, swallowClick, dragging, cancel: () => clear(true) };
+  /** The camera scrolled while the pointer held still: the world point under it changed. */
+  const refresh = useCallback(() => {
+    const p = press.current;
+    if (p && p.state === "drag") update(p.cx, p.cy);
+  }, [update]);
+
+  return { store, onPressStart, swallowClick, dragging, refresh, cancel: () => clear(true) };
 }
 
 export function useDragView(store: { subscribe: (l: () => void) => () => void; get: () => DragView }): DragView {
@@ -270,12 +288,15 @@ export function DragOverlay({
   characters,
   chooser,
   objects = [],
+  objectHint,
 }: {
   view: DragView;
   actors: ActorView[];
   characters: Character[];
   chooser: { actorId: string; choices: string[] } | null;
   objects?: WorldObject[];
+  /** What dropping on this object will do right now ("Open: door", "Choose: bar counter", "Locked: door"), from its state. */
+  objectHint?: (actorId: string, o: WorldObject) => { label: string; ok: boolean } | null;
 }) {
   const { t } = useI18n();
   const STAGE = useStageSize();
@@ -309,20 +330,23 @@ export function DragOverlay({
   const to = target ? { x: target.x, y: target.y - 12 } : obj ? { x: (obj.bounds.x0 + obj.bounds.x1) / 2, y: (obj.bounds.y0 + obj.bounds.y1) / 2 } : view.point;
   const objName = obj ? (obj.type === "gift" ? obj.tags[0] || t("objects.names.gift") : (obj.label ?? t(`objects.names.${obj.name}` as "objects.names.door"))) : "";
   const objAction = obj ? defaultAction(obj, view.actorId) : null;
+  const hint = obj && reachable && objectHint ? objectHint(view.actorId, obj) : null;
   const label = target
     ? reachable
       ? t("talk.drag.talk", { other: name(target.id) })
       : t("talk.drag.noRoute", { other: name(target.id) })
     : obj
-      ? reachable && objAction
-        ? t("objects.drag.use", { action: t(`objects.actions.${objAction}`), object: objName })
-        : t("objects.drag.objectNoWay", { object: objName })
+      ? hint
+        ? hint.label
+        : reachable && objAction
+          ? t("objects.drag.use", { action: t(`objects.actions.${objAction}`), object: objName })
+          : t("objects.drag.objectNoWay", { object: objName })
       : !reachable
         ? t("objects.drag.noWay")
         : view.adjusted
           ? t("objects.drag.nearby")
           : t("objects.drag.walkHere");
-  const tone = reachable ? (view.adjusted && !target ? "warn" : "ok") : "bad";
+  const tone = reachable ? ((view.adjusted && !target) || (hint && !hint.ok) ? "warn" : "ok") : "bad";
   // Label above the pointer (touch: well above the finger), kept inside the stage.
   const lift = view.kind === "touch" ? 46 : 18;
   const lx = Math.min(STAGE.width - 40, Math.max(40, view.point.x));

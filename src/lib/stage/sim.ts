@@ -17,6 +17,7 @@
 import type { Character } from "../types";
 import { type Emotion, type EmotionLevel } from "../emotion/emotions";
 import { burstMs, effectFor, type BodyMotion } from "../emotion/effects";
+import type { Anim } from "../explore/interact";
 import { PRIORITIES, travels, validateStageAction, type ActionResult, type IdleKind, type Priority, type StageAction } from "./actions";
 import { actionAllowed, defaultAction, validAnchors, type ObjectAction, type WorldObject } from "./objects";
 import { idleChoice, idleDelay, reactionAction, rngFrom, walkSpeed, type MoveContext } from "./behavior";
@@ -51,6 +52,8 @@ export const REACT_MOVE_COOLDOWN = 1500;
 const RETARGET_MS = 500;
 /** After a player-commanded walk ends, autonomous behavior leaves that character's position alone this long. */
 export const COMMAND_GRACE_MS = 2500;
+/** Seated (or resting) by the player: autonomy leaves them there this long before getting up or wandering off. */
+export const SEATED_GRACE_MS = 20000;
 
 type Move = {
   kind: "approach" | "retreat" | "shift" | "makeRoom" | "goto" | "object";
@@ -88,7 +91,7 @@ type Actor = {
   burstAt: number;
   /** External stamp of the emotion (story state), to tell a new one from a re-sync. */
   emotionStamp: number;
-  body: BodyMotion | IdleKind | null;
+  body: BodyMotion | IdleKind | Anim | null;
   bodyAt: number;
   bodyUntil: number;
   reactUntil: number;
@@ -120,7 +123,7 @@ export type ActorView = {
   burstKey: number;
   /** The burst is still playing (full particles); afterwards the effect is quiet. */
   bursting: boolean;
-  body: BodyMotion | IdleKind | null;
+  body: BodyMotion | IdleKind | Anim | null;
   bodyKey: number;
   walking: boolean;
   /** Paused walk waiting to resume. */
@@ -174,6 +177,17 @@ export class StageSim {
   onWalkEnd: WalkEndListener | null = null;
   /** Interactive objects in this room (objects.ts). */
   objects: WorldObject[] = [];
+  /**
+   * Extra rule for object actions (explore/interact.ts): may `actor` do
+   * `action` with this object in its CURRENT state? (a locked door can't be
+   * opened). Set by the play screen; missing = only the object's own list counts.
+   */
+  objectGuard: ((actor: string, o: WorldObject, action: ObjectAction) => boolean) | null = null;
+  /** The action to use when none was named (first one possible right now). */
+  pickAction(o: WorldObject, actor: string): ObjectAction | null {
+    if (!this.objectGuard) return defaultAction(o, actor);
+    return o.actions.find((x) => actionAllowed(o, x, actor) && !(o.type === "gift" && x === "pick_up") && this.objectGuard!(actor, o, x)) ?? null;
+  }
   /** Saved spots to put characters back on when they're (re)added. */
   private savedSpots: Record<string, SavedSpot> = {};
   private pendingPriority: number = PRIORITIES.story;
@@ -326,6 +340,56 @@ export class StageSim {
     return this.objects.find((o) => o.id === id) ?? null;
   }
 
+  /**
+   * Same place, changed collision (a door opened or closed): swap the room
+   * without moving anyone. Walks re-plan on their next blocked step.
+   */
+  patchRoom(room: RoomLayout) {
+    if (room === this.room) return;
+    this.room = room;
+    for (const a of this.actors.values()) if (a.move) a.move.blockedMs = BLOCKED_REPLAN_MS;
+    this.emit(true);
+  }
+
+  /** Put a character at a spot (arriving in a scene through its entrance), the nearest free one if taken. Not a walk. */
+  spawnAt(id: string, p: Point, facing?: 1 | -1) {
+    const a = this.actors.get(id);
+    if (!a) return false;
+    const others = [...this.actors.values()].filter((b) => b.id !== id).map((b) => ({ x: b.x, y: b.y, depth: STAND_DEPTH }));
+    const q = isFree(this.room, p, others, PERSONAL_SPACE - 2) ? p : nearestFree(this.room, p, others, PERSONAL_SPACE, 120);
+    if (!q) return false;
+    a.move = null;
+    a.suspended = null;
+    a.x = q.x;
+    a.y = q.y;
+    if (facing) a.facing = facing;
+    a.pose = null;
+    a.usingObject = null;
+    if (a.state === "moving") this.setState(a, "idle");
+    this.emit(true);
+    return true;
+  }
+
+  /** A short body animation that isn't a walk (climbing a step, pushing a door, rattling a lock). */
+  perform(id: string, anim: Anim, ms = 900) {
+    const a = this.actors.get(id);
+    if (!a) return;
+    a.body = anim;
+    a.bodyAt = this.time;
+    a.bodyUntil = this.time + (this.reducedMotion ? 0 : ms);
+    a.interactUntil = Math.max(a.interactUntil, this.time + ms);
+    if (a.state === "idle") this.setState(a, "interacting");
+    this.emit();
+  }
+
+  /** Sit down / get up without walking (an object's outcome decides it). */
+  setPose(id: string, pose: "sit" | null) {
+    const a = this.actors.get(id);
+    if (!a || a.state === "moving") return;
+    a.pose = pose;
+    this.emit();
+  }
+
   /** New room (different place): everyone goes back to a starting spot. */
   /** Switch rooms (everyone is placed again). `spots` = where they stood last time in the new room. */
   setRoom(room: RoomLayout, spots: Record<string, SavedSpot> = {}) {
@@ -444,8 +508,8 @@ export class StageSim {
       objectOk: (actor, objectId, action) => {
         const o = this.objectById(objectId);
         if (!o) return "unknown_object";
-        const act = (action as ObjectAction | undefined) ?? defaultAction(o, actor);
-        return act && actionAllowed(o, act, actor) ? "ok" : "not_allowed";
+        const act = (action as ObjectAction | undefined) ?? this.pickAction(o, actor);
+        return act && actionAllowed(o, act, actor) && (!this.objectGuard || this.objectGuard(actor, o, act)) ? "ok" : "not_allowed";
       },
     });
     if (!v.ok) {
@@ -454,7 +518,7 @@ export class StageSim {
     }
     const a0 = this.actors.get(v.action.actor)!;
     const rank = PRIORITIES[priority];
-    const moves = travels(v.action);
+    const moves = travels(v.action) || v.action.type === "stand_up";
     if (moves && rank < PRIORITIES.player && this.time < a0.commandUntil) {
       const r: ActionResult = { ok: false, reason: "player_command", action: v.action };
       this.lastResult.set(v.action.actor, r);
@@ -506,7 +570,7 @@ export class StageSim {
         return this.startGoto(a, { x: act.x, y: act.y }, act);
       case "use_object": {
         const o = this.objectById(act.object)!;
-        return this.startObject(a, o, act.action ?? defaultAction(o, a.id)!, act);
+        return this.startObject(a, o, act.action ?? this.pickAction(o, a.id)!, act);
       }
       case "turn_away": {
         const from = this.actors.get(act.from)!;
@@ -739,6 +803,8 @@ export class StageSim {
 
   private idleReaction(a: Actor, kind: IdleKind, act: StageAction, force = false): ActionResult {
     if (!force && (a.state === "moving" || a.state === "speaking")) return { ok: false, reason: "busy", action: act };
+    // Sitting: fidget in place (a shuffle step would stand them up).
+    if (kind === "shift" && a.pose === "sit") kind = "look_around";
     if (kind === "shift") {
       if (this.reducedMotion) return { ok: true, action: act, note: "idle" };
       const rng = rngFrom(`${a.id}:shift:${a.idleSeq++}`);
@@ -1038,7 +1104,9 @@ export class StageSim {
     }
     this.setState(a, social || obj || this.convo.has(a.id) ? "interacting" : "idle");
     const priority = this.priorityName(a.movePriority);
+    const seatedByPlayer = !!obj && a.movePriority >= PRIORITIES.player && (m!.action === "sit" || m!.action === "rest");
     this.endCommand(a);
+    if (seatedByPlayer) a.commandUntil = this.time + SEATED_GRACE_MS;
     if (m) this.onWalkEnd?.(a.id, "arrived", m.kind, priority);
     if (obj && m?.action) this.onObject?.(a.id, obj.id, m.action, priority);
     // Ended up in someone's personal space (they moved too)? Take one small step to make room.

@@ -86,8 +86,16 @@ export function proposals(ctx: PlanContext): Proposal[] {
     else add({ kind: "move_away", target: o.id, reason: "keepingDistance", score: 0.9 });
   }
 
+  // Exits and counters aren't things to idly look at: doors are for leaving, counters for asking.
+  const lookable = objects.filter((o) => !o.exit && o.type !== "counter" && (!o.giftId || o.ownerId === actor.id));
+  const exits = objects.filter((o) => o.exit && !o.giftId && o.anchors.length);
+  const counter = objects.find((o) => o.type === "counter" && o.anchors.length);
+
   // 2. Upset.
   if (upset >= 50) {
+    // Wants out: an avoidant person who's had enough heads for the door (they only go and stand by it; leaving the area is the player's call).
+    const door = [...exits].sort((a, b) => dist(me, objCenter(a)) - dist(me, objCenter(b)))[0];
+    if (door && upset >= 60 && p.avoidant > 0.55) add({ kind: "go_to_place", object: door.id, reason: "wantsToLeave", score: 0.42 + p.avoidant * 0.25 });
     if (p.confront > 0.6) add({ kind: "stay_still", reason: "standingGround", score: 0.5 + p.confront * 0.3 });
     const quiet = privateSpots[privateSpots.length - 1];
     if (quiet) add({ kind: "seek_privacy", object: quiet.id, reason: "coolingOff", score: 0.45 + (p.avoidant + p.reserved) * 0.2 });
@@ -114,14 +122,18 @@ export function proposals(ctx: PlanContext): Proposal[] {
   if (bright >= 50) {
     const pal = liked.find((x) => x.rel.affection >= 15 && gap(x.o.id) > 45);
     if (pal) add({ kind: "approach", target: pal.o.id, reason: "wantsCompany", score: 0.3 + p.extro * 0.35 + p.playful * 0.1 });
-    const thing = pick(objects.filter((o) => !o.giftId || o.ownerId === actor.id), rng);
+    const thing = pick(lookable, rng);
     if (thing) add({ kind: "inspect_object", object: thing.id, reason: "contentAlone", score: 0.25 + p.intro * 0.3 });
   }
 
   // 6. Surprised or confused.
   if (puzzled >= 40) {
-    const thing = [...objects].sort((a, b) => dist(me, objCenter(a)) - dist(me, objCenter(b)))[0];
+    // Curious minds go for the mysterious things first: books, chests, signs.
+    const mysterious = lookable.filter((o) => o.type === "book" || o.type === "chest" || o.type === "sign");
+    const thing = [...(mysterious.length ? mysterious : lookable)].sort((a, b) => dist(me, objCenter(a)) - dist(me, objCenter(b)))[0];
     if (thing) add({ kind: "inspect_object", object: thing.id, reason: "curious", score: 0.3 + (p.impulsive + p.rebel) * 0.15 });
+    // Someone with questions and a bartender to ask: go and ask (a local exchange, no AI).
+    if (counter && p.extro > 0.45) add({ kind: "use_object", object: counter.id, reason: "asksAround", score: 0.28 + p.extro * 0.2 });
     add({ kind: "observe", reason: "takingItIn", score: 0.3 + p.cautious * 0.25 });
   }
 
@@ -129,7 +141,7 @@ export function proposals(ctx: PlanContext): Proposal[] {
   if (upset < 30 && low < 30 && bright < 50 && puzzled < 40) {
     const last = [...agency.log].reverse().find((i) => i.actor === actor.id && i.status === "completed" && i.object && i.kind !== "seek_privacy");
     if (last?.object && objects.some((o) => o.id === last.object)) add({ kind: "return_to_task", object: last.object, reason: "backToIt", score: 0.2 + p.serious * 0.15 });
-    const thing = pick(objects.filter((o) => !o.giftId || o.ownerId === actor.id), rng);
+    const thing = pick(lookable, rng);
     if (thing) add({ kind: "inspect_object", object: thing.id, reason: "idleCuriosity", score: 0.12 + (p.playful + p.impulsive + p.idealist) * 0.08 });
     if (ctx.pose(actor.id) === "sit") add({ kind: "stand", reason: "stretchLegs", score: 0.18 + p.impulsive * 0.15 });
     add({ kind: "stay_still", reason: "content", score: 0.3 + (p.calm + p.cautious) * 0.1 });

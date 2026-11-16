@@ -27,10 +27,32 @@
 import type { EnvironmentTypeId, GiftInstance, WorldId } from "../types";
 import { FOOT, insideWalk, hitsObstacle, type Point, type Rect, type RoomLayout } from "./room";
 
-export const OBJECT_TYPES = ["book", "sign", "seat", "door", "painting", "item", "window", "gift", "plant", "light", "feature"] as const;
+export const OBJECT_TYPES = ["book", "sign", "seat", "door", "painting", "item", "window", "gift", "plant", "light", "feature", "stairs", "counter", "table", "bed", "chest", "exit", "portal"] as const;
 export type ObjectType = (typeof OBJECT_TYPES)[number];
 
-export const OBJECT_ACTIONS = ["read", "examine", "sit", "open", "inspect", "pick_up", "look_out", "admire"] as const;
+export const OBJECT_ACTIONS = [
+  "read",
+  "examine",
+  "sit",
+  "open",
+  "inspect",
+  "pick_up",
+  "look_out",
+  "admire",
+  // Explorable world (src/lib/explore/interact.ts): real actions whose result is decided by game rules + object state.
+  "climb",
+  "talk",
+  "order",
+  "close",
+  "knock",
+  "unlock",
+  "browse",
+  "place",
+  "rest",
+  "search",
+  "leave",
+  "enter",
+] as const;
 export type ObjectAction = (typeof OBJECT_ACTIONS)[number];
 
 export type WorldObject = {
@@ -52,7 +74,50 @@ export type WorldObject = {
   /** Gift objects: the gift instance and its owner (only the owner may pick it up). */
   giftId?: string;
   ownerId?: string;
+  // ---- Explorable world (all optional; see src/lib/explore/)
+  /** Leads out of this scene (doors, stairs, exits, portals): using it can propose leaving the area. */
+  exit?: boolean;
+  /** Counters and the like: the character who works here (the bartender). Missing = whoever stands behind it. */
+  keeper?: string | null;
+  /** Starts locked (doors, chests). The live state is kept per scene in the world save. */
+  locked?: boolean;
+  /** A locked object opens for someone carrying an item whose name contains this ("key", "钥匙"). */
+  keyName?: string;
+  /** Doors / chests that start open. */
+  startsOpen?: boolean;
+  /** What a chest holds (found with "search"). */
+  contents?: string[];
+  /** An exit marker added by the game (the way back to another scene), not part of the map. */
+  marker?: boolean;
 };
+
+/**
+ * What can be done with each kind of object. Which of these are possible
+ * RIGHT NOW (a locked door can't be opened, a chest must be open to search
+ * it…) is decided by src/lib/explore/interact.ts from the object's state.
+ */
+export const ACTIONS_BY_TYPE: Record<ObjectType, ObjectAction[]> = {
+  book: ["browse", "read"],
+  sign: ["read"],
+  seat: ["sit"],
+  door: ["open", "leave", "close", "knock", "unlock"],
+  painting: ["inspect"],
+  item: ["examine"],
+  window: ["look_out"],
+  gift: ["admire", "pick_up"],
+  plant: ["inspect"],
+  light: ["inspect"],
+  feature: ["inspect"],
+  stairs: ["climb", "inspect"],
+  counter: ["talk", "order", "inspect"],
+  table: ["examine", "place"],
+  bed: ["rest", "sit"],
+  chest: ["open", "search", "close", "unlock"],
+  exit: ["leave"],
+  portal: ["enter", "inspect"],
+};
+/** Kinds of object that lead somewhere else by default. */
+export const EXIT_TYPES: ObjectType[] = ["door", "stairs", "exit", "portal"];
 
 const rect = (x0: number, y0: number, x1: number, y1: number): Rect => ({ x0, y0, x1, y1 });
 type Def = Omit<WorldObject, "world" | "place" | "radius"> & { radius?: number };
@@ -64,7 +129,7 @@ const DEFAULT_OBJECTS: Partial<Record<EnvironmentTypeId, Def[]>> = {
     { id: "bookshelf", type: "book", name: "bookshelf", bounds: rect(139, 24, 201, 46), collider: null, anchors: [{ x: 124, y: 147 }, { x: 196, y: 150 }], actions: ["read", "examine"], tags: ["bookshelf", "books", "book", "shelf", "reading", "书架", "书", "看书"], private: true },
     { id: "painting", type: "painting", name: "wallArt", bounds: rect(206, 24, 233, 57), collider: null, anchors: [{ x: 220, y: 147 }], actions: ["inspect"], tags: ["painting", "picture", "poster", "banner", "画", "挂画", "海报"] },
     { id: "door", type: "door", name: "door", bounds: rect(243, 28, 289, 105), collider: null, anchors: [{ x: 266, y: 146 }], actions: ["open"], tags: ["door", "exit", "outside", "门", "门口", "出去"] },
-    { id: "table-item", type: "item", name: "tableNote", bounds: rect(136, 100, 184, 128), collider: "table", anchors: [{ x: 160, y: 151 }, { x: 128, y: 146 }, { x: 192, y: 146 }], actions: ["examine"], tags: ["table", "note", "桌子", "桌", "纸条"] },
+    { id: "table-item", type: "table", name: "tableNote", bounds: rect(136, 100, 184, 128), collider: "table", anchors: [{ x: 160, y: 151 }, { x: 128, y: 146 }, { x: 192, y: 146 }], actions: ["examine"], tags: ["table", "note", "桌子", "桌", "纸条"] },
     { id: "rug", type: "seat", name: "rug", bounds: rect(92, 146, 228, 176), collider: null, anchors: [{ x: 116, y: 168 }, { x: 204, y: 168 }], actions: ["sit"], tags: ["rug", "carpet", "sit", "地毯", "坐"] },
     { id: "plant", type: "plant", name: "plant", bounds: rect(12, 94, 41, 134), collider: "plant", anchors: [{ x: 52, y: 146 }], actions: ["inspect"], tags: ["plant", "pot", "植物", "盆栽", "花"] },
   ],
@@ -118,7 +183,15 @@ const OTHERWORLD_OBJECTS: Partial<Record<EnvironmentTypeId, Def[]>> = {
 export function objectsFor(world: WorldId, place: EnvironmentTypeId): WorldObject[] {
   const set = world === "otherworld" ? OTHERWORLD_OBJECTS : DEFAULT_OBJECTS;
   const w: WorldObject["world"] = world === "otherworld" ? "otherworld" : "default";
-  return (set[place] ?? []).map((d) => ({ radius: 6, ...d, world: w, place }));
+  return (set[place] ?? []).map((d) => ({
+    radius: 6,
+    ...d,
+    // Hand-written actions first, then everything this kind of object supports (doors open AND close, etc.).
+    actions: [...new Set([...d.actions, ...ACTIONS_BY_TYPE[d.type]])],
+    exit: d.exit ?? (EXIT_TYPES.includes(d.type) && d.id !== "house" ? true : undefined),
+    world: w,
+    place,
+  }));
 }
 
 /** A displayed gift is an object too: anyone can admire it; only its owner can pick it up again. */

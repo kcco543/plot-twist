@@ -28,7 +28,7 @@
 import { FOOT, type NavMask, type Obstacle, type Point, type Rect, type RoomLayout } from "../stage/room";
 import { nearestFree } from "../stage/path";
 import type { EnvironmentTypeId } from "../types";
-import type { ObjectAction, ObjectType, WorldObject } from "../stage/objects";
+import { ACTIONS_BY_TYPE, EXIT_TYPES, type ObjectType, type WorldObject } from "../stage/objects";
 
 export type Perspective = "side" | "angled";
 
@@ -43,6 +43,20 @@ export type SceneObject = {
   solid: boolean;
   /** Draw this part of the picture over characters standing behind it. */
   front: boolean;
+  // ---- Explorable world (optional; older layouts simply don't have them)
+  /** Leads to another area (doors, stairs, exits, portals). Missing = by type (door/stairs/exit/portal yes). */
+  exit?: boolean;
+  /** Counters: who works here (a character id). Missing = whoever is standing behind it. */
+  keeper?: string | null;
+  /** Doors / chests that start locked, and the key that opens them ("key", "钥匙"). */
+  locked?: boolean;
+  keyName?: string;
+  /** Doors / chests that start open. */
+  startsOpen?: boolean;
+  /** What a sign says, what a book is about, what's notable about it (shown when used). */
+  note?: string;
+  /** Chests: what's inside, comma separated when edited. */
+  contents?: string[];
 };
 
 export type SceneLayout = {
@@ -68,21 +82,9 @@ export type CharacterSize = keyof typeof STAGE_WIDTHS;
 export const DEFAULT_STAGE_WIDTH = STAGE_WIDTHS.medium;
 export const GRID_COLS = 96;
 
-export const OBJECT_ACTIONS_BY_TYPE: Record<ObjectType, ObjectAction[]> = {
-  book: ["read", "examine"],
-  sign: ["read"],
-  seat: ["sit"],
-  door: ["open"],
-  painting: ["inspect"],
-  item: ["examine"],
-  window: ["look_out"],
-  gift: ["admire"],
-  plant: ["inspect"],
-  light: ["inspect"],
-  feature: ["inspect"],
-};
+export const OBJECT_ACTIONS_BY_TYPE = ACTIONS_BY_TYPE;
 /** Types the player can pick for an object (gifts are placed by the game). */
-export const SCENE_OBJECT_TYPES: ObjectType[] = ["feature", "seat", "item", "book", "door", "window", "painting", "plant", "light", "sign"];
+export const SCENE_OBJECT_TYPES: ObjectType[] = ["feature", "seat", "table", "counter", "stairs", "door", "bed", "chest", "book", "window", "painting", "plant", "light", "sign", "item", "exit", "portal"];
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
@@ -140,7 +142,21 @@ export function readLayout(raw: unknown, mapW: number, mapH: number): SceneLayou
     floor: r.floor.replace(/[^1]/g, "0"),
     objects: (Array.isArray(r.objects) ? r.objects : [])
       .filter((o): o is SceneObject => !!o && typeof o.id === "string" && !!o.bounds)
-      .map((o) => ({ id: o.id, label: String(o.label ?? "").slice(0, 40), type: SCENE_OBJECT_TYPES.includes(o.type) ? o.type : "feature", bounds: rect(o.bounds), solid: !!o.solid, front: !!o.front })),
+      .map((o) => ({
+        id: o.id,
+        label: String(o.label ?? "").slice(0, 40),
+        type: SCENE_OBJECT_TYPES.includes(o.type) ? o.type : "feature",
+        bounds: rect(o.bounds),
+        solid: !!o.solid,
+        front: !!o.front,
+        ...(typeof o.exit === "boolean" ? { exit: o.exit } : {}),
+        ...(typeof o.keeper === "string" && o.keeper ? { keeper: o.keeper.slice(0, 80) } : {}),
+        ...(o.locked ? { locked: true } : {}),
+        ...(typeof o.keyName === "string" && o.keyName.trim() ? { keyName: o.keyName.trim().slice(0, 30) } : {}),
+        ...(o.startsOpen ? { startsOpen: true } : {}),
+        ...(typeof o.note === "string" && o.note.trim() ? { note: o.note.slice(0, 280) } : {}),
+        ...(Array.isArray(o.contents) ? { contents: o.contents.filter((x): x is string => typeof x === "string" && !!x.trim()).map((x) => x.trim().slice(0, 40)).slice(0, 8) } : {}),
+      })),
     spawns: (Array.isArray(r.spawns) ? r.spawns : []).filter((p) => p && typeof p.x === "number" && typeof p.y === "number").map((p) => ({ x: clamp01(p.x), y: clamp01(p.y) })).slice(0, 12),
     reviewed: !!r.reviewed,
     updatedAt: typeof r.updatedAt === "number" ? r.updatedAt : 0,
@@ -190,6 +206,28 @@ export function footprintOf(b: Rect, perspective: Perspective): Rect {
   const depth = perspective === "angled" ? Math.max(6, h * 0.45) : Math.max(4, h * 0.25);
   return { x0: b.x0, y0: Math.max(b.y0, b.y1 - depth), x1: b.x1, y1: b.y1 };
 }
+
+/** Words for each kind of object, so "I'm going upstairs" / "我去楼上" finds the stairs on any map. */
+const TYPE_WORDS: Record<ObjectType, string[]> = {
+  book: ["bookshelf", "books", "书架", "书"],
+  sign: ["sign", "招牌", "牌子"],
+  seat: ["chair", "seat", "bench", "椅子", "座位"],
+  door: ["door", "exit", "outside", "门", "门口", "出去"],
+  painting: ["painting", "picture", "画"],
+  item: [],
+  window: ["window", "窗", "窗户", "窗边"],
+  gift: ["gift", "礼物"],
+  plant: ["plant", "植物"],
+  light: ["lamp", "light", "灯"],
+  feature: [],
+  stairs: ["stairs", "staircase", "upstairs", "downstairs", "楼梯", "楼上", "楼下", "上楼"],
+  counter: ["counter", "bar", "吧台", "柜台"],
+  table: ["table", "桌子", "桌"],
+  bed: ["bed", "床"],
+  chest: ["chest", "box", "箱子", "宝箱"],
+  exit: ["exit", "way out", "出口"],
+  portal: ["portal", "传送门"],
+};
 
 const words = (s: string) =>
   s
@@ -249,7 +287,14 @@ export function buildScene(layout: SceneLayout, mapW: number, mapH: number, plac
       anchors,
       radius: 6,
       actions: OBJECT_ACTIONS_BY_TYPE[o.type] ?? ["inspect"],
-      tags: [...new Set([...words(o.label), o.type])],
+      tags: [...new Set([...words(o.label), o.type, ...TYPE_WORDS[o.type]])],
+      ...(o.note ? { description: o.note } : {}),
+      exit: o.exit ?? EXIT_TYPES.includes(o.type),
+      ...(o.keeper ? { keeper: o.keeper } : {}),
+      ...(o.locked ? { locked: true } : {}),
+      ...(o.keyName ? { keyName: o.keyName } : {}),
+      ...(o.startsOpen ? { startsOpen: true } : {}),
+      ...(o.contents?.length ? { contents: o.contents } : {}),
     });
   }
   return { size: { width, height }, room, objects, fronts, problems };

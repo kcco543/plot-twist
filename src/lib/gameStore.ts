@@ -10,6 +10,7 @@ import { emptyStory, neutralState, withMemoryNote } from "./story/engine";
 import { sanitizeUiTheme, type WorldUiTheme } from "./theme/themes";
 import type { CharacterPortraits } from "./portraits/model";
 import { withEmotion, type Emotion } from "./emotion/emotions";
+import { normalizeScenes, syncActive, type WorldScenes } from "./explore/scenes";
 import type { Character, CharacterArt, EnvironmentDraft, SaveData, SpriteAsset, StoryLine, StoryState, WorldId } from "./types";
 
 /**
@@ -66,6 +67,8 @@ export function migrateSave(raw: unknown): SaveData {
     sprites: Array.isArray(r.sprites) ? r.sprites.filter((s) => s && typeof s.sprite === "string") : [],
     // Versioned, validated: an unknown or mismatched theme falls back to the world type's default (never reset to nothing).
     uiTheme: sanitizeUiTheme(r.uiTheme, (r.worldId as WorldId | null) ?? null) ?? undefined,
+    // Connected scenes: validated, and older saves get one scene made from their environment (nothing is lost).
+    scenes: normalizeScenes(r.scenes, { ...emptySave.environment, ...(r.environment ?? {}) }),
   };
 }
 
@@ -116,7 +119,19 @@ export const gameActions = {
     touch((s) => ({ ...s, characters: s.characters.filter((c) => c.id !== id) }));
   },
   updateEnvironment(patch: Partial<EnvironmentDraft>) {
-    touch((s) => ({ ...s, environment: { ...s.environment, ...patch } }));
+    // The active scene mirrors the environment (World Builder changes the map of the scene being played).
+    touch((s) => {
+      const environment = { ...s.environment, ...patch };
+      return { ...s, environment, scenes: s.scenes ? syncActive(s.scenes, environment) : s.scenes };
+    });
+  },
+  /** Replace this world's scenes (and, when travelling, the environment shown) in one save. */
+  setScenes(scenes: WorldScenes, environment?: EnvironmentDraft) {
+    touch((s) => ({ ...s, scenes, ...(environment ? { environment } : {}) }));
+  },
+  /** Scenes + story in one write (travelling also moves saved positions in the story's agency state). */
+  setScenesAndStory(scenes: WorldScenes, story: StoryState, environment?: EnvironmentDraft) {
+    touch((s) => ({ ...s, scenes, story, ...(environment ? { environment } : {}) }));
   },
   appendLog(line: StoryLine) {
     gameActions.appendLines([line]);
