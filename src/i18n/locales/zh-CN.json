@@ -2873,5 +2873,82 @@
       "unknown_target": "对方离开了",
       "outranked": "有更重要的事在发生"
     }
+  },
+  "playArea": {
+    "title": "可玩区域",
+    "edit": "编辑可玩区域",
+    "untitled": "你的地图",
+    "loadingMap": "正在读取你的地图",
+    "intro": "图片本身无法告诉游戏哪里是地面、哪里是家具，所以请在这里标出来：把角色能走的地面涂成绿色，给家具和可以互动的东西画框，再放几个出生点。",
+    "toolsLabel": "可玩区域工具",
+    "tools": {
+      "floor": "地面",
+      "wall": "非地面",
+      "object": "物体",
+      "spawn": "出生点"
+    },
+    "hints": {
+      "floor": "在图片上拖动，涂出角色可以走的地方。",
+      "wall": "拖动擦除地面：墙壁、画面上方，以及任何不该站人的地方。",
+      "object": "在家具或可互动的东西周围拖出一个框。点击已有的框可以修改。",
+      "spawn": "点击添加角色出现的位置，再点一次可以删除。"
+    },
+    "brush": "笔刷",
+    "brushes": {
+      "s": "小",
+      "m": "中",
+      "l": "大"
+    },
+    "name": "地图名称",
+    "perspective": "视角",
+    "perspectives": {
+      "angled": "斜视 / 俯视",
+      "side": "侧视"
+    },
+    "characterSize": "角色大小",
+    "sizes": {
+      "large": "大",
+      "medium": "中",
+      "small": "小",
+      "tiny": "很小"
+    },
+    "floor": "地面",
+    "resetGuess": "粗略猜测",
+    "fillAll": "全部是地面",
+    "clearAll": "清空地面",
+    "startOver": "重新开始",
+    "noFloor": "几乎还没有地面，角色没有地方可以站。",
+    "objects": "物体",
+    "noObjects": "还没有物体。选择“物体”，在吧台、桌子或壁炉周围拖出一个框。",
+    "objectName": "名称",
+    "objectNamePlaceholder": "例如：吧台",
+    "objectType": "类型",
+    "solid": "实心（角色会绕开它）",
+    "front": "遮住站在它后面的角色",
+    "unreachable": "没人能走到这里：在它旁边涂一些地面。",
+    "deleteObject": "删除物体",
+    "spawnCount": "出生点：{n} 个（没有的话，角色会聚在地面中间）",
+    "save": "保存可玩区域",
+    "saveFailed": "保存失败，请再试一次。",
+    "types": {
+      "feature": "物件",
+      "seat": "座位",
+      "item": "物品",
+      "book": "书",
+      "door": "门",
+      "window": "窗户",
+      "painting": "画",
+      "plant": "植物",
+      "light": "灯",
+      "sign": "招牌",
+      "gift": "礼物"
+    },
+    "guessNotice": "“{name}”是你生成的地图。目前可行走区域只是粗略猜测。",
+    "missingNotice": "这个存档使用的地图已不在这个浏览器中，所以显示内置场景。",
+    "openBuilder": "世界构建",
+    "inPlay": "游戏中使用",
+    "notInPlay": "游戏使用内置图片",
+    "useInPlay": "在游戏中使用",
+    "builderHint": "游戏会使用这张图片本身。在“可玩区域”里设置角色能走的地方。"
   }
 }

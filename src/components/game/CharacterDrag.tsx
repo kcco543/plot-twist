@@ -15,11 +15,11 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from "react";
 import { DRAG, hitCharacter, pressState, toStagePoint, type PointerKind, type PressState } from "@/lib/talk/drag";
 import { defaultAction, hitObject, type WorldObject } from "@/lib/stage/objects";
-import type { Point } from "@/lib/stage/room";
+import { roomSize, type Point } from "@/lib/stage/room";
 import type { ActorView, StageSim } from "@/lib/stage/sim";
 import type { Character } from "@/lib/types";
 import { useI18n } from "@/i18n";
-import { STAGE } from "./SceneSprites";
+import { useStageSize } from "./PixelStage";
 
 export type DragView = {
   actorId: string;
@@ -108,7 +108,7 @@ export function useCharacterDrag({
     (clientX: number, clientY: number) => {
       const p = press.current;
       if (!p || p.state !== "drag") return;
-      const pt = toStagePoint(clientX, clientY, p.box, STAGE);
+      const pt = toStagePoint(clientX, clientY, p.box, roomSize(stage.room));
       const target = hitCharacter(stage.getSnapshot().actors, pt, p.id, p.kind);
       const onSelf = !target && hitCharacter(stage.getSnapshot().actors, pt, null, p.kind) === p.id;
       const obj = !target && !onSelf && cbs.current.onDropObject ? hitObject(stage.objects, pt, p.kind === "touch" ? 4 : 2) : null;
@@ -242,6 +242,7 @@ const RING = { halfW: 13, top: 34, bottom: 4 };
 
 /** Brackets around a character (art px), drawn in the overlay so they stay crisp. */
 function Ring({ a, tone, pulse = false }: { a: ActorView; tone: "ok" | "bad" | "pick" | "self"; pulse?: boolean }) {
+  const STAGE = useStageSize();
   const color = tone === "ok" ? "var(--color-mint-deep)" : tone === "bad" ? "var(--color-coral-deep)" : tone === "self" ? "var(--color-label)" : "var(--color-rose)";
   return (
     <span
@@ -277,6 +278,7 @@ export function DragOverlay({
   objects?: WorldObject[];
 }) {
   const { t } = useI18n();
+  const STAGE = useStageSize();
   const byId = new Map(actors.map((a) => [a.id, a]));
   const name = (id: string | null) => {
     const c = id ? characters.find((x) => x.id === id) : null;
@@ -305,7 +307,7 @@ export function DragOverlay({
   const reachable = view.route !== null && (!!target || !!obj || ground);
   const from = { x: me.x, y: me.y - 12 };
   const to = target ? { x: target.x, y: target.y - 12 } : obj ? { x: (obj.bounds.x0 + obj.bounds.x1) / 2, y: (obj.bounds.y0 + obj.bounds.y1) / 2 } : view.point;
-  const objName = obj ? (obj.type === "gift" ? obj.tags[0] || t("objects.names.gift") : t(`objects.names.${obj.name}` as "objects.names.door")) : "";
+  const objName = obj ? (obj.type === "gift" ? obj.tags[0] || t("objects.names.gift") : (obj.label ?? t(`objects.names.${obj.name}` as "objects.names.door"))) : "";
   const objAction = obj ? defaultAction(obj, view.actorId) : null;
   const label = target
     ? reachable

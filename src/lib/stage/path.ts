@@ -5,7 +5,7 @@
  * character's personal space. Paths are then smoothed to straight segments
  * wherever a straight walk is also clear, so characters don't zig-zag.
  */
-import { FOOT, PERSONAL_SPACE, STAND_DEPTH, gap, hitsObstacle, insideWalk, type Point, type RoomLayout } from "./room";
+import { FOOT, PERSONAL_SPACE, STAND_DEPTH, gap, hitsObstacle, insideWalk, roomSize, type Point, type RoomLayout } from "./room";
 
 export const CELL = 4;
 /** While walking past someone, keep at least this much room (a bit less than standing space). */
@@ -58,14 +58,15 @@ export function nearestFree(room: RoomLayout, p: Point, blockers: Blocker[] = []
 }
 
 /** A* path from `from` to `to` (both feet points). Returns waypoints after `from`, or null if unreachable. */
-export function findPath(room: RoomLayout, from: Point, to: Point, blockers: Blocker[] = [], maxNodes = 6000): Point[] | null {
+export function findPath(room: RoomLayout, from: Point, to: Point, blockers: Blocker[] = [], maxNodes = nodeBudget(room)): Point[] | null {
   const goal = { x: snap(to.x), y: snap(to.y) };
   if (!isFree(room, goal, blockers)) return null;
   const start = { x: snap(from.x), y: snap(from.y) };
   if (clearLine(room, from, to, blockers)) return [to];
   const key = (p: Point) => `${p.x},${p.y}`;
   const h = (p: Point) => Math.hypot(p.x - goal.x, p.y - goal.y);
-  const open: { p: Point; f: number }[] = [{ p: start, f: h(start) }];
+  const open = new Heap();
+  open.push({ p: start, f: h(start) });
   const g = new Map<string, number>([[key(start), 0]]);
   const came = new Map<string, Point>();
   const closed = new Set<string>();
@@ -73,10 +74,8 @@ export function findPath(room: RoomLayout, from: Point, to: Point, blockers: Blo
     [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1],
   ];
   let expanded = 0;
-  while (open.length && expanded < maxNodes) {
-    let bi = 0;
-    for (let i = 1; i < open.length; i++) if (open[i].f < open[bi].f) bi = i;
-    const { p } = open.splice(bi, 1)[0];
+  while (open.size && expanded < maxNodes) {
+    const { p } = open.pop()!;
     const pk = key(p);
     if (closed.has(pk)) continue;
     closed.add(pk);
@@ -110,6 +109,51 @@ export function findPath(room: RoomLayout, from: Point, to: Point, blockers: Blo
   return null;
 }
 
+/** Bigger stages (generated maps) get a bigger search budget: up to every cell of the floor. */
+export function nodeBudget(room: RoomLayout): number {
+  const { width, height } = roomSize(room);
+  return Math.max(6000, Math.ceil((width / CELL) * (height / CELL)));
+}
+
+/** Min-heap on f, so A* stays fast on large floors. */
+class Heap {
+  private a: { p: Point; f: number }[] = [];
+  get size() {
+    return this.a.length;
+  }
+  push(n: { p: Point; f: number }) {
+    const a = this.a;
+    a.push(n);
+    let i = a.length - 1;
+    while (i > 0) {
+      const j = (i - 1) >> 1;
+      if (a[j].f <= a[i].f) break;
+      [a[i], a[j]] = [a[j], a[i]];
+      i = j;
+    }
+  }
+  pop() {
+    const a = this.a;
+    const top = a[0];
+    const last = a.pop();
+    if (a.length && last) {
+      a[0] = last;
+      let i = 0;
+      for (;;) {
+        const l = i * 2 + 1;
+        const r = l + 1;
+        let m = i;
+        if (l < a.length && a[l].f < a[m].f) m = l;
+        if (r < a.length && a[r].f < a[m].f) m = r;
+        if (m === i) break;
+        [a[i], a[m]] = [a[m], a[i]];
+        i = m;
+      }
+    }
+    return top;
+  }
+}
+
 /** Drop waypoints that a straight, clear walk can skip. */
 function smooth(room: RoomLayout, from: Point, pts: Point[], blockers: Blocker[]): Point[] {
   const out: Point[] = [];
@@ -127,6 +171,7 @@ function smooth(room: RoomLayout, from: Point, pts: Point[], blockers: Blocker[]
 
 /** Evenly spread starting spots along the floor (like Step 1's slots), moved off furniture if needed. */
 export function spawnPoints(room: RoomLayout, count: number): Point[] {
+  if (room.mask || room.spawns?.length) return spawnOnFloor(room, count);
   const left = 56;
   const right = 264;
   const y = Math.min(room.walk.y1 - FOOT.d / 2 - 2, 174);
@@ -135,5 +180,35 @@ export function spawnPoints(room: RoomLayout, count: number): Point[] {
     const x = count === 1 ? 160 : left + ((right - left) / (count - 1)) * i;
     pts.push(nearestFree(room, { x, y }, pts.map((q) => ({ ...q, depth: STAND_DEPTH })), PERSONAL_SPACE + 4, 120) ?? { x, y });
   }
+  return pts;
+}
+
+/**
+ * Starting spots on a free-form floor (generated maps): the hand-placed spawn
+ * points first (moved off furniture if needed), then free spots gathered
+ * around the middle of the floor, each outside everyone else's personal space.
+ */
+function spawnOnFloor(room: RoomLayout, count: number): Point[] {
+  const pts: Point[] = [];
+  const blockers = () => pts.map((q) => ({ ...q, depth: STAND_DEPTH }));
+  for (const s of room.spawns ?? []) {
+    if (pts.length >= count) break;
+    const p = nearestFree(room, s, blockers(), PERSONAL_SPACE + 4, 60);
+    if (p) pts.push(p);
+  }
+  if (pts.length >= count) return pts;
+  // Free cells of the floor, nearest to its centre first.
+  const free: Point[] = [];
+  const { width, height } = roomSize(room);
+  for (let y = CELL * 2; y < height; y += CELL * 2) for (let x = CELL * 2; x < width; x += CELL * 2) if (isFree(room, { x, y })) free.push({ x, y });
+  if (!free.length) return [...pts, ...Array.from({ length: count - pts.length }, () => ({ x: (room.walk.x0 + room.walk.x1) / 2, y: (room.walk.y0 + room.walk.y1) / 2 }))];
+  const cx = free.reduce((s, p) => s + p.x, 0) / free.length;
+  const cy = free.reduce((s, p) => s + p.y, 0) / free.length;
+  free.sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy));
+  for (const p of free) {
+    if (pts.length >= count) break;
+    if (isFree(room, p, blockers(), PERSONAL_SPACE + 4)) pts.push(p);
+  }
+  while (pts.length < count) pts.push(free[pts.length % free.length]);
   return pts;
 }

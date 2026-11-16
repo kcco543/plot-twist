@@ -20,7 +20,7 @@ import { burstMs, effectFor, type BodyMotion } from "../emotion/effects";
 import { PRIORITIES, travels, validateStageAction, type ActionResult, type IdleKind, type Priority, type StageAction } from "./actions";
 import { actionAllowed, defaultAction, validAnchors, type ObjectAction, type WorldObject } from "./objects";
 import { idleChoice, idleDelay, reactionAction, rngFrom, walkSpeed, type MoveContext } from "./behavior";
-import { clampToWalk, gap, PERSONAL_SPACE, STAND_DEPTH, standGap, type Point, type RoomLayout } from "./room";
+import { clampToWalk, gap, roomSize, PERSONAL_SPACE, STAND_DEPTH, standGap, type Point, type RoomLayout } from "./room";
 import { findPath, isFree, nearestFree, PASSING_SPACE, spawnPoints, type Blocker } from "./path";
 import type { Bond } from "../types";
 
@@ -273,7 +273,7 @@ export class StageSim {
           c,
           x: p.x,
           y: p.y,
-          facing: saved && p.x === saved.x && p.y === saved.y ? saved.facing : p.x > 160 ? -1 : 1,
+          facing: saved && p.x === saved.x && p.y === saved.y ? saved.facing : p.x > roomSize(this.room).width / 2 ? -1 : 1,
           state: "idle",
           since: this.time,
           move: null,
@@ -327,10 +327,11 @@ export class StageSim {
   }
 
   /** New room (different place): everyone goes back to a starting spot. */
-  setRoom(room: RoomLayout) {
+  /** Switch rooms (everyone is placed again). `spots` = where they stood last time in the new room. */
+  setRoom(room: RoomLayout, spots: Record<string, SavedSpot> = {}) {
     if (room === this.room) return;
     this.room = room;
-    this.savedSpots = {};
+    this.savedSpots = spots;
     const cast = this.order.map((id) => this.actors.get(id)!.c);
     this.actors.clear();
     this.setCast(cast);
@@ -705,8 +706,9 @@ export class StageSim {
 
   /** Step back from someone (or from the middle of the room), never leaving the floor. */
   private startRetreat(a: Actor, fromId: string | null, distance: number, act: StageAction): ActionResult {
-    const from: Point = fromId ? this.actors.get(fromId)! : { x: 160, y: a.y };
-    const dir = a.x === from.x ? (a.x < 160 ? -1 : 1) : a.x < from.x ? -1 : 1;
+    const mid = roomSize(this.room).width / 2;
+    const from: Point = fromId ? this.actors.get(fromId)! : { x: mid, y: a.y };
+    const dir = a.x === from.x ? (a.x < mid ? -1 : 1) : a.x < from.x ? -1 : 1;
     const others = this.standBlockers(a);
     const before = standGap(a, from);
     let best: Point | null = null;

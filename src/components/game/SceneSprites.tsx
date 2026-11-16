@@ -3,6 +3,7 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { artFor } from "@/lib/character/art";
 import { useI18n } from "@/i18n";
+import { useStageSize } from "./PixelStage";
 import type { Character } from "@/lib/types";
 import type { ActorView } from "@/lib/stage/sim";
 
@@ -18,9 +19,9 @@ export const MAX_ON_STAGE = 6;
  * live position (from the stage simulation), so everything anchored to a
  * character follows it while it walks and when the stage is resized.
  */
-export function anchorOf(view: { x: number; y: number } | null | undefined): { x: number; y: number } | null {
+export function anchorOf(view: { x: number; y: number } | null | undefined, size: { width: number; height: number } = STAGE): { x: number; y: number } | null {
   if (!view) return null;
-  return { x: view.x / STAGE.width, y: (view.y - STAGE.sprite) / STAGE.height };
+  return { x: view.x / size.width, y: (view.y - STAGE.sprite) / size.height };
 }
 
 const byId = (actors: ActorView[]) => new Map(actors.map((a) => [a.id, a]));
@@ -104,6 +105,7 @@ export function SceneLabels({
   speakingId?: string | null;
 }) {
   const { t } = useI18n();
+  const size = useStageSize();
   const pos = byId(actors);
   const shown = characters.slice(0, MAX_ON_STAGE).filter((c) => pos.has(c.id));
   return (
@@ -116,7 +118,7 @@ export function SceneLabels({
           <span
             key={c.id}
             className="absolute -translate-x-1/2"
-            style={{ left: `${(a.x / STAGE.width) * 100}%`, top: `${((a.y + 2) / STAGE.height) * 100}%`, zIndex: speaking ? 3 : active ? 2 : 1 }}
+            style={{ left: `${(a.x / size.width) * 100}%`, top: `${((a.y + 2) / size.height) * 100}%`, zIndex: speaking ? 3 : active ? 2 : 1 }}
           >
             <span
               className={`flex max-w-24 items-center gap-1 px-1 py-[1px] font-head text-[11px] font-bold leading-tight sm:text-xs ${
@@ -141,7 +143,7 @@ export function SceneLabels({
             key="marker"
             aria-hidden
             className="absolute -translate-x-1/2 animate-bob text-label"
-            style={{ left: `${(a.x / STAGE.width) * 100}%`, top: `calc(${((a.y - STAGE.sprite) / STAGE.height) * 100}% - 16px)` }}
+            style={{ left: `${(a.x / size.width) * 100}%`, top: `calc(${((a.y - STAGE.sprite) / size.height) * 100}% - 16px)` }}
           >
             <svg width="12" height="10" viewBox="0 0 6 5" shapeRendering="crispEdges" fill="currentColor">
               <rect x="0" y="0" width="6" height="1" fill="var(--color-ink)" />

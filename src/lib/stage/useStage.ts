@@ -31,9 +31,9 @@ export function useStageSim({
   const sim = ref.current;
   sim.bondOf = bondOf;
 
-  useEffect(() => sim.setRoom(room), [sim, room]);
   const spotsRef = useRef(savedSpots);
   spotsRef.current = savedSpots;
+  useEffect(() => sim.setRoom(room, spotsRef.current?.()), [sim, room]);
   useEffect(() => {
     if (spotsRef.current) sim.setSavedSpots(spotsRef.current());
     sim.setCast(cast);

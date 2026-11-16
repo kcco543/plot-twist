@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 /**
  * What part of the stage is on screen, in CSS px of the scaled stage.
@@ -9,6 +9,10 @@ import { createContext, useContext, useEffect, useRef, useState, type CSSPropert
 export type StageView = { offsetX: number; viewW: number } | null;
 const StageViewContext = createContext<StageView>(null);
 export const useStageView = () => useContext(StageViewContext);
+
+/** The stage's size in art px (320×192 for built-in rooms; generated maps have their own). */
+const StageSizeContext = createContext({ width: 320, height: 192 });
+export const useStageSize = () => useContext(StageSizeContext);
 
 /** Below this container width, `squareOnPhones` switches to the taller, panning view. */
 const PHONE_MAX = 640;
@@ -70,11 +74,12 @@ export function PixelStage({
       if (squareOnPhones && w < PHONE_MAX) s = Math.max(s, (w * squareOnPhones) / art.height);
       else if (maxHeight) s = Math.min(s, Math.max(1, maxHeight / art.height));
       setBoxW(w);
-      setScale(s >= 1 ? Math.floor(s * dpr) / dpr : s);
+      // Generated maps are smooth pictures: no whole-pixel snapping, so they fill the frame.
+      setScale(art.smooth || s < 1 ? s : Math.floor(s * dpr) / dpr);
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [art.width, art.height, fit, maxHeight, squareOnPhones]);
+  }, [art.width, art.height, art.smooth, fit, maxHeight, squareOnPhones]);
 
   const w = art.width * scale;
   const h = art.height * scale;
@@ -84,23 +89,26 @@ export function PixelStage({
   const camX = panning ? Math.min(art.width - viewArt, Math.max(0, (focusX ?? art.width / 2) - viewArt / 2)) : 0;
   const offsetX = Math.round(camX * scale);
   const view: StageView = scale > 0 ? { offsetX, viewW: panning ? boxW : w } : null;
+  const size = useMemo(() => ({ width: art.width, height: art.height }), [art.width, art.height]);
 
   return (
     <div className={`px-frame px-shadow ${className}`} style={{ "--frame": `var(--frame-${frame})` } as CSSProperties}>
       <div ref={box} data-stage-view className="px-checker relative grid w-full place-items-center overflow-hidden" style={{ height: scale ? h : undefined, aspectRatio: scale ? undefined : `${art.width} / ${art.height}` }}>
         {scale > 0 && (
           <StageViewContext.Provider value={view}>
+          <StageSizeContext.Provider value={size}>
           <div
             className={`${panning ? "absolute left-0 top-0 transition-transform duration-500 ease-out" : "relative"}`}
             style={{ width: w, height: h, transform: panning ? `translateX(${-offsetX}px)` : undefined }}
           >
             <div className="absolute left-0 top-0 origin-top-left" style={{ width: art.width, height: art.height, transform: `scale(${scale})` }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={art.src} alt={label} width={art.width} height={art.height} draggable={false} className="pixelated absolute inset-0 block size-full" />
+              <img src={art.src} alt={label} width={art.width} height={art.height} draggable={false} data-stage-art={art.smooth ? "generated" : "builtin"} className={`${art.smooth ? "" : "pixelated "}absolute inset-0 block size-full`} />
               {children}
             </div>
             {overlay && <div className="pointer-events-none absolute inset-0">{overlay}</div>}
           </div>
+          </StageSizeContext.Provider>
           </StageViewContext.Provider>
         )}
         {scale > 0 && tag && art.placeholder && (

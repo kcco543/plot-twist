@@ -15,8 +15,28 @@ import type { EnvironmentTypeId, WorldId } from "../types";
 
 export type Rect = { x0: number; y0: number; x1: number; y1: number };
 export type Obstacle = Rect & { id: string };
-export type RoomLayout = { walk: Rect; obstacles: Obstacle[] };
 export type Point = { x: number; y: number };
+/**
+ * Optional walkable-floor grid for rooms whose floor isn't a rectangle (an
+ * angled / isometric generated map). `cells[row * cols + col]` is 1 where
+ * characters may stand. Each cell is `cw` × `ch` art px.
+ */
+export type NavMask = { cols: number; rows: number; cw: number; ch: number; cells: Uint8Array };
+export type RoomLayout = {
+  /** Bounding box of the floor (the whole floor for built-in rooms). */
+  walk: Rect;
+  obstacles: Obstacle[];
+  /** Stage size in art px. Missing = the built-in 320×192. */
+  size?: { width: number; height: number };
+  /** Floor shape, when it isn't the plain `walk` rectangle. */
+  mask?: NavMask;
+  /** Hand-placed starting spots (feet). */
+  spawns?: Point[];
+};
+
+/** Built-in scenes are 320×192 art px. */
+export const BUILTIN_SIZE = { width: 320, height: 192 };
+export const roomSize = (room: RoomLayout) => room.size ?? BUILTIN_SIZE;
 
 /** A character's footprint around its feet (art px). Sprites are 32 px wide, the drawn body ~18. */
 export const FOOT = { w: 16, d: 6 };
@@ -87,7 +107,24 @@ export const overlaps = (a: Rect, b: Rect) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0
 /** Feet position inside the floor (the whole footprint, not just the centre). */
 export function insideWalk(room: RoomLayout, p: Point): boolean {
   const f = footRect(p);
-  return f.x0 >= room.walk.x0 && f.x1 <= room.walk.x1 && f.y0 >= room.walk.y0 && f.y1 <= room.walk.y1;
+  if (!(f.x0 >= room.walk.x0 && f.x1 <= room.walk.x1 && f.y0 >= room.walk.y0 && f.y1 <= room.walk.y1)) return false;
+  return !room.mask || footOnMask(room.mask, f);
+}
+
+/** Every part of the footprint (corners, edge midpoints, centre) is on a floor cell. */
+function footOnMask(m: NavMask, f: Rect): boolean {
+  const e = 0.01;
+  const xs = [f.x0 + e, (f.x0 + f.x1) / 2, f.x1 - e];
+  const ys = [f.y0 + e, (f.y0 + f.y1) / 2, f.y1 - e];
+  for (const x of xs) for (const y of ys) if (!maskAt(m, x, y)) return false;
+  return true;
+}
+
+export function maskAt(m: NavMask, x: number, y: number): boolean {
+  const c = Math.floor(x / m.cw);
+  const r = Math.floor(y / m.ch);
+  if (c < 0 || r < 0 || c >= m.cols || r >= m.rows) return false;
+  return m.cells[r * m.cols + c] === 1;
 }
 
 export function hitsObstacle(room: RoomLayout, p: Point): Obstacle | null {

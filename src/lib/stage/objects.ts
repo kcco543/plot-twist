@@ -37,6 +37,8 @@ export type WorldObject = {
   id: string;
   type: ObjectType;
   name: string;
+  /** The player's own name for an object on a generated map (shown instead of objects.names.<name>). */
+  label?: string;
   world: WorldId | "default";
   place: EnvironmentTypeId;
   bounds: Rect;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ActionBar, ScreenHeader } from "@/components/ScreenHeader";
 import { MapEditOverlay, MapEditPanel, useRegionEdit } from "@/components/game/MapEditPanel";
@@ -20,6 +20,9 @@ import { useAiStatus } from "@/lib/ai/client";
 import { currentMap, dismissMapError, generateMap, mapIsOutdated, placeholderArt, removeMap, selectMap, useMapStudio } from "@/lib/mapGenerator";
 import { getWorld } from "@/lib/worlds";
 import { useI18n } from "@/i18n";
+import { SceneEditor } from "@/components/game/SceneEditor";
+import { mapDisplayName } from "@/lib/scene/useScene";
+import { readLayout } from "@/lib/scene/layout";
 
 /** Where each environment thumbnail crops to (the scene's most readable spot). */
 const THUMB_FOCUS: Record<EnvironmentTypeId, string> = {
@@ -37,6 +40,7 @@ export default function WorldBuilderPage() {
   const status = useAiStatus();
   const phonePreviewRef = useRef<HTMLDivElement>(null);
   const studio = useMapStudio();
+  const [areaOpen, setAreaOpen] = useState(false);
   const world = getWorld(save.worldId);
   const { description, type } = save.environment;
   const worldName = world ? t(`worlds.list.${world.id}.name` as const) : "";
@@ -117,6 +121,22 @@ export default function WorldBuilderPage() {
         )}
 
         <MapEditPanel edit={edit} versionOf={versionIfKept} />
+
+        {/* The map shown here is the one Play uses (the world save's selected map). */}
+        {map && !working && (
+          <div data-play-map className="flex flex-wrap items-center gap-2 bg-mint-hi px-3 py-2 shadow-[inset_4px_0_0_var(--color-mint-deep)]">
+            <PixelIcon name="check" size={12} className="shrink-0 text-mint-deep" />
+            <span className="min-w-0 flex-1 text-base leading-snug">
+              <span className="font-bold">
+                {t("playArea.inPlay")}: {mapDisplayName(map) || t("playArea.untitled")}
+              </span>
+              <span className="block text-sm text-ink-soft">{t("playArea.builderHint")}</span>
+            </span>
+            <PixelButton size="sm" variant={readLayout(map.scene, map.width, map.height).reviewed ? "ghost" : "calm"} icon="pencil" disabled={busy} onClick={() => setAreaOpen(true)} data-edit-play-area>
+              {t("playArea.title")}
+            </PixelButton>
+          </div>
+        )}
 
         <p className="min-h-12 text-lg leading-snug text-ink-soft">
           {map ? `“${map.description}”` : description.trim() ? t("builder.notDrawnYet", { text: description.trim() }) : t("builder.quoteEmpty")}
@@ -272,6 +292,9 @@ export default function WorldBuilderPage() {
           <div className="hidden min-w-0 lg:sticky lg:top-24 lg:block lg:self-start">{previewPanel}</div>
         </div>
       </main>
+
+      {/* One editor for both preview panels (phone and desktop layouts). */}
+      {map && <SceneEditor open={areaOpen} map={map} onClose={() => setAreaOpen(false)} />}
 
       <ActionBar>
         <PixelLink href="/studio" variant="ghost" icon="left">
