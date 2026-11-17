@@ -63,3 +63,39 @@ export function resetTalkLimits() {
   inFlight.clear();
   global = [];
 }
+
+// ---------------------------------------------------------------- autonomous conversations
+
+/**
+ * Autonomous conversations (/api/ai/converse) have their own, smaller
+ * budget, separate from conversations the player starts:
+ *   AI_AUTO_TALK_PER_HOUR  per visitor per hour (default 20)
+ *   AI_AUTO_TALK_PER_DAY   per visitor per day  (default 120)
+ * One at a time per visitor. The game asks far less often than this (the
+ * observation frequency caps it at 4–14 an hour); this is the backstop.
+ */
+const autoBuckets = new Map<string, { hour: number[]; day: number[] }>();
+const autoInFlight = new Set<string>();
+const HOUR = 60 * MIN;
+
+export function takeAutoTalkSlot(key: string, now = Date.now()): LimitResult {
+  const perHour = num(process.env.AI_AUTO_TALK_PER_HOUR, 20);
+  const perDay = num(process.env.AI_AUTO_TALK_PER_DAY, 120);
+  if (autoInFlight.has(key)) return { ok: false, reason: "busy", retryAfter: 5 };
+  const b = autoBuckets.get(key) ?? { hour: [], day: [] };
+  b.hour = b.hour.filter((t) => now - t < HOUR);
+  b.day = b.day.filter((t) => now - t < DAY);
+  if (b.day.length >= perDay) return { ok: false, reason: "day", retryAfter: Math.ceil((b.day[0] + DAY - now) / 1000) };
+  if (b.hour.length >= perHour) return { ok: false, reason: "minute", retryAfter: Math.ceil((b.hour[0] + HOUR - now) / 1000) };
+  b.hour.push(now);
+  b.day.push(now);
+  autoBuckets.set(key, b);
+  autoInFlight.add(key);
+  if (autoBuckets.size > 5000) for (const k of [...autoBuckets.keys()].slice(0, 1000)) autoBuckets.delete(k);
+  return { ok: true, release: () => autoInFlight.delete(key) };
+}
+
+export function resetAutoTalkLimits() {
+  autoBuckets.clear();
+  autoInFlight.clear();
+}

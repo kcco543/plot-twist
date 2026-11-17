@@ -186,6 +186,13 @@ export class StageSim {
   private endingUntil = new Map<string, number>();
   private intentUntil = new Map<string, number>();
   private approachFor = new Map<string, string>();
+  /**
+   * Strict movement locks for autonomous conversations (autonomy/convoDirector.ts):
+   * actor id → conversation session id. While locked, nothing translates the
+   * character: no walk, no shuffle, no crowd step, no resumed walk. Only a
+   * session release (a state change out of Active) frees them.
+   */
+  private locks = new Map<string, string>();
   room: RoomLayout;
   paused = false;
   reducedMotion: boolean;
@@ -198,6 +205,14 @@ export class StageSim {
   onArrive: ArriveListener | null = null;
   onObject: ObjectListener | null = null;
   onWalkEnd: WalkEndListener | null = null;
+  /**
+   * A player-priority move hit a conversation lock. Return true once the
+   * session has been ended (lock released) to let the move go ahead; false
+   * (or no handler) refuses it. Lower priorities are always refused.
+   */
+  onLockedMove: ((actorId: string, sessionId: string) => boolean) | null = null;
+  /** A lock disappeared without the session releasing it (room change, removed from the cast, teleported). */
+  onLockLost: ((sessionId: string, reason: "room" | "cast" | "moved" | "reset") => void) | null = null;
   /** Interactive objects in this room (objects.ts). */
   objects: WorldObject[] = [];
   /**
@@ -294,7 +309,11 @@ export class StageSim {
   /** Add / update / remove characters by id. Existing characters keep their place. */
   setCast(cast: Character[]) {
     const ids = cast.map((c) => c.id);
-    for (const id of [...this.actors.keys()]) if (!ids.includes(id)) this.actors.delete(id);
+    for (const id of [...this.actors.keys()])
+      if (!ids.includes(id)) {
+        this.dropLock(id, "cast");
+        this.actors.delete(id);
+      }
     const fresh = cast.filter((c) => !this.actors.has(c.id));
     if (fresh.length) {
       const spots = spawnPoints(this.room, cast.length);
@@ -378,6 +397,7 @@ export class StageSim {
   spawnAt(id: string, p: Point, facing?: 1 | -1) {
     const a = this.actors.get(id);
     if (!a) return false;
+    this.dropLock(id, "moved");
     const others = [...this.actors.values()].filter((b) => b.id !== id).map((b) => ({ x: b.x, y: b.y, depth: STAND_DEPTH }));
     const q = isFree(this.room, p, others, PERSONAL_SPACE - 2) ? p : nearestFree(this.room, p, others, PERSONAL_SPACE, 120);
     if (!q) return false;
@@ -417,6 +437,7 @@ export class StageSim {
   /** Switch rooms (everyone is placed again). `spots` = where they stood last time in the new room. */
   setRoom(room: RoomLayout, spots: Record<string, SavedSpot> = {}) {
     if (room === this.room) return;
+    for (const id of [...this.locks.keys()]) this.dropLock(id, "room");
     this.room = room;
     this.savedSpots = spots;
     const cast = this.order.map((id) => this.actors.get(id)!.c);
@@ -542,6 +563,13 @@ export class StageSim {
     const a0 = this.actors.get(v.action.actor)!;
     const rank = PRIORITIES[priority];
     const moves = travels(v.action) || v.action.type === "stand_up";
+    // Strict conversation lock: only an explicit end of the session (here: the player's own command) frees them.
+    const lock = moves ? this.locks.get(a0.id) : undefined;
+    if (lock && !(rank >= PRIORITIES.player && this.onLockedMove?.(a0.id, lock) && !this.locks.has(a0.id))) {
+      const r: ActionResult = { ok: false, reason: "in_conversation", action: v.action };
+      this.lastResult.set(v.action.actor, r);
+      return r;
+    }
     // Stationary conversation: someone talking stays put unless the move is an intentional exception.
     if (moves && this.held(a0)) {
       const gated = this.conversationGate(a0, v.action, rank);
@@ -670,6 +698,8 @@ export class StageSim {
   }
 
   private beginMove(a: Actor, m: Move): boolean {
+    // Defence in depth: whatever path a walk comes from, a locked character never starts one.
+    if (this.locks.has(a.id)) return false;
     const replaced = a.move ?? a.suspended;
     if (replaced && replaced !== m) this.onWalkEnd?.(a.id, "cancelled", replaced.kind, this.priorityName(a.movePriority));
     a.pose = null;
@@ -937,7 +967,7 @@ export class StageSim {
   /** Where this character is in a conversation (see ConversationPhase). */
   conversationPhase(id: string): ConversationPhase {
     if ((this.intentUntil.get(id) ?? -1) > this.time) return "intentional";
-    if (this.convo.has(id)) return "in_conversation";
+    if (this.convo.has(id) || this.locks.has(id)) return "in_conversation";
     if ((this.endingUntil.get(id) ?? -1) > this.time) return "ending";
     if (this.approachFor.has(id) && this.actors.get(id)?.move?.kind === "approach") return "approaching";
     return "disengaged";
@@ -945,6 +975,8 @@ export class StageSim {
 
   /** Who else is in this character's conversation right now. */
   conversationPartners(id: string): string[] {
+    const lock = this.locks.get(id);
+    if (lock) return [...this.locks].filter(([x, s]) => s === lock && x !== id).map(([x]) => x);
     return this.convo.has(id) ? [...this.convo].filter((x) => x !== id) : [];
   }
 
@@ -970,6 +1002,7 @@ export class StageSim {
 
   /** Talking or just finished: routine movement is held. */
   private held(a: Actor): boolean {
+    if (this.locks.has(a.id)) return true;
     const p = this.conversationPhase(a.id);
     return p === "in_conversation" || p === "ending";
   }
@@ -1008,6 +1041,71 @@ export class StageSim {
     }
   }
 
+  // ------------------------------------------------------------ autonomous conversation locks
+
+  /**
+   * Lock these characters into one shared conversation session: current walks
+   * (and paused ones) are dropped, they stop where they stand, and face each
+   * other. False if anyone is missing or already locked into another session.
+   */
+  lockConversation(sessionId: string, ids: string[]): boolean {
+    const list = [...new Set(ids)].filter((id) => this.actors.has(id));
+    if (list.length < 2 || list.length !== new Set(ids).size) return false;
+    if (list.some((id) => (this.locks.get(id) ?? sessionId) !== sessionId)) return false;
+    for (const id of list) {
+      const a = this.actors.get(id)!;
+      const m = a.move ?? a.suspended;
+      const priority = this.priorityName(a.movePriority);
+      a.move = null;
+      a.suspended = null;
+      // A queued walk (waiting for a reaction to end) goes too; a queued gesture may stay.
+      if (a.queued && (travels(a.queued) || a.queued.type === "stand_up")) a.queued = null;
+      this.endCommand(a);
+      this.approachFor.delete(id);
+      this.intentUntil.delete(id);
+      this.endingUntil.delete(id);
+      this.locks.set(id, sessionId);
+      if (m) this.onWalkEnd?.(id, "cancelled", m.kind, priority);
+      if (a.state === "moving" || a.state === "idle") this.setState(a, "interacting");
+    }
+    for (const id of list) {
+      const a = this.actors.get(id)!;
+      const partner = list.find((x) => x !== id)!;
+      a.lookAt = partner;
+      this.faceToward(a, this.actors.get(partner)!);
+    }
+    this.emit();
+    return true;
+  }
+
+  /** The session left Active (ended, interrupted): free its characters after a short, still hold. */
+  releaseConversation(sessionId: string, holdMs = ENDING_HOLD_MS) {
+    let any = false;
+    for (const [id, s] of [...this.locks]) {
+      if (s !== sessionId) continue;
+      this.locks.delete(id);
+      any = true;
+      const a = this.actors.get(id);
+      if (!a) continue;
+      if (holdMs > 0) this.endingUntil.set(id, this.time + holdMs);
+      a.lookAt = null;
+      if (a.state === "interacting" && !this.convo.has(id) && this.time >= a.interactUntil) this.setState(a, "idle");
+    }
+    if (any) this.emit();
+  }
+
+  /** The conversation session this character is locked into, if any. */
+  lockOf(id: string): string | null {
+    return this.locks.get(id) ?? null;
+  }
+
+  private dropLock(id: string, reason: "room" | "cast" | "moved" | "reset") {
+    const s = this.locks.get(id);
+    if (!s) return;
+    for (const [x, y] of [...this.locks]) if (y === s) this.locks.delete(x);
+    this.onLockLost?.(s, reason);
+  }
+
   endConversation() {
     const ids = [...this.convo];
     this.convo.clear();
@@ -1043,6 +1141,8 @@ export class StageSim {
       if (listener) this.faceToward(a, this.actors.get(listener)!);
       for (const b of this.actors.values()) {
         if (b.id === a.id) continue;
+        // Someone locked in their own conversation keeps looking at their partner.
+        if (this.locks.has(b.id) && this.locks.get(b.id) !== this.locks.get(a.id)) continue;
         b.lookAt = a.id;
         if (b.state !== "moving") this.faceToward(b, a);
       }
@@ -1098,6 +1198,7 @@ export class StageSim {
 
   /** Drop every walk, queued action and paused walk. */
   cancelAll() {
+    for (const id of [...this.locks.keys()]) this.dropLock(id, "reset");
     for (const a of this.actors.values()) {
       a.queued = null;
       a.suspended = null;
@@ -1138,7 +1239,7 @@ export class StageSim {
         if (q) this.request(q, "event");
         if ((a.state as ActorState) === "idle") this.settle(a);
       }
-      if (a.state === "interacting" && !this.convo.has(a.id) && this.time >= a.interactUntil && this.time - a.since > 300) this.setState(a, "idle");
+      if (a.state === "interacting" && !this.convo.has(a.id) && !this.locks.has(a.id) && this.time >= a.interactUntil && this.time - a.since > 300) this.setState(a, "idle");
       if (a.state === "moving") this.step(a, dt);
       if (a.state !== "moving" && a.lookAt) {
         const t = this.actors.get(a.lookAt);

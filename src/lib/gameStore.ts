@@ -5,6 +5,7 @@ import { libraryActions } from "./library/characterLibrary";
 import { characterFromTemplate, forgetCharacterInStory, type CharacterTemplate } from "./library/templates";
 import { makeId } from "./id";
 import { emptyAgency } from "./autonomy/types";
+import { isFrequency, type Frequency } from "./autonomy/frequency";
 import { createBlankCharacter, normalizeCharacter } from "./character/model";
 import { emptyStory, neutralState, withMemoryNote } from "./story/engine";
 import { sanitizeUiTheme, type WorldUiTheme } from "./theme/themes";
@@ -69,6 +70,8 @@ export function migrateSave(raw: unknown): SaveData {
     uiTheme: sanitizeUiTheme(r.uiTheme, (r.worldId as WorldId | null) ?? null) ?? undefined,
     // Connected scenes: validated, and older saves get one scene made from their environment (nothing is lost).
     scenes: normalizeScenes(r.scenes, { ...emptySave.environment, ...(r.environment ?? {}) }),
+    // Observation frequency: only a known value survives (anything else = the default, Medium).
+    observation: isFrequency(r.observation?.frequency) ? { frequency: r.observation.frequency } : undefined,
   };
 }
 
@@ -132,6 +135,11 @@ export const gameActions = {
   /** Scenes + story in one write (travelling also moves saved positions in the story's agency state). */
   setScenesAndStory(scenes: WorldScenes, story: StoryState, environment?: EnvironmentDraft) {
     touch((s) => ({ ...s, scenes, story, ...(environment ? { environment } : {}) }));
+  },
+  /** This world's autonomous interaction frequency (observation setting). */
+  setObservationFrequency(frequency: Frequency) {
+    if (!isFrequency(frequency)) return;
+    touch((s) => ({ ...s, observation: { ...(s.observation ?? {}), frequency } }));
   },
   appendLog(line: StoryLine) {
     gameActions.appendLines([line]);

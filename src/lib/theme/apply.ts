@@ -18,6 +18,7 @@ export function applyTheme(el: HTMLElement, theme: WorldUiTheme | null, cacheFor
   ATTRS.forEach((a) => el.removeAttribute(a));
   applied.delete(el);
   if (!theme) {
+    if (el === el.ownerDocument?.documentElement) syncThemeColor(el.ownerDocument, null);
     if (cacheFor !== undefined) writeCache(null);
     return;
   }
@@ -26,7 +27,21 @@ export function applyTheme(el: HTMLElement, theme: WorldUiTheme | null, cacheFor
   for (const [k, v] of Object.entries(vars)) el.style.setProperty(k, v);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
   applied.set(el, Object.keys(vars));
+  if (el === el.ownerDocument?.documentElement) syncThemeColor(el.ownerDocument, vars["--color-bg"] ?? null);
   if (cacheFor) writeCache({ worldId: cacheFor, vars, attrs });
+}
+
+/**
+ * The browser's own UI colour (mobile address bar, iOS status bar / safe
+ * area, overscroll on some browsers) follows the page background inside a
+ * world, and goes back to the brand value (layout.tsx viewport.themeColor)
+ * everywhere else. The brand value is remembered on the tag the first time.
+ */
+export function syncThemeColor(doc: Document, color: string | null) {
+  const meta = doc.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (!meta) return;
+  if (!meta.dataset.brand) meta.dataset.brand = meta.content;
+  meta.content = color ?? meta.dataset.brand;
 }
 
 function writeCache(value: unknown) {
@@ -43,4 +58,4 @@ function writeCache(value: unknown) {
  * world this tab is in, so there is no flash of the brand theme on reload.
  * React then applies the authoritative theme (and removes it elsewhere).
  */
-export const THEME_BOOT_SCRIPT = `(function(){try{if(!/^\\/(studio|builder|play)(\\/|$)/.test(location.pathname))return;var c=JSON.parse(localStorage.getItem(${JSON.stringify(THEME_CACHE_KEY)})||"null");if(!c)return;var a=sessionStorage.getItem("plot-twist:active-world");if(a&&a!==c.worldId)return;var e=document.documentElement;for(var k in c.vars)e.style.setProperty(k,c.vars[k]);for(var n in c.attrs)e.setAttribute(n,c.attrs[n]);}catch(_){}})();`;
+export const THEME_BOOT_SCRIPT = `(function(){try{if(!/^\\/(studio|builder|play)(\\/|$)/.test(location.pathname))return;var c=JSON.parse(localStorage.getItem(${JSON.stringify(THEME_CACHE_KEY)})||"null");if(!c)return;var a=sessionStorage.getItem("plot-twist:active-world");if(a&&a!==c.worldId)return;var e=document.documentElement;for(var k in c.vars)e.style.setProperty(k,c.vars[k]);for(var n in c.attrs)e.setAttribute(n,c.attrs[n]);var bg=c.vars["--color-bg"];if(bg){var t=function(){var m=document.querySelector('meta[name="theme-color"]');if(m){if(!m.dataset.brand)m.dataset.brand=m.content;m.content=bg;}};t();document.addEventListener("DOMContentLoaded",t);}}catch(_){}})();`;

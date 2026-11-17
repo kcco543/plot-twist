@@ -12,11 +12,14 @@ import "server-only";
  *   ANTHROPIC_MODEL        personality analysis + feedback refinement (rare, complex)  default claude-opus-5-5
  *   ANTHROPIC_TALK_MODEL   conversations, photo and gift reactions (frequent)          default claude-sonnet-5-5
  *   ANTHROPIC_STORY_MODEL  wording of story beats the engine already decided           default claude-haiku-5-5
+ *   ANTHROPIC_AUTO_TALK_MODEL  autonomous conversations between characters (batched)  default = story model
  * Usage modes, limits and the usage dashboard: see usage.ts.
  */
 export const TEXT_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-5-5";
 export const TALK_MODEL = process.env.ANTHROPIC_TALK_MODEL || "claude-sonnet-5-5";
 export const STORY_MODEL = process.env.ANTHROPIC_STORY_MODEL || "claude-haiku-5-5";
+/** Autonomous character-to-character conversations (one request writes a whole short exchange). */
+export const AUTO_TALK_MODEL = process.env.ANTHROPIC_AUTO_TALK_MODEL || STORY_MODEL;
 export const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-2.5-flare";
 export const IMAGE_PROVIDER = (process.env.IMAGE_PROVIDER || "openai").toLowerCase();
 

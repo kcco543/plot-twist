@@ -33,6 +33,7 @@ const FEATURE_LABEL: Record<string, string> = {
   turn: "Story beat wording",
   photo: "Photo reactions",
   gift_reaction: "Gift reactions",
+  auto_talk: "Autonomous conversations",
   analyze: "Personality analysis",
   refine: "Profile refinement",
 };

@@ -18,6 +18,7 @@ function kindOf(body) {
   const sys = Array.isArray(body.system) ? body.system.map((b) => b.text).join("") : String(body.system ?? "");
   if (sys.startsWith("You voice ONE character") && sys.includes("speaker")) return "talk";
   if (sys.startsWith("You write one short story beat")) return "turn";
+  if (sys.startsWith("You write ONE short conversation")) return "auto_talk";
   if (sys.includes("photo")) return "photo";
   if (sys.includes("gift")) return "gift_reaction";
   return "other";
@@ -36,6 +37,22 @@ const TALK = {
     { label: "Ask more", line: "Tell me more?", intent: "curious" },
     { label: "Change topic", line: "Anyway, nice weather.", intent: "playful" },
   ],
+  staysInCharacter: true,
+};
+const VIEW = { interaction: "small_talk", significance: "ordinary", trust: 0, affection: 1, respect: 0, tension: 0, memory: { summary: "", importance: 0, kind: "none", thread: "none" } };
+/** One whole autonomous conversation (four alternating lines). */
+const AUTO_TALK = {
+  turns: [
+    { speaker: "a", text: "Got a minute? (mock)", emotion: "happy", intensity: 0.3 },
+    { speaker: "b", text: "Sure, what is it? (mock)", emotion: "neutral", intensity: 0.2 },
+    { speaker: "a", text: "Nothing much, just saying hello. (mock)", emotion: "neutral", intensity: 0.2 },
+    { speaker: "b", text: "Hello to you too. (mock)", emotion: "happy", intensity: 0.2 },
+  ],
+  endedBy: "b",
+  how: "natural",
+  topic: "hello (mock)",
+  a: VIEW,
+  b: VIEW,
   staysInCharacter: true,
 };
 const TURN = { lines: [{ speaker: "narrator", text: "The wind shifts a little. (mock)" }], memoryNote: "" };
@@ -66,7 +83,7 @@ const server = http.createServer((req, res) => {
     const kind = kindOf(body);
     const cached = body.system?.some?.((b) => b.cache_control) ?? false;
     log.push({ at: new Date().toISOString(), kind, model: body.model, max_tokens: body.max_tokens, cacheMarked: cached });
-    const out = kind === "talk" ? TALK : kind === "turn" ? TURN : { error: "unsupported in mock" };
+    const out = kind === "talk" ? TALK : kind === "turn" ? TURN : kind === "auto_talk" ? AUTO_TALK : { error: "unsupported in mock" };
     res.setHeader("content-type", "application/json");
     res.end(
       JSON.stringify({

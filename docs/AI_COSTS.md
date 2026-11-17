@@ -20,6 +20,7 @@ with no prompt caching.
 | `/api/ai/refine` | **Refine This Analysis** button | Opus 5.5, effort medium, max 16,000 tokens, no rate limit |
 | `/api/ai/photo` | Player confirms **Send** on a photo | Opus 5.5, effort low, max 4,000 tokens, one retry |
 | `/api/ai/gift-reaction` | Player gives a gift | Opus 5.5, effort low, max 4,000 tokens, one retry |
+| `/api/ai/converse` | Two characters agree to talk on their own (autonomous conversation) | Story model (`ANTHROPIC_AUTO_TALK_MODEL`), effort low, max 1,800 tokens, one retry; ONE request writes the whole 2–12 line exchange |
 
 Two more Anthropic calls are free (no generation): the Models API lookups in
 **Settings → Test connections** (`/api/ai/check`) and the once-per-model
@@ -110,7 +111,25 @@ pays the first-reply price again.
 | **Balanced** (default) | Only what the player starts: conversations, photos, gifts, analysis/refinement, and Talk / Twist! / event beats. Observe and Wait use built-in lines. |
 | **Full AI** | Also words Observe and Wait beats. Same limits and budget. |
 
-No mode calls the AI from timers, movement or idle autonomy. Switch on the
+No mode calls the AI from timers, movement or the autonomy planner. The one
+background request is an **autonomous conversation** (`auto_talk`): when two
+characters agree to talk while you watch, one request writes the whole short
+exchange, which is then revealed line by line. It is bounded by:
+
+- at most one autonomous conversation at a time per world, and per-character,
+  per-pair and global start cooldowns (set by *Autonomous Interaction
+  Frequency*: Low / Medium / High in the pause menu);
+- at most 4 / 8 / 14 AI-written conversations per hour (Low / Medium / High),
+  counted in the world save; past that, labelled built-in lines are used;
+- one request per conversation, never retried by the game; a declined
+  invitation, an approach that fails or an interrupted walk never calls the AI;
+- on the server: one in flight per visitor, 20 per hour and 120 per day
+  (`AI_AUTO_TALK_PER_HOUR`, `AI_AUTO_TALK_PER_DAY`), then the usage gate;
+- a billing, budget, auth, limit or offline error pauses AI conversations for
+  an hour (built-in lines meanwhile); any AI error ends that conversation
+  honestly ("they stopped talking"), with no invented lines.
+
+Offline mode never makes this request. Switch on the
 dashboard (`/dev/usage`, development) or with `AI_MODE=offline|balanced|full`
 in `.env.local`. Reload the game tab after switching.
 

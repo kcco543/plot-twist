@@ -125,3 +125,54 @@ describe("theme data in world saves", () => {
     expect(migrateSave({ worldId: "modern", uiTheme }).uiTheme).toBeUndefined();
   });
 });
+
+describe("page background follows the world skin", () => {
+  it("every base and mood gets its own page colour and pattern from the theme tokens; the brand stays on global screens", async () => {
+    const brand = fs.readFileSync("src/app/globals.css", "utf8").match(/--color-bg: (#[0-9a-f]{6})/)![1];
+    const bgs = new Map<string, string>();
+    for (const t of every()) {
+      const v = buildThemeVars(t);
+      expect(v["--color-bg"], `${t.baseTheme}/${t.moodVariant}`).toMatch(/^#[0-9a-f]{6}$/);
+      expect(v["--pt-background"]).toBe(v["--color-bg"]);
+      expect(v["--bg-pattern"]).toMatch(/^url\("data:image\/svg\+xml,/);
+      bgs.set(`${t.baseTheme}/${t.moodVariant}`, v["--color-bg"]);
+    }
+    // The four bases differ from each other and from the brand page.
+    const bases = BASE_THEMES.map((b) => bgs.get(`${b}/default`)!);
+    expect(new Set([...bases, brand]).size).toBe(5);
+    // Moods change it too (bounded: still the same base family).
+    for (const b of BASE_THEMES) {
+      const moods = new Set(MOODS.map((m) => bgs.get(`${b}/${m}`)));
+      expect(moods.size, b).toBeGreaterThan(3);
+    }
+    // Minimal decoration turns the pattern off, never the colour.
+    const css = fs.readFileSync("src/app/globals.css", "utf8");
+    expect(css).toContain('html[data-density="minimal"] { --bg-pattern: none; }');
+  });
+
+  it("html and body both paint the themed colour and pattern (overscroll, safe areas, short pages), and the colour change respects reduced motion", () => {
+    const css = fs.readFileSync("src/app/globals.css", "utf8");
+    const block = (sel: string) => css.match(new RegExp(`\\n${sel} \\{([^}]*)\\}`))![1];
+    for (const sel of ["html", "body"]) {
+      expect(block(sel)).toContain("background-color: var(--color-bg)");
+      expect(block(sel)).toContain("background-image: var(--bg-pattern)");
+    }
+    expect(css).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{\s*html:not\(\[data-motion="reduced"\]\)/);
+    expect(fs.readFileSync("src/app/layout.tsx", "utf8")).toContain('viewportFit: "cover"');
+  });
+
+  it("the browser's theme-color follows the skin and goes back to the brand value", async () => {
+    const { syncThemeColor, THEME_BOOT_SCRIPT } = await import("../src/lib/theme/apply");
+    const meta = { content: "#30273f", dataset: {} as Record<string, string> };
+    const doc = { querySelector: () => meta } as unknown as Document;
+    syncThemeColor(doc, "#f3ebd6");
+    expect(meta.content).toBe("#f3ebd6");
+    syncThemeColor(doc, "#efe8fa");
+    expect(meta.content).toBe("#efe8fa");
+    syncThemeColor(doc, null);
+    expect(meta.content).toBe("#30273f");
+    // The pre-hydration script paints it too (no flash of the wrong colour on reload), only on world screens.
+    expect(THEME_BOOT_SCRIPT).toContain('meta[name="theme-color"]');
+    expect(THEME_BOOT_SCRIPT).toContain("studio|builder|play");
+  });
+});

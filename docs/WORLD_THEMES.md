@@ -33,6 +33,22 @@ Entering another world reloads the page, so a skin can't leak between saves.
 A tiny inline script re-applies the last skin before hydration to avoid a
 flash of the brand theme on reload.
 
+### The page background
+
+The whole page wears the skin, not only the panels: `<html>` and `<body>`
+both paint `--color-bg` and `--bg-pattern` (globals.css), so overscroll,
+safe areas (`viewport-fit=cover`), short pages and long scrolling pages all
+show the world's colour and motif pattern; inner panels and scroll areas use
+the themed surface tokens. The browser's own UI colour (`<meta
+name="theme-color">`: mobile address bar, iOS status bar) follows the page
+colour in a world and goes back to the brand value elsewhere
+(`syncThemeColor`; the boot script sets it too, and `WorldThemeApplier`
+re-applies it if Next.js re-renders the tag on navigation). A mood or look
+change eases the page colour in 240 ms steps, off under reduced motion.
+Checked in a browser for the title screen, My Worlds, the Character Library,
+all four worlds, two moods, reload, and desktop / tablet / phone portrait /
+phone landscape / short windows.
+
 Frames are generated at runtime by `frames.ts` with **the same 12×12
 construction** as `scripts/build-frames.mjs` (a test checks the geometry is
 identical), drawn crisp and used through `border-image` 9-slice, so border

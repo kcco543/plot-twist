@@ -27,6 +27,7 @@ export function SpeechBubble({
   typer,
   more,
   onAdvance,
+  ariaLabel,
 }: {
   /** Changes with every new line (resets scrolling + pop-in). */
   lineId: string;
@@ -37,6 +38,8 @@ export function SpeechBubble({
   /** Another line follows this one. */
   more: boolean;
   onAdvance: () => void;
+  /** Overrides the default "finish / next line" label (e.g. a bubble that opens an inspector). */
+  ariaLabel?: string;
 }) {
   const { t } = useI18n();
   const layer = useRef<HTMLDivElement>(null);
@@ -145,7 +148,7 @@ export function SpeechBubble({
   // ---- input
   const activate = () => onAdvance();
 
-  const label = !typer.done ? t("play.bubble.finish", { name: speaker }) : more ? t("play.bubble.next", { name: speaker }) : t("play.bubble.said", { name: speaker });
+  const label = ariaLabel ?? (!typer.done ? t("play.bubble.finish", { name: speaker }) : more ? t("play.bubble.next", { name: speaker }) : t("play.bubble.said", { name: speaker }));
 
   const [head, space] = splitTrailingSpace(typer.shown);
   const lineStep = () => (scroller.current ? parseFloat(getComputedStyle(scroller.current).lineHeight) || 20 : 20);
