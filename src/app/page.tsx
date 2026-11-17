@@ -11,6 +11,7 @@ import { PixelButton, PixelLink } from "@/components/ui/PixelButton";
 import { Sparkle } from "@/components/ui/Deco";
 import { Panel } from "@/components/ui/Panel";
 import { CastParade } from "@/components/CastParade";
+import { BetaPanel } from "@/components/BetaPanel";
 import { titleArt } from "@/assets/manifest";
 import { useWorldIndex } from "@/lib/saves/worldSaves";
 import { useI18n } from "@/i18n";
@@ -86,9 +87,18 @@ export default function TitleScreen() {
           <p className="mt-6 animate-blink bg-surface/80 px-2 py-1 font-label text-xs uppercase text-label" aria-hidden>
             ▶ {t("title.pressStart")}
           </p>
+          <a href="#beta" className="mt-3 bg-surface/80 px-2 py-1 font-label text-xs uppercase text-ink underline decoration-dotted underline-offset-4">
+            {t("beta.title")} · {t("beta.howTo")} ↓
+          </a>
         </div>
         <CastParade />
       </main>
+
+      <section id="beta" aria-label={t("beta.title")} className="paper-band scroll-mt-4">
+        <div className="content-grid py-8 sm:py-10">
+          <BetaPanel />
+        </div>
+      </section>
 
       {index.worlds.length > 0 && (
         <section id="my-worlds" aria-label={t("myWorlds.heading")} className="paper-band scroll-mt-4">

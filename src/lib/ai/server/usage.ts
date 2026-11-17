@@ -242,7 +242,8 @@ export function record(r: Omit<RequestRecord, "costUsd" | "at"> & { at?: number;
   t.costUsd += costUsd;
   t.ms += r.ms;
   if (!t.models.includes(r.model)) t.models.push(r.model);
-  if (devMode() && process.env.AI_USAGE_LOG === "1") {
+  // In production every request is logged as one line of numbers (Vercel → Logs) so usage can be monitored.
+  if (!devMode() || process.env.AI_USAGE_LOG === "1") {
     // Numbers only: never keys, prompts or replies.
     console.info(`[ai-usage] ${rec.feature} ${rec.model} ${rec.ok ? "ok" : `failed:${rec.error}`} in=${rec.inputTokens} out=${rec.outputTokens} cacheW=${rec.cacheWriteTokens} cacheR=${rec.cacheReadTokens} $${rec.costUsd.toFixed(5)} ${rec.ms}ms`);
   }
@@ -293,3 +294,10 @@ export function resetUsageForTests() {
 
 /** The dashboard and its API exist in development only (or when explicitly enabled). */
 export const dashboardEnabled = () => devMode() || process.env.AI_USAGE_DASHBOARD === "1";
+
+/** Image requests (OpenAI) are not metered in tokens; log one line of numbers per request for monitoring. */
+export function logImageUsage(feature: string, ok: boolean, started: number) {
+  if (devMode() && process.env.AI_USAGE_LOG !== "1") return;
+  if (process.env.VITEST === "true") return;
+  console.info(`[ai-usage] image:${feature} ${ok ? "ok" : "failed"} ${Date.now() - started}ms`);
+}

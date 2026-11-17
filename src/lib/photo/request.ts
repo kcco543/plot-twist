@@ -105,6 +105,8 @@ export type PhotoErrorCode =
   | "too_large"
   | "cancelled"
   | "billing"
+  | "beta_locked"
+  | "quota"
   | "ai_off"
   | "budget";
 export type PhotoResult = { ok: true; data: PhotoResponse } | { ok: false; code: PhotoErrorCode };

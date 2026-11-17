@@ -134,7 +134,7 @@ const narrator = (c: AutoConvo, tpl: string, params: Record<string, string>): St
 
 const SIG_RANK: Record<Significance, number> = { trivial: 0, ordinary: 1, meaningful: 2, major: 3 };
 /** Errors after which no AI conversation is tried for a while (the writer falls back to built-in lines). */
-const PAUSING: ConverseErrorCode[] = ["billing", "budget", "ai_off", "auth", "not_configured", "limit"];
+const PAUSING: ConverseErrorCode[] = ["billing", "budget", "ai_off", "auth", "not_configured", "limit", "beta_locked", "quota"];
 const AI_PAUSE_MS = 60 * 60_000;
 
 export class ConversationDirector {

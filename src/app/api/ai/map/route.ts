@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { AiError, aiErrorResponse } from "@/lib/ai/server/claude";
+import { betaGuard } from "@/lib/ai/server/beta";
+import { logImageUsage } from "@/lib/ai/server/usage";
 import { getImageProvider } from "@/lib/ai/server/image";
 import { mapPrompt } from "@/lib/ai/server/mapPrompt";
 
@@ -14,6 +16,7 @@ const MapRequestSchema = z.object({
 
 /** Each map costs money, so the server never runs more than a couple at once. */
 const MAX_IN_FLIGHT = 2;
+const FEATURE = "map";
 let inFlight = 0;
 
 const isWebp = (b: Buffer) => b.length >= 12 && b.toString("ascii", 0, 4) === "RIFF" && b.toString("ascii", 8, 12) === "WEBP";
@@ -24,14 +27,24 @@ export async function POST(req: Request) {
   const parsed = MapRequestSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "bad_request", message: "Write a description first (up to 600 characters)" }, { status: 400 });
   if (inFlight >= MAX_IN_FLIGHT) return Response.json({ error: "rate_limited", message: "A map is already being drawn" }, { status: 429 });
+  const g = await betaGuard(req, FEATURE, { image: true });
+  if (!g.ok) return g.response;
+  const started = Date.now();
+  if (inFlight >= MAX_IN_FLIGHT) {
+    await g.refund();
+    return Response.json({ error: "rate_limited", message: "A map is already being drawn" }, { status: 429 });
+  }
   inFlight++;
   try {
     const provider = getImageProvider();
     const bytes = await provider.generateMap({ prompt: mapPrompt(parsed.data) });
     const mime = isWebp(bytes) ? "image/webp" : isPng(bytes) ? "image/png" : null;
     if (!mime) throw new AiError("invalid_output", "The image service returned an unexpected format");
+    logImageUsage(FEATURE, true, started);
     return Response.json({ image: `data:${mime};base64,${bytes.toString("base64")}`, provider: provider.id, model: provider.model });
   } catch (err) {
+    await g.refundIf(err);
+    logImageUsage(FEATURE, false, started);
     return aiErrorResponse(err);
   } finally {
     inFlight--;

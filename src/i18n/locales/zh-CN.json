@@ -49,7 +49,7 @@
     "load": "读取存档",
     "settings": "设置",
     "pressStart": "按下开始",
-    "version": "v0.4 · 原型",
+    "version": "v0.5 · 公开测试版",
     "menu": "主菜单",
     "menuTab": "开始",
     "paradeLabel": "几位等着故事开场的角色",
@@ -309,7 +309,7 @@
       "iterateHint": "修改描述后再次生成，就会得到新版本。",
       "needDescription": "先写一段描述，再生成地图。",
       "unavailable": "地图生成尚未设置",
-      "unavailableHint": "在 .env.local 中添加 OPENAI_API_KEY 并重启应用即可开启。在此之前，预览显示内置图片。",
+      "unavailableHint": "本网站没有开启地图生成。预览显示内置图片，内置地图工具仍可使用。",
       "failed": "地图生成失败：{reason}。",
       "outdated": "这张地图生成后，你修改了描述或场所类型。再次生成即可查看新版本。",
       "version": "第 {n} 版",
@@ -692,7 +692,7 @@
     "off": "关",
     "offlineTitle": "离线游玩",
     "offlineReady": "首次访问后，除 AI 功能外的一切都可离线使用。存档保存在这个浏览器中。",
-    "offlineFuture": "AI 分析、AI 对话和像素生成需要联网，并且服务器上要有 API 密钥。",
+    "offlineFuture": "AI 分析、AI 对话和像素生成需要联网。",
     "danger": "危险区域",
     "dangerDesc": "从此浏览器中删除你的世界、角色和故事记录。",
     "erase": "清除存档",
@@ -913,7 +913,7 @@
     "runLocal": "使用内置分析",
     "running": "分析中",
     "unavailable": "AI 分析尚未配置，暂不可用",
-    "unavailableHint": "在 .env.local 中添加 ANTHROPIC_API_KEY 并重启应用。在此之前，内置分析可离线使用。",
+    "unavailableHint": "AI 分析暂时不可用。在此期间可以使用内置分析。",
     "needInput": "请先写一些设定或设置一个滑块。",
     "pending": "等待你确认",
     "approved": "已确认 · 用于游戏",
@@ -1000,11 +1000,11 @@
   },
   "ai": {
     "errors": {
-      "not_configured": "尚未配置",
+      "not_configured": "本网站没有开启这项 AI 功能",
       "refused": "AI 拒绝了这个请求",
       "invalid_output": "AI 的回答没有通过校验",
       "rate_limited": "请求太多，请稍后再试",
-      "auth": "API 密钥无效",
+      "auth": "AI 服务暂时不可用",
       "failed": "AI 服务出了问题",
       "offline": "你现在离线",
       "bad_request": "请求无效",
@@ -1015,9 +1015,11 @@
       "limit": "已达到对话次数上限，请稍后再试",
       "cancelled": "对话已结束",
       "unsupported": "当前的图像服务不支持局部修改",
-      "billing": "AI 账户余额不足或已达到消费上限（请在服务商的账单页面充值后再试）",
-      "ai_off": "当前 AI 模式（离线）已关闭 AI，改用内置台词",
-      "budget": "本次开发会话的 AI 预算已用完（可在 API 用量面板中提高或重置）"
+      "billing": "AI 服务暂时不可用（额度可能已用完）",
+      "ai_off": "AI 目前已关闭，所以使用内置台词",
+      "budget": "本网站今天的 AI 额度已用完",
+      "beta_locked": "AI 功能需要测试码（在首页输入）。内置台词仍然可用",
+      "quota": "今天的免费 AI 额度已用完。额度在 UTC 午夜重置，内置台词仍然可用"
     },
     "errorTitle": "没有成功：{reason}。"
   },
@@ -1036,7 +1038,7 @@
     "generating": "正在绘制你的角色",
     "generatingHint": "可能需要一分钟左右。",
     "unavailable": "AI 生成尚未配置，暂不可用",
-    "unavailableHint": "在 .env.local 中添加 OPENAI_API_KEY 并重启应用即可开启。你仍然可以使用下方的快速转换。",
+    "unavailableHint": "本网站没有开启 AI 图像生成。你仍然可以使用下方的快速转换。",
     "convert": "快速像素转换（不用 AI）",
     "convertHint": "把你的图片直接缩成像素形象。背景单一的手绘图效果最好。",
     "result": "结果",
@@ -2219,7 +2221,7 @@
       "modeMockDesc": "开发者测试模式：固定回复，没有使用 AI。添加 Anthropic API 密钥后才是真正的回复。",
       "modeOff": "内置回复",
       "modeOffDesc": "AI 对话已关闭或未设置，由游戏自带的规则回答。",
-      "offTyped": "{other}听到了，但回应你自己写的话需要 AI 对话。在设置里打开“AI 书写故事”（服务器上需要 Anthropic API 密钥）。这里不会用预设台词冒充回答。",
+      "offTyped": "{other}听到了，但回应你自己写的话需要 AI 对话。在设置里打开“AI 书写故事”（公开测试版还需要测试码）。这里不会用预设台词冒充回答。",
       "failed": "{other}的 AI 回复没有送达：",
       "usedBuiltin": "改为显示内置反应。",
       "retry": "再试一次",
@@ -2317,17 +2319,17 @@
       "back": "返回",
       "thinking": "{name}正在看你的照片……",
       "stop": "停止",
-      "aiOff": "照片反应需要用到 AI。请在设置里打开“AI 写故事”（服务器也需要 Anthropic API 密钥）。",
+      "aiOff": "照片反应需要用到 AI。请在设置里打开“AI 写故事”（公开测试版还需要测试码）。",
       "testTag": "测试",
       "error": {
-        "not_configured": "这台服务器还没设置照片反应（需要 Anthropic API 密钥）。",
+        "not_configured": "本网站没有开启照片反应。",
         "unsupported": "服务器上设置的 AI 模型看不了图片。",
         "refused": "{name}不想对这张照片作出反应。换一张试试。",
         "invalid_output": "{name}的反应没能正常生成。再试一次。",
         "rate_limited": "AI 现在有点忙，稍后再试。",
         "busy": "上一张照片还在看。稍后再试。",
         "limit": "今天的照片有点多了，稍后再试。",
-        "auth": "服务器的 Anthropic API 密钥被拒绝了。",
+        "auth": "AI 服务暂时不可用，请稍后再试。",
         "failed": "发送给 AI 时出了点问题。再试一次。",
         "offline": "你现在离线。连上网络后再试。",
         "timeout": "等太久了。再试一次。",
@@ -2335,9 +2337,11 @@
         "bad_image": "照片读不出来。换一张试试。",
         "too_large": "这张照片太复杂，发不出去。换一张试试。",
         "cancelled": "已停止。",
-        "billing": "AI 账户余额不足。充值后再试。",
-        "ai_off": "离线模式下 AI 反应已关闭，{name}没有看到照片。可在 API 用量面板切换到“平衡”模式。",
-        "budget": "本次开发会话的 AI 预算已用完，{name}没有反应。可在 API 用量面板中提高或重置预算。"
+        "billing": "AI 服务暂时不可用，请稍后再试。",
+        "ai_off": "AI 反应目前已关闭，{name}没有看到照片。",
+        "budget": "本网站今天的 AI 额度已用完，{name}没有反应。明天再试吧。",
+        "beta_locked": "照片反应需要 AI，而 AI 需要测试码。请在首页输入。",
+        "quota": "你今天的免费 AI 额度已用完，{name}没有看到照片。额度在 UTC 午夜重置。"
       }
     },
     "gift": {
@@ -2364,12 +2368,12 @@
       "aiUnavailableBody": "这个游戏还没有设置图像生成服务，所以无法生成。你可以自己画礼物。",
       "drawInstead": "改为自己画",
       "aiError": {
-        "not_configured": "图像生成服务未设置，没有生成图案。",
+        "not_configured": "本网站没有开启图片生成，没有生成图片。",
         "offline": "你已离线，请联网后再试。",
         "rate_limited": "已经在画一张图了，请稍后再试。",
         "refused": "图像服务拒绝了这个描述，换个说法试试。",
         "failed": "图案没能生成，请再试一次。",
-        "billing": "图像服务账户余额不足，没有生成图片。请到 platform.openai.com → Billing 充值。"
+        "billing": "图像服务暂时不可用，没有生成图片。"
       },
       "needName": "请先给礼物起个名字。",
       "preview": "物品预览",
@@ -2386,7 +2390,7 @@
       "unwrapping": "{name}正在拆礼物……",
       "sendNote": "送出礼物时，礼物的名称、描述和图片会发送给 Claude（Anthropic），让{name}作出反应。",
       "sendMock": "测试模式：{name}会给出测试反应（不会发送到任何地方）。",
-      "aiOff": "礼物反应需要用到 AI。请在设置里打开“AI 写故事”（服务器也需要 Anthropic API 密钥）。",
+      "aiOff": "礼物反应需要用到 AI。请在设置里打开“AI 写故事”（公开测试版还需要测试码）。",
       "transfer": {
         "not_in_world": "这份礼物属于另一个世界。",
         "unknown_character": "{name}不在这个世界里。",
@@ -2394,14 +2398,14 @@
         "no_name": "先给礼物起个名字。"
       },
       "error": {
-        "not_configured": "这台服务器还没设置礼物反应（需要 Anthropic API 密钥）。",
+        "not_configured": "本网站没有开启礼物反应。",
         "unsupported": "服务器上设置的 AI 模型看不了图片。",
         "refused": "{name}不想对这份礼物作出反应。换一张试试。",
         "invalid_output": "{name}的反应没能正常生成。再试一次。",
         "rate_limited": "AI 现在有点忙，稍后再试。",
         "busy": "上一份礼物还在拆。稍后再试。",
         "limit": "今天的礼物有点多了，稍后再试。",
-        "auth": "服务器的 Anthropic API 密钥被拒绝了。",
+        "auth": "AI 服务暂时不可用，请稍后再试。",
         "failed": "发送给 AI 时出了点问题。再试一次。",
         "offline": "你现在离线。连上网络后再试。",
         "timeout": "等太久了。再试一次。",
@@ -2409,9 +2413,11 @@
         "bad_image": "礼物图片读不出来。",
         "too_large": "这份礼物太复杂，发不出去。换一张试试。",
         "cancelled": "已停止。",
-        "billing": "AI 账户余额不足。充值后再试。",
-        "ai_off": "离线模式下 AI 反应已关闭，{name}没有收到礼物。可在 API 用量面板切换到“平衡”模式。",
-        "budget": "本次开发会话的 AI 预算已用完，{name}没有收到礼物。可在 API 用量面板中提高或重置预算。"
+        "billing": "AI 服务暂时不可用，请稍后再试。",
+        "ai_off": "AI 反应目前已关闭，{name}没有收到礼物。",
+        "budget": "本网站今天的 AI 额度已用完，{name}没有收到礼物。明天再试吧。",
+        "beta_locked": "礼物反应需要 AI，而 AI 需要测试码。请在首页输入。",
+        "quota": "你今天的免费 AI 额度已用完，{name}没有收到礼物。额度在 UTC 午夜重置。"
       }
     },
     "log": {
@@ -2826,7 +2832,7 @@
     "apply": "根据反馈重新分析",
     "applying": "正在修订分析",
     "testMode": "测试回复（非 AI）",
-    "unavailable": "修订需要 AI（ANTHROPIC_API_KEY）。",
+    "unavailable": "修订需要 AI，目前不可用。",
     "restorePrevious": "恢复上一版本",
     "proposalTitle": "修订建议",
     "yourFeedback": "你的反馈：",
@@ -3819,5 +3825,33 @@
         }
       }
     }
+  },
+  "beta": {
+    "title": "公开测试版",
+    "intro": "PLOT TWIST! 是一个像素风故事沙盒：搭建世界，创造有真实性格的角色，看他们交谈、反应、记住彼此。",
+    "savesNote": "你的世界保存在这个浏览器里。在“云存档”中登录，就能在多台设备上继续。",
+    "aiLocked": "不用 AI 也能玩（使用内置台词）。如需开启 AI 对话，请输入你收到的测试码。",
+    "aiUnlocked": "这个浏览器已开启 AI 功能。",
+    "allowance": "每日免费额度：约 {text} 次 AI 回复和 {auto} 次角色之间的对话。UTC 午夜重置。",
+    "imagesOff": "本测试版关闭了 AI 图像生成（立绘、地图），改用内置图片和地图工具。",
+    "imagesOn": "AI 图像：每天 {images} 次。",
+    "codeLabel": "测试码",
+    "codePlaceholder": "输入测试码",
+    "unlock": "开启 AI",
+    "checking": "正在检查…",
+    "lock": "在这个浏览器关闭 AI",
+    "err": {
+      "wrong_code": "测试码不正确，请检查后再试。",
+      "too_many": "尝试次数太多，请等几分钟再试。",
+      "closed": "目前没有开放 AI 访问。你仍然可以用内置台词游玩。",
+      "failed": "无法检查测试码，请检查网络后再试。"
+    },
+    "aiUnavailable": "本网站目前无法使用 AI。其他功能都可以用内置台词正常游玩。",
+    "howTo": "玩法说明与测试码",
+    "stepsTitle": "从这里开始",
+    "step1": "选择或创建一个世界。",
+    "step2": "在角色工作室添加角色，或从角色库带入。",
+    "step3": "点击开始游戏并探索。用“找人聊天…”，或把一个角色拖到另一个角色身上，开始对话。",
+    "step4": "看他们自己交谈、互相反应。进度会自动保存。"
   }
 }

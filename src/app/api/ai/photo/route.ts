@@ -1,6 +1,7 @@
 import { AiError, aiErrorResponse, assertImageInput, structuredCall } from "@/lib/ai/server/claude";
 import { TALK_MODEL, textConfigured, talkMock } from "@/lib/ai/server/config";
-import { takeTalkSlot, visitorKey } from "@/lib/ai/server/limits";
+import { takeTalkSlot } from "@/lib/ai/server/limits";
+import { betaGuard } from "@/lib/ai/server/beta";
 import { mockPhotoReply, PHOTO_SYSTEM, photoContent } from "@/lib/ai/server/photo";
 import { checkImage, PHOTO_PROBLEM_FEEDBACK, photoProblem, sanitizePhotoReply } from "@/lib/photo/checks";
 import { PhotoReplySchema, PhotoRequestSchema, PHOTO_AI_MAX_BYTES, type PhotoResponse } from "@/lib/photo/contract";
@@ -44,8 +45,11 @@ export async function POST(req: Request) {
   const mock = !textConfigured() && talkMock();
   if (!textConfigured() && !mock) return aiErrorResponse(new AiError("not_configured", "ANTHROPIC_API_KEY is not set"));
 
-  const slot = takeTalkSlot(`photo:${visitorKey(req)}`);
+  const g = await betaGuard(req, "photo");
+  if (!g.ok) return g.response;
+  const slot = takeTalkSlot(`photo:${g.key}`);
   if (!slot.ok) {
+    await g.refund();
     const error = slot.reason === "busy" ? "busy" : "limit";
     return Response.json({ error, message: slot.reason === "busy" ? "A reaction is already being written" : "Photo limit reached, try again later" }, { status: 429, headers: { "Retry-After": String(slot.retryAfter) } });
   }
@@ -71,6 +75,7 @@ export async function POST(req: Request) {
     }
     throw new AiError("invalid_output", "The reaction did not fit the character, even after a retry");
   } catch (err) {
+    await g.refundIf(err);
     return aiErrorResponse(err);
   } finally {
     slot.release();
