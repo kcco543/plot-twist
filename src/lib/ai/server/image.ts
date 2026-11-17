@@ -31,7 +31,7 @@ export interface ImageProvider {
    * block-out of the game's plan, 1536×1024) as a finished map, keeping its
    * layout. Returns PNG bytes (lossless, so the pixel-grid snap sees clean colours).
    */
-  repaintMap?(input: { image: Buffer; prompt: string }): Promise<Buffer>;
+  repaintMap?(input: { image: Buffer; prompt: string }): Promise<{ bytes: Buffer; usage: unknown }>;
 }
 
 /** Sizes the OpenAI image model accepts; anything else is left to "auto". */
@@ -123,7 +123,9 @@ const openaiProvider: ImageProvider = {
   },
   async repaintMap({ image, prompt }) {
     try {
-      const res = await openai().images.edit({
+      // No automatic retry: each attempt is a paid call, so a failure is reported, never silently repeated.
+      const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 170_000, maxRetries: 0 });
+      const res = await client.images.edit({
         model: IMAGE_MODEL,
         image: await toFile(image, "layout.png", { type: "image/png" }),
         prompt,
@@ -135,7 +137,8 @@ const openaiProvider: ImageProvider = {
       });
       const b64 = res.data?.[0]?.b64_json;
       if (!b64) throw new AiError("invalid_output", "The image service returned no image");
-      return Buffer.from(b64, "base64");
+      // Token usage as the service reports it (for the cost report).
+      return { bytes: Buffer.from(b64, "base64"), usage: (res as { usage?: unknown }).usage ?? null };
     } catch (err) {
       throw imageError(err, "The image service declined this map");
     }
@@ -174,7 +177,7 @@ export const echoProvider: Pick<ImageProvider, "id" | "model" | "repaintMap"> = 
   id: "mock",
   model: "mock-echo (no image service)",
   async repaintMap({ image }) {
-    return image;
+    return { bytes: image, usage: null };
   },
 };
 

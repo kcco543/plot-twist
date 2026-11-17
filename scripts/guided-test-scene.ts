@@ -5,7 +5,7 @@
  *
  * Runs the same steps as Map Lab → Guided art (drawGuidedMap), outside the
  * browser: the kit plans the place, its block-out goes to the running dev
- * server's /api/ai/map/guided (ONE image-service call), and the answer is
+ * server's /api/ai/map/guided (ONE image-service call, never retried), and the answer is
  * snapped onto the 480×320 grid and checked against the plan. Writes
  * public/map-trial/test-scene*.{png,json}; Map Lab → "Show the saved test
  * scene" opens it, and "Use this map in my world" makes it playable.
@@ -40,7 +40,7 @@ async function main() {
   form.set("world", "western-fantasy");
   console.log(`Plan: ${kit.report.kind} · seed ${kit.report.seed} · walkable ${Math.round(kit.report.walkable * 100)}%. Asking the image service…`);
   const res = await fetch(`${base}/api/ai/map/guided`, { method: "POST", body: form });
-  const body = (await res.json()) as { image?: string; model?: string; provider?: string; error?: string; message?: string };
+  const body = (await res.json()) as { image?: string; model?: string; provider?: string; usage?: unknown; error?: string; message?: string };
   if (!res.ok || !body.image) throw new Error(`Image service: ${res.status} ${body.error ?? ""} ${body.message ?? ""}`);
   const rawBytes = Buffer.from(body.image.split(",")[1], "base64");
   const art = snapMapToGrid(decodePng(rawBytes), { width: guide.w, height: guide.h });
@@ -59,10 +59,12 @@ async function main() {
     provider: body.provider,
     report: kit.report,
     alignment,
+    usage: body.usage ?? null,
     scene: kit.scene,
     madeAt: new Date().toISOString(),
   };
   writeFileSync(join(out, "test-scene.json"), JSON.stringify(meta));
+  console.log(`Usage reported by the image service: ${JSON.stringify(body.usage ?? null)}`);
   console.log(`Done (${body.model}). Floor still clear ${Math.round(alignment.floorClear * 100)}%, objects in place ${Math.round(alignment.solidsPresent * 100)}%. Files in ${out}/`);
 }
 

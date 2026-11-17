@@ -53,10 +53,10 @@ export async function POST(req: Request) {
   try {
     const provider = imageMock() ? echoProvider : getImageProvider();
     if (!provider.repaintMap) throw new AiError("unsupported", `The ${provider.id} image provider can't repaint a layout`);
-    const out = await provider.repaintMap({ image, prompt: guidedMapPrompt({ ...parsed.data, legend: GUIDE_LEGEND }) });
+    const { bytes: out, usage } = await provider.repaintMap({ image, prompt: guidedMapPrompt({ ...parsed.data, legend: GUIDE_LEGEND }) });
     const mime = isPng(out) ? "image/png" : out.toString("ascii", 0, 4) === "RIFF" ? "image/webp" : null;
     if (!mime) throw new AiError("invalid_output", "The image service returned an unexpected format");
-    return Response.json({ image: `data:${mime};base64,${out.toString("base64")}`, provider: provider.id, model: provider.model });
+    return Response.json({ image: `data:${mime};base64,${out.toString("base64")}`, provider: provider.id, model: provider.model, usage });
   } catch (err) {
     return aiErrorResponse(err);
   } finally {
