@@ -683,3 +683,12 @@ html[data-motion="reduced"] .skin-ambient { display: none; }
   animation: actor-ping 0.55s steps(3, end) 3; pointer-events: none;
 }
 @keyframes actor-ping { from { transform: scale(0.6); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+
+/* Phone landscape and other very short windows: the dock's text area may shrink to two lines so the
+   choices and the character row still fit (the dock scrolls inside itself as a last resort). */
+@media (max-height: 420px) {
+  [data-dialogue-dock] .dialogue-text { min-height: 2.1rem; }
+}
+@media (max-height: 420px) {
+  [data-cast-focus] [data-focus-character] { width: 1.75rem; height: 1.75rem; }
+}

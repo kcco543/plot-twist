@@ -106,7 +106,8 @@ export function DialogueBox({
       aria-label={t("play.dialogue")}
       data-dialogue-dock
       data-compact={compact || undefined}
-      className="@container px-frame px-shadow px-panel relative flex h-full min-h-0 flex-col"
+      // Very short windows (phone landscape): if even the compact dock can't fit, it scrolls inside itself, never the page.
+      className="@container px-frame px-shadow px-panel relative flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain [scrollbar-width:thin]"
       style={{ "--frame": "var(--frame-cream)" } as CSSProperties}
     >
       {/* Speaker header */}
