@@ -163,6 +163,24 @@ export async function requestGiftImage(body: { name: string; description: string
   return post<{ image: string; model: string }>("/api/ai/gift", body);
 }
 
+/** Guided map art (trial): layout block-out (PNG 1536×1024) + description → finished map (data URL). */
+export async function requestGuidedMap(layout: Blob, body: { description: string; type: string; world: string | null }): Promise<{ image: string; model: string; provider: string }> {
+  const form = new FormData();
+  form.set("image", layout, "layout.png");
+  form.set("description", body.description);
+  form.set("type", body.type);
+  if (body.world) form.set("world", body.world);
+  let res: Response;
+  try {
+    res = await fetch("/api/ai/map/guided", { method: "POST", body: form });
+  } catch {
+    throw new AiRequestError("offline", "Network error");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new AiRequestError((data.error as AiErrorCode) ?? "failed", data.message ?? `HTTP ${res.status}`);
+  return data;
+}
+
 export type MapEditBody = { instruction: string; region: { x: number; y: number; w: number; h: number }; description: string; type: string | null; world: string | null };
 
 /** Current map + selected area + instruction → the map with that area repainted (data URL). */

@@ -100,3 +100,45 @@ export function mapEditPrompt(opts: { instruction: string; description?: string;
     .filter(Boolean)
     .join("\n\n");
 }
+
+/**
+ * GUIDED MAP ART (trial, PIXEL_ART_STYLE_GUIDE.md §18)
+ * The image service repaints a flat colour block-out of the game's own plan
+ * (lib/mapgen/guide.ts). The block-out fixes WHERE everything is, so the
+ * gameplay layer (floor, obstacles, exits, objects) stays true; this text
+ * decides HOW it looks. It answers the two failures seen so far: templated,
+ * rigid kit art, and over-detailed AI art with blurry object edges.
+ */
+export const GUIDED_STYLE = [
+  "Art style: a handcrafted top-down adventure RPG scene in authentic pixel art, seen in a three-quarter top-down view (the ground seen from about 60 degrees): roofs, cliff tops and canopies seen from above, and the front walls, cliff faces and object fronts clearly visible below them, every object using the same camera.",
+  "Pixel density: drawn on a 480 by 320 pixel canvas and enlarged with hard square pixels. Every pixel is the same size everywhere; nothing is drawn smaller than one of these pixels. It must read as hand-placed pixel clusters, never as a painting or illustration with a pixel filter.",
+  "Shape language: few, large, confident forms with expressive silhouettes. Buildings have characterful architecture (asymmetric gables, overhanging eaves, timber framing, stone footings, chimneys, a porch or awning), each one designed rather than repeated. Trees are big rounded masses of leaf clusters with a dark underside. Cliffs and walls are chunky blocks with a lit top edge.",
+  "Every object has a clean, unbroken 1-pixel dark warm-brown outline around its silhouette and a solid shadow to its lower right, so it reads instantly as a separate thing standing on the ground. Ground surfaces have no outlines.",
+  "Restraint: low-to-medium detail. Walkable ground (grass, road, paving) is calm, with large areas of one or two tones and only occasional small accents. No clutter, no scattered small props, no texture noise, no busy tile patterns on roads.",
+  "Colour and light: a warm, saturated but controlled palette of about 32 to 40 colours, 3 to 4 flat tones per material, hue-shifted shading (warm golden highlights, deep cool-brown shadows), light from the upper left. No gradients, no blur, no glow halos, no anti-aliasing, no dithering noise.",
+].join(" ");
+
+export const GUIDED_LAYOUT_RULES = [
+  "The attached picture is a flat-colour LAYOUT BLOCK-OUT of this exact game map, not a style reference. Repaint the whole picture as finished pixel art.",
+  "Keep the layout exactly: every region and object stays at the same position, size and outline as in the block-out. Do not move, add, remove or resize buildings, trees, water, cliffs or props. Do not place anything on the walkable areas (grass, roads, paving, steps, bridges), and keep their edges where they are.",
+  "Replace every flat colour with fully rendered pixel-art materials; none of the flat block-out colours or the dark guide outlines should survive as flat fills.",
+].join(" ");
+
+export function guidedLegendText(legend: { hex: string; meaning: string }[]): string {
+  return `Block-out colour key: ${legend.map((e) => `${e.hex} = ${e.meaning}`).join("; ")}.`;
+}
+
+export function guidedMapPrompt(opts: { description: string; type: EnvironmentTypeId; world: WorldId | null; legend: { hex: string; meaning: string }[] }): string {
+  const description = opts.description.trim().replace(/\s+/g, " ").slice(0, 600);
+  return [
+    GUIDED_LAYOUT_RULES,
+    guidedLegendText(opts.legend),
+    GUIDED_STYLE,
+    opts.world ? MAP_WORLD[opts.world] : "",
+    `What the player wants this place to be (it may be written in Chinese or English; follow its meaning in the materials, mood and architecture, never write its words into the image): """${description}"""`,
+    "Where the description and the layout disagree, keep the layout.",
+    MAP_RULES,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}

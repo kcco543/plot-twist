@@ -49,7 +49,7 @@ export type KitReport = {
   attempts: number;
 };
 
-export type KitMap = { img: Img; scene: SceneLayout; report: KitReport };
+export type KitMap = { img: Img; scene: SceneLayout; report: KitReport; /** The plan itself (for the guided-art trial, guide.ts). */ plan: { bp: Blueprint; props: Placed[] } };
 
 /** Interests characters can recognise on each object (autonomy/environment.ts reads these words). */
 const INTERESTS: Partial<Record<LabelKey, string[]>> = {
@@ -207,7 +207,7 @@ export function generateKitMap(opts: { description: string; type?: EnvironmentTy
     const { scene, connected } = layoutFromBlueprint(bp, props, opts.label);
     const m = measure(bp, cover, scene, img);
     const report: KitReport = { ...m, connected, objects: scene.objects.length, decorGroups: bp.decor.length, seed, nonce, kind: bp.kind, biome: bp.biome, attempts: attempt + 1 };
-    const result = { img, scene, report };
+    const result = { img, scene, report, plan: { bp, props } };
     const ok = m.walkable >= KIT_LIMITS.walkable && connected >= KIT_LIMITS.connected && m.visibleGround >= KIT_LIMITS.visibleGround && m.frontCover <= KIT_LIMITS.frontCover && bp.spawns.length === 4;
     if (ok) return result;
     fallback ??= result;
@@ -218,3 +218,4 @@ export function generateKitMap(opts: { description: string; type?: EnvironmentTy
 export { MAP_W, MAP_H, M, GRID_COLS };
 export type { LabelKey, SceneKind };
 export { planScene, sceneKindFor, biomeFor, SCENE_KINDS };
+export { guideFromPlan, checkAlignment, GUIDE_LEGEND, type Alignment } from "./guide";

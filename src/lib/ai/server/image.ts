@@ -26,6 +26,12 @@ export interface ImageProvider {
    * route answers "unsupported" so the UI can say so.
    */
   editMap?(input: { image: Buffer; mime: string; mask: Buffer; width: number; height: number; prompt: string }): Promise<Buffer>;
+  /**
+   * Guided map art (trial): repaint the WHOLE of `image` (a flat layout
+   * block-out of the game's plan, 1536×1024) as a finished map, keeping its
+   * layout. Returns PNG bytes (lossless, so the pixel-grid snap sees clean colours).
+   */
+  repaintMap?(input: { image: Buffer; prompt: string }): Promise<Buffer>;
 }
 
 /** Sizes the OpenAI image model accepts; anything else is left to "auto". */
@@ -115,6 +121,25 @@ const openaiProvider: ImageProvider = {
       throw imageError(err, "The image service declined this gift description");
     }
   },
+  async repaintMap({ image, prompt }) {
+    try {
+      const res = await openai().images.edit({
+        model: IMAGE_MODEL,
+        image: await toFile(image, "layout.png", { type: "image/png" }),
+        prompt,
+        size: "1536x1024",
+        background: "opaque",
+        output_format: "png",
+        quality: "medium",
+        n: 1,
+      });
+      const b64 = res.data?.[0]?.b64_json;
+      if (!b64) throw new AiError("invalid_output", "The image service returned no image");
+      return Buffer.from(b64, "base64");
+    } catch (err) {
+      throw imageError(err, "The image service declined this map");
+    }
+  },
   async editMap({ image, mime, mask, width, height, prompt }) {
     const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
     const size = OPENAI_SIZES.has(`${width}x${height}`) ? `${width}x${height}` : "auto";
@@ -136,6 +161,20 @@ const openaiProvider: ImageProvider = {
     } catch (err) {
       throw imageError(err, "The image service declined this edit");
     }
+  },
+};
+
+/**
+ * Developer test double for the guided-map plumbing only (AI_IMAGE_MOCK=1,
+ * never in production): returns the block-out unchanged. Its model name says
+ * so, and the Map Lab shows it, so it can't be mistaken for generated art.
+ */
+export const imageMock = () => process.env.AI_IMAGE_MOCK === "1" && process.env.NODE_ENV !== "production";
+export const echoProvider: Pick<ImageProvider, "id" | "model" | "repaintMap"> = {
+  id: "mock",
+  model: "mock-echo (no image service)",
+  async repaintMap({ image }) {
+    return image;
   },
 };
 

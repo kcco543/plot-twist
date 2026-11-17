@@ -15,7 +15,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { defaultWorld, environmentArt, type ArtAsset } from "@/assets/manifest";
-import { AiRequestError, requestMap, requestMapEdit, type AiErrorCode } from "./ai/client";
+import { AiRequestError, requestGuidedMap, requestMap, requestMapEdit, type AiErrorCode } from "./ai/client";
 import { gameActions, getSave } from "./gameStore";
 import { makeId } from "./id";
 import { MAP_HISTORY_LIMIT, clearAllMaps, deleteMaps, listMaps, patchMap, putMap, type StoredMap } from "./mapLibrary";
@@ -24,10 +24,10 @@ import { regionIsUsable, type Region } from "./mapSelection";
 import type { EnvironmentTypeId, WorldId } from "./types";
 import { activeWorldId, getIndex } from "./saves/worldSaves";
 import { mapOwner, tagMap, type OwnedMap } from "./saves/worldMaps";
-import { isNativeSize, snapMapToGrid } from "./pixelArt/mapPixels";
+import { enlarge, isNativeSize, snapMapToGrid } from "./pixelArt/mapPixels";
 import { blobToImg, compositeNative, enlargeForEdit, firstLayout, imgToPng, snapGenerated } from "./pixelArt/mapPixelsBrowser";
 import { readLayout } from "./scene/layout";
-import { KIT_ID, generateKitMap, kitSupports, type KitReport, type LabelKey } from "./mapgen";
+import { KIT_ID, checkAlignment, generateKitMap, guideFromPlan, kitSupports, type Alignment, type KitReport, type LabelKey } from "./mapgen";
 import { currentLocale, translate } from "@/i18n";
 
 /** Only the active world's maps (each world save keeps its own map history). */
@@ -159,7 +159,45 @@ async function kitMap(req: MapRequest, nonce?: number): Promise<DrawnMap> {
   return { blob: await imgToPng(img), width: img.w, height: img.h, scene, model: `${KIT_ID}#${report.seed}`, report };
 }
 
-export type DrawnMap = { blob: Blob; width: number; height: number; scene?: unknown; model: string; report?: KitReport };
+export type DrawnMap = {
+  blob: Blob;
+  width: number;
+  height: number;
+  scene?: unknown;
+  model: string;
+  report?: KitReport;
+  /** Guided art only: the layout block-out that was sent, and how closely the picture kept to it. */
+  guided?: { guide: Blob; alignment: Alignment; provider: string };
+};
+
+/**
+ * GUIDED MAP ART (trial, Map Lab only; PIXEL_ART_STYLE_GUIDE.md §18).
+ * Gameplay first: the kit plans the place (floor, obstacles, spawns, objects,
+ * exits, occlusion) exactly as for a kit map. Then the image service repaints
+ * a flat block-out of that plan, and the result is snapped onto the 480×320
+ * pixel grid like every generated map. The play area is the PLAN's, never a
+ * guess from the picture; the alignment check reports where they disagree.
+ * One image-service call per click.
+ */
+export async function drawGuidedMap(req: MapRequest, nonce?: number): Promise<DrawnMap> {
+  const locale = currentLocale();
+  const label = (k: LabelKey) => translate(locale, `mapKit.labels.${k}`);
+  const kit = generateKitMap({ description: req.description.trim(), type: req.type, nonce: nonce ?? Date.now() % 1_000_000_007, label });
+  const { guide, classes } = guideFromPlan(kit.plan.bp, kit.plan.props);
+  const guideBlob = await imgToPng(guide);
+  const out = await requestGuidedMap(await imgToPng(enlarge(guide, 1536, 1024)), { description: req.description.trim(), type: req.type, world: req.worldId });
+  const art = snapMapToGrid(await blobToImg(await (await fetch(out.image)).blob()), { width: guide.w, height: guide.h });
+  const alignment = checkAlignment(art, classes, kit.scene);
+  return {
+    blob: await imgToPng(art),
+    width: art.w,
+    height: art.h,
+    scene: kit.scene,
+    model: `guided/${out.model}#${kit.report.seed}`,
+    report: kit.report,
+    guided: { guide: guideBlob, alignment, provider: out.provider },
+  };
+}
 
 /**
  * A new map for a request: the pixel map kit where it applies, otherwise the image service.

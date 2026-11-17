@@ -14,6 +14,11 @@
  * The structured fields are only a way to write the description: they are
  * joined into the one text the pipeline receives, which is shown verbatim.
  * Previews stay in memory; "Use this map" stores one exactly as Generate Map does.
+ *
+ * TRIAL: "Guided art" (drawGuidedMap) keeps the kit's plan as the gameplay
+ * layer and has the image service repaint a block-out of it; one image call
+ * per click. "Saved test scene" shows the one made for evaluation without a
+ * new call (public/map-trial, written by scripts/guided-test-scene.ts).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionBar, ScreenHeader } from "@/components/ScreenHeader";
@@ -24,9 +29,9 @@ import type { EnvironmentTypeId, WorldId } from "@/lib/types";
 import { WORLDS } from "@/lib/worlds";
 import { useSave } from "@/lib/gameStore";
 import { useAiStatus } from "@/lib/ai/client";
-import { mapPrompt } from "@/lib/ai/mapPrompt";
-import { KIT_ID, kitSupports, sceneKindFor, biomeFor, type KitReport } from "@/lib/mapgen";
-import { adoptMap, drawMap, type DrawnMap, type MapRequest } from "@/lib/mapGenerator";
+import { guidedMapPrompt, mapPrompt } from "@/lib/ai/mapPrompt";
+import { GUIDE_LEGEND, KIT_ID, kitSupports, sceneKindFor, biomeFor, type Alignment, type KitReport } from "@/lib/mapgen";
+import { adoptMap, drawGuidedMap, drawMap, type DrawnMap, type MapRequest } from "@/lib/mapGenerator";
 import { readLayout, type SceneLayout } from "@/lib/scene/layout";
 import { useI18n } from "@/i18n";
 
@@ -52,7 +57,23 @@ const BOARD: { type: EnvironmentTypeId; fields: Fields }[] = [
   { type: "wilderness", fields: { environment: "magical clearing", architecture: "", mood: "mysterious, glowing", terrain: "flagstone circle", props: "standing stones, shrine, mushrooms" } },
 ];
 
-type Preview = { req: MapRequest; nonce: number; drawn: DrawnMap; url: string; scene: SceneLayout | null; at: number };
+type Preview = { req: MapRequest; nonce: number; drawn: DrawnMap; url: string; guideUrl: string | null; scene: SceneLayout | null; at: number };
+
+type Art = "kit" | "guided";
+
+/** The evaluation test scene made on the player's computer (public/map-trial). */
+const TEST_SCENE = "/map-trial/test-scene";
+
+async function loadTestScene(): Promise<{ req: MapRequest; nonce: number; drawn: DrawnMap } | null> {
+  const meta = await fetch(`${TEST_SCENE}.json`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  if (!meta) return null;
+  const [art, guide] = await Promise.all([fetch(`${TEST_SCENE}.png`, { cache: "no-store" }).then((r) => r.blob()), fetch(`${TEST_SCENE}-guide.png`, { cache: "no-store" }).then((r) => r.blob())]);
+  return {
+    req: meta.req,
+    nonce: meta.nonce,
+    drawn: { blob: art, width: meta.width, height: meta.height, scene: meta.scene, model: meta.model, report: meta.report, guided: { guide, alignment: meta.alignment, provider: meta.provider } },
+  };
+}
 
 function usePreviewUrl(drawn: DrawnMap | null) {
   const [url, setUrl] = useState<string | null>(null);
@@ -66,7 +87,7 @@ function usePreviewUrl(drawn: DrawnMap | null) {
 }
 
 /** The picture with the play area on top: walkable cells tinted, objects outlined. */
-function PreviewImage({ url, scene, overlay, w, h }: { url: string; scene: SceneLayout | null; overlay: boolean; w: number; h: number }) {
+function PreviewImage({ url, scene, overlay, w, h, blocked }: { url: string; scene: SceneLayout | null; overlay: boolean; w: number; h: number; blocked?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const cv = ref.current;
@@ -78,6 +99,11 @@ function PreviewImage({ url, scene, overlay, w, h }: { url: string; scene: Scene
     const ch = cv.height / scene.rows;
     g.fillStyle = "rgba(80, 220, 160, 0.32)";
     for (let r = 0; r < scene.rows; r++) for (let c = 0; c < scene.cols; c++) if (scene.floor[r * scene.cols + c] === "1") g.fillRect(c * cw, r * ch, cw, ch);
+    // Guided art: floor cells the picture seems to have painted over.
+    if (blocked) {
+      g.fillStyle = "rgba(255, 40, 60, 0.6)";
+      for (let r = 0; r < scene.rows; r++) for (let c = 0; c < scene.cols; c++) if (blocked[r * scene.cols + c] === "1") g.fillRect(c * cw, r * ch, cw, ch);
+    }
     g.lineWidth = 2;
     for (const o of scene.objects) {
       g.strokeStyle = o.solid ? "rgba(255, 90, 70, 0.95)" : "rgba(255, 220, 90, 0.95)";
@@ -85,7 +111,7 @@ function PreviewImage({ url, scene, overlay, w, h }: { url: string; scene: Scene
     }
     g.fillStyle = "#fff";
     for (const s of scene.spawns) g.fillRect(s.x * cv.width - 3, s.y * cv.height - 3, 6, 6);
-  }, [scene, overlay]);
+  }, [scene, overlay, blocked]);
   return (
     <div className="relative w-full" style={{ aspectRatio: `${w} / ${h}` }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -95,7 +121,7 @@ function PreviewImage({ url, scene, overlay, w, h }: { url: string; scene: Scene
   );
 }
 
-function Checks({ report }: { report: KitReport }) {
+function Checks({ report, guided }: { report: KitReport; guided?: boolean }) {
   const { t } = useI18n();
   const pct = (v: number) => `${Math.round(v * 100)}%`;
   const rows: [string, string][] = [
@@ -103,7 +129,8 @@ function Checks({ report }: { report: KitReport }) {
     [t("mapLab.connected"), pct(report.connected)],
     [t("mapLab.visible"), pct(report.visibleGround)],
     [t("mapLab.front"), pct(report.frontCover)],
-    [t("mapLab.colours"), String(report.colours)],
+    // A guided picture's colours are the image service's, not the kit render's.
+    ...(guided ? [] : ([[t("mapLab.colours"), String(report.colours)]] as [string, string][])),
     [t("mapLab.objects"), String(report.objects)],
   ];
   return (
@@ -114,6 +141,23 @@ function Checks({ report }: { report: KitReport }) {
           <dd className="font-label text-ink">{v}</dd>
         </div>
       ))}
+    </dl>
+  );
+}
+
+function AlignmentChecks({ a }: { a: Alignment }) {
+  const { t } = useI18n();
+  const pct = (v: number) => `${Math.round(v * 100)}%`;
+  return (
+    <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm" data-lab-alignment>
+      <div className="flex justify-between gap-2 border-b border-dashed border-line py-0.5">
+        <dt className="text-ink-mute">{t("mapLab.floorClear")}</dt>
+        <dd className="font-label text-ink">{pct(a.floorClear)}</dd>
+      </div>
+      <div className="flex justify-between gap-2 border-b border-dashed border-line py-0.5">
+        <dt className="text-ink-mute">{t("mapLab.solidsPresent")}</dt>
+        <dd className="font-label text-ink">{pct(a.solidsPresent)}</dd>
+      </div>
     </dl>
   );
 }
@@ -166,11 +210,17 @@ export default function MapLabPage() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [adopted, setAdopted] = useState(false);
   const [board, setBoard] = useState<number | null>(null);
+  const [art, setArt] = useState<Art>("kit");
+  const [noTestScene, setNoTestScene] = useState(false);
 
   const description = composeDescription(fields);
   const kit = kitSupports(worldId, type);
+  const guided = kit && art === "guided";
   const canRun = description !== "" && (kit || !!status?.image);
-  const prompt = useMemo(() => (kit ? null : mapPrompt({ description: description || "…", type, world: worldId })), [kit, description, type, worldId]);
+  const prompt = useMemo(
+    () => (guided ? guidedMapPrompt({ description: description || "…", type, world: worldId, legend: GUIDE_LEGEND }) : kit ? null : mapPrompt({ description: description || "…", type, world: worldId })),
+    [guided, kit, description, type, worldId],
+  );
   const kind = kit ? sceneKindFor(description, type) : null;
   const biome = kind ? biomeFor(description, kind) : null;
 
@@ -181,17 +231,37 @@ export default function MapLabPage() {
     setAdopted(false);
     try {
       const req: MapRequest = { worldId, type, description };
-      const drawn = await drawMap(req, n);
-      const scene = drawn.scene ? readLayout(drawn.scene, drawn.width, drawn.height) : null;
-      setPreview((old) => {
-        if (old) URL.revokeObjectURL(old.url);
-        return { req, nonce: n, drawn, url: URL.createObjectURL(drawn.blob), scene, at: Date.now() };
-      });
+      const drawn = guided ? await drawGuidedMap(req, n) : await drawMap(req, n);
+      show(req, n, drawn);
     } catch {
       setError(true);
     } finally {
       setBusy(false);
     }
+  };
+
+  const show = (req: MapRequest, n: number, drawn: DrawnMap) => {
+    const scene = drawn.scene ? readLayout(drawn.scene, drawn.width, drawn.height) : null;
+    setPreview((old) => {
+      if (old) {
+        URL.revokeObjectURL(old.url);
+        if (old.guideUrl) URL.revokeObjectURL(old.guideUrl);
+      }
+      return { req, nonce: n, drawn, url: URL.createObjectURL(drawn.blob), guideUrl: drawn.guided ? URL.createObjectURL(drawn.guided.guide) : null, scene, at: Date.now() };
+    });
+  };
+
+  const openTestScene = async () => {
+    setAdopted(false);
+    setError(false);
+    const found = await loadTestScene();
+    setNoTestScene(!found);
+    if (!found) return;
+    setWorldId(found.req.worldId ?? "western-fantasy");
+    setType(found.req.type);
+    setFields({ ...EMPTY, environment: found.req.description });
+    setNonce(found.nonce);
+    show(found.req, found.nonce, found.drawn);
   };
 
   const adopt = async () => {
@@ -251,6 +321,26 @@ export default function MapLabPage() {
               <p className="mt-1 text-xs text-ink-mute">{t("mapLab.sentHint")}</p>
             </div>
             {kit && (
+              <fieldset className="flex flex-col gap-1.5" data-lab-art={art}>
+                <legend className="font-label text-xs uppercase tracking-wide text-label">{t("mapLab.art")}</legend>
+                <label className="flex items-start gap-2 text-sm">
+                  <input type="radio" name="art" checked={art === "kit"} onChange={() => setArt("kit")} className="mt-1" /> <span>{t("mapLab.artKit")}</span>
+                </label>
+                <label className="flex items-start gap-2 text-sm">
+                  <input type="radio" name="art" checked={art === "guided"} onChange={() => setArt("guided")} className="mt-1" data-lab-art-guided /> <span>{t("mapLab.artGuided")}</span>
+                </label>
+                {guided && <p className="text-xs text-ink-mute">{status?.image ? t("mapLab.guidedCost") : t("mapLab.aiOff")}</p>}
+                {guided && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <PixelButton size="sm" variant="ghost" onClick={() => void openTestScene()} data-lab-test-scene>
+                      {t("mapLab.testScene")}
+                    </PixelButton>
+                    {noTestScene && <span className="text-xs text-ink-mute">{t("mapLab.noTestScene")}</span>}
+                  </div>
+                )}
+              </fieldset>
+            )}
+            {kit && (
               <div className="flex flex-wrap items-end gap-3">
                 <label className="flex flex-col gap-1.5">
                   <span className="font-label text-xs uppercase tracking-wide text-label">{t("mapLab.variation")}</span>
@@ -278,13 +368,20 @@ export default function MapLabPage() {
 
         <div className="flex min-w-0 flex-col gap-6">
           <Panel title={t("mapLab.pipeline")}>
-            <dl className="grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[auto_1fr]" data-lab-pipeline={kit ? "kit" : "ai"}>
+            <dl className="grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[auto_1fr]" data-lab-pipeline={guided ? "guided" : kit ? "kit" : "ai"}>
               <dt className="text-ink-mute">{t("mapLab.pipeline")}</dt>
               <dd>
-                <b>{kit ? t("mapLab.kit") : t("mapLab.ai")}</b> <span className="text-ink-mute">— {kit ? t("mapLab.kitWhy") : t("mapLab.aiWhy")}</span>
+                <b>{guided ? t("mapLab.guided") : kit ? t("mapLab.kit") : t("mapLab.ai")}</b>{" "}
+                <span className="text-ink-mute">— {guided ? t("mapLab.guidedWhy") : kit ? t("mapLab.kitWhy") : t("mapLab.aiWhy")}</span>
               </dd>
               <dt className="text-ink-mute">{t("mapLab.model")}</dt>
-              <dd className="font-label">{kit ? KIT_ID : (status?.imageModel ?? "—")}</dd>
+              <dd className="font-label">{guided ? `${KIT_ID} + ${status?.imageModel ?? "—"}` : kit ? KIT_ID : (status?.imageModel ?? "—")}</dd>
+              {preview?.drawn.guided && (
+                <>
+                  <dt className="text-ink-mute">{t("mapLab.made")}</dt>
+                  <dd className="font-label break-all">{preview.drawn.model}</dd>
+                </>
+              )}
               {kind && biome && (
                 <>
                   <dt className="text-ink-mute">{t("mapLab.kind")}</dt>
@@ -322,8 +419,21 @@ export default function MapLabPage() {
           >
             {preview ? (
               <div className="flex flex-col gap-3">
-                <PreviewImage url={preview.url} scene={preview.scene} overlay={overlay} w={preview.drawn.width} h={preview.drawn.height} />
-                {preview.drawn.report && <Checks report={preview.drawn.report} />}
+                <PreviewImage url={preview.url} scene={preview.scene} overlay={overlay} w={preview.drawn.width} h={preview.drawn.height} blocked={preview.drawn.guided?.alignment.blockedCells} />
+                {preview.drawn.guided && preview.guideUrl && (
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                    <figure className="flex flex-col gap-1">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={preview.guideUrl} alt="" className="pixelated block w-full" data-lab-guide />
+                      <figcaption className="text-xs text-ink-mute">{t("mapLab.guide")}</figcaption>
+                    </figure>
+                    <div className="flex flex-col gap-2">
+                      <AlignmentChecks a={preview.drawn.guided.alignment} />
+                      <p className="text-xs text-ink-mute">{t("mapLab.alignmentHint")}</p>
+                    </div>
+                  </div>
+                )}
+                {preview.drawn.report && <Checks report={preview.drawn.report} guided={!!preview.drawn.guided} />}
                 <div className="flex flex-wrap items-center gap-3">
                   <PixelButton variant="secondary" disabled={adopted || preview.req.worldId !== save.worldId} onClick={() => void adopt()} data-lab-use>
                     {t("mapLab.use")}

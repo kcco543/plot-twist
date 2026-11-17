@@ -3615,6 +3615,19 @@
       "temperate": "Temperate",
       "arid": "Arid",
       "enchanted": "Enchanted"
-    }
+    },
+    "art": "Artwork",
+    "artKit": "Pixel kit (drawn here, free)",
+    "artGuided": "Guided art (trial): the image service paints over the kit's layout",
+    "guided": "Guided art (trial)",
+    "guidedWhy": "the layout and play area come from the kit's plan; the image service only paints the picture over a block-out of that plan, which is then snapped onto the 480×320 pixel grid",
+    "guidedCost": "Each click sends one picture to the image service (one paid call).",
+    "testScene": "Show the saved test scene",
+    "noTestScene": "No test scene has been made on this computer yet.",
+    "made": "Made with",
+    "guide": "Layout block-out sent to the image service (the gameplay layer)",
+    "floorClear": "Floor still clear",
+    "solidsPresent": "Objects drawn in place",
+    "alignmentHint": "How closely the picture kept to the layout (a colour check). Red cells on the play area are floor the picture seems to have painted over."
   }
 }
