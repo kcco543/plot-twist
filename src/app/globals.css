@@ -76,11 +76,71 @@
 /* One UI pixel. Every frame, notch and offset is a multiple of it. */
 :root {
   --u: 2px;
-  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
-  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+  --gutter-l: max(var(--page-gutter), env(safe-area-inset-left, 0px));
+  --gutter-r: max(var(--page-gutter), env(safe-area-inset-right, 0px));
+  /* Shared content grid: one set of left/right edges for every block on a screen. */
+  --content-max: 72rem;
+  --stack-gap: 12px;
+  /* ---- Shared layout tokens (docs/DESIGN_SYSTEM.md §6). Change them here, every screen follows. ----
+     Level 1 (primary) alignment: the outer edges of blocks in a column (page gutters, column gaps).
+     Level 2 (secondary): distance from a framed panel's OUTER edge to its text and icons. The frame's
+     border counts toward it, so text never lines up with a decorative border, only with other text. */
+  --page-gutter: 16px;
+  --panel-pad-x: 14px;
+  --panel-pad-y: 12px;
+  --grid-gap: 16px;
+  --section-gap: 32px;
+  /* Dialogue window (Play): its own, slightly tighter vertical rhythm. */
+  --dialogue-pad-x: var(--panel-pad-x);
+  --dialogue-pad-y: 8px;
+  --dialogue-gap: 6px;
+  /* Play: the dialogue / character column beside the game viewport. */
+  --sidebar-w: clamp(18rem, 31%, 28rem);
+  --sidebar-w-short: clamp(18rem, 40%, 24rem);
+  /* Control heights (touch-sized; PixelButton sm / md / lg). */
+  --control-h-sm: 44px;
+  --control-h-md: 48px;
+  --control-h-lg: 56px;
+  /* Pixel geometry: frame border and the one shadow offset everything shares. */
+  --border-px: calc(var(--u) * 4);
+  /* Sticky chrome: what a sticky side column must stay clear of. */
+  --sticky-top: 88px;
+  --bottom-bar-h: 84px;
+  --shadow-off: calc(var(--u) * 2);
+  --shadow-off-btn: calc(var(--u) * 1.5);
+
+  /* Semantic tokens (Layer A names). World skins override these and the
+     brand colour tokens above together; see src/lib/theme/themes.ts. */
+  --pt-background: var(--color-bg);
+  --pt-surface: var(--color-surface);
+  --pt-panel: var(--color-surface);
+  --pt-primary: var(--color-pink-lo);
+  --pt-secondary: var(--color-lavender-lo);
+  --pt-accent: var(--color-butter-lo);
+  --pt-text: var(--color-ink);
+  --pt-muted-text: var(--color-ink-soft);
+  --pt-border: #b8a8dc;
+  --pt-border-highlight: var(--color-butter-lo);
+  --pt-shadow: rgba(91, 74, 134, 0.16);
+  --pt-focus: var(--color-label);
+  --pt-hover: var(--color-pink-hi);
+  --pt-selected: var(--color-butter);
+  --pt-disabled: #eee8f5;
+  --pt-error: var(--color-coral-deep);
+  --pt-success: var(--color-mint-deep);
+  --shadow-rgb: 91, 74, 134;
+  /* Portrait badge frame (themes swap in brass / digital card / jade / star). */
+  --frame-portrait: var(--frame-gold);
+  /* Page pattern: faint pixel sparkles. */
+  --bg-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 48 48' shape-rendering='crispEdges'%3E%3Cg fill='%23ddd2f3'%3E%3Crect x='6' y='8' width='1' height='3'/%3E%3Crect x='5' y='9' width='3' height='1'/%3E%3Crect x='34' y='30' width='1' height='3'/%3E%3Crect x='33' y='31' width='3' height='1'/%3E%3C/g%3E%3Cg fill='%23f6d4e2'%3E%3Crect x='22' y='20' width='1' height='1'/%3E%3Crect x='41' y='6' width='1' height='1'/%3E%3Crect x='12' y='38' width='1' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  --motif-corner-a: none;
+  --motif-corner-b: none;
 }
 @media (min-width: 640px) {
-  :root { --u: 3px; }
+  :root { --u: 3px; --page-gutter: 24px; --panel-pad-x: 20px; --panel-pad-y: 16px; --grid-gap: 24px; --section-gap: 48px; --dialogue-pad-y: 10px; }
+}
+@media (min-width: 1024px) {
+  :root { --page-gutter: 32px; }
 }
 
 @keyframes blink { 0%, 90% { opacity: 1; } 91%, 97% { opacity: 0.2; } }
@@ -99,8 +159,9 @@ html {
 body {
   background-color: var(--color-bg);
   /* faint pixel sparkles */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 48 48' shape-rendering='crispEdges'%3E%3Cg fill='%23ddd2f3'%3E%3Crect x='6' y='8' width='1' height='3'/%3E%3Crect x='5' y='9' width='3' height='1'/%3E%3Crect x='34' y='30' width='1' height='3'/%3E%3Crect x='33' y='31' width='3' height='1'/%3E%3C/g%3E%3Cg fill='%23f6d4e2'%3E%3Crect x='22' y='20' width='1' height='1'/%3E%3Crect x='41' y='6' width='1' height='1'/%3E%3Crect x='12' y='38' width='1' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: var(--bg-pattern);
   background-size: 96px 96px;
+  image-rendering: pixelated;
   color: var(--color-ink);
   font-family: var(--font-body);
   font-size: 1.125rem;
@@ -117,6 +178,67 @@ html[lang="zh-CN"] .font-display { font-weight: 400; }
 .pixelated, .pixelated img { image-rendering: pixelated; }
 
 ::selection { background: var(--color-butter); color: var(--color-ink); }
+
+/* ===================================================================
+   Emotion effects + character body motion (Play Mode).
+   Drawn in ART pixels inside the scaled stage, so 1px here = one art pixel.
+   steps() timing keeps every frame on whole pixels. Effects are defined in
+   src/lib/emotion/effects.ts; each motion name maps to one keyframe here.
+   ========================================================================== */
+.fx { animation-duration: var(--fx-dur, 1200ms); animation-delay: var(--fx-delay, 0ms); animation-iteration-count: infinite; animation-fill-mode: both; transform-origin: 50% 50%; }
+.fx-twinkle { animation-name: fx-twinkle; animation-timing-function: steps(5); }
+.fx-burst { animation-name: fx-burst; animation-timing-function: steps(6); }
+.fx-float { animation-name: fx-float; animation-timing-function: steps(8); }
+.fx-pop { animation-name: fx-pop; animation-timing-function: steps(6); }
+.fx-drip { animation-name: fx-drip; animation-timing-function: steps(6); }
+.fx-shake { animation-name: fx-shake; animation-timing-function: steps(1); animation-duration: 240ms; }
+.fx-rise { animation-name: fx-rise; animation-timing-function: steps(6); }
+.fx-spin { animation-name: fx-spin; animation-timing-function: steps(4); }
+@keyframes fx-twinkle { 0% { opacity: 0; transform: scale(0.4); } 20% { opacity: 1; transform: scale(1); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.6); } }
+@keyframes fx-burst { 0% { opacity: 0; transform: scale(0.3); } 30% { opacity: 1; transform: scale(1.2); } 60% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translateY(-3px) scale(0.8); } }
+@keyframes fx-float { 0% { opacity: 0; transform: translateY(2px); } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+@keyframes fx-pop { 0% { opacity: 0; transform: scale(0.4); } 20% { opacity: 1; transform: scale(1.25); } 35% { transform: scale(1); } 85% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
+@keyframes fx-drip { 0% { opacity: 0; transform: translateY(-2px); } 15% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(8px); } }
+@keyframes fx-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-1px); } 75% { transform: translateX(1px); } }
+@keyframes fx-rise { 0% { opacity: 0; transform: translateY(0) scale(0.6); } 20% { opacity: 1; transform: scale(1); } 80% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-8px) scale(1.2); } }
+@keyframes fx-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.body-walk { animation: body-walk 280ms steps(1) infinite; }
+.body-hop, .body-jolt { animation: body-hop 420ms steps(4) 2; }
+.body-jolt { animation-iteration-count: 1; }
+.body-bounce { animation: body-bounce 360ms steps(2) 2; }
+.body-shake, .body-stomp { animation: body-shake 140ms steps(1) 5; }
+.body-tremble, .body-shiver { animation: body-shake 100ms steps(1) 8; }
+.body-droop, .body-sigh { animation: body-droop 900ms steps(3) 1 both; }
+.body-tilt { animation: body-tilt 700ms steps(2) 1 both; }
+.body-stretch { animation: body-stretch 800ms steps(3) 1; }
+@keyframes body-walk { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+@keyframes body-hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes body-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes body-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-1px); } 75% { transform: translateX(1px); } }
+@keyframes body-droop { 0%, 100% { transform: translateY(0); } 30%, 80% { transform: translateY(1px) scaleY(0.97); } }
+@keyframes body-tilt { 0%, 100% { transform: translateX(0); } 30%, 80% { transform: translateX(1px) skewX(-4deg); } }
+@keyframes body-stretch { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.07); } }
+/* Explorable world: object actions (whole art pixels, stepped, so sprites stay crisp). */
+.body-climb { animation: body-climb 900ms steps(6) 1 both; }
+.body-push, .body-reach { animation: body-push 480ms steps(3) 1; }
+.body-rattle { animation: body-shake 90ms steps(1) 6; }
+.body-knock { animation: body-push 220ms steps(2) 3; }
+.body-lean { animation: body-lean 700ms steps(2) 1 both; }
+.body-read, .body-search { animation: body-droop 900ms steps(3) 1 both; }
+.body-rest { animation: body-droop 1200ms steps(3) 1 both; }
+@keyframes body-climb { 0% { transform: translateY(0); opacity: 1; } 60% { transform: translateY(-8px); opacity: 1; } 100% { transform: translateY(-12px); opacity: 0.35; } }
+@keyframes body-push { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(2px); } }
+@keyframes body-lean { 0%, 100% { transform: translateX(0); } 40%, 85% { transform: translateX(1px) skewX(-3deg); } }
+@keyframes door-swing { from { transform: scaleX(3.2); } to { transform: scaleX(1); } }
+/* Map region selection: dashed border (World Builder → Edit region). */
+.region-ants {
+  background:
+    repeating-linear-gradient(90deg, #fffaf0 0 6px, transparent 6px 12px) top / 100% 2px no-repeat,
+    repeating-linear-gradient(90deg, #fffaf0 0 6px, transparent 6px 12px) bottom / 100% 2px no-repeat,
+    repeating-linear-gradient(0deg, #fffaf0 0 6px, transparent 6px 12px) left / 2px 100% no-repeat,
+    repeating-linear-gradient(0deg, #fffaf0 0 6px, transparent 6px 12px) right / 2px 100% no-repeat;
+}
 
 /* Settings: reduce motion (also honors the OS setting) */
 html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after {
@@ -139,18 +261,18 @@ html[data-crt="on"] body::after {
   /* 9-slice storybook frame. Pick the art with --frame: var(--frame-panel) etc. */
   .px-frame {
     --frame: var(--frame-panel);
-    border: calc(var(--u) * 4) solid transparent;
+    border: var(--border-px) solid transparent;
     border-image-source: var(--frame);
     border-image-slice: 4 fill;
-    border-image-width: calc(var(--u) * 4);
+    border-image-width: var(--border-px);
     border-image-repeat: stretch;
     image-rendering: pixelated;
   }
   /* Soft offset shadow (lavender, not black). */
-  .px-shadow { filter: drop-shadow(0 calc(var(--u) * 2) 0 rgba(91, 74, 134, 0.14)); }
+  .px-shadow { filter: drop-shadow(0 var(--shadow-off) 0 rgba(var(--shadow-rgb), 0.14)); }
   .px-lift { transition: transform 100ms steps(2), filter 100ms steps(2); }
   @media (hover: hover) {
-    .px-lift:hover { transform: translateY(calc(var(--u) * -1)); filter: drop-shadow(0 calc(var(--u) * 3) 0 rgba(91, 74, 134, 0.2)); }
+    .px-lift:hover { transform: translateY(calc(var(--u) * -1)); filter: drop-shadow(0 calc(var(--u) * 3) 0 rgba(var(--shadow-rgb), 0.2)); }
   }
   /* Selected card: gold rim (frame) + soft butter halo. */
   .px-selected { filter: drop-shadow(0 0 0 var(--color-butter)) drop-shadow(0 calc(var(--u) * 2) 0 rgba(232, 184, 90, 0.45)); }
@@ -168,11 +290,11 @@ html[data-crt="on"] body::after {
     border: calc(var(--u) * 4) solid transparent;
     border-image: var(--frame) 4 fill / calc(var(--u) * 4) stretch;
     image-rendering: pixelated;
-    filter: drop-shadow(0 calc(var(--u) * 1.5) 0 rgba(91, 74, 134, 0.3));
+    filter: drop-shadow(0 calc(var(--u) * 1.5) 0 rgba(var(--shadow-rgb), 0.3));
     transition: transform 80ms steps(2), filter 80ms steps(2);
   }
   @media (hover: hover) {
-    .px-btn:hover:not(:disabled):not([aria-disabled="true"]) { transform: translateY(calc(var(--u) * -1)); filter: drop-shadow(0 calc(var(--u) * 2.5) 0 rgba(91, 74, 134, 0.3)) brightness(1.04); }
+    .px-btn:hover:not(:disabled):not([aria-disabled="true"]) { transform: translateY(calc(var(--u) * -1)); filter: drop-shadow(0 calc(var(--u) * 2.5) 0 rgba(var(--shadow-rgb), 0.3)) brightness(1.04); }
   }
   .px-btn:active:not(:disabled):not([aria-disabled="true"]), .px-btn[data-pressed="true"] {
     transform: translateY(var(--u)); filter: none; border-image-source: var(--frame-pressed);
@@ -214,6 +336,31 @@ html[data-crt="on"] body::after {
     image-rendering: pixelated;
   }
 
+  /* In-world speech bubble: cream body, thin pixel outline with notched corners, soft lavender shadow. */
+  .bubble {
+    --bubble-fill: var(--color-surface);
+    --bubble-line: var(--color-lavender-lo);
+    filter: drop-shadow(0 3px 0 rgba(var(--shadow-rgb), 0.16));
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (min-width: 640px) { .bubble { font-size: 1.0625rem; } }
+  .bubble-body {
+    background: var(--bubble-fill);
+    box-shadow: 0 -2px 0 0 var(--bubble-line), 0 2px 0 0 var(--bubble-line), -2px 0 0 0 var(--bubble-line), 2px 0 0 0 var(--bubble-line),
+      inset 0 -2px 0 0 var(--color-pink-hi);
+  }
+  .bubble:focus-visible { outline: 2px dashed var(--color-label); outline-offset: 5px; }
+  .bubble-scroll { scrollbar-width: none; }
+  .bubble-scroll::-webkit-scrollbar { display: none; }
+  /* Zero-width caret: an empty inline, so it never adds a line-break opportunity mid-word. */
+  .bubble-caret { position: relative; }
+  .bubble-caret::after {
+    content: ""; position: absolute; left: 1px; bottom: 0.2em; width: 5px; height: 0.95em;
+    background: var(--color-rose); animation: var(--animate-cursor);
+  }
+
   /* Checkerboard behind pixel art and the game stage. */
   .px-checker {
     background-color: var(--color-well);
@@ -225,6 +372,52 @@ html[data-crt="on"] body::after {
   }
 
   .gutter { padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+
+  /*
+   * Content grid. The container owns the side gutters; every direct block
+   * (and anything marked .content-block) spans its full width, so all outer
+   * edges line up. Blocks never add their own side margins.
+   */
+  .content-grid {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
+    padding-left: var(--gutter-l);
+    padding-right: var(--gutter-r);
+  }
+  .content-block { box-sizing: border-box; width: 100%; margin-inline: 0; }
+  /* Inner padding for a .px-frame panel: the frame border counts toward --panel-pad-x. */
+  .panel-pad-x { padding-inline: max(0px, calc(var(--panel-pad-x) - var(--border-px))); }
+  .panel-pad-y { padding-block: max(0px, calc(var(--panel-pad-y) - var(--border-px))); }
+  .panel-pad { padding: max(0px, calc(var(--panel-pad-y) - var(--border-px))) max(0px, calc(var(--panel-pad-x) - var(--border-px))); }
+  .plain-pad-x { padding-inline: var(--panel-pad-x); }
+  /* Dialogue dock rhythm: header → text → actions use the dialogue tokens (tighter on short windows). */
+  .dialogue-head { padding-top: max(2px, calc(var(--dialogue-pad-y) - var(--border-px) + 2px)); }
+  .dialogue-text { padding-top: var(--dialogue-gap); padding-bottom: var(--dialogue-gap); }
+  .dialogue-actions { padding-block: var(--dialogue-gap); }
+  [data-compact] { --dialogue-gap: 4px; --dialogue-pad-y: 4px; }
+  /* Nameplate tabs on a frame's top edge start on the same line as the panel's text (level 2). */
+  .panel-tab-row { left: max(0px, calc(var(--panel-pad-x) - var(--border-px))); right: max(0px, calc(var(--panel-pad-x) - var(--border-px))); }
+  /* Two columns that share outer edges (Studio, Builder, Library): gap from the token, never ad hoc. */
+  .layout-gap { gap: var(--grid-gap); }
+  /*
+   * A side column that stays in view while the page scrolls (Studio roster, Library list, Builder preview).
+   * It owns its own scroll when it is taller than the space between the sticky top bar and the bottom
+   * action bar, so nothing in it is ever cut off on short windows. Below 1024px it's ordinary flow.
+   */
+  @media (min-width: 1024px) {
+    .sticky-col {
+      position: sticky; top: var(--sticky-top); align-self: start;
+      max-height: calc(100dvh - var(--sticky-top) - var(--bottom-bar-h));
+      overflow-y: auto; overscroll-behavior: auto; scrollbar-width: thin;
+      /* Room for frame shadows and nameplate tabs inside the scroll box. */
+      padding: 28px 6px 10px; margin: -28px -6px -10px;
+    }
+  }
+  .section-gap { margin-top: var(--section-gap); }
+  .content-stack { display: flex; flex-direction: column; gap: var(--stack-gap); min-width: 0; }
+  .content-stack > * { box-sizing: border-box; width: 100%; margin-inline: 0; }
 
   /* Scalloped top edge (bottom action bar, footers). */
   .px-scallop { position: relative; }
@@ -253,7 +446,7 @@ html[data-crt="on"] body::after {
   .px-range::-webkit-slider-runnable-track {
     height: calc(var(--u) * 4);
     background: linear-gradient(to right, var(--color-lavender) 0 var(--fill), var(--color-well) var(--fill) 100%);
-    box-shadow: 0 0 0 var(--u) var(--color-line), inset 0 var(--u) 0 rgba(91, 74, 134, 0.12);
+    box-shadow: 0 0 0 var(--u) var(--color-line), inset 0 var(--u) 0 rgba(var(--shadow-rgb), 0.12);
   }
   .px-range::-moz-range-track {
     height: calc(var(--u) * 4);
@@ -278,4 +471,224 @@ html[data-crt="on"] body::after {
   /* Tab strip (Character Studio, sidebar). */
   .px-tabbar { display: flex; gap: calc(var(--u) * 2); overflow-x: auto; scrollbar-width: none; }
   .px-tabbar::-webkit-scrollbar { display: none; }
+}
+
+/* Screens that opt into the wide layout (Play) widen the shared grid, top bar included. */
+:root:has([data-layout="wide"]) { --content-max: 1600px; }
+
+/* ==========================================================================
+   WORLD SKINS  (src/lib/theme/themes.ts sets the colour tokens, frames and
+   motif images on <html>; this block only adds per-world DETAILS on top of
+   the shared components. Every detail is an absolutely positioned
+   pseudo-element inside safe bounds, so no skin changes layout, size,
+   padding or interaction.)
+   ========================================================================== */
+@keyframes skin-paper { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes skin-slide { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+@keyframes skin-ink { from { clip-path: inset(0 50% 0 50%); opacity: 0.4; } to { clip-path: inset(0 0 0 0); opacity: 1; } }
+@keyframes skin-float { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+/* Same 240ms / 4 steps for every world: only the flavour of the reveal changes. */
+html[data-motion-preset="paper"] { --animate-screen-in: skin-paper 240ms steps(4) both; }
+html[data-motion-preset="slide"] { --animate-screen-in: skin-slide 240ms steps(4) both; }
+html[data-motion-preset="ink"] { --animate-screen-in: skin-ink 240ms steps(4) both; }
+html[data-motion-preset="float"] { --animate-screen-in: skin-float 240ms steps(4) both; }
+
+/* Corner ornaments on framed windows (Panel, Modal, dialogue). Standard = one, decorative = two, minimal = none. */
+.px-panel::before, .px-panel::after, .px-portrait::after {
+  content: none; position: absolute; pointer-events: none; z-index: 1;
+  width: calc(var(--u) * 7); height: calc(var(--u) * 7);
+  background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated;
+}
+.theme-scope:not([data-density="minimal"]) .px-panel::before,
+html[data-world-theme]:not([data-density="minimal"]) .px-panel::before {
+  content: ""; background-image: var(--motif-corner-a); top: calc(var(--u) * -3); right: calc(var(--u) * -3);
+}
+.theme-scope[data-density="decorative"] .px-panel::after,
+html[data-world-theme][data-density="decorative"] .px-panel::after {
+  content: ""; background-image: var(--motif-corner-b); bottom: calc(var(--u) * -3); left: calc(var(--u) * -3);
+}
+/* Portrait badge: the world frames the art, never changes it. */
+.theme-scope:not([data-density="minimal"]) .px-portrait::after,
+html[data-world-theme]:not([data-density="minimal"]) .px-portrait::after {
+  content: ""; background-image: var(--motif-corner-a); top: calc(var(--u) * -3); left: calc(var(--u) * -3);
+  width: calc(var(--u) * 5); height: calc(var(--u) * 5);
+}
+html[data-density="minimal"] { --bg-pattern: none; }
+
+/* Nameplate tabs: one geometry, a small per-world detail. */
+.px-tab { position: relative; }
+[data-world-theme="western-fantasy"] .px-tab::after {
+  /* bookmark ribbon tail */
+  content: ""; position: absolute; right: calc(var(--u) * 2); top: 100%; width: calc(var(--u) * 3); height: calc(var(--u) * 3);
+  background: var(--color-lavender-lo); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 60%, 0 100%); pointer-events: none;
+}
+[data-world-theme="modern"] .px-tab::after {
+  /* folder status light */
+  content: ""; position: absolute; right: calc(var(--u) * -1); top: calc(var(--u) * -1); width: calc(var(--u) * 2); height: calc(var(--u) * 2);
+  background: var(--color-mint-lo); box-shadow: 0 0 0 var(--u) var(--color-surface); animation: skin-status 2.4s steps(1) infinite; pointer-events: none;
+}
+@keyframes skin-status { 0%, 70% { opacity: 1; } 71%, 100% { opacity: 0.35; } }
+[data-world-theme="ancient-china"] .px-tab::after {
+  /* small vermilion seal */
+  content: ""; position: absolute; right: calc(var(--u) * -2); bottom: calc(var(--u) * -2); width: calc(var(--u) * 3); height: calc(var(--u) * 3);
+  background: var(--color-butter-lo); box-shadow: inset 0 0 0 calc(var(--u) * 0.5) var(--color-butter-hi); pointer-events: none;
+}
+[data-world-theme="otherworld"] .px-tab { filter: drop-shadow(var(--u) var(--u) 0 var(--color-surface)); }
+[data-world-theme="otherworld"] .px-tab::after {
+  /* sticker star */
+  content: ""; position: absolute; right: calc(var(--u) * -3); top: calc(var(--u) * -3); width: calc(var(--u) * 5); height: calc(var(--u) * 5);
+  background: var(--motif-corner-b) center / 100% 100% no-repeat; image-rendering: pixelated; pointer-events: none;
+}
+html[data-density="minimal"] .px-tab::after { content: none; }
+
+/* Speech bubbles follow the skin through tokens; Modern reads like a chat message. */
+[data-world-theme="modern"] .bubble { --bubble-line: var(--color-pink-lo); }
+[data-world-theme="ancient-china"] .bubble { --bubble-line: var(--color-outline); }
+[data-world-theme="western-fantasy"] .bubble { --bubble-line: var(--color-butter-lo); }
+
+/* Ambient decoration (ThemeAmbient): slow, sparse, desktop margins only, gone with reduced motion. */
+.skin-ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.skin-ambient > span { position: absolute; width: calc(var(--u) * 7); height: calc(var(--u) * 7); background-size: 100% 100%; image-rendering: pixelated; opacity: 0.55; }
+@media (max-width: 1279px) { .skin-ambient { display: none; } }
+html[data-motion="reduced"] .skin-ambient { display: none; }
+@media (prefers-reduced-motion: reduce) { .skin-ambient { display: none; } }
+@keyframes skin-drift { 0% { transform: translate(0, 0); } 50% { transform: translate(calc(var(--u) * 2), calc(var(--u) * 6)); } 100% { transform: translate(0, calc(var(--u) * 12)); opacity: 0; } }
+@keyframes skin-bob { 50% { transform: translateY(calc(var(--u) * -3)); } }
+@keyframes skin-cloud { 50% { transform: translateX(calc(var(--u) * 6)); } }
+.skin-ambient[data-preset="paper"] > span { animation: skin-drift 9s steps(12) infinite; }
+.skin-ambient[data-preset="slide"] > span { animation: skin-status 3s steps(1) infinite; }
+.skin-ambient[data-preset="ink"] > span { animation: skin-cloud 14s steps(8) infinite; }
+.skin-ambient[data-preset="float"] > span { animation: skin-bob 4s steps(4) infinite, twinkle 3.2s steps(1) infinite; }
+
+/* Play Mode gives the setup-step row (phones / tablets) to the game, and on windows up to 860px tall the
+   world strip too. The world name stays in the Play header; the title screen still switches worlds. */
+:root:has([data-play-area]) [data-step-row] { display: none; }
+@media (max-height: 860px) {
+  :root:has([data-play-area]) [data-world-strip] { display: none; }
+}
+
+/* ==========================================================================
+   TITLE SCREEN (brand skin only)
+   ========================================================================== */
+/* Character parade on the hero's grass: 2-frame stepped bob, staggered, plus a 1u ground shadow. */
+.parade-actor { animation: bob 1.2s steps(2) infinite; animation-delay: var(--bob-delay, 0ms); }
+.parade-actor > img { position: relative; z-index: 1; }
+.parade-shadow {
+  position: absolute; left: 22%; right: 22%; bottom: calc(var(--u) * 1); height: calc(var(--u) * 2);
+  background: rgba(var(--shadow-rgb), 0.28);
+}
+/* The saved-worlds band continues the hero: a scalloped paper edge, cream surface, the brand sparkle pattern. */
+.paper-band { position: relative; background: var(--color-surface) var(--bg-pattern) 0 0 / 96px 96px; }
+.paper-band::before {
+  content: ""; position: absolute; left: 0; right: 0; top: calc(var(--u) * -3); height: calc(var(--u) * 3);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='3' viewBox='0 0 8 3' shape-rendering='crispEdges'%3E%3Crect x='2' y='0' width='4' height='1' fill='%23fffaf3'/%3E%3Crect x='1' y='1' width='6' height='1' fill='%23fffaf3'/%3E%3Crect x='0' y='2' width='8' height='1' fill='%23fffaf3'/%3E%3C/svg%3E") 0 0 / calc(var(--u) * 8) 100% repeat-x;
+  image-rendering: pixelated;
+}
+
+/* ---------------------------------------------------------------- ambient animation on the stage
+   (components/game/AmbientLayer.tsx). Stepped, slow, transform/opacity only. Timing comes from
+   --amb-dur / --amb-delay / --amb-steps / --amb-dir per object. Paused off camera; the global
+   reduce-motion rule above stops them. */
+.amb-ripple, .amb-sway, .amb-flicker, .amb-flame, .amb-flame-glow, .amb-twinkle, .amb-pulse {
+  animation-duration: var(--amb-dur, 2400ms);
+  animation-delay: var(--amb-delay, 0ms);
+  animation-direction: var(--amb-dir, normal);
+  animation-iteration-count: infinite;
+  animation-timing-function: steps(var(--amb-steps, 4), end);
+}
+[data-amb-paused], [data-amb-paused] * { animation-play-state: paused !important; }
+.amb-ripple {
+  position: absolute; left: 0; top: 0; width: 200%; height: 100%;
+  background: repeating-linear-gradient(0deg, transparent 0 5px, rgb(255 255 255 / 0.55) 5px 6px, transparent 6px 11px);
+  -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 7px, transparent 7px 19px);
+  mask-image: repeating-linear-gradient(90deg, #000 0 7px, transparent 7px 19px);
+  opacity: 0.7;
+  animation-name: amb-ripple;
+}
+@keyframes amb-ripple { from { transform: translateX(0); } to { transform: translateX(-38px); } }
+.amb-sway {
+  position: absolute; inset: 0;
+  transform-origin: 50% 100%;
+  animation-name: amb-sway;
+  animation-timing-function: step-end;
+}
+@keyframes amb-sway {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(1px); }
+  50% { transform: translateX(0); }
+  75% { transform: translateX(-1px); }
+}
+/* A front cut-out that sways (SceneFronts): same motion on the cut-out itself. */
+[data-scene-front].amb-sway { position: absolute; inset: auto; }
+.amb-flicker {
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 222 140 / 0.55) 0 22%, rgb(255 196 110 / 0.22) 45%, transparent 68%);
+  mix-blend-mode: screen;
+  animation-name: amb-flicker;
+}
+@keyframes amb-flicker {
+  0%, 100% { opacity: 0.7; }
+  20% { opacity: 1; }
+  40% { opacity: 0.8; }
+  60% { opacity: 0.95; }
+  80% { opacity: 0.6; }
+}
+.amb-flame {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, #e8662e 0 30%, #ffb238 30% 65%, #fff1a8 65%);
+  clip-path: polygon(50% 0, 75% 30%, 100% 70%, 80% 100%, 20% 100%, 0 70%, 25% 30%);
+  transform-origin: 50% 100%;
+  animation-name: amb-flame;
+}
+@keyframes amb-flame {
+  0%, 100% { transform: scale(1, 1); }
+  33% { transform: scale(0.82, 1.15) translateX(4%); }
+  66% { transform: scale(1.08, 0.9) translateX(-4%); }
+}
+.amb-flame-glow {
+  position: absolute; left: -100%; top: -40%; width: 300%; height: 220%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 190 90 / 0.45), transparent 65%);
+  mix-blend-mode: screen;
+  animation-name: amb-flicker;
+}
+.amb-twinkle {
+  position: absolute; width: 3px; height: 3px;
+  background:
+    linear-gradient(#fff, #fff) center / 1px 3px no-repeat,
+    linear-gradient(#fff, #fff) center / 3px 1px no-repeat;
+  filter: drop-shadow(0 0 1px rgb(255 240 190 / 0.9));
+  animation-name: amb-twinkle;
+}
+@keyframes amb-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  30% { opacity: 1; transform: scale(1); }
+  55% { opacity: 0.4; transform: scale(0.8); }
+}
+.amb-pulse {
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(196 168 255 / 0.5) 0 25%, rgb(168 214 255 / 0.25) 50%, transparent 70%);
+  mix-blend-mode: screen;
+  animation-name: amb-pulse;
+}
+@keyframes amb-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 0.8; transform: scale(1.08); }
+}
+
+/* Quick focus: the character found from the portrait row blinks once. */
+[data-actor].actor-ping::after {
+  content: ""; position: absolute; left: 50%; bottom: -2px; width: 22px; height: 8px; margin-left: -11px;
+  border: 2px solid var(--color-butter-lo); border-radius: 50%;
+  animation: actor-ping 0.55s steps(3, end) 3; pointer-events: none;
+}
+@keyframes actor-ping { from { transform: scale(0.6); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+
+/* Phone landscape and other very short windows: the dock's text area may shrink to two lines so the
+   choices and the character row still fit (the dock scrolls inside itself as a last resort). */
+@media (max-height: 420px) {
+  [data-dialogue-dock] .dialogue-text { min-height: 2.1rem; }
+}
+@media (max-height: 420px) {
+  [data-cast-focus] [data-focus-character] { width: 1.75rem; height: 1.75rem; }
 }

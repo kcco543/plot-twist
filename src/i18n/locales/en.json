@@ -50,7 +50,12 @@
     "settings": "Settings",
     "pressStart": "Press start",
     "version": "v0.4 · prototype",
-    "menu": "Main menu"
+    "menu": "Main menu",
+    "menuTab": "Start",
+    "paradeLabel": "A few characters waiting for a story",
+    "paradeBubble": "Plot twist?!",
+    "worldsTeaser": "Four worlds to start in",
+    "savesBand": "Saved worlds"
   },
   "nav": {
     "steps": "Game steps",
@@ -110,7 +115,11 @@
           "Strange"
         ]
       }
-    }
+    },
+    "saves": "{count} saved",
+    "savesOne": "1 saved",
+    "savesNone": "New",
+    "motifsLabel": "Motifs"
   },
   "studio": {
     "kicker": "Step 2 · Character studio",
@@ -153,7 +162,36 @@
       "look": "Look & sprite"
     },
     "methodsNote": "Describe your character in words, with sliders, or both. The two are saved separately and sliders never rewrite what you wrote.",
-    "toReview": "{count} to review"
+    "toReview": "{count} to review",
+    "boundaries": {
+      "title": "Boundaries",
+      "intro": "What this character won't share, won't discuss or won't do. Trust never overrides these by itself.",
+      "hardHelp": "Hard: never crossed in play. Only editing the character here changes them.",
+      "softHelp": "Soft: avoided for now. They may open up to one person after real shared experiences, never just because someone asks again.",
+      "empty": "No boundaries written yet. Locked canon that says \"never…\" still counts as a hard boundary.",
+      "item": "Boundary {n}",
+      "strength": "Hard or soft",
+      "hard": "Hard",
+      "soft": "Soft",
+      "kind": "Type",
+      "kinds": {
+        "secret": "A secret",
+        "topic": "A topic",
+        "principle": "A principle"
+      },
+      "remove": "Remove boundary",
+      "text": "What it is",
+      "textPlaceholder": {
+        "secret": "e.g. Her feelings for Mira",
+        "topic": "e.g. Her childhood in the lighthouse",
+        "principle": "e.g. Never cheats, even to win"
+      },
+      "topics": "Words that bring it up",
+      "topicsHint": "Comma separated, any language. A message containing one of these touches the boundary.",
+      "topicsPlaceholder": "e.g. crush, love, 喜欢, 暗恋",
+      "addHard": "Add hard boundary",
+      "addSoft": "Add soft boundary"
+    }
   },
   "character": {
     "fields": {
@@ -219,16 +257,41 @@
       "lockField": "Lock {field}",
       "unlockField": "Unlock {field}",
       "hint": "Locked details are canon. The AI must keep them exactly as written."
+    },
+    "gender": {
+      "label": "Gender",
+      "options": {
+        "unspecified": "Unspecified",
+        "female": "Female",
+        "male": "Male",
+        "nonbinary": "Non-binary",
+        "custom": "Self-describe"
+      },
+      "customLabel": "In your words",
+      "customPlaceholder": "e.g. genderfluid, a sentient cloud",
+      "note": "Optional. Only used to refer to the character correctly. It never changes their personality, interests or behavior. Saved for this version of the character only."
+    },
+    "pronouns": {
+      "label": "Pronouns",
+      "options": {
+        "unspecified": "Unspecified",
+        "she": "she/her",
+        "he": "he/him",
+        "they": "they/them",
+        "custom": "Custom"
+      },
+      "customLabel": "Custom pronouns",
+      "customPlaceholder": "e.g. xe/xem/xyr"
     }
   },
   "builder": {
     "kicker": "Step 3 · World builder",
     "heading": "Set the scene",
-    "intro": "Describe where your story begins and pick a type of place. The preview uses placeholder art for now.",
+    "intro": "Describe where your story begins, pick a type of place, then generate a map. Edit the words and generate again until it feels right.",
     "description": "Description",
     "describeLabel": "Describe the environment",
     "describePlaceholder": "A cramped bookshop above a noodle stand. It always smells like rain, and the back door is locked from the inside...",
-    "describeHint": "Saved automatically. Later, this text will drive AI map generation.",
+    "describeHint": "Saved automatically. Chinese or English both work.",
     "type": "Environment type",
     "preview": "Preview",
     "previewAlt": "{title} preview",
@@ -237,7 +300,58 @@
     "generating": "Drawing preview",
     "quoteEmpty": "No description yet. Your words will appear here.",
     "backToCast": "Cast",
-    "play": "Play"
+    "play": "Play",
+    "map": {
+      "generate": "Generate Map",
+      "generating": "Generating map",
+      "drawing": "Drawing your map",
+      "drawingHint": "This can take up to a minute.",
+      "iterateHint": "Change the description and generate again for a new version.",
+      "needDescription": "Write a description first, then generate a map.",
+      "unavailable": "Map generation is not set up yet",
+      "unavailableHint": "Add OPENAI_API_KEY to .env.local and restart the app to turn it on. Until then the preview shows built-in art.",
+      "failed": "The map couldn't be generated: {reason}.",
+      "outdated": "You changed the description or place type since this map. Generate again to see the new version.",
+      "version": "Version {n}",
+      "history": "Your maps",
+      "showVersion": "Show version {n}",
+      "download": "Download",
+      "remove": "Remove",
+      "usePlaceholder": "Use built-in art",
+      "keepHint": "You're still looking at your current map until the new one is ready.",
+      "showingWhileDrawing": "Drawing new · showing v{n}",
+      "pixelGridCopy": "Pixel-grid copy",
+      "pixelGridCopyHint": "Older maps are high-resolution pictures. This makes a copy on the game's pixel grid, as a new version. The original stays as it is, and it costs nothing.",
+      "pixelGridFailed": "The pixel-grid copy couldn't be made in this browser.",
+      "kitHint": "Drawn by the game's own pixel map kit: free, instant, and the play area matches the picture exactly."
+    },
+    "edit": {
+      "enter": "Edit region",
+      "exit": "Done editing",
+      "selectHint": "Drag over the map to select the area you want to change.",
+      "adjustHint": "Drag the box to move it, or drag a corner to resize it.",
+      "selectionLabel": "Selected area. Arrow keys move it, Shift + arrow keys resize it, Delete clears it.",
+      "clear": "Clear selection",
+      "instructionLabel": "What should change here?",
+      "instructionPlaceholder": "Add a green-roof cottage here.",
+      "examples": "Try",
+      "example1": "Add a green-roof cottage here.",
+      "example2": "Turn this area into a flower garden.",
+      "example3": "Replace this empty space with a pond and wooden fence.",
+      "submit": "Edit Selected Area",
+      "submitting": "Editing area",
+      "repainting": "Repainting this area",
+      "keepHint": "Everything outside the box stays as it is. Each edit is saved as a new version.",
+      "needSelection": "Select an area on the map first.",
+      "failed": "The area couldn't be edited: {reason}.",
+      "undo": "Undo edit",
+      "editedFrom": "Edited from version {n}: “{instruction}”",
+      "editedFromRemoved": "Edited: “{instruction}”",
+      "editedTag": "Edited"
+    },
+    "sampleTag": "Built-in sample",
+    "sampleNotice": "This is the game's built-in sample art for “{place}”. It was not made from your description. Generate a map to draw one from your words.",
+    "notDrawnYet": "Your description (not drawn yet): “{text}”"
   },
   "environments": {
     "interior": {
@@ -310,6 +424,11 @@
     },
     "nextLine": "Next line",
     "lineCount": "{n} / {total}",
+    "bubble": {
+      "finish": "{name} is speaking. Show the full line",
+      "next": "{name} said this. Next line",
+      "said": "{name} said this"
+    },
     "resetStory": "Reset moods, bonds & memories",
     "resetStoryDone": "Story state reset.",
     "sidebar": {
@@ -328,7 +447,127 @@
       "behaviorNone": "Playing from sliders + text",
       "open": "Character info",
       "close": "Close character info",
-      "more": "More about {name}"
+      "more": "More about {name}",
+      "feeling": "Feeling",
+      "howSees": "How {name} sees others",
+      "stageLine": "Trust: {trust} · Affection: {affection} · Respect: {respect}",
+      "visitor": "The visitor",
+      "hide": "Hide info"
+    },
+    "test": {
+      "open": "Test panel",
+      "title": "Emotion & movement test",
+      "intro": "Pick a character in the scene (◀ ▶ or tap them), then press a button. Everything here goes through the same rules as the story, so a refused action tells you why.",
+      "who": "Character",
+      "target": "Toward / away from",
+      "nobody": "Nobody",
+      "emotionsTitle": "1 · Emotions",
+      "level": "Strength",
+      "levels": {
+        "1": "Mild",
+        "2": "Clear",
+        "3": "Strong"
+      },
+      "react": "React with movement",
+      "reactDesc": "Personality, bond and feeling decide how they move. Off: effect only.",
+      "movesTitle": "2 · Movement",
+      "approach": "Walk closer",
+      "retreat": "Step back",
+      "face": "Turn to face",
+      "idle": "Idle animation",
+      "stop": "Stop",
+      "resume": "Resume walk",
+      "freeze": "Freeze everyone",
+      "unfreeze": "Unfreeze",
+      "scenariosTitle": "3 · Quick tests",
+      "meet": "Both walk to each other",
+      "walkTalk": "Talk while walking",
+      "rapid": "Rapid emotion changes",
+      "interrupt": "Interrupt, then resume",
+      "crowd": "Everyone gathers (collision)",
+      "corner": "Back into the wall",
+      "status": "Live status",
+      "colName": "Name",
+      "colState": "State",
+      "colFeeling": "Feeling",
+      "colSpot": "Feet (x, y)",
+      "paused": "Frozen",
+      "suspended": "walk paused",
+      "needTwo": "Add a second character to try walking toward someone.",
+      "result": {
+        "ok": "{name} · {action}: {note}",
+        "refused": "{name} · {action}: refused, {reason}"
+      },
+      "actions": {
+        "approach": "Walk closer",
+        "retreat": "Step back",
+        "face_target": "Turn to face",
+        "idle_reaction": "Idle animation",
+        "show_emotion": "Show emotion",
+        "walk_to": "Walk to a spot",
+        "use_object": "Use an object",
+        "turn_away": "Turn away",
+        "stand_up": "Stand up"
+      },
+      "reasons": {
+        "invalid": "the request wasn't valid",
+        "unknown_actor": "that character isn't on stage",
+        "unknown_target": "the other character isn't on stage",
+        "self_target": "they can't target themselves",
+        "busy": "they're busy (mid-sentence or walking)",
+        "no_room": "there's no free spot next to them",
+        "no_path": "the way is blocked",
+        "cornered": "there's nowhere to back away to, so they turned away instead",
+        "paused": "everyone is frozen",
+        "player_command": "you're steering them right now, so their own reaction waits",
+        "outranked": "they're busy with something more important (your command or the story)",
+        "unknown_object": "there's no such object here",
+        "not_allowed": "that isn't something they can do with it",
+        "in_conversation": "talking, so stays in place"
+      },
+      "notes": {
+        "moving": "on the way",
+        "already_close": "already close, so they just turned to face them",
+        "facing": "turned to face them",
+        "emoting": "showing the feeling",
+        "idle": "playing an idle animation",
+        "shortened": "only a short step was possible",
+        "nearby": "that exact spot was blocked, so they're going to the nearest reachable spot",
+        "arrived": "already there"
+      },
+      "idleKinds": {
+        "look_around": "Look around",
+        "shift": "Shift weight",
+        "hop": "Hop",
+        "stretch": "Stretch",
+        "shiver": "Shiver",
+        "stomp": "Stomp",
+        "sigh": "Sigh"
+      },
+      "close": "Hide test panel"
+    },
+    "sampleCast": "Add the sample cast (Mira, Wren, Tobi)",
+    "earlierLines": "Earlier lines",
+    "details": "Character details",
+    "detailsHint": "Everything about {name}. The conversation above keeps going while this is open.",
+    "castBar": {
+      "label": "Find a character",
+      "elsewhere": "in another place",
+      "here": "here"
+    },
+    "activity": {
+      "elsewhere": "Last seen: {scene}",
+      "speaking": "Speaking",
+      "talking": "Talking with {name}",
+      "approaching": "Going over to {name}",
+      "goingTo": "Heading to the {object}",
+      "sittingOn": "Sitting on the {object}",
+      "using": "At the {object}",
+      "steppingAway": "Stepping back",
+      "walking": "Walking",
+      "sitting": "Sitting",
+      "leaving": "Walking away",
+      "idle": "Standing around"
     }
   },
   "scene": {
@@ -388,9 +627,57 @@
     "characters": "{count} characters",
     "character": "1 character"
   },
+  "myWorlds": {
+    "heading": "My Worlds",
+    "intro": "Every world keeps its own characters, relationships, memories, maps and story. Nothing in one world ever changes another.",
+    "create": "Create New World",
+    "continue": "Continue",
+    "continueLast": "Continue “{name}”",
+    "rename": "Rename",
+    "duplicate": "Duplicate",
+    "delete": "Delete",
+    "current": "Playing",
+    "lastPlayed": "Last played",
+    "characters": "{count} characters",
+    "character": "1 character",
+    "noCharacters": "No characters yet",
+    "theme": "Theme",
+    "noTheme": "Theme not chosen",
+    "autoName": "{theme} {n}",
+    "newWorldName": "New World {n}",
+    "copyName": "{name} (copy)",
+    "nameLabel": "World name",
+    "namePlaceholder": "Name this world",
+    "save": "Save name",
+    "cancelRename": "Cancel renaming",
+    "renamed": "Renamed to “{name}”.",
+    "copying": "Copying",
+    "copied": "Made a copy: “{name}”.",
+    "deleted": "Deleted “{name}”.",
+    "copyFailed": "This world couldn't be copied: the browser's storage is full. Deleting a world you no longer need will make room.",
+    "copyUnreadable": "This world's save couldn't be read, so it wasn't copied. Nothing was changed.",
+    "deleteTitle": "Delete this world?",
+    "deleteBody": "“{name}” will be removed from this browser, along with its characters, relationships, memories, story and maps.",
+    "deleteSafe": "Your other worlds are not touched.",
+    "deleteWarn": "This can't be undone.",
+    "deleteConfirm": "Delete world",
+    "deleting": "Deleting",
+    "emptyTitle": "No worlds yet",
+    "emptyBody": "Create a world to start your first story.",
+    "migrated": "Your earlier save is now the world “{name}”. The original save is kept as a backup in this browser.",
+    "dismiss": "Got it",
+    "previewAlt": "{name} preview",
+    "actions": "Options for {name}",
+    "inWorld": "World",
+    "switch": "Switch world",
+    "count": "{count} worlds",
+    "countOne": "1 world",
+    "jump": "My Worlds"
+  },
   "settings": {
     "title": "Settings",
-    "textSpeed": "Text speed",
+    "textSpeed": "Dialogue speed",
+    "textSpeedDesc": "How fast lines type out in speech bubbles and the dialogue panel. Click or tap a line to show it all at once.",
     "speeds": {
       "slow": "Slow",
       "normal": "Normal",
@@ -419,13 +706,40 @@
       "chaotic": "Chaotic"
     },
     "aiStory": "AI story writing",
-    "aiStoryDesc": "Let the AI write dialogue when it's set up. Off means built-in lines only.",
+    "aiStoryDesc": "Let the AI write dialogue and conversation replies when it's set up. Off means built-in lines only.",
     "aiTitle": "AI services",
     "aiText": "Personality analysis & dialogue",
-    "aiImage": "Pixel character generation",
-    "aiReady": "Ready",
+    "aiImage": "Pixel character & map generation",
+    "aiReady": "Key added",
     "aiMissing": "Not configured",
-    "aiChecking": "Checking"
+    "aiChecking": "Checking",
+    "testPanel": "Emotion & movement test panel",
+    "testPanelDesc": "Shows buttons under the dialogue in Play Mode to trigger every emotion and movement by hand.",
+    "behaviorDebug": "Behavior debug panel (developers)",
+    "behaviorDebugDesc": "Shows why each character chose what they did: personality, feelings, relationship, memories and every option's weight. Hidden from players.",
+    "relationshipInspector": "Relationship inspector",
+    "relationshipInspectorDesc": "Developer tool: long-term relationship values, stages, milestones and why each change was accepted or refused.",
+    "aiCheck": "Test connections",
+    "aiCheckFailed": "Couldn't reach the app's server.",
+    "aiService": {
+      "anthropic": "Claude (dialogue, analysis)",
+      "openai": "OpenAI images (characters, maps)"
+    },
+    "aiResult": {
+      "ok": "Key works",
+      "missing": "No key",
+      "auth": "Key rejected",
+      "model_missing": "Model not available",
+      "unreachable": "Couldn't reach"
+    },
+    "aiCheckNote": "This checks the key and model without making anything. Running out of credits only shows up when something is generated.",
+    "aiMode": "AI mode: {mode}",
+    "aiModes": {
+      "offline": "Offline (no AI requests)",
+      "balanced": "Balanced (AI only when you start it)",
+      "full": "Full AI"
+    },
+    "usageDashboard": "Open the API usage dashboard (development)"
   },
   "traits": {
     "extroversion": {
@@ -523,6 +837,26 @@
     "excited": "fired up",
     "suspicious": "suspicious",
     "embarrassed": "embarrassed"
+  },
+  "emotions": {
+    "neutral": "Neutral",
+    "happy": "Happy",
+    "excited": "Excited",
+    "affectionate": "Affectionate",
+    "embarrassed": "Embarrassed",
+    "angry": "Angry",
+    "frustrated": "Frustrated",
+    "sad": "Sad",
+    "anxious": "Anxious",
+    "surprised": "Surprised",
+    "confused": "Confused"
+  },
+  "stageStates": {
+    "idle": "Idle",
+    "moving": "Moving",
+    "interacting": "Interacting",
+    "speaking": "Speaking",
+    "reacting": "Reacting"
   },
   "events": {
     "confide": "Confide",
@@ -663,7 +997,15 @@
       "offline": "you're offline",
       "bad_request": "the request was invalid",
       "too_large": "the image is larger than 8 MB",
-      "bad_type": "only PNG, JPG or WebP images work"
+      "bad_type": "only PNG, JPG or WebP images work",
+      "timeout": "it took too long to answer",
+      "busy": "a reply is already being written",
+      "limit": "the conversation limit was reached, try again later",
+      "cancelled": "the conversation ended",
+      "unsupported": "this image service can't edit part of a map",
+      "billing": "the AI account has run out of credits or hit its spending limit (add credits in the provider's billing page, then try again)",
+      "ai_off": "AI is switched off in the current AI mode (Offline). The built-in lines are used instead",
+      "budget": "the development AI budget for this session is used up (raise it or reset it in the API Usage dashboard)"
     },
     "errorTitle": "That didn't work: {reason}."
   },
@@ -675,7 +1017,7 @@
     "replace": "Choose another image",
     "fileHint": "PNG, JPG or WebP · up to 8 MB",
     "reference": "Your reference",
-    "referenceNote": "Shown only here and never saved. Your original file is not changed.",
+    "referenceNote": "When you save, a small copy is kept with the portrait so you can see what it was made from. Your original file is never changed.",
     "permission": "I made this image or have permission to use it.",
     "generate": "Generate pixel character",
     "regenerate": "Regenerate",
@@ -722,7 +1064,8 @@
       "softEdges": "Soft edges found",
       "tooManyColors": "Too many colors"
     },
-    "nothingFound": "Couldn't find a character in this image. Try turning off “Remove plain background”."
+    "nothingFound": "Couldn't find a character in this image. Try turning off “Remove plain background”.",
+    "savedNewVersion": "Saved to {name}. The new picture was added as a new portrait version."
   },
   "editor": {
     "title": "Pixel editor",
@@ -732,7 +1075,39 @@
     "color": "Color {hex}",
     "canvas": "Sprite pixels, 32 by 32. Use the pointer to draw.",
     "apply": "Apply edits",
-    "note": "Edits change the sprite. The portrait stays as it was."
+    "note": "Edits change the sprite. The portrait stays as it was.",
+    "clear": "Clear",
+    "redo": "Redo",
+    "colorPicker": {
+      "sv": "Saturation and brightness",
+      "saturation": "saturation",
+      "value": "brightness",
+      "hue": "Hue",
+      "current": "Current",
+      "previous": "Previous",
+      "usePrevious": "Go back to the previous color",
+      "screen": "Pick from screen",
+      "limited": "Limited palette",
+      "limitedNote": "Limited palette: every color snaps to the nearest of these {n} colors.",
+      "palette": "Palette",
+      "recent": "Recent",
+      "saved": "Saved swatches",
+      "save": "Save",
+      "unsave": "Remove",
+      "savedEmpty": "Save colors you like to find them again. They're remembered in this browser."
+    },
+    "pantone": {
+      "unavailable": "No licensed Pantone library is installed, so no Pantone match is shown. Pantone codes are proprietary; the game won't guess one.",
+      "verified": "From {source}.",
+      "unverified": "Unverified approximation ({source}). Not an official Pantone match.",
+      "none": "No close match in {source}."
+    },
+    "fill": "Fill",
+    "pan": "Pan",
+    "mirror": "Mirror drawing",
+    "zoom": "Zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
   },
   "story": {
     "talk": {
@@ -783,12 +1158,12 @@
         "{name} seems settled for now. {detail}"
       ],
       "happy": [
-        "{name} is humming under their breath. {detail}",
+        "{name} is humming under {their} breath. {detail}",
         "Something has put {name} in a good mood. {detail}"
       ],
       "anxious": [
         "{name} keeps glancing at the door. {detail}",
-        "{name} looks like they're bracing for something. {detail}"
+        "{name} looks like {theyre} bracing for something. {detail}"
       ],
       "irritated": [
         "{name}'s jaw is set. Best tread lightly. {detail}",
@@ -804,7 +1179,7 @@
       ],
       "suspicious": [
         "{name} is watching everyone a little too carefully. {detail}",
-        "{name} narrows their eyes at nothing. {detail}"
+        "{name} narrows {their} eyes at nothing. {detail}"
       ],
       "embarrassed": [
         "{name} is pretending very hard that nothing happened. {detail}",
@@ -854,7 +1229,7 @@
       ],
       "temptation": [
         "An easy shortcut appears, but it would mean going against this: ‘{text}’.",
-        "Someone offers {name} exactly what they want, if they bend ‘{text}’. Just once.",
+        "Someone offers {name} exactly what {name} has always wanted, on one condition: bend ‘{text}’. Just once.",
         "No one is watching. {name} could ignore ‘{text}’ and nobody would know."
       ],
       "goalStep": [
@@ -873,7 +1248,7 @@
         "A smell, a sound, and {name} is back in {memory}."
       ],
       "quietMoment": [
-        "A quiet moment. {name} does what they always do: ‘{text}’.",
+        "A quiet moment. {name} does the usual: ‘{text}’.",
         "Nothing happens, and {name} slips into an old habit: ‘{text}’.",
         "The {place} goes quiet. You notice something about {name}: ‘{text}’."
       ],
@@ -916,7 +1291,7 @@
           "{name} finds a ribbon tied around a tree, very deliberately."
         ],
         "ruins": [
-          "{name} uncovers a mural of someone who looks a lot like them.",
+          "{name} uncovers a mural of someone who looks a lot like {them}.",
           "{name} finds a lantern that's still warm.",
           "A loose stone reveals a hollow with a sealed letter inside."
         ],
@@ -1036,6 +1411,2210 @@
         "Things between {name} and {other} get a little colder.",
         "A small crack appears between {name} and {other}."
       ]
+    }
+  },
+  "behave": {
+    "pre": "… ",
+    "addr": "{other}, ",
+    "say": {
+      "greet": {
+        "terse": [
+          "Oh. Hi.",
+          "Hey.",
+          "…Hello."
+        ],
+        "short": [
+          "Hi! I didn't see you there.",
+          "Oh, hello. Good to see you.",
+          "Hey, you're here early."
+        ],
+        "full": [
+          "Hey! I was hoping I'd run into you today.",
+          "There you are! I've been wanting to tell you something.",
+          "Hi! Come here, look what I found on the way over."
+        ]
+      },
+      "initiate_conversation": {
+        "terse": [
+          "Got a minute?",
+          "Hey. Listen.",
+          "Wait. Can I ask you something?"
+        ],
+        "short": [
+          "Hey, can I tell you something?",
+          "Do you have a minute? I had an idea.",
+          "Walk with me for a bit?"
+        ],
+        "full": [
+          "Okay, I have to tell you about this, it's been stuck in my head all morning.",
+          "Perfect timing! I need someone to hear this plan before I talk myself out of it.",
+          "Come here, come here. You won't believe what I just figured out."
+        ]
+      },
+      "avoid_conversation": {
+        "terse": [
+          "Not now.",
+          "…Busy.",
+          "Later."
+        ],
+        "short": [
+          "Sorry, I was just leaving.",
+          "Can this wait? I'm in the middle of something.",
+          "I'd rather not, right now."
+        ],
+        "full": [
+          "I don't really feel like talking at the moment, if that's okay.",
+          "Let's not do this today. I need some air.",
+          "I'm sure it's important, but I can't right now. Really."
+        ]
+      },
+      "express_surprise": {
+        "terse": [
+          "Oh!",
+          "Wait, what?",
+          "Huh!"
+        ],
+        "short": [
+          "Oh! I didn't expect that.",
+          "Wait, really?",
+          "You scared me!"
+        ],
+        "full": [
+          "Oh! I genuinely did not see that coming.",
+          "Wait, wait. Say that again, I think I misheard.",
+          "Whoa. Okay. That's not what I thought you'd say."
+        ]
+      },
+      "show_affection": {
+        "terse": [
+          "Glad you're here.",
+          "Missed you.",
+          "Hey, you."
+        ],
+        "short": [
+          "I'm really glad you came.",
+          "You always make this place feel nicer.",
+          "I saved you a seat. Obviously."
+        ],
+        "full": [
+          "Honestly? Today got a lot better the second you showed up.",
+          "I was just thinking about you, and here you are.",
+          "Stay a bit? Everything's easier with you around."
+        ]
+      },
+      "express_frustration": {
+        "terse": [
+          "Seriously?",
+          "Ugh.",
+          "Again?"
+        ],
+        "short": [
+          "Can you not, just for once?",
+          "That's really getting on my nerves.",
+          "I heard you the first time."
+        ],
+        "full": [
+          "I'm trying very hard to stay calm right now, and you are not helping.",
+          "Every single time. Do you even hear yourself?",
+          "Okay, that's enough. I'm done pretending this is fine."
+        ]
+      },
+      "ask_question": {
+        "terse": [
+          "Why?",
+          "Meaning?",
+          "…What do you want?"
+        ],
+        "short": [
+          "What do you mean by that?",
+          "Why are you telling me this?",
+          "Wait, what's this about?"
+        ],
+        "full": [
+          "Sorry, I need to understand this first. What exactly are you asking me?",
+          "Hang on. Why now, and why me?",
+          "Before I answer, can you tell me what's really going on?"
+        ]
+      },
+      "respond_cautiously": {
+        "terse": [
+          "…Okay.",
+          "Maybe.",
+          "Hm. Fine."
+        ],
+        "short": [
+          "I'll think about it.",
+          "Okay… what is it?",
+          "That depends."
+        ],
+        "full": [
+          "I'm listening. I just want to be sure I understand first.",
+          "Let's go slowly, if that's alright with you.",
+          "Maybe. I'd like to know a bit more before I decide."
+        ]
+      },
+      "respond_playfully": {
+        "terse": [
+          "Ha! Nice try.",
+          "Oh, is that so?",
+          "Bold of you."
+        ],
+        "short": [
+          "Ha! You wish.",
+          "Careful, I might start liking you.",
+          "Is this a bribe? Because it's working."
+        ],
+        "full": [
+          "Oh, absolutely. And next you'll tell me the islands float because they're happy.",
+          "Ha! Say that again, slower, so I can remember it forever.",
+          "Alright, alright, you win this round. Enjoy it while it lasts."
+        ]
+      },
+      "respond_defensively": {
+        "terse": [
+          "I know what I'm doing.",
+          "That's not fair.",
+          "Says you."
+        ],
+        "short": [
+          "I had it under control.",
+          "That's not what happened.",
+          "You don't know the whole story."
+        ],
+        "full": [
+          "I did exactly what anyone sensible would have done, so let's not pretend otherwise.",
+          "Before you lecture me, maybe ask why I did it.",
+          "I don't need you to tell me how to do my job."
+        ],
+        "praise": {
+          "terse": [
+            "…What's that supposed to mean?",
+            "Sure.",
+            "Hm."
+          ],
+          "short": [
+            "What do you want from me?",
+            "Don't think that changes anything.",
+            "I don't need your approval."
+          ],
+          "full": [
+            "If you're being nice, you want something. So what is it?",
+            "Flattery won't get you anywhere, if that's the plan.",
+            "Save it. I know exactly how you talk about me when I'm not around."
+          ]
+        }
+      },
+      "change_subject": {
+        "terse": [
+          "Anyway.",
+          "So. Weather.",
+          "…Look, a bird."
+        ],
+        "short": [
+          "Anyway, did you see the sky today?",
+          "Let's talk about something else.",
+          "So! How about that map?"
+        ],
+        "full": [
+          "Right, moving on. Has anyone checked whether the bridge is still floating?",
+          "Okay, enough about me. What have you been up to?",
+          "Funny you say that. Unrelated, but have you eaten yet?"
+        ]
+      },
+      "challenge": {
+        "terse": [
+          "Prove it.",
+          "Try me.",
+          "Oh yeah?"
+        ],
+        "short": [
+          "Say that to my face.",
+          "Want to settle this properly?",
+          "You really think you can beat me?"
+        ],
+        "full": [
+          "Fine. Race me to the lighthouse and we'll see who's right.",
+          "If you're so sure, let's put it to the test. Right now.",
+          "You keep talking. I'd rather see you actually do it."
+        ]
+      },
+      "acknowledge": {
+        "terse": [
+          "…Fair.",
+          "Okay. Noted.",
+          "Fine."
+        ],
+        "short": [
+          "You're right. I'll fix it.",
+          "Fair point. I didn't think of that.",
+          "Okay. Let's do it your way this time."
+        ],
+        "full": [
+          "I don't love hearing it, but you're right. I'll do better.",
+          "That's fair. I got carried away. Thanks for saying it.",
+          "Alright. We do this together, properly, and we argue about it later."
+        ],
+        "praise": {
+          "terse": [
+            "…Thanks.",
+            "Oh. Thank you.",
+            "Appreciated."
+          ],
+          "short": [
+            "That's kind of you. Thank you.",
+            "Thanks. That means a lot.",
+            "Oh. I didn't expect that. Thanks."
+          ],
+          "full": [
+            "Thank you, really. I wasn't sure anyone noticed.",
+            "That's a kind thing to say. I'll remember it.",
+            "Thanks. Coming from you, that actually matters."
+          ]
+        }
+      }
+    },
+    "narr": {
+      "approach": [
+        "{name} steps a little closer to {other}.",
+        "{name} drifts over to {other}'s side."
+      ],
+      "retreat": [
+        "{name} takes a step back from {other}.",
+        "{name} edges away, putting a little space between themself and {other}."
+      ],
+      "stay_still": [
+        "{name} stays right where {theyAre}.",
+        "{name} doesn't move."
+      ],
+      "face_target": [
+        "{name} turns to face {other}.",
+        "{name} watches {other} carefully."
+      ],
+      "stay_silent": [
+        "{name} says nothing.",
+        "{name} presses {their} lips together and stays quiet."
+      ]
+    },
+    "hidden": {
+      "affection": [
+        "{name}'s ears go a little pink.",
+        "{name} looks away from {other} a moment too quickly."
+      ],
+      "fear": [
+        "{name}'s hands aren't quite steady.",
+        "{name} keeps {their} voice level. Mostly."
+      ],
+      "sadness": [
+        "Something in {name}'s face closes, just for a second.",
+        "{name} blinks a few times and says nothing about it."
+      ]
+    },
+    "triggers": {
+      "approached": "is approached by",
+      "spoken_to": "is spoken to by",
+      "criticized": "is criticized by",
+      "complimented": "is complimented by",
+      "provoked": "is provoked by",
+      "forced_cooperation": "has to work with",
+      "helped": "is helped by",
+      "teased": "is teased by",
+      "brushed_off": "is brushed off by"
+    },
+    "actions": {
+      "approach": "Approach",
+      "retreat": "Step back",
+      "stay_still": "Stay still",
+      "face_target": "Face them",
+      "greet": "Greet",
+      "initiate_conversation": "Start a conversation",
+      "avoid_conversation": "Avoid the conversation",
+      "express_surprise": "Show surprise",
+      "show_affection": "Show affection",
+      "express_frustration": "Show frustration",
+      "ask_question": "Ask a question",
+      "respond_cautiously": "Answer cautiously",
+      "respond_playfully": "Answer playfully",
+      "respond_defensively": "Get defensive",
+      "stay_silent": "Stay silent",
+      "change_subject": "Change the subject",
+      "challenge": "Challenge them",
+      "acknowledge": "Acknowledge it"
+    }
+  },
+  "debug": {
+    "title": "Behavior debug",
+    "intro": "Why characters do what they do. Pick an event, fire it, and read every option's weight. Developers only.",
+    "close": "Hide behavior debug panel",
+    "scenario": "Scenario",
+    "liveCast": "Your own cast (live game)",
+    "sandboxNotice": "Sample scenario on the real stage. Sample characters only: nothing here is saved to your story.",
+    "reactor": "Who reacts",
+    "trigger": "Event",
+    "by": "Caused by",
+    "seed": "Random seed (optional)",
+    "seedPlaceholder": "e.g. 42 — same seed + same state = same result",
+    "seedNote": "Fixed seed: firing again from the same state repeats the result. State changes (feelings, cooldowns) still make later results differ.",
+    "run": "Fire event",
+    "preview": "Odds over {n} runs",
+    "passTime": "Let time pass",
+    "resetScenario": "Reset scenario",
+    "distribution": "Preview: {n} runs, nothing changed",
+    "log": "Recent decisions (tap to inspect)",
+    "empty": "No decision yet. Fire an event, or play: every reaction in the game shows up here.",
+    "selected": "Selected action",
+    "because": "Because:",
+    "noStrongReason": "no single strong reason; picked among close options",
+    "chance": "Chosen with {p}% chance (temperature {temp})",
+    "shows": "shows {emotion} ({level})",
+    "showsNothing": "shows nothing on the outside",
+    "masked": "held back",
+    "pause": "pause {ms} ms",
+    "subtle": "subtle",
+    "moderate": "moderate",
+    "strong": "strong",
+    "style": "Dialogue style",
+    "directness": "directness",
+    "humor": "humor",
+    "formality": "formality",
+    "disclosure": "reveals",
+    "hesitant": "hesitates",
+    "movement": "Movement",
+    "candidates": "Possible actions (after hard limits)",
+    "score": "score",
+    "repeatPenalty": "repeat penalty ×{x}",
+    "rejected": "Rejected by hard limits (before any dice)",
+    "noneRejected": "None.",
+    "canonRules": "Canon rules found: {rules}",
+    "notApplicable": "{n} other actions don't apply to this kind of event.",
+    "reasons": {
+      "canon": "locked canon / rules ({detail})",
+      "busy": "busy mid-sentence",
+      "player_command": "the player is steering them",
+      "unreachable": "can't reach the other character",
+      "already_close": "already standing close",
+      "no_room": "no room to step back",
+      "cooldown": "used too recently (cooldown {detail})"
+    },
+    "feelings": "{name}'s feelings (before → after first impression)",
+    "calm": "Nothing strong.",
+    "relation": "Relationship (each direction separately)",
+    "labelNote": "The label is context only; behavior reads the numbers.",
+    "rel": {
+      "trust": "Trust",
+      "affection": "Affection",
+      "respect": "Respect",
+      "familiarity": "Familiarity",
+      "rivalry": "Rivalry",
+      "tension": "Tension",
+      "fear": "Fear",
+      "label": "Label"
+    },
+    "labels": {
+      "stranger": "stranger",
+      "acquaintance": "acquaintance",
+      "friend": "friend",
+      "family": "family",
+      "partner": "partner",
+      "rival": "rival",
+      "enemy": "enemy"
+    },
+    "memories": "Memories with them",
+    "noMemories": "None yet.",
+    "turn": "turn {n}",
+    "memoryKinds": {
+      "helped": "Was helped",
+      "argument": "Argument",
+      "rejected": "Was brushed off",
+      "complimented": "Was complimented",
+      "criticized": "Was criticized",
+      "promise": "Promise",
+      "secret": "Shared a secret",
+      "reunion": "Reunion",
+      "betrayed": "Was betrayed",
+      "provoked": "Was provoked",
+      "cooperated": "Worked together",
+      "teased": "Was teased",
+      "met": "First meeting",
+      "approached": "Approached",
+      "spoken_to": "Spoken to",
+      "forced_cooperation": "Worked together",
+      "brushed_off": "Was brushed off"
+    },
+    "personality": "Personality factors (0–1)",
+    "legend": "p = personality, e = feelings, r = relationship, m = memories, c = place & distance, pref = the character's own tendencies. × means both must be true.",
+    "triggers": {
+      "approached": "is approached by",
+      "spoken_to": "is spoken to by",
+      "criticized": "is criticized by",
+      "complimented": "is complimented by",
+      "provoked": "is provoked by",
+      "forced_cooperation": "has to work with",
+      "helped": "is helped by",
+      "teased": "is teased by",
+      "brushed_off": "is brushed off by"
+    },
+    "feelingNames": {
+      "happiness": "Happiness",
+      "anger": "Anger",
+      "sadness": "Sadness",
+      "fear": "Fear",
+      "anxiety": "Anxiety",
+      "excitement": "Excitement",
+      "embarrassment": "Embarrassment",
+      "affection": "Affection",
+      "frustration": "Frustration",
+      "surprise": "Surprise",
+      "confusion": "Confusion"
+    },
+    "scenarios": {
+      "introStranger": "Introvert approached by a stranger",
+      "introFriend": "Same introvert approached by a close friend",
+      "extroFearedRival": "Extrovert approached by a feared rival",
+      "impulsiveCriticized": "Impulsive character, unexpected criticism",
+      "proudComplimentedByEnemy": "Proud character complimented by an enemy",
+      "rivalsCooperate": "Two rivals forced to cooperate",
+      "calmTurnsAngry": "Calm character pushed to anger",
+      "betrayedBefore": "Meeting someone who betrayed them",
+      "sameTraitsDifferentPast": "Same sliders, different past",
+      "hiddenAffection": "Hiding strong affection"
+    }
+  },
+  "talk": {
+    "hint": "Drag a character onto someone to talk, onto an object to use it, or onto the floor to walk there.",
+    "hintTouch": "Touch and hold a character, then drag onto someone, an object, or the floor.",
+    "orTap": "Or:",
+    "chooseButton": "Talk to…",
+    "chooseNeedsSelection": "Select a character first",
+    "chooseFor": "Who should {name} talk to?",
+    "chooseHelp": "Tap someone on the stage, or pick a name:",
+    "cancel": "Cancel",
+    "walking": "{name} is walking over to {other}…",
+    "drag": {
+      "talk": "Talk to {other}",
+      "noRoute": "Can't reach {other}",
+      "empty": "Drop on someone to talk",
+      "self": "Release to cancel"
+    },
+    "notices": {
+      "unreachable": "{name} can't find a way to {other}. Something is in the way.",
+      "blocked": "{name} can't get past someone standing in the way to {other}. Try moving them first, or pick someone closer.",
+      "noRoom": "There's no free space to stand next to {other}.",
+      "busy": "{name} is in the middle of something. Try again in a moment.",
+      "targetLeft": "{other} isn't here any more.",
+      "lostTarget": "{name} couldn't catch up with {other}.",
+      "tooLong": "{name} gave up trying to reach {other}.",
+      "cancelled": "Cancelled. Nobody moved.",
+      "emptySpace": "To start a conversation, drop {name} onto another character.",
+      "ended": "{name} and {other} finished talking.",
+      "listenerEnded": "{other} ended the conversation.",
+      "unreachablePlace": "{name} can't get there. Something is in the way.",
+      "unreachableObject": "{name} can't reach the {other}.",
+      "nearby": "That spot is blocked, so {name} is going as close as possible.",
+      "refused": "{other} doesn't want to talk to {name} right now.",
+      "walkedAway": "{other} walked away from {name}.",
+      "goingTo": "{name} is heading to the {other}, as they said.",
+      "noSuchPlace": "{name} meant to go to “{other}”, but there's no such place here, so {name} stays put.",
+      "inviteAccepted": "{name} asked {other} to come and see. {other} came along.",
+      "inviteDeclined": "{name} asked {other} to come and see. {other} said no, not now."
+    },
+    "dismiss": "Dismiss",
+    "panel": {
+      "title": "Conversation",
+      "pair": "{name} talks to {other}",
+      "relationship": "Relationship",
+      "relationshipOf": "How {name} sees {other}",
+      "mood": "{other}'s mood",
+      "hardToRead": "Hard to read",
+      "suggested": "Suggested topics",
+      "askElse": "Ask Something Else",
+      "end": "End conversation",
+      "speaking": "Tap the dialogue to hear {other}'s answer.",
+      "answering": "{other} is answering…",
+      "continue": "Keep talking, or end the conversation.",
+      "endShort": "End"
+    },
+    "relation": {
+      "labels": {
+        "stranger": "Strangers",
+        "acquaintance": "Acquaintances",
+        "friend": "Friends",
+        "family": "Family",
+        "partner": "Partners",
+        "rival": "Rivals",
+        "enemy": "Enemies"
+      },
+      "warm": "warm",
+      "cold": "cold",
+      "trusting": "trusting",
+      "wary": "wary",
+      "tense": "tense",
+      "competitive": "competitive",
+      "neutral": "no strong feelings yet"
+    },
+    "composer": {
+      "label": "What should {name} say to {other}?",
+      "placeholder": "Type in English or 中文…",
+      "send": "Send",
+      "cancel": "Cancel",
+      "count": "{n} / {max}",
+      "hint": "Enter sends · Shift+Enter new line · Esc closes (your draft is kept)",
+      "empty": "Type something first."
+    },
+    "listens": [
+      "{other} listens quietly.",
+      "{other} takes that in.",
+      "{other} nods slowly."
+    ],
+    "topics": {
+      "howFeeling": "Ask how {other} is feeling",
+      "cheerUp": "Try to cheer {other} up",
+      "worries": "Ask what's worrying {other}",
+      "recentDisagreement": "Talk about the recent disagreement",
+      "apologize": "Apologize to {other}",
+      "betrayal": "Ask {other} why they broke your trust",
+      "challenge": "Challenge {other}",
+      "sharedMemory": "Bring up {memory}",
+      "compliment": "Compliment {other}",
+      "tease": "Tease {other} a little",
+      "confide": "Confide in {other}",
+      "askHelp": "Ask {other} for help with your goal",
+      "theirGoal": "Ask about {other}'s goals",
+      "introduce": "Introduce yourself",
+      "place": "Talk about this place",
+      "rumor": "Share some local news"
+    },
+    "reasons": {
+      "looks": "Visible mood: {emotion}",
+      "argued": "You clashed recently",
+      "tension": "Things feel tense",
+      "betrayed": "{other} broke your trust",
+      "rivals": "You're rivals",
+      "memory": "A memory you share",
+      "close": "You're close",
+      "playful": "{name} likes to joke",
+      "trust": "You trust each other",
+      "yourGoal": "{name}'s goal",
+      "theirGoal": "{other} has a goal",
+      "stranger": "You barely know each other",
+      "place": "Here: {place}",
+      "world": "World: {world}",
+      "smallTalk": "Small talk"
+    },
+    "memory": {
+      "helped": "the time we helped each other",
+      "cooperated": "the time we worked together",
+      "reunion": "the day we met again",
+      "promise": "the promise we made",
+      "secret": "the secret we shared",
+      "complimented": "the nice things we said",
+      "teased": "all our teasing",
+      "met": "the day we first met"
+    },
+    "say": {
+      "howFeeling": {
+        "soft": [
+          "{other}… are you doing okay?",
+          "How are you feeling, {other}? Really?"
+        ],
+        "bold": [
+          "Hey {other}! How are you holding up?",
+          "So, {other}, how's your day going?"
+        ]
+      },
+      "cheerUp": {
+        "soft": [
+          "You seem down, {other}. Want to sit with me for a bit?",
+          "Whatever it is, {other}, you don't have to carry it alone."
+        ],
+        "bold": [
+          "Okay, enough gloom, {other}. Let's find something good about today.",
+          "Chin up, {other}! I've got a terrible joke ready if you need it."
+        ]
+      },
+      "worries": {
+        "soft": [
+          "Is something worrying you, {other}?",
+          "You can tell me what's on your mind, {other}. Only if you want to."
+        ],
+        "bold": [
+          "What's eating at you, {other}? Out with it.",
+          "Something's bugging you, {other}. What is it?"
+        ]
+      },
+      "recentDisagreement": {
+        "soft": [
+          "About what happened between us… can we talk about it, {other}?",
+          "I keep thinking about our disagreement, {other}."
+        ],
+        "bold": [
+          "We need to talk about what happened, {other}.",
+          "Let's clear the air, {other}. That fight's still bugging me."
+        ]
+      },
+      "apologize": {
+        "soft": [
+          "{other}, I'm sorry about before. I didn't handle it well.",
+          "I owe you an apology, {other}."
+        ],
+        "bold": [
+          "Look, {other}, I was out of line. Sorry.",
+          "Okay. I messed up, {other}. I'm sorry."
+        ]
+      },
+      "betrayal": {
+        "soft": [
+          "Why did you do it, {other}? I need to understand.",
+          "I haven't forgotten what you did, {other}."
+        ],
+        "bold": [
+          "Explain yourself, {other}. Why did you betray me?",
+          "Did you think I'd just forget, {other}?"
+        ]
+      },
+      "challenge": {
+        "soft": [
+          "I think I could beat you this time, {other}.",
+          "Want to see who's better at this, {other}?"
+        ],
+        "bold": [
+          "Bet you can't keep up with me, {other}!",
+          "Rematch, {other}. Right now."
+        ]
+      },
+      "sharedMemory": {
+        "soft": [
+          "Do you remember {memory}, {other}?",
+          "I was thinking about {memory}, {other}."
+        ],
+        "bold": [
+          "{other}! I still think about {memory}.",
+          "Remember {memory}, {other}? Good times."
+        ]
+      },
+      "compliment": {
+        "soft": [
+          "I like how you see things, {other}.",
+          "You're really good at this, {other}. I mean it."
+        ],
+        "bold": [
+          "{other}, you're honestly kind of amazing.",
+          "Nobody does it like you, {other}!"
+        ]
+      },
+      "tease": {
+        "soft": [
+          "Is that your thinking face, {other}? It's very serious.",
+          "Did you sleep at all, {other}? Your hair says no."
+        ],
+        "bold": [
+          "Wow, {other}, did you get dressed in the dark?",
+          "Still slower than me, {other}?"
+        ]
+      },
+      "confide": {
+        "soft": [
+          "Can I tell you something, {other}? Just between us.",
+          "{other}, there's something I haven't told anyone."
+        ],
+        "bold": [
+          "{other}, I trust you, so here goes.",
+          "Okay, secret time, {other}. Don't laugh."
+        ]
+      },
+      "askHelp": {
+        "soft": [
+          "{other}, could you help me with something? It matters to me.",
+          "I'm stuck on something important, {other}. Would you help?"
+        ],
+        "bold": [
+          "{other}, I need a hand. You in?",
+          "Help me out with something, {other}? It's a big deal for me."
+        ]
+      },
+      "theirGoal": {
+        "soft": [
+          "What are you hoping for, {other}? What do you want most?",
+          "Do you have something you're working toward, {other}?"
+        ],
+        "bold": [
+          "So what's your big plan, {other}?",
+          "Tell me, {other}: what are you really after?"
+        ]
+      },
+      "introduce": {
+        "soft": [
+          "Um, hi. I'm {name}. I don't think we've really met.",
+          "Hello. I'm {name}. You're {other}, right?"
+        ],
+        "bold": [
+          "Hi! I'm {name}. And you're {other}, right?",
+          "Hey, we haven't met properly. I'm {name}!"
+        ]
+      },
+      "place": {
+        "interior": [
+          "It's cozy in here, isn't it, {other}?",
+          "Have you noticed how quiet this room gets, {other}?",
+          "Someone should really tidy this place up."
+        ],
+        "street": [
+          "It's busy out here today, {other}.",
+          "Did you see that stall on the corner, {other}?",
+          "I like watching people go by. Don't you, {other}?"
+        ],
+        "wilderness": [
+          "It's so open out here, {other}. Hear that wind?",
+          "Careful where you step, {other}. Things grow fast out here.",
+          "I could stay out here all day."
+        ],
+        "ruins": [
+          "This place gives me chills, {other}.",
+          "Who do you think built all this, {other}?",
+          "Stay close, {other}. I don't trust these walls."
+        ],
+        "dreamscape": [
+          "Is any of this real, {other}?",
+          "The sky keeps changing color. Is it just me?",
+          "I feel like I've been here before, {other}."
+        ]
+      },
+      "rumor": {
+        "western-fantasy": [
+          "Did you hear? The guild posted a dragon bounty.",
+          "They say the old wizard's tower lit up again last night, {other}."
+        ],
+        "modern": [
+          "Did you see the news this morning, {other}?",
+          "Apparently the café on the corner is closing. Can you believe it?"
+        ],
+        "ancient-china": [
+          "I heard a wandering swordsman passed through the city gate today.",
+          "They say the magistrate is holding a poetry contest, {other}."
+        ],
+        "otherworld": [
+          "Word is the floating islands drifted closer overnight, {other}.",
+          "Someone saw a slime wearing a hat by the crystal fields."
+        ]
+      }
+    },
+    "ai": {
+      "testTag": "Developer TEST reply: no AI was used",
+      "thinking": "{other} is thinking…",
+      "slow": "{other} is still thinking… (slow connection?)",
+      "modeAi": "AI replies",
+      "modeAiDesc": "Replies are written by Claude from the characters' profiles, mood, relationship and memories.",
+      "modeMock": "TEST replies",
+      "modeMockDesc": "Developer test mode: canned replies, no AI. Add an Anthropic API key for real replies.",
+      "modeOff": "Built-in replies",
+      "modeOffDesc": "AI conversations are off or not set up, so the game's own rules answer.",
+      "offTyped": "{other} heard you, but answering your own words needs AI conversations. Turn on AI story writing in Settings (it needs an Anthropic API key on the server). Nothing scripted is shown in its place.",
+      "failed": "{other}'s AI reply didn't arrive:",
+      "usedBuiltin": "Showing the built-in reaction instead.",
+      "retry": "Try again",
+      "intents": {
+        "warm": "warm",
+        "curious": "curious",
+        "playful": "playful",
+        "serious": "serious",
+        "challenging": "challenging",
+        "supportive": "supportive",
+        "apologetic": "apologetic",
+        "honest": "honest"
+      }
+    }
+  },
+  "memoryEditor": {
+    "help": "Memories shape how characters act and what they say. You can correct, resolve or forget them.",
+    "edited": "edited",
+    "textLabel": "What they remember",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Correct",
+    "forget": "Forget",
+    "forgetConfirm": "Yes, forget it",
+    "markResolved": "Mark resolved",
+    "reopen": "Reopen",
+    "resolved": "resolved",
+    "open": "unresolved",
+    "threads": {
+      "conflict": "Conflict",
+      "promise": "Promise",
+      "discovery": "Discovery",
+      "secret": "Secret"
+    },
+    "kinds": {
+      "note": "Talk",
+      "helped": "Helped",
+      "argument": "Argument",
+      "rejected": "Rejected",
+      "complimented": "Compliment",
+      "criticized": "Criticism",
+      "promise": "Promise",
+      "secret": "Secret",
+      "reunion": "Reunion",
+      "betrayed": "Betrayal",
+      "provoked": "Provoked",
+      "cooperated": "Teamwork",
+      "teased": "Teasing",
+      "met": "First meeting"
+    }
+  },
+  "keepsakes": {
+    "menu": {
+      "label": "Things to do with {name}",
+      "photo": "Photo",
+      "gift": "Gift",
+      "demo": "Add your own characters (or the sample cast) to share photos and gifts."
+    },
+    "done": "Done",
+    "saveFailed": "Couldn't save it in this world. Try again, or reopen the world from My Worlds.",
+    "photo": {
+      "title": "Photo for {name}",
+      "take": "Take Photo",
+      "retake": "Retake",
+      "upload": "Upload Photo",
+      "another": "Choose Another",
+      "capture": "Snap!",
+      "flip": "Switch camera",
+      "stopCamera": "Close camera",
+      "tryAgain": "Try again",
+      "viewfinder": "Camera view",
+      "previewAlt": "Your photo",
+      "empty": "No photo yet",
+      "reading": "Opening photo…",
+      "caption": "Caption (optional)",
+      "captionPlaceholder": "What should {name} know about this photo?",
+      "show": "Show to {name}",
+      "privacy": "The camera only turns on when you press Take Photo. Nothing leaves this device until you choose to show the photo.",
+      "problem": {
+        "type": "That file isn't a photo. Pick a JPG, PNG, WebP or HEIC image.",
+        "size": "That photo is too big (over 25 MB). Pick a smaller one.",
+        "empty": "That file is empty. Pick another photo.",
+        "unreadable": "This photo couldn't be opened. It may be damaged or in a format this browser can't read.",
+        "denied": "Camera access was turned down, so the camera stays off. You can upload a photo instead, or allow the camera in your browser's site settings.",
+        "noCamera": "No camera was found on this device. You can upload a photo instead.",
+        "cameraBusy": "The camera is being used by another app. Close it and try again, or upload a photo.",
+        "cameraFailed": "The camera couldn't start. Try again, or upload a photo.",
+        "saveFailed": "Couldn't save the photo in this world. Try again."
+      },
+      "sendTitle": "Show this photo to {name}?",
+      "sendBody": "{name} looks at photos through Claude, an AI service made by Anthropic. When you press Send, this photo and your caption are sent to Anthropic for this one reaction.",
+      "sendKeep": "The game doesn't keep the photo unless you save the moment as a memory afterwards.",
+      "sendMock": "Test mode: the photo stays on this device. {name} gives a TEST reply without looking at it.",
+      "send": "Send",
+      "back": "Back",
+      "thinking": "{name} is looking at your photo…",
+      "stop": "Stop",
+      "aiOff": "Photo reactions use the AI. Turn on “AI story writing” in Settings (and the server needs an Anthropic API key).",
+      "testTag": "TEST",
+      "error": {
+        "not_configured": "Photo reactions aren't set up on this server yet (it needs an Anthropic API key).",
+        "unsupported": "The AI model set up on this server can't look at pictures.",
+        "refused": "{name} didn't want to react to this photo. Try a different one.",
+        "invalid_output": "{name}'s reaction didn't come out right. Try again.",
+        "rate_limited": "The AI is busy right now. Try again in a moment.",
+        "busy": "Another photo is still being looked at. Try again in a moment.",
+        "limit": "That's a lot of photos for now. Try again later.",
+        "auth": "The server's Anthropic API key was turned down.",
+        "failed": "Something went wrong on the way to the AI. Try again.",
+        "offline": "You're offline. Connect and try again.",
+        "timeout": "That took too long. Try again.",
+        "bad_request": "The photo couldn't be sent. Try another one.",
+        "bad_image": "The photo couldn't be read. Try another one.",
+        "too_large": "That photo is too detailed to send. Try another one.",
+        "cancelled": "Stopped.",
+        "billing": "The AI account is out of credits. Add credits, then try again.",
+        "ai_off": "AI reactions are off in Offline mode, so {name} didn't see the photo. Switch to Balanced in the API Usage dashboard to use them.",
+        "budget": "The development AI budget for this session is used up, so {name} didn't react. Raise or reset it in the API Usage dashboard."
+      }
+    },
+    "gift": {
+      "title": "Gift for {name}",
+      "name": "Gift name",
+      "namePlaceholder": "e.g. Moonlight Cookie",
+      "description": "Description",
+      "descriptionPlaceholder": "What is it, and why this gift?",
+      "picture": "Picture",
+      "mode": {
+        "draw": "Draw it",
+        "ai": "AI picture"
+      },
+      "unavailableTag": "Off",
+      "drawNote": "Draw your gift on the 32×32 grid. Leave it blank to give a wrapped present.",
+      "canvas": "Gift pixels, 32 by 32. Use the pointer to draw.",
+      "aiIntro": "Make a picture from the gift's name and description. You can touch it up afterwards.",
+      "generate": "Generate picture",
+      "regenerate": "Try another",
+      "touchUp": "Touch up",
+      "generating": "Drawing your gift… this can take up to a minute.",
+      "aiUnavailableTitle": "AI pictures are unavailable",
+      "aiChecking": "Checking AI pictures…",
+      "aiUnavailableBody": "Image generation isn't set up for this game yet, so nothing can be generated. You can draw your gift instead.",
+      "drawInstead": "Draw it instead",
+      "aiError": {
+        "not_configured": "Image generation isn't set up, so no picture was made.",
+        "offline": "You're offline. Connect and try again.",
+        "rate_limited": "A picture is already being drawn. Try again in a moment.",
+        "refused": "The image service declined this description. Try different words.",
+        "failed": "The picture couldn't be made. Try again.",
+        "billing": "The image account is out of credits, so no picture was made. Add credits on platform.openai.com → Billing."
+      },
+      "needName": "Give the gift a name first.",
+      "preview": "Item preview",
+      "previewAlt": "Pixel picture of {gift}",
+      "noPicture": "Wrapped",
+      "untitled": "Unnamed gift",
+      "noDescription": "No description yet.",
+      "aiMade": "Picture made with AI",
+      "save": "Save Gift",
+      "give": "Give to {name}",
+      "saved": "“{gift}” is saved in this world's gift box.",
+      "box": "Gift box ({count})",
+      "openSaved": "Open saved gift {gift}",
+      "unwrapping": "{name} is unwrapping it…",
+      "sendNote": "Giving sends the gift's name, description and picture to Claude (Anthropic) so {name} can react.",
+      "sendMock": "Test mode: {name} gives a TEST reaction (nothing is sent anywhere).",
+      "aiOff": "Gift reactions use the AI. Turn on “AI story writing” in Settings (and the server needs an Anthropic API key).",
+      "transfer": {
+        "not_in_world": "This gift belongs to another world.",
+        "unknown_character": "{name} isn't in this world.",
+        "already_has": "{name} already has this gift.",
+        "no_name": "Give the gift a name first."
+      },
+      "error": {
+        "not_configured": "Gift reactions aren't set up on this server yet (it needs an Anthropic API key).",
+        "unsupported": "The AI model set up on this server can't look at pictures.",
+        "refused": "{name} didn't want to react to this gift. Try a different one.",
+        "invalid_output": "{name}'s reaction didn't come out right. Try again.",
+        "rate_limited": "The AI is busy right now. Try again in a moment.",
+        "busy": "Another gift is still being opened. Try again in a moment.",
+        "limit": "That's a lot of gifts for now. Try again later.",
+        "auth": "The server's Anthropic API key was turned down.",
+        "failed": "Something went wrong on the way to the AI. Try again.",
+        "offline": "You're offline. Connect and try again.",
+        "timeout": "That took too long. Try again.",
+        "bad_request": "The gift couldn't be sent. Try another one.",
+        "bad_image": "The gift picture couldn't be read. Try another one.",
+        "too_large": "That gift picture is too big to send.",
+        "cancelled": "Stopped.",
+        "billing": "The AI account is out of credits. Add credits, then try again.",
+        "ai_off": "AI reactions are off in Offline mode, so {name} didn't get the gift. Switch to Balanced in the API Usage dashboard to use them.",
+        "budget": "The development AI budget for this session is used up, so {name} didn't get the gift. Raise or reset it in the API Usage dashboard."
+      }
+    },
+    "log": {
+      "photo": "You showed {name} a photo.",
+      "photoCaption": "You showed {name} a photo: “{caption}”",
+      "gift": "You gave {name} a gift: {gift}.",
+      "photoSaved": "{name} will remember your photo.",
+      "giftRefused": "{name} turned down your gift: {gift}.",
+      "giftMoved": {
+        "displayed": "{name} put the {gift} on display.",
+        "carried": "{name} started carrying the {gift} around.",
+        "private": "{name} tucked the {gift} away among {their} things.",
+        "hidden": "{name} hid the {gift} where no one will find it.",
+        "stored": "{name} put the {gift} away in storage."
+      }
+    },
+    "moment": {
+      "title": "{name} saw your photo",
+      "suggest": "{name} seems to want to remember this.",
+      "unclear": "{name} couldn't quite make it out.",
+      "save": "Save as memory",
+      "notNow": "Not now",
+      "saved": "Saved to {name}'s memories.",
+      "open": "See in memories",
+      "saveFailed": "Couldn't save the photo. Try again.",
+      "privacy": "Saved photos stay in this browser, in this world only. Not now = the photo is let go.",
+      "thumbAlt": "The photo you showed {name}"
+    },
+    "memory": {
+      "label": "Photo from you",
+      "inPhoto": "In the photo",
+      "why": "Why it mattered",
+      "caption": "Your caption",
+      "said": "{name} said",
+      "deletePhoto": "Delete photo",
+      "deleteConfirm": "Delete this photo? {name} will still remember the moment, but the picture is gone for good.",
+      "deleted": "The photo was deleted. The memory stays.",
+      "missing": "Photo not on this device",
+      "alt": "Photo shown to {name}",
+      "giftLabel": "Gift from you"
+    },
+    "giftState": {
+      "displayed": "On display",
+      "carried": "Carried",
+      "private": "Kept privately",
+      "hidden": "Hidden",
+      "stored": "Stored away",
+      "refused": "Refused"
+    },
+    "giftMoment": {
+      "title": "{name} got your gift",
+      "accepted": "{name} took the {gift}.",
+      "indifferent": "{name} took the {gift}, without much interest.",
+      "refused": "{name} turned down the {gift}. It's back in your gift box.",
+      "where": "Now: {state}",
+      "thinks": "{name} thinks:",
+      "open": "See {name}'s things"
+    },
+    "things": {
+      "tab": "Things",
+      "empty": "{name} doesn't have any gifts from you yet.",
+      "knownBy": "Known to: {names}",
+      "onlyOwner": "Only {name} knows about it.",
+      "refused": "Turned down",
+      "history": "History",
+      "alt": "{gift}, a gift from you",
+      "onStage": "{owner}'s {gift} (a gift from you)"
+    }
+  },
+  "library": {
+    "heading": "Character Library",
+    "kicker": "Your originals",
+    "intro": "Your reusable original characters. Add one to any world and that world gets its own copy to change freely. The originals here stay exactly as they are.",
+    "menu": "Character Library",
+    "emptyTitle": "Your library is empty",
+    "emptyBody": "Create a character here, or use “Save as New Template” on any character in Character Studio.",
+    "createNew": "Create New Character",
+    "count": "{count} originals",
+    "countOne": "1 original",
+    "editingOriginal": "Editing the original",
+    "originalEditNote": "Changes here are saved to the library only. Characters already added to your worlds keep their own versions.",
+    "addToWorld": "Add to {world}",
+    "added": "Added “{name}” to {world}.",
+    "noWorld": "Open a world from the title screen to add characters to it.",
+    "delete": "Delete from Library",
+    "deleteTitle": "Delete this original?",
+    "deleteBody": "“{name}” will be removed from your Character Library.",
+    "deleteSafe": "Worlds that already have {name} keep their own version.",
+    "deleteConfirm": "Delete original",
+    "list": "Library characters",
+    "addFromLibrary": "Add from Library",
+    "pickTitle": "Add from Library",
+    "pickIntro": "Pick a character to bring into {world}. This world gets its own copy: changing it never changes the original or your other worlds.",
+    "pickEmpty": "No characters in your library yet. Use “Save as New Template” on any character, or create one in the Character Library.",
+    "addThis": "Add to this world",
+    "alreadyHere": "Already in this world",
+    "openLibrary": "Open Character Library",
+    "worldVersion": "This world's version",
+    "worldVersionNote": "Changes you make here only affect {world}.",
+    "fromLibrary": "From your library",
+    "madeHere": "Made in this world",
+    "editThis": "Edit This World Version",
+    "viewOriginal": "View Original Character",
+    "saveTemplate": "Save as New Template",
+    "savedTemplate": "Saved “{name}” to your Character Library as a new original.",
+    "removeFromWorld": "Remove from This World",
+    "removeTitle": "Remove from this world?",
+    "removeBody": "{name} will leave {world}. Their story so far stays in the log, and the other characters still remember them.",
+    "removeKept": "The original in your Character Library is kept.",
+    "removeNotSaved": "{name} isn't in your Character Library, so this version will be gone. Use “Save as New Template” first to keep a copy.",
+    "removeConfirm": "Remove from world",
+    "originalTitle": "Original character",
+    "originalNote": "This is the library original {name} was added from. Editing this world's version never changes it, and editing the original never changes this world.",
+    "originalMissing": "The original was deleted from the Character Library. This world's version is not affected.",
+    "thisWorld": "this world",
+    "relationships": "Relationships in this world",
+    "noRelationships": "No relationships with the rest of the cast yet. They grow as the story plays out.",
+    "bond": "Closeness {affinity} · Trust {trust}",
+    "unnamedOriginal": "Unnamed original"
+  },
+  "rel": {
+    "say": {
+      "refuse_polite": [
+        "I'd rather not talk about that, {other}.",
+        "That's not something I want to get into.",
+        "Let's leave that one alone, if you don't mind."
+      ],
+      "refuse_firm": [
+        "No. I'm not talking about that.",
+        "That stays with me, {other}. Don't ask.",
+        "No. Drop it."
+      ],
+      "explain_boundary": [
+        "I already said no, {other}. Some things I keep to myself, and that's one of them.",
+        "Asking again won't change my answer. That's a line for me.",
+        "I meant it the first time. That isn't up for discussion."
+      ],
+      "deflect": [
+        "Hm. Ask me something else.",
+        "Is that really what you want to talk about? Pass.",
+        "Nice try. Next question."
+      ],
+      "change_subject": [
+        "Anyway. How's your day going?",
+        "Let's talk about something else. Anything else.",
+        "So… did you see the weather out there?"
+      ],
+      "question_intent": [
+        "Why do you want to know?",
+        "What makes you ask that, {other}?",
+        "Who's asking, you or someone else?"
+      ],
+      "express_discomfort": [
+        "You keep asking, {other}. I don't like it.",
+        "I've said no twice now. This is making me uncomfortable.",
+        "Please stop pushing. It's not okay."
+      ],
+      "end_conversation": [
+        "I'm done with this conversation.",
+        "I'm going to stop here, {other}.",
+        "That's enough. We're finished talking."
+      ],
+      "hesitate": [
+        "…I'm not sure I want to say.",
+        "Maybe another time. Not now.",
+        "I… don't know. Let me think about it."
+      ],
+      "disagree": [
+        "I don't agree with that, {other}.",
+        "No, I see it differently.",
+        "I think you're wrong about this."
+      ]
+    },
+    "stage": {
+      "trust": {
+        "distrustful": "Distrustful",
+        "guarded": "Guarded",
+        "cautious": "Cautious",
+        "developing": "Developing trust",
+        "strong": "Strong trust",
+        "deep": "Deep trust"
+      },
+      "affection": {
+        "hostile": "Hostile",
+        "cold": "Cold",
+        "neutral": "Neutral",
+        "warm": "Warm",
+        "fond": "Fond",
+        "devoted": "Devoted"
+      },
+      "respect": {
+        "contempt": "Contempt",
+        "doubtful": "Doubtful",
+        "neutral": "Neutral",
+        "respect": "Respect",
+        "admiration": "Admiration"
+      },
+      "familiarity": {
+        "stranger": "Stranger",
+        "acquaintance": "Acquaintance",
+        "familiar": "Familiar",
+        "close": "Close"
+      },
+      "tension": {
+        "calm": "Calm",
+        "strained": "Strained",
+        "hostile": "Hostile"
+      }
+    },
+    "label": {
+      "stranger": "Strangers",
+      "acquaintance": "Acquaintances",
+      "friend": "Friends",
+      "close_friend": "Close friends",
+      "family": "Family",
+      "partner": "Partners",
+      "rival": "Rivals",
+      "respected_rival": "Respected rival",
+      "enemy": "Enemies",
+      "wary": "Wary"
+    },
+    "impression": {
+      "prefix": {
+        "tentative": "{name} is beginning to think",
+        "growing": "{name} has come to believe",
+        "firm": "{name} is sure"
+      },
+      "reliable": {
+        "pos": "{other} can be relied on.",
+        "neg": "{other} can't be relied on."
+      },
+      "kind": {
+        "pos": "{other} is kind.",
+        "neg": "{other} can be hurtful."
+      },
+      "competent": {
+        "pos": "{other} knows what they're doing.",
+        "neg": "{other} doesn't know what they're doing."
+      },
+      "honest": {
+        "pos": "{other} is honest.",
+        "neg": "{other} isn't honest."
+      },
+      "respectful": {
+        "pos": "{other} respects their boundaries.",
+        "neg": "{other} pushes past their boundaries."
+      },
+      "sincere": {
+        "pos": "{other} means what they say.",
+        "neg": "{other} flatters to get something."
+      },
+      "safe": {
+        "pos": "{other} is safe to be around.",
+        "neg": "{other} is a threat."
+      }
+    },
+    "milestone": {
+      "reliable_behavior": "Several times reliable",
+      "promise_kept": "Kept a promise",
+      "helped_in_difficulty": "Helped in a hard moment",
+      "voluntary_secret": "Shared a secret freely",
+      "shared_experience": "A shared experience",
+      "resolved_disagreement": "Resolved a disagreement",
+      "respected_boundaries": "Respected boundaries",
+      "earned_respect": "Earned respect",
+      "boundary_reconsidered": "Opened up a little",
+      "betrayed": "Betrayal",
+      "promise_broken": "Broke a promise",
+      "threatened": "A threat",
+      "boundary_violated": "Kept pushing past a boundary"
+    }
+  },
+  "relInspector": {
+    "title": "Relationship inspector",
+    "close": "Hide relationship inspector",
+    "intro": "How one character sees another: long-term values and stages, impressions, milestones and every validated change. Developers only.",
+    "from": "Whose view",
+    "toward": "Toward",
+    "visitor": "The visitor (player)",
+    "longTerm": "Long-term",
+    "grandfathered": "stages read from earlier values",
+    "next": "next: {stage} at {at} (falls back below {exit})",
+    "top": "highest stage",
+    "needs": "needs",
+    "impressions": "Current impressions",
+    "evidence": "evidence {n}",
+    "none": "None yet.",
+    "milestones": "Milestones",
+    "openThings": "Conflicts, promises, refused requests",
+    "conflict": "Open {kind} (turn {turn}): {apologies} apologies, repair {repair}/{need}",
+    "promise": "Promise ({status}, turn {turn}): {text}",
+    "pressure": "Asked about {topic}: {asks}×, refused {refusals}× (last: {last})",
+    "opened": "Soft boundary opened for them: {id}",
+    "memories": "Relevant memories",
+    "importance": "importance {n}",
+    "log": "Changes (newest first, tap for details)",
+    "noLog": "No changes recorded yet. Play, and every relationship change shows up here.",
+    "turn": "Turn {n}",
+    "proposedAs": "proposed as {kind}",
+    "accepted": "Accepted",
+    "proposed": "Proposed",
+    "before": "Before",
+    "after": "After",
+    "feelings": "Emotion (before → after)",
+    "reasons": "Why",
+    "noReasons": "accepted as proposed",
+    "stages": "Stages",
+    "noStageChange": "no stage change",
+    "why": "Moment",
+    "noCast": "Add characters to inspect their relationships.",
+    "tests": "Test scenarios (fixed seed)",
+    "testsIntro": "Replays the relationship scenarios on a sample cast with the real game rules. Nothing is saved to your world.",
+    "seed": "Seed",
+    "runScenarios": "Run scenarios",
+    "runSimulation": "20-interaction simulation",
+    "passed": "{n} of {total} passed",
+    "simSummary": "Mira's view of Tobi: {start} → {end}; label {from} → {to}."
+  },
+  "objects": {
+    "names": {
+      "window": "window",
+      "bookshelf": "bookshelf",
+      "wallArt": "picture on the wall",
+      "door": "door",
+      "tableNote": "note on the table",
+      "rug": "rug",
+      "plant": "potted plant",
+      "shopSign": "shop sign",
+      "shopDoor": "shop door",
+      "lamp": "street lamp",
+      "mushroom": "mushroom",
+      "bigMushroom": "big mushroom",
+      "rubble": "pile of rubble",
+      "oldStone": "old stone",
+      "roundWindow": "round window",
+      "potionShelf": "potion shelf",
+      "cushion": "cushion",
+      "lantern": "lantern",
+      "crystals": "crystals",
+      "slime": "slime",
+      "tinyHouse": "tiny house",
+      "pond": "pond",
+      "steps": "old steps",
+      "potion": "potion",
+      "gift": "gift"
+    },
+    "actions": {
+      "read": "Read",
+      "examine": "Examine",
+      "sit": "Sit",
+      "open": "Open",
+      "inspect": "Inspect",
+      "pick_up": "Pick up",
+      "look_out": "Look out",
+      "admire": "Admire",
+      "climb": "Climb",
+      "talk": "Talk to staff",
+      "order": "Order",
+      "close": "Close",
+      "knock": "Knock",
+      "unlock": "Unlock",
+      "browse": "Browse",
+      "place": "Put something down",
+      "rest": "Rest",
+      "search": "Search",
+      "leave": "Leave",
+      "enter": "Step through"
+    },
+    "do": {
+      "read": "{name} pulls something from the {object} and reads a few lines.",
+      "examine": "{name} takes a closer look at the {object}.",
+      "sit": "{name} sits down on the {object}.",
+      "open": "{name} opens the {object} a crack and looks out.",
+      "inspect": "{name} inspects the {object}.",
+      "pick_up": "{name} picks up the {object} and keeps it close.",
+      "look_out": "{name} looks out of the {object} for a while.",
+      "admire": "{name} stops to admire the {object}.",
+      "climb": "{name} climbs the {object}.",
+      "talk": "{name} waves someone over at the {object}.",
+      "order": "{name} orders something at the {object}.",
+      "close": "{name} closes the {object}.",
+      "knock": "{name} knocks on the {object}.",
+      "unlock": "{name} unlocks the {object}.",
+      "browse": "{name} browses the {object}.",
+      "place": "{name} puts something down on the {object}.",
+      "rest": "{name} rests on the {object}.",
+      "search": "{name} searches the {object}.",
+      "leave": "{name} heads out through the {object}.",
+      "enter": "{name} steps toward the {object}."
+    },
+    "drag": {
+      "use": "{action}: {object}",
+      "walkHere": "Walk here",
+      "nearby": "Blocked, will stop as close as possible",
+      "noWay": "Can't get there",
+      "objectNoWay": "Can't reach the {object}",
+      "busy": "Busy"
+    },
+    "notice": {
+      "unreachablePlace": "{actor} can't get there. Something is in the way.",
+      "unreachableObject": "{actor} can't reach the {object}.",
+      "nearby": "That spot is blocked, so {actor} went as close as possible."
+    }
+  },
+  "refine": {
+    "title": "Refine This Analysis",
+    "intro": "Tell the AI what it got wrong or missed. It proposes a revised analysis and shows exactly what it would change. Nothing changes until you accept it, and your locked canon always wins.",
+    "current": "Current · v{n}",
+    "label": "Refine This Analysis",
+    "placeholder": "The character is reserved around strangers, but becomes playful and talkative around close friends. They are not timid or passive.",
+    "hint": "Only this world's version of the character is changed.",
+    "apply": "Apply Feedback",
+    "applying": "Revising the analysis",
+    "testMode": "Test replies (no AI)",
+    "unavailable": "Refining needs the AI (ANTHROPIC_API_KEY).",
+    "restorePrevious": "Restore Previous Version",
+    "proposalTitle": "Proposed revision",
+    "yourFeedback": "Your feedback:",
+    "understood": "How it was understood:",
+    "conflictTitle": "This feedback contradicts locked canon",
+    "keepCanon": "Keep canon, revise without that part",
+    "editCanon": "Edit the canon instead",
+    "keptCanon": "Revised while keeping your locked canon: the conflicting part of the feedback was left out.",
+    "ambiguousTitle": "Please check this reading",
+    "confirmReading": "Yes, that's what I meant",
+    "changes": "What changes",
+    "noChanges": "Nothing would change.",
+    "why": "Why: {why}",
+    "kept": "Kept as it was",
+    "preview": "Show the full revised analysis",
+    "stale": "The analysis changed since this was proposed. Apply your feedback again.",
+    "accept": "Accept Changes",
+    "reject": "Reject Changes",
+    "blockedCanon": "Resolve the canon conflict first.",
+    "blockedAmbiguous": "Confirm the reading above first.",
+    "history": "Revision history ({n})",
+    "status": {
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "restored": "Restored"
+    },
+    "restoreEntry": "Restored an earlier version (from v{n})",
+    "useThis": "Use this version",
+    "useBefore": "Restore the version before",
+    "sections": {
+      "summary": "Summary",
+      "coreTraits": "Core traits",
+      "speech": "Speech",
+      "emotionalPatterns": "Emotional patterns",
+      "decisionStyle": "Decisions",
+      "socialStyle": "Social style",
+      "motivations": "Motivations",
+      "boundaries": "Boundaries",
+      "dialogueApproaches": "Dialogue approaches",
+      "reactionTendencies": "Reaction tendencies",
+      "storyHooks": "Story hooks"
+    }
+  },
+  "autonomy": {
+    "title": "Autonomy",
+    "intro": "What characters are doing on their own, and why. Rules only, no AI; a player command always comes first, but a character's boundaries can't be overridden.",
+    "active": "Now",
+    "recent": "Recently",
+    "nothing": "Nothing yet.",
+    "boundaries": "Conversation boundaries",
+    "boundary": "{who} ↛ {other} · severity {severity} · pushed {pushes}×",
+    "ready": "ready to talk again",
+    "goals": "Plans said out loud",
+    "kinds": {
+      "approach": "go up to {target}",
+      "move_away": "move away from {target}",
+      "go_to_place": "go to the {object}",
+      "inspect_object": "look at the {object}",
+      "use_object": "use the {object}",
+      "sit": "sit on the {object}",
+      "stand": "stand up",
+      "turn_toward": "turn to {target}",
+      "turn_away": "turn away from {target}",
+      "pause": "pause",
+      "leave_conversation": "leave the conversation",
+      "decline": "decline",
+      "seek_privacy": "find a quiet spot ({object})",
+      "return_to_task": "go back to the {object}",
+      "stay_still": "stay put",
+      "observe": "watch the room",
+      "avoid_object": "step away from the {object}",
+      "reflect": "go quiet by the {object}"
+    },
+    "status": {
+      "proposed": "proposed",
+      "validated": "validated",
+      "queued": "queued",
+      "executing": "doing it",
+      "completed": "done",
+      "interrupted": "interrupted",
+      "failed": "didn't happen"
+    },
+    "goalStatus": {
+      "pending": "after the conversation",
+      "started": "on the way",
+      "done": "arrived",
+      "unavailable": "no such place here",
+      "failed": "couldn't get there"
+    },
+    "reasons": {
+      "keepingDistance": "keeping their distance after a conversation ended badly",
+      "standingGround": "upset, but not one to walk away",
+      "coolingOff": "upset; wants a quiet moment",
+      "seeksComfort": "wants to be near someone they trust",
+      "needsQuiet": "low; wants somewhere quiet to sit",
+      "embarrassed": "embarrassed",
+      "wantsCompany": "in a good mood and wants company",
+      "contentAlone": "in a good mood, happy pottering about",
+      "curious": "something caught their attention",
+      "takingItIn": "taking in what just happened",
+      "backToIt": "going back to what they were doing",
+      "idleCuriosity": "idly curious",
+      "stretchLegs": "stretching their legs",
+      "content": "content where they are",
+      "endedConversation": "ended the conversation and stepped away",
+      "saidSo": "said they would",
+      "wantsToLeave": "wants to get out of here",
+      "asksAround": "has questions for the bartender",
+      "drawnTo": "drawn to something they love",
+      "uneasyNear": "uneasy near something they fear",
+      "quietMemory": "it touches a painful memory",
+      "remindsOf": "it reminds them of someone",
+      "invitesOver": "wants to share something they love",
+      "acceptedInvite": "accepted an invitation",
+      "declinedInvite": "turned an invitation down"
+    },
+    "why": {
+      "cooldown": "needs more time",
+      "upset": "still upset",
+      "repair": "waiting for an apology or a kind gesture",
+      "trust": "trust has broken down",
+      "fear": "afraid of them"
+    },
+    "notes": {
+      "in_conversation": "in a conversation",
+      "player_command": "the player is steering them",
+      "busy": "busy",
+      "boundary": "a boundary stands in the way",
+      "too_many_walks": "enough people are walking around",
+      "unknown_object": "not in this room",
+      "not_allowed": "not theirs to use",
+      "no_path": "blocked",
+      "timeout": "took too long",
+      "expired": "never got the chance",
+      "replaced": "something else came first",
+      "resumed": "picked up again after loading",
+      "no_room": "no room",
+      "unknown_target": "they left",
+      "outranked": "something more important is happening"
+    }
+  },
+  "playArea": {
+    "title": "Play area",
+    "edit": "Edit play area",
+    "untitled": "Your map",
+    "loadingMap": "Loading your map",
+    "intro": "The picture can't tell the game where the floor or the furniture is, so mark it here. Paint the floor green where characters may walk, draw a box around furniture and things they can use, and add a few starting spots.",
+    "toolsLabel": "Play area tools",
+    "tools": {
+      "floor": "Floor",
+      "wall": "Not floor",
+      "object": "Object",
+      "spawn": "Start spot",
+      "walk": "Paint walkable",
+      "block": "Paint blocked",
+      "rect": "Box select",
+      "pen": "Pen outline",
+      "edit": "Edit shape",
+      "anchor": "Walk-to spot",
+      "pan": "Move view"
+    },
+    "hints": {
+      "floor": "Drag over the picture to paint where characters can walk.",
+      "wall": "Drag to remove floor: walls, the top of the picture, anything nobody should stand on.",
+      "object": "Drag a box around a piece of furniture or something to use. Click a box to change it.",
+      "spawn": "Click to add a place where characters start. Click one again to remove it.",
+      "walk": "Drag over the picture to paint where characters can walk. The brush is measured in map cells, so zooming never changes how much it paints.",
+      "block": "Drag to remove floor: walls, water, anything nobody should stand on.",
+      "rect": "Drag a box around a piece of furniture or something to use. Click an object to select it.",
+      "pen": "Click to place points around the object. Click the first point (or Finish) to close the outline. Backspace removes the last point, Esc cancels.",
+      "edit": "Drag a point to move it, drag inside to move the whole shape, click a + to add a point. Select a point and press Delete (or double-click it) to remove it.",
+      "anchor": "Click where a character should stand to use the selected object.",
+      "pan": "Drag to move around the zoomed picture. The mouse wheel scrolls it too."
+    },
+    "brush": "Brush",
+    "brushes": {
+      "s": "S",
+      "m": "M",
+      "l": "L",
+      "xl": "XL"
+    },
+    "name": "Map name",
+    "perspective": "View",
+    "perspectives": {
+      "angled": "Angled / top-down",
+      "side": "Side view"
+    },
+    "characterSize": "Character size",
+    "sizes": {
+      "large": "Large",
+      "medium": "Medium",
+      "small": "Small",
+      "tiny": "Tiny"
+    },
+    "floor": "Floor",
+    "resetGuess": "Rough guess",
+    "fillAll": "All floor",
+    "clearAll": "No floor",
+    "startOver": "Start over",
+    "noFloor": "There's almost no floor yet, so characters have nowhere to stand.",
+    "objects": "Objects",
+    "noObjects": "No objects yet. Choose Object and drag a box around the bar, a table or the fireplace.",
+    "objectName": "Name",
+    "objectNamePlaceholder": "e.g. bar counter",
+    "objectType": "What it is",
+    "solid": "Solid (characters walk around it)",
+    "front": "Hide characters standing behind it",
+    "unreachable": "Nobody can reach this: paint some floor next to it.",
+    "deleteObject": "Delete object",
+    "spawnCount": "Start spots: {n} (without any, characters gather in the middle of the floor)",
+    "save": "Save play area",
+    "saveFailed": "Couldn't save. Try again.",
+    "types": {
+      "feature": "Thing",
+      "seat": "Seat",
+      "item": "Item",
+      "book": "Books",
+      "door": "Door",
+      "window": "Window",
+      "painting": "Picture",
+      "plant": "Plant",
+      "light": "Light",
+      "sign": "Sign",
+      "gift": "Gift",
+      "stairs": "Stairs",
+      "counter": "Counter / bar",
+      "table": "Table",
+      "bed": "Bed",
+      "chest": "Chest",
+      "exit": "Exit",
+      "portal": "Portal"
+    },
+    "guessNotice": "“{name}” is your generated map. Where people can walk is only a rough guess so far.",
+    "missingNotice": "The map this save uses isn't in this browser any more, so the built-in scene is shown.",
+    "openBuilder": "World Builder",
+    "inPlay": "Used in Play",
+    "notInPlay": "Play uses the built-in picture",
+    "useInPlay": "Use in Play",
+    "builderHint": "Play uses this exact picture. Set where characters can walk under Play area.",
+    "exitField": "Leads to another area",
+    "keeper": "Who works here",
+    "keeperAuto": "Whoever stands behind it",
+    "locked": "Locked",
+    "keyName": "Opens with an item called",
+    "keyNamePlaceholder": "key",
+    "startsOpen": "Starts open",
+    "note": "What it says / a note about it",
+    "notePlaceholder": "e.g. “Rooms upstairs, 2 coins a night”",
+    "contents": "What's inside (comma separated)",
+    "contentsPlaceholder": "e.g. old map, silver bell",
+    "pixelGridSize": "Characters match this map's pixel grid: one map pixel is one character pixel, so the size is fixed.",
+    "groundHint": "Readable maps keep about two thirds of the playable view as open, connected ground.",
+    "toolGroups": {
+      "paint": "Navigation",
+      "objects": "Objects",
+      "view": "View"
+    },
+    "active": "Tool: {tool}",
+    "brushSize": "Brush size",
+    "brushCells": "{n} cells across · about {px} map px",
+    "zoom": "Zoom",
+    "undo": "Undo",
+    "redo": "Redo",
+    "finish": "Finish outline",
+    "cancelOutline": "Cancel",
+    "points": "{n} points",
+    "deletePoint": "Delete point",
+    "toRect": "Back to a box",
+    "outline": "Outline",
+    "outlineBox": "Box",
+    "outlinePoly": "Drawn outline · {n} points",
+    "collision": "Collision",
+    "collisionWalk": "Walk through",
+    "collisionSolid": "Blocks walking",
+    "range": "Interaction range",
+    "rangeValue": "{n} px",
+    "walkTo": "Walk-to spot",
+    "walkToAuto": "Automatic (in front of it)",
+    "walkToSet": "Set on the map",
+    "walkToClear": "Use automatic",
+    "walkToCustom": "Set by you",
+    "actions": "What characters can do",
+    "linkedNpc": "Linked character",
+    "linkedNone": "Nobody",
+    "linkedScene": "Linked scene",
+    "interests": "What it's about (comma separated)",
+    "interestsPlaceholder": "e.g. flowers, roses, spring",
+    "interestsHint": "Characters who care about these notice it (likes, fears, memories).",
+    "hiddenObject": "Hidden (characters don't know it's here)",
+    "ambient": "Ambient animation",
+    "ambientAuto": "Automatic",
+    "ambientNone": "None",
+    "ambientKinds": {
+      "ripple": "Water ripple",
+      "sway": "Gentle sway",
+      "flicker": "Lantern flicker",
+      "flame": "Small flame",
+      "twinkle": "Twinkle",
+      "pulse": "Glow pulse"
+    },
+    "ambientSpeed": "Speed",
+    "ambientOn": "Animate",
+    "noObjectsPen": "No objects yet. Use Box select or Pen outline to mark the bar, a table or the flower bed.",
+    "unsavedTool": "Editing: the game is paused while this window is open."
+  },
+  "theme": {
+    "title": "Look & feel",
+    "intro": "How the game's windows, buttons and frames look inside this world. It's still PLOT TWIST!, wearing a {world} skin. Changing it never redraws your map or characters.",
+    "mood": "Mood",
+    "motifsLabel": "Small motifs (up to {n})",
+    "primary": "Main colour",
+    "accent": "Accent colour",
+    "colorOption": "Colour option {n}: {hex}",
+    "colorsNote": "Only colours made for this world are offered, so text always stays readable.",
+    "density": "Decoration",
+    "densities": {
+      "minimal": "Minimal",
+      "standard": "Standard",
+      "decorative": "Decorative"
+    },
+    "moods": {
+      "default": "As designed",
+      "cozy": "Cozy",
+      "cheerful": "Cheerful",
+      "dreamy": "Dreamy",
+      "mysterious": "Mysterious",
+      "calm": "Calm",
+      "sacred": "Sacred",
+      "moody": "Moody",
+      "rustic": "Rustic",
+      "elegant": "Elegant"
+    },
+    "motifs": {
+      "leaf": "Leaf",
+      "vine": "Vine",
+      "book": "Book",
+      "key": "Key",
+      "potion": "Potion",
+      "quill": "Quill",
+      "crest": "Crest",
+      "raindrop": "Raindrop",
+      "window": "Window",
+      "camera": "Camera",
+      "message": "Message",
+      "folder": "Folder",
+      "pin": "Location",
+      "citylight": "City light",
+      "cloud": "Cloud",
+      "lantern": "Lantern",
+      "bamboo": "Bamboo",
+      "seal": "Seal",
+      "mountain": "Mountain",
+      "fan": "Fan",
+      "scroll": "Scroll",
+      "jade": "Jade",
+      "star": "Star",
+      "mushroom": "Mushroom",
+      "moon": "Moon",
+      "crystal": "Crystal",
+      "bubble": "Bubble",
+      "sparkle": "Sparkle"
+    },
+    "suggest": {
+      "label": "Suggested",
+      "none": "Write a description above and a mood and motifs will be suggested from it. Until then the world's own skin is used.",
+      "summary": "{mood} mood · {motifs}",
+      "because": "From the words: {words}. This is a simple word match, not AI.",
+      "baseHint": "Some words sound like {other}, but the skin stays {world} because that's this world's type.",
+      "use": "Use suggestion"
+    },
+    "preview": {
+      "label": "Preview of the {world} skin",
+      "panel": "Preview",
+      "tabA": "Story",
+      "tabB": "Memories",
+      "speaker": "Mira",
+      "line": "Oh! Is it always this pretty here?",
+      "primary": "Continue",
+      "secondary": "Observe"
+    },
+    "confirm": "Use this look",
+    "restore": "Restore base theme",
+    "saved": "Saved for this world.",
+    "unsaved": "Not saved yet.",
+    "defaultInUse": "Using the world's default look.",
+    "mapNote": "Only this world changes. Other worlds, the title screen and the Character Library keep their own look."
+  },
+  "portrait": {
+    "title": "Portrait & avatar",
+    "intro": "The generated picture is only a starting point. Edit any pixel, keep every version, and choose which part becomes the profile avatar.",
+    "emptyIntro": "Upload a reference below and save a result to get an editable portrait. Or start from the art this character already has.",
+    "startFromArt": "Make current portrait editable",
+    "startFromPlaceholder": "Start from the placeholder portrait",
+    "started": "Portrait ready to edit. The old art is kept as the first version.",
+    "loadFailed": "That portrait couldn't be loaded.",
+    "full": "Full portrait",
+    "fullAlt": "Full portrait of {name}",
+    "avatar": "Avatar",
+    "avatarAlt": "Avatar preview",
+    "referenceAlt": "Your reference (small copy)",
+    "referenceNote": "Small copy of your upload. Never edited.",
+    "forgetReference": "Forget reference",
+    "outdated": "The avatar was cut from an earlier version of this portrait. Update it with the same crop, or choose a new one.",
+    "updateFromCrop": "Update avatar from saved crop",
+    "recrop": "Re-crop",
+    "keepAvatar": "Keep current avatar",
+    "edit": "Edit portrait",
+    "editShort": "Edit portrait & avatar",
+    "chooseAvatar": "Choose avatar",
+    "restoreGenerated": "Restore generated version",
+    "restored": "Generated version restored. Your edits are still in the list.",
+    "savedNew": "Saved as a new version.",
+    "savedChanges": "Changes saved.",
+    "avatarSaved": "Avatar saved.",
+    "avatarUpdated": "Avatar updated from your saved crop.",
+    "versions": "Portrait versions",
+    "versionsCount": "Versions ({n})",
+    "original": "Original",
+    "use": "Use",
+    "inUse": "In use",
+    "deleteVersion": "Delete {kind} version",
+    "kind": {
+      "generated": "AI generated",
+      "converted": "Converted",
+      "edited": "Edited",
+      "legacy": "Earlier art"
+    },
+    "worldOnly": "Changes here belong to this world's version only. The Character Library original and other worlds keep theirs.",
+    "saveTemplate": "Save as new template",
+    "remove": "Remove portrait",
+    "removeTitle": "Remove this portrait?",
+    "removeConfirm": "Remove portrait",
+    "removeBody": "All {n} versions and the avatar crop will be removed from this world's character. The sprite and other worlds are not affected.",
+    "customAvatar": "Custom avatar",
+    "editor": {
+      "title": "Edit portrait",
+      "save": "Save changes",
+      "saveNew": "Save as new version",
+      "editing": "Editing: {version} ({w}×{h}).",
+      "inPlace": "Save changes updates this edited version.",
+      "keepsOriginal": "The original stays untouched: saving adds a new version.",
+      "canvas": "Portrait pixels, {w} by {h}. Use the pointer to draw.",
+      "note": "Shortcuts: B pencil · E eraser · G fill · I pick · H pan · M mirror · +/− zoom · Ctrl+Z undo"
+    },
+    "crop": {
+      "title": "Choose avatar",
+      "confirm": "Use this avatar",
+      "presets": "Crop presets",
+      "preset": {
+        "head": "Head only",
+        "bust": "Bust",
+        "square": "Square avatar",
+        "custom": "Custom"
+      },
+      "auto": "Auto head crop",
+      "autoNote": "Auto head crop places a box at the top of the figure's outline. It doesn't detect faces, so move or resize it if it's off.",
+      "area": "Crop box at {x}, {y}, size {w} by {h} pixels. Drag to move, drag corners to resize, arrow keys to nudge, Shift+arrows to resize.",
+      "hint": "Drag the box, pull its corners, or draw a new box. It snaps to whole pixels.",
+      "preview": "Avatar preview",
+      "thumb": "Small list icon"
+    }
+  },
+  "explore": {
+    "do": {
+      "openOther": "{name} opens the {object}.",
+      "throughDoor": "{name} steps up to the open {object}.",
+      "alreadyOpen": "The {object} is already open.",
+      "locked": "{name} tries the {object}. It's locked.",
+      "chestOpen": "{name} lifts the lid of the {object}.",
+      "chestOpenFull": "{name} lifts the lid of the {object}. Something is inside.",
+      "doorOpen": "{name} pushes the {object} open. The way through is clear now.",
+      "doorOpenExit": "{name} pulls the {object} open. Beyond it, the way leads on.",
+      "alreadyClosed": "The {object} is already closed.",
+      "close": "{name} closes the {object}.",
+      "knock": "{name} knocks on the {object}. No answer.",
+      "alreadyUnlocked": "The {object} isn't locked.",
+      "noKey": "{name} has nothing that fits the lock of the {object}.",
+      "unlock": "{name} unlocks the {object} with the {item}.",
+      "notAnExit": "The {object} doesn't lead anywhere.",
+      "portal": "{name} reaches into the {object}. It hums and pulls gently.",
+      "leave": "{name} walks up to the {object}.",
+      "climbExit": "{name} climbs the {object}.",
+      "climbStay": "{name} climbs a few steps of the {object}, looks up, and comes back down.",
+      "noKeeper": "{name} leans on the {object}, but nobody is serving right now.",
+      "chatKeeper": "{name} leans on the {object} and chats with {other} for a moment.",
+      "callKeeper": "{name} leans on the {object} and catches {other}'s eye.",
+      "order": "{name} orders a drink from {other} at the {object}. {other} slides it across.",
+      "sitBed": "{name} sits on the edge of the {object}.",
+      "rest": "{name} lies down on the {object} for a short rest.",
+      "browse": "{name} runs a finger along the {object} and pulls out something to read.",
+      "signText": "The {object} reads: “{text}”",
+      "signFaded": "{name} reads the {object}. The paint has mostly faded.",
+      "readText": "{name} reads from the {object}: “{text}”",
+      "chestClosed": "The {object} is closed. Open it first.",
+      "found": "{name} searches the {object} and finds: {text}.",
+      "empty": "{name} searches the {object}. It's empty.",
+      "nothingToPlace": "{name} has nothing to put down.",
+      "place": "{name} puts the {item} down on the {object}.",
+      "noteLook": "{name} looks at the {object}. {text}"
+    },
+    "unavailable": {
+      "locked": "Locked",
+      "no_key": "No key",
+      "no_keeper": "Nobody serving",
+      "closed": "Closed",
+      "nothing_to_place": "Carrying nothing",
+      "not_owner": "Not theirs",
+      "already_open": "Already open",
+      "already_closed": "Already closed",
+      "not_an_exit": "Leads nowhere"
+    },
+    "menu": {
+      "title": "{name} at the {object}",
+      "cancel": "Never mind",
+      "label": "What should {name} do?",
+      "noActor": "Select a character first, then tap the {object}."
+    },
+    "drag": {
+      "choose": "Choose what to do: {object}",
+      "blocked": "{reason}: {object}"
+    },
+    "leave": {
+      "title": "Leave This Area?",
+      "bodyTo": "{name} is at the {exit}, which leads to {scene}.",
+      "bodyNew": "{name} is at the {exit}. It doesn't lead anywhere yet, so you'll choose or create the next area.",
+      "npc": "{name} said they'd go to {scene} and is at the {exit} now.",
+      "stay": "Stay Here",
+      "leave": "Leave",
+      "party": "Who's going",
+      "partyHint": "Everyone else stays here, exactly where they are.",
+      "saved": "This area is saved as it is now."
+    },
+    "travel": {
+      "loading": "Heading to {scene}…",
+      "failed": "Couldn't open {scene}. You're still here and nothing was lost.",
+      "arrived": "{names} arrived at {scene}.",
+      "log": "{names} went from {from} to {to}.",
+      "stayed": "{name} stays by the {exit}."
+    },
+    "picker": {
+      "title": "Where does it lead?",
+      "intro": "Pick an area of this world, or create a new one.",
+      "tabNew": "Create new scene",
+      "tabExisting": "Choose existing scene",
+      "name": "Scene name",
+      "namePlaceholder": "e.g. Upstairs rooms",
+      "description": "Describe the place",
+      "descriptionPlaceholder": "A quiet library filled with tall bookshelves, warm lamps, and a spiral staircase.",
+      "type": "Environment type",
+      "theme": "Uses this world's theme ({world}) and the PLOT TWIST! pixel-art style.",
+      "generate": "Generate map",
+      "usePlaceholder": "Use placeholder art",
+      "placeholderNote": "No map is generated: the built-in picture for this place type is used and marked as a placeholder. You can generate a map for it later in World Builder.",
+      "noImage": "Map generation isn't available right now, so the new scene will use placeholder art.",
+      "generating": "Drawing the new map… this can take up to a minute.",
+      "failed": "The map couldn't be generated ({reason}). You're still here and nothing was lost.",
+      "retry": "Try again",
+      "cancel": "Cancel",
+      "back": "Back",
+      "noScenes": "There are no other scenes in this world yet.",
+      "connected": "Connected",
+      "notConnected": "Not connected yet",
+      "twoWay": "Add a way back",
+      "go": "Go there",
+      "here": "{n} here",
+      "nobody": "Nobody here",
+      "placeholderTag": "Placeholder",
+      "needsDescription": "Describe the place first.",
+      "full": "This world already has the most scenes it can hold."
+    },
+    "scene": {
+      "incomplete": "“{name}” is a new map: where people can walk and what's in it is only a rough guess so far. Mark the floor, furniture and exits under Play area.",
+      "placeholder": "“{name}” uses placeholder art (no map was generated). Generate one in World Builder whenever you like.",
+      "unnamed": "New area",
+      "scenes": "Areas"
+    },
+    "marker": {
+      "to": "To {scene}",
+      "back": "Way back"
+    }
+  },
+  "camera": {
+    "controls": "Camera",
+    "follow": "Follow",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zooms": {
+      "wide": "Wide",
+      "normal": "Normal",
+      "close": "Close"
+    },
+    "followSpeed": "Camera follow",
+    "speeds": {
+      "gentle": "Gentle",
+      "normal": "Normal",
+      "snappy": "Snappy"
+    },
+    "followSpeedDesc": "How quickly the Play Mode camera catches up with the character it follows.",
+    "followTalk": "Speakers",
+    "free": "Free",
+    "freeHint": "Free camera: it stays where you put it. Drag the map to look around.",
+    "followHint": "Follow the selected or speaking character",
+    "modeFollow": "Following",
+    "modeFree": "Free camera"
+  },
+  "sync": {
+    "badge": {
+      "unconfigured": "Cloud saves off",
+      "signedOut": "Not signed in",
+      "saving": "Saving…",
+      "synced": "Synced",
+      "offline": "Offline",
+      "error": "Sync failed",
+      "conflict": "Needs a choice"
+    },
+    "title": "Cloud saves",
+    "open": "Cloud saves and backups",
+    "intro": "Sign in to keep your worlds in your own private cloud account and continue them on any device: characters, relationships, memories, story progress, maps, photos and gifts.",
+    "unconfiguredTitle": "Cloud saves aren't set up on this copy of the game",
+    "unconfiguredBody": "Everything is saved on this device as usual. Export Save and Import Save below still move worlds between devices.",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least 8 characters.",
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "haveAccount": "I already have an account",
+    "noAccount": "New here? Create an account",
+    "signingIn": "Signing in…",
+    "signOut": "Sign out",
+    "signedInAs": "Signed in as {email}",
+    "confirmEmail": "Almost there: open the email we just sent to {email} and tap the confirmation link, then come back and sign in.",
+    "authInvalid": "That email and password don't match an account.",
+    "authExists": "There's already an account with this email. Sign in instead.",
+    "authWeak": "Please use a longer password (at least 8 characters).",
+    "authNetwork": "Can't reach the cloud right now. Check your connection and try again.",
+    "authUnconfirmed": "Please confirm your email first (check your inbox), then sign in.",
+    "authRate": "Too many tries. Please wait a minute and try again.",
+    "authOther": "Couldn't sign in: {message}",
+    "statusSaving": "Saving your changes to the cloud…",
+    "statusSynced": "All worlds in your account are up to date.",
+    "statusSyncedAt": "Last synced {time}.",
+    "statusOffline": "Offline. Changes are saved on this device and will sync when you're back online.",
+    "statusError": "Sync failed. Your worlds are safe on this device; it will try again automatically.",
+    "statusErrorAuth": "Your sign-in expired. Sign out and sign in again to keep syncing. Nothing on this device is lost.",
+    "statusConflict": "A world was changed on two devices. Choose which version to keep below.",
+    "syncNow": "Sync now",
+    "retry": "Retry",
+    "hiddenWorlds": "{count} world(s) from another account are on this device but hidden until that account signs in here.",
+    "deviceTitle": "Worlds only on this device",
+    "deviceBody": "These worlds aren't in your account yet. Adding one uploads it as it is: nothing in it changes, and a backup is made first.",
+    "deviceAdd": "Back up and add to my account",
+    "deviceAdding": "Adding…",
+    "deviceAdded": "Added {count} world(s) to your account.",
+    "deviceNone": "Every world on this device is in your account.",
+    "selectAll": "Select all",
+    "downloadBackupFirst": "Download a backup file first (recommended)",
+    "conflictsTitle": "Changed on two devices",
+    "conflictBoth": "“{name}” was changed here and on {device} since they last matched.",
+    "conflictDeleted": "“{name}” was deleted on another device but changed here.",
+    "keepBoth": "Keep both",
+    "keepBothHint": "Recommended. The other version becomes a separate world.",
+    "useLocal": "Keep this device's version",
+    "useCloud": "Use the other version",
+    "useCloudDeleted": "Delete it here too",
+    "useLocalDeleted": "Keep it (restore it to my account)",
+    "anotherDevice": "another device",
+    "copyName": "{name} (other device)",
+    "importedCopyName": "{name} (imported)",
+    "transferTitle": "Export and import",
+    "transferBody": "Save worlds to a file you can keep as a backup or open on another device, with or without cloud saves.",
+    "exportAll": "Export all worlds",
+    "exportWorld": "Export",
+    "importSave": "Import save",
+    "importing": "Importing…",
+    "imported": "Imported: {list}.",
+    "importedSame": "{name} is already here (unchanged)",
+    "importedCopy": "{name} added as a separate copy",
+    "importedNew": "{name} added",
+    "importInvalid": "That file isn't a PLOT TWIST! save, or it is damaged. Nothing was changed.",
+    "importSomeInvalid": "{count} world(s) in the file were damaged and skipped.",
+    "importFailed": "Couldn't import: your browser storage may be full. Nothing was changed.",
+    "exported": "Saved {file}.",
+    "backupsTitle": "Automatic backups on this device",
+    "backupsBody": "Made before anything replaces or removes a world here. Download one as a file, or restore it as a separate copy.",
+    "backupsNone": "No backups yet.",
+    "backupReason": {
+      "before-cloud-import": "before adding to account",
+      "before-cloud-update": "before a newer version from the cloud",
+      "before-remote-delete": "before removing (deleted on another device)",
+      "before-use-cloud": "before using the other version",
+      "before-import-file": "before importing",
+      "manual": "made by you"
+    },
+    "backupLine": "{name} · {chars} characters · {when} · {reason}",
+    "download": "Download",
+    "restoreCopy": "Restore as copy",
+    "restoredName": "{name} (restored)",
+    "restored": "Restored “{name}” as a separate world.",
+    "cardCloud": "In your account",
+    "cardDevice": "This device only",
+    "cardConflict": "Changed on two devices",
+    "cardResolve": "Choose a version",
+    "deviceBanner": "{count} world(s) on this device aren't in your cloud account yet.",
+    "deviceBannerAction": "Review and add",
+    "unnamed": "Untitled world"
+  },
+  "mapKit": {
+    "labels": {
+      "house": "Cottage",
+      "house2": "Neighbour's cottage",
+      "door": "Cottage door",
+      "door2": "Neighbour's door",
+      "well": "Old well",
+      "bench": "Bench",
+      "sign": "Signpost",
+      "tree": "Big tree",
+      "roadEast": "Side road",
+      "roadSouth": "Road south",
+      "stall": "Market stall",
+      "lamp": "Lamp post",
+      "log": "Fallen log",
+      "shrine": "Stone shrine",
+      "stones": "Standing stones",
+      "arch": "Old archway",
+      "column": "Old column",
+      "fallenColumn": "Fallen column",
+      "palm": "Palm tree",
+      "bridge": "Bridge"
+    }
+  },
+  "mapLab": {
+    "kicker": "Map Lab",
+    "heading": "Test map generation",
+    "intro": "Try scene keywords and see what Generate Map would make, using exactly the same pipeline as the game. Previews are not saved unless you choose \"Use this map\".",
+    "form": "Scene prompt",
+    "world": "World",
+    "type": "Place type",
+    "fields": {
+      "environment": "Environment",
+      "architecture": "Architecture",
+      "mood": "Mood",
+      "terrain": "Terrain",
+      "props": "Important objects"
+    },
+    "placeholders": {
+      "environment": "forest path, riverbank, desert oasis…",
+      "architecture": "timber cottages, broken archway…",
+      "mood": "quiet morning, mysterious…",
+      "terrain": "stream, rocky ledge, sand…",
+      "props": "well, bench, standing stones…"
+    },
+    "sent": "Description sent to the pipeline",
+    "sentHint": "The fields are joined into one description, the same single text box World Builder sends.",
+    "variation": "Variation",
+    "newVariation": "New variation",
+    "generate": "Generate preview",
+    "generating": "Drawing…",
+    "pipeline": "Pipeline",
+    "kit": "Pixel map kit (in the browser)",
+    "kitWhy": "Free and instant. Same words and variation always give the same pixels.",
+    "ai": "Image service",
+    "aiWhy": "Costs money per picture. No seed control: the same prompt can come back different each time.",
+    "aiOff": "The image service isn't set up, so this world and place type can't be previewed.",
+    "aiConfirm": "This calls the paid image service once.",
+    "model": "Model",
+    "kind": "Scene kind",
+    "biome": "Biome",
+    "seed": "Seed",
+    "attempts": "Variations tried",
+    "prompt": "Exact prompt sent to the model",
+    "checks": "Readability checks",
+    "walkable": "Walkable floor",
+    "connected": "Connected",
+    "visible": "Open ground visible",
+    "front": "Under front objects",
+    "colours": "Colours",
+    "objects": "Objects",
+    "overlay": "Show play area",
+    "use": "Use this map in my world",
+    "used": "Saved as a new map version and put in use.",
+    "useOtherWorld": "Switch the World field to your current world to use a preview there.",
+    "empty": "Nothing generated yet.",
+    "failed": "The preview couldn't be made.",
+    "board": "Style consistency board",
+    "boardHint": "Six different scene prompts drawn with the same variation number, side by side, to check they look like one game.",
+    "runBoard": "Draw all six",
+    "loadCase": "Load into the form",
+    "open": "Map Lab",
+    "kinds": {
+      "village": "Village",
+      "forest": "Forest path",
+      "riverbank": "Riverbank",
+      "ruins": "Ruins",
+      "desert": "Desert",
+      "glade": "Magical clearing"
+    },
+    "biomes": {
+      "temperate": "Temperate",
+      "arid": "Arid",
+      "enchanted": "Enchanted"
     }
   }
 }

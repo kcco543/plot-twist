@@ -15,6 +15,10 @@ export const CharacterBriefSchema = z.object({
   fields: z.partialRecord(z.enum(CHARACTER_TEXT_FIELDS), text(800)),
   traits: z.partialRecord(z.enum(TRAIT_IDS), z.number().min(0).max(100)),
   lockedFields: z.array(z.enum(CHARACTER_TEXT_FIELDS)).max(CHARACTER_TEXT_FIELDS.length),
+  /** Personal boundaries from the Character Studio (hard never change in play; soft may, for one person). */
+  boundaries: z.array(z.object({ strength: z.enum(["hard", "soft"]), kind: z.enum(["secret", "topic", "principle"]), text: text(240) })).max(12).optional(),
+  /** Gender and pronouns the player chose (absent = not specified: don't assume). */
+  identity: z.object({ gender: text(80), pronouns: text(80) }).optional(),
   /** Approved behavioral profile (summary + speech), if any. */
   profile: z
     .object({
@@ -40,6 +44,30 @@ export const AnalyzeRequestSchema = z.object({
 });
 export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
 
+/** A behavior the game engine already decided (src/lib/mind). The AI voices it; it can't change it. */
+export const BehaviorBriefSchema = z.object({
+  characterId: text(64),
+  trigger: text(40),
+  causedBy: text(64).nullable(),
+  intent: text(40),
+  style: z.object({
+    length: z.enum(["silent", "terse", "short", "full"]),
+    tone: z.enum(["warm", "cool", "tense", "playful", "nervous", "flat"]),
+    directness: z.number().min(0).max(1),
+    humor: z.number().min(0).max(1),
+    formality: z.number().min(0).max(1),
+    disclosure: z.number().min(0).max(1),
+    hesitant: z.boolean(),
+    useName: z.boolean(),
+  }),
+  shows: z.object({ emotion: text(20), level: z.number().int().min(1).max(3) }).nullable(),
+  hiddenFeeling: text(20).nullable(),
+  feelings: z.array(z.object({ feeling: text(20), value: z.number().min(0).max(100) })).max(4),
+  movement: text(20),
+  speaks: z.boolean(),
+});
+export type BehaviorBriefInput = z.infer<typeof BehaviorBriefSchema>;
+
 export const TurnRequestSchema = z.object({
   locale,
   world,
@@ -63,5 +91,22 @@ export const TurnRequestSchema = z.object({
   memories: z.array(MemoryBrief).max(8),
   /** The last lines shown, so the AI doesn't repeat itself. */
   recentLines: z.array(text(400)).max(12),
+  /** Behaviors the engine decided for this beat (who reacts how). Optional for older clients. */
+  behaviors: z.array(BehaviorBriefSchema).max(3).optional(),
 });
 export type TurnRequest = z.infer<typeof TurnRequestSchema>;
+
+/** Feedback refinement of an existing behavioral profile (/api/ai/refine). */
+export const RefineRequestSchema = z.object({
+  locale,
+  world: world.nullable(),
+  character: CharacterBriefSchema,
+  /** The profile being refined (the active one). Validated as a profile on the server. */
+  profile: z.unknown(),
+  feedback: z.string().trim().min(1).max(1500),
+  /** The player chose to keep locked canon: leave out whatever in the feedback contradicts it. */
+  keepCanon: z.boolean(),
+  /** Earlier feedback on this character (most recent last), so a rejected reading isn't proposed again. */
+  earlier: z.array(z.object({ feedback: text(1500), status: z.enum(["accepted", "rejected"]) })).max(6),
+});
+export type RefineRequest = z.infer<typeof RefineRequestSchema>;

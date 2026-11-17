@@ -50,7 +50,12 @@
     "settings": "设置",
     "pressStart": "按下开始",
     "version": "v0.4 · 原型",
-    "menu": "主菜单"
+    "menu": "主菜单",
+    "menuTab": "开始",
+    "paradeLabel": "几位等着故事开场的角色",
+    "paradeBubble": "剧情反转？！",
+    "worldsTeaser": "四个世界，任你开局",
+    "savesBand": "已保存的世界"
   },
   "nav": {
     "steps": "游戏步骤",
@@ -110,7 +115,11 @@
           "奇异"
         ]
       }
-    }
+    },
+    "saves": "已保存 {count} 个",
+    "savesOne": "已保存 1 个",
+    "savesNone": "新的",
+    "motifsLabel": "图样"
   },
   "studio": {
     "kicker": "第 2 步 · 角色工作室",
@@ -153,7 +162,36 @@
       "look": "外观与像素形象"
     },
     "methodsNote": "可以用文字描述角色，也可以用滑块，或两者结合。两者分开保存，滑块永远不会改写你写的内容。",
-    "toReview": "{count} 项待查看"
+    "toReview": "{count} 项待查看",
+    "boundaries": {
+      "title": "界限",
+      "intro": "这个角色不会说的、不愿聊的、不会去做的事。信任再高，也不会自动越过这些界限。",
+      "hardHelp": "硬界限：游戏中永远不会被打破。只有在这里编辑角色才能修改。",
+      "softHelp": "软界限：暂时回避。经历过真正的共同经历后，可能会对某个人稍微敞开，但绝不会因为被一再追问而改变。",
+      "empty": "还没有写界限。锁定的设定里写着“从不……”的内容也算作硬界限。",
+      "item": "界限 {n}",
+      "strength": "硬或软",
+      "hard": "硬",
+      "soft": "软",
+      "kind": "类型",
+      "kinds": {
+        "secret": "秘密",
+        "topic": "话题",
+        "principle": "原则"
+      },
+      "remove": "删除界限",
+      "text": "内容",
+      "textPlaceholder": {
+        "secret": "例如：她对米拉的感情",
+        "topic": "例如：她在灯塔里的童年",
+        "principle": "例如：绝不作弊，哪怕是为了赢"
+      },
+      "topics": "会触及它的词",
+      "topicsHint": "用逗号分隔，任何语言都可以。消息中出现其中任何一个词，就会触及这个界限。",
+      "topicsPlaceholder": "例如：喜欢, 暗恋, crush, love",
+      "addHard": "添加硬界限",
+      "addSoft": "添加软界限"
+    }
   },
   "character": {
     "fields": {
@@ -219,16 +257,41 @@
       "lockField": "锁定{field}",
       "unlockField": "解锁{field}",
       "hint": "锁定的内容是固定设定，AI 必须原样保留。"
+    },
+    "gender": {
+      "label": "性别",
+      "options": {
+        "unspecified": "未指定",
+        "female": "女性",
+        "male": "男性",
+        "nonbinary": "非二元",
+        "custom": "自我描述"
+      },
+      "customLabel": "用你的话描述",
+      "customPlaceholder": "例如：性别流动、一朵有意识的云",
+      "note": "可选。只用于正确称呼角色，绝不会改变角色的性格、兴趣或行为。只保存在这个版本的角色上。"
+    },
+    "pronouns": {
+      "label": "代词",
+      "options": {
+        "unspecified": "未指定",
+        "she": "她（she/her）",
+        "he": "他（he/him）",
+        "they": "TA（they/them）",
+        "custom": "自定义"
+      },
+      "customLabel": "自定义代词",
+      "customPlaceholder": "例如：xe/xem/xyr"
     }
   },
   "builder": {
     "kicker": "第 3 步 · 世界构建",
     "heading": "布置场景",
-    "intro": "描述故事开始的地方，并选择场所类型。目前预览使用的是占位图。",
+    "intro": "描述故事开始的地方，选择场所类型，然后生成地图。修改文字再生成一次，直到满意为止。",
     "description": "描述",
     "describeLabel": "描述这个环境",
     "describePlaceholder": "面馆楼上一间挤得满满的书店。这里总有雨的味道，后门却是从里面锁上的……",
-    "describeHint": "自动保存。之后这段文字将用于 AI 生成地图。",
+    "describeHint": "自动保存。中文或英文都可以。",
     "type": "环境类型",
     "preview": "预览",
     "previewAlt": "{title}预览",
@@ -237,7 +300,58 @@
     "generating": "正在绘制预览",
     "quoteEmpty": "还没有描述。你写的文字会显示在这里。",
     "backToCast": "角色",
-    "play": "开始"
+    "play": "开始",
+    "map": {
+      "generate": "生成地图",
+      "generating": "正在生成地图",
+      "drawing": "正在绘制地图",
+      "drawingHint": "最多可能需要一分钟。",
+      "iterateHint": "修改描述后再次生成，就会得到新版本。",
+      "needDescription": "先写一段描述，再生成地图。",
+      "unavailable": "地图生成尚未设置",
+      "unavailableHint": "在 .env.local 中添加 OPENAI_API_KEY 并重启应用即可开启。在此之前，预览显示内置图片。",
+      "failed": "地图生成失败：{reason}。",
+      "outdated": "这张地图生成后，你修改了描述或场所类型。再次生成即可查看新版本。",
+      "version": "第 {n} 版",
+      "history": "你的地图",
+      "showVersion": "查看第 {n} 版",
+      "download": "下载",
+      "remove": "删除",
+      "usePlaceholder": "使用内置图片",
+      "keepHint": "新地图完成前，你看到的仍是当前地图。",
+      "showingWhileDrawing": "正在生成 · 当前显示 v{n}",
+      "pixelGridCopy": "像素网格副本",
+      "pixelGridCopyHint": "较早的地图是高分辨率图片。这会在游戏的像素网格上做一份副本，存为新版本。原图保持不变，也不花钱。",
+      "pixelGridFailed": "这个浏览器无法生成像素网格副本。",
+      "kitHint": "由游戏自带的像素地图工具绘制：免费、即时，可行走区域与画面完全一致。"
+    },
+    "edit": {
+      "enter": "编辑区域",
+      "exit": "完成编辑",
+      "selectHint": "在地图上拖动，框选想要修改的区域。",
+      "adjustHint": "拖动选框可以移动，拖动四个角可以调整大小。",
+      "selectionLabel": "选中区域。方向键移动，Shift + 方向键调整大小，Delete 清除。",
+      "clear": "清除选区",
+      "instructionLabel": "这里要改成什么？",
+      "instructionPlaceholder": "把这里改成一间绿色屋顶的小屋。",
+      "examples": "试试",
+      "example1": "把这里改成一间绿色屋顶的小屋。",
+      "example2": "在这里添加一个花圃和木栅栏。",
+      "example3": "把这片空地换成一个小池塘。",
+      "submit": "修改选中区域",
+      "submitting": "正在修改区域",
+      "repainting": "正在重绘这片区域",
+      "keepHint": "选框以外的部分保持不变。每次修改都会保存为一个新版本。",
+      "needSelection": "请先在地图上框选一个区域。",
+      "failed": "区域修改失败：{reason}。",
+      "undo": "撤销修改",
+      "editedFrom": "由版本 {n} 修改：“{instruction}”",
+      "editedFromRemoved": "已修改：“{instruction}”",
+      "editedTag": "已修改"
+    },
+    "sampleTag": "内置示例",
+    "sampleNotice": "这是游戏内置的「{place}」示例图，并不是根据你的描述生成的。点击生成地图，才会按你的文字绘制。",
+    "notDrawnYet": "你的描述（尚未生成）：“{text}”"
   },
   "environments": {
     "interior": {
@@ -310,6 +424,11 @@
     },
     "nextLine": "下一句",
     "lineCount": "{n} / {total}",
+    "bubble": {
+      "finish": "{name} 正在说话。显示全文",
+      "next": "{name} 说完了。下一句",
+      "said": "{name} 说的话"
+    },
     "resetStory": "重置心情、关系和记忆",
     "resetStoryDone": "故事状态已重置。",
     "sidebar": {
@@ -328,7 +447,127 @@
       "behaviorNone": "按滑块和文字设定演出",
       "open": "角色信息",
       "close": "关闭角色信息",
-      "more": "关于{name}的更多信息"
+      "more": "关于{name}的更多信息",
+      "feeling": "情绪",
+      "howSees": "{name}怎么看其他人",
+      "stageLine": "信任：{trust} · 好感：{affection} · 尊重：{respect}",
+      "visitor": "访客",
+      "hide": "收起信息"
+    },
+    "test": {
+      "open": "测试面板",
+      "title": "情绪与移动测试",
+      "intro": "先在场景中选一个角色（◀ ▶ 或直接点角色），再按按钮。这里的操作和剧情走同一套规则，被拒绝时会告诉你原因。",
+      "who": "角色",
+      "target": "靠近 / 远离谁",
+      "nobody": "无",
+      "emotionsTitle": "1 · 情绪",
+      "level": "强度",
+      "levels": {
+        "1": "轻微",
+        "2": "明显",
+        "3": "强烈"
+      },
+      "react": "带动作反应",
+      "reactDesc": "由性格、关系和情绪决定怎么动。关闭：只显示特效。",
+      "movesTitle": "2 · 移动",
+      "approach": "走近",
+      "retreat": "后退",
+      "face": "转向对方",
+      "idle": "待机动作",
+      "stop": "停下",
+      "resume": "继续走",
+      "freeze": "全员定格",
+      "unfreeze": "取消定格",
+      "scenariosTitle": "3 · 快速测试",
+      "meet": "两人互相走近",
+      "walkTalk": "边走边说",
+      "rapid": "快速切换情绪",
+      "interrupt": "打断后继续",
+      "crowd": "全员聚拢（碰撞）",
+      "corner": "退到墙边",
+      "status": "实时状态",
+      "colName": "名字",
+      "colState": "状态",
+      "colFeeling": "情绪",
+      "colSpot": "脚下 (x, y)",
+      "paused": "已定格",
+      "suspended": "行走暂停",
+      "needTwo": "再添加一个角色，才能测试走向别人。",
+      "result": {
+        "ok": "{name} · {action}：{note}",
+        "refused": "{name} · {action}：被拒绝，{reason}"
+      },
+      "actions": {
+        "approach": "走近",
+        "retreat": "后退",
+        "face_target": "转向对方",
+        "idle_reaction": "待机动作",
+        "show_emotion": "显示情绪",
+        "walk_to": "走到某处",
+        "use_object": "使用物品",
+        "turn_away": "转过身去",
+        "stand_up": "站起来"
+      },
+      "reasons": {
+        "invalid": "请求无效",
+        "unknown_actor": "这个角色不在场景中",
+        "unknown_target": "对方不在场景中",
+        "self_target": "不能以自己为目标",
+        "busy": "正忙（正在说话或行走）",
+        "no_room": "对方身边没有空位",
+        "no_path": "路被挡住了",
+        "cornered": "已经无路可退，于是转过身去",
+        "paused": "全员已定格",
+        "player_command": "你正在操控他们，所以他们自己的反应会先等等",
+        "outranked": "他们正忙着更重要的事（你的指令或剧情）",
+        "unknown_object": "这里没有这个物品",
+        "not_allowed": "不能对它这样做",
+        "in_conversation": "正在聊天，原地不动"
+      },
+      "notes": {
+        "moving": "出发了",
+        "already_close": "已经很近，只是转向对方",
+        "facing": "转向了对方",
+        "emoting": "显示情绪中",
+        "idle": "播放待机动作",
+        "shortened": "只能退一小步",
+        "nearby": "那个位置走不过去，改去最近能到的地方",
+        "arrived": "已经在那里了"
+      },
+      "idleKinds": {
+        "look_around": "东张西望",
+        "shift": "挪动脚步",
+        "hop": "小跳",
+        "stretch": "伸懒腰",
+        "shiver": "发抖",
+        "stomp": "跺脚",
+        "sigh": "叹气"
+      },
+      "close": "隐藏测试面板"
+    },
+    "sampleCast": "加入示例角色（米拉、雯雯、托比）",
+    "earlierLines": "之前的台词",
+    "details": "角色详情",
+    "detailsHint": "关于{name}的全部信息。打开时上方的对话不会中断。",
+    "castBar": {
+      "label": "找到角色",
+      "elsewhere": "在别的地方",
+      "here": "在这里"
+    },
+    "activity": {
+      "elsewhere": "最后出现在：{scene}",
+      "speaking": "正在说话",
+      "talking": "正在和{name}聊天",
+      "approaching": "正走向{name}",
+      "goingTo": "正去{object}",
+      "sittingOn": "坐在{object}上",
+      "using": "在{object}旁",
+      "steppingAway": "后退了一步",
+      "walking": "正在走动",
+      "sitting": "坐着",
+      "leaving": "正在走开",
+      "idle": "在一旁站着"
     }
   },
   "scene": {
@@ -388,9 +627,57 @@
     "characters": "{count} 个角色",
     "character": "1 个角色"
   },
+  "myWorlds": {
+    "heading": "世界存档",
+    "intro": "每个世界都有自己的角色、关系、记忆、地图和故事。一个世界里的改动永远不会影响另一个世界。",
+    "create": "创建新世界",
+    "continue": "继续",
+    "continueLast": "继续「{name}」",
+    "rename": "重命名",
+    "duplicate": "复制",
+    "delete": "删除",
+    "current": "游玩中",
+    "lastPlayed": "上次游玩",
+    "characters": "{count} 个角色",
+    "character": "1 个角色",
+    "noCharacters": "还没有角色",
+    "theme": "主题",
+    "noTheme": "尚未选择主题",
+    "autoName": "{theme} {n}",
+    "newWorldName": "新世界 {n}",
+    "copyName": "{name}（副本）",
+    "nameLabel": "世界名称",
+    "namePlaceholder": "给这个世界起个名字",
+    "save": "保存名称",
+    "cancelRename": "取消重命名",
+    "renamed": "已重命名为「{name}」。",
+    "copying": "复制中",
+    "copied": "已复制：「{name}」。",
+    "deleted": "已删除「{name}」。",
+    "copyFailed": "无法复制这个世界：浏览器存储空间已满。删除不再需要的世界可以腾出空间。",
+    "copyUnreadable": "无法读取这个世界的存档，因此没有复制。没有任何内容被更改。",
+    "deleteTitle": "删除这个世界？",
+    "deleteBody": "「{name}」将从此浏览器中移除，包括其中的角色、关系、记忆、故事和地图。",
+    "deleteSafe": "你的其他世界不会受到影响。",
+    "deleteWarn": "此操作无法撤销。",
+    "deleteConfirm": "删除世界",
+    "deleting": "删除中",
+    "emptyTitle": "还没有世界",
+    "emptyBody": "创建一个世界，开始你的第一个故事。",
+    "migrated": "你之前的存档现在是世界「{name}」。原始存档仍作为备份保留在此浏览器中。",
+    "dismiss": "知道了",
+    "previewAlt": "{name} 预览图",
+    "actions": "「{name}」的选项",
+    "inWorld": "世界",
+    "switch": "切换世界",
+    "count": "{count} 个世界",
+    "countOne": "1 个世界",
+    "jump": "世界存档"
+  },
   "settings": {
     "title": "设置",
-    "textSpeed": "文字速度",
+    "textSpeed": "对话速度",
+    "textSpeedDesc": "对话气泡和对话框中文字逐字出现的速度。点击对话即可立即显示全文。",
     "speeds": {
       "slow": "慢",
       "normal": "普通",
@@ -419,13 +706,40 @@
       "chaotic": "混乱"
     },
     "aiStory": "AI 书写故事",
-    "aiStoryDesc": "配置好之后，由 AI 书写对话。关闭则只使用内置台词。",
+    "aiStoryDesc": "配置好之后，由 AI 书写对话和角色之间的对话回复。关闭则只使用内置台词。",
     "aiTitle": "AI 服务",
     "aiText": "性格分析与对话",
-    "aiImage": "像素形象生成",
-    "aiReady": "可用",
+    "aiImage": "像素形象与地图生成",
+    "aiReady": "已添加密钥",
     "aiMissing": "未配置",
-    "aiChecking": "检查中"
+    "aiChecking": "检查中",
+    "testPanel": "情绪与移动测试面板",
+    "testPanelDesc": "在游戏画面的对话框下方显示按钮，可以手动触发每种情绪和移动。",
+    "behaviorDebug": "行为调试面板（开发者）",
+    "behaviorDebugDesc": "显示每个角色为什么这样做：性格、情绪、关系、记忆，以及每个选项的权重。玩家看不到。",
+    "relationshipInspector": "关系检查器",
+    "relationshipInspectorDesc": "开发者工具：长期关系数值、阶段、里程碑，以及每次变化被接受或拒绝的原因。",
+    "aiCheck": "测试连接",
+    "aiCheckFailed": "无法连接到应用服务器。",
+    "aiService": {
+      "anthropic": "Claude（对话、分析）",
+      "openai": "OpenAI 图像（角色、地图）"
+    },
+    "aiResult": {
+      "ok": "密钥有效",
+      "missing": "没有密钥",
+      "auth": "密钥被拒绝",
+      "model_missing": "模型不可用",
+      "unreachable": "无法连接"
+    },
+    "aiCheckNote": "这里只检查密钥和模型，不会生成任何内容。余额不足只有在实际生成时才会显示。",
+    "aiMode": "AI 模式：{mode}",
+    "aiModes": {
+      "offline": "离线（不发送 AI 请求）",
+      "balanced": "平衡（仅在你发起时使用 AI）",
+      "full": "完整 AI"
+    },
+    "usageDashboard": "打开 API 用量面板（开发用）"
   },
   "traits": {
     "extroversion": {
@@ -523,6 +837,26 @@
     "excited": "跃跃欲试",
     "suspicious": "多疑",
     "embarrassed": "难为情"
+  },
+  "emotions": {
+    "neutral": "平静",
+    "happy": "开心",
+    "excited": "兴奋",
+    "affectionate": "亲昵",
+    "embarrassed": "害羞",
+    "angry": "生气",
+    "frustrated": "烦躁",
+    "sad": "难过",
+    "anxious": "不安",
+    "surprised": "惊讶",
+    "confused": "困惑"
+  },
+  "stageStates": {
+    "idle": "待机",
+    "moving": "移动中",
+    "interacting": "互动中",
+    "speaking": "说话中",
+    "reacting": "反应中"
   },
   "events": {
     "confide": "倾诉",
@@ -663,7 +997,15 @@
       "offline": "你现在离线",
       "bad_request": "请求无效",
       "too_large": "图片超过 8 MB",
-      "bad_type": "只支持 PNG、JPG 或 WebP 图片"
+      "bad_type": "只支持 PNG、JPG 或 WebP 图片",
+      "timeout": "回答时间太长",
+      "busy": "上一个回复还在写",
+      "limit": "已达到对话次数上限，请稍后再试",
+      "cancelled": "对话已结束",
+      "unsupported": "当前的图像服务不支持局部修改",
+      "billing": "AI 账户余额不足或已达到消费上限（请在服务商的账单页面充值后再试）",
+      "ai_off": "当前 AI 模式（离线）已关闭 AI，改用内置台词",
+      "budget": "本次开发会话的 AI 预算已用完（可在 API 用量面板中提高或重置）"
     },
     "errorTitle": "没有成功：{reason}。"
   },
@@ -675,7 +1017,7 @@
     "replace": "换一张图片",
     "fileHint": "PNG、JPG 或 WebP · 不超过 8 MB",
     "reference": "你的参考图",
-    "referenceNote": "只在这里显示，不会被保存。你的原始文件不会被修改。",
+    "referenceNote": "保存时会随立绘保留一份小尺寸副本，方便你查看它是根据什么生成的。你的原始文件不会被修改。",
     "permission": "这张图是我画的，或我有权使用它。",
     "generate": "生成像素形象",
     "regenerate": "重新生成",
@@ -722,7 +1064,8 @@
       "softEdges": "存在半透明边缘",
       "tooManyColors": "颜色太多"
     },
-    "nothingFound": "在图片中找不到角色。试试关闭“去除纯色背景”。"
+    "nothingFound": "在图片中找不到角色。试试关闭“去除纯色背景”。",
+    "savedNewVersion": "已保存到{name}。新图片作为新的立绘版本加入。"
   },
   "editor": {
     "title": "像素编辑器",
@@ -732,7 +1075,39 @@
     "color": "颜色 {hex}",
     "canvas": "形象像素，32×32。用指针绘制。",
     "apply": "应用修改",
-    "note": "修改只作用于形象，头像保持不变。"
+    "note": "修改只作用于形象，头像保持不变。",
+    "clear": "清空",
+    "redo": "重做",
+    "colorPicker": {
+      "sv": "饱和度与明度",
+      "saturation": "饱和度",
+      "value": "明度",
+      "hue": "色相",
+      "current": "当前",
+      "previous": "上一个",
+      "usePrevious": "换回上一个颜色",
+      "screen": "从屏幕取色",
+      "limited": "限定调色板",
+      "limitedNote": "限定调色板：每个颜色都会贴到这 {n} 个颜色里最接近的一个。",
+      "palette": "调色板",
+      "recent": "最近使用",
+      "saved": "收藏的色块",
+      "save": "收藏",
+      "unsave": "移除",
+      "savedEmpty": "收藏喜欢的颜色，方便下次再用。只保存在这个浏览器里。"
+    },
+    "pantone": {
+      "unavailable": "没有安装获得授权的 Pantone 色库，所以不显示 Pantone 匹配。Pantone 色号是专有数据，游戏不会猜测色号。",
+      "verified": "来自 {source}。",
+      "unverified": "未经验证的近似值（{source}），不是官方 Pantone 匹配。",
+      "none": "{source} 里没有接近的颜色。"
+    },
+    "fill": "填充",
+    "pan": "平移",
+    "mirror": "镜像绘制",
+    "zoom": "缩放",
+    "zoomIn": "放大",
+    "zoomOut": "缩小"
   },
   "story": {
     "talk": {
@@ -1036,6 +1411,2210 @@
         "{name}和{other}之间冷淡了一些。",
         "{name}和{other}之间出现了一道小小的裂痕。"
       ]
+    }
+  },
+  "behave": {
+    "pre": "……",
+    "addr": "{other}，",
+    "say": {
+      "greet": {
+        "terse": [
+          "啊，嗨。",
+          "嘿。",
+          "……你好。"
+        ],
+        "short": [
+          "嗨！刚才没看见你。",
+          "啊，你好。见到你真好。",
+          "嘿，你来得真早。"
+        ],
+        "full": [
+          "嘿！我正希望今天能碰到你呢。",
+          "你在这儿！我一直想跟你说件事。",
+          "嗨！快过来，看看我路上捡到了什么。"
+        ]
+      },
+      "initiate_conversation": {
+        "terse": [
+          "有空吗？",
+          "嘿，听我说。",
+          "等等，能问你件事吗？"
+        ],
+        "short": [
+          "嘿，我能跟你说件事吗？",
+          "你有空吗？我有个主意。",
+          "陪我走一会儿？"
+        ],
+        "full": [
+          "好啦，这事我必须告诉你，它在我脑子里转了一早上了。",
+          "来得正好！在我说服自己放弃之前，得有人听听这个计划。",
+          "过来过来，你绝对想不到我刚想通了什么。"
+        ]
+      },
+      "avoid_conversation": {
+        "terse": [
+          "现在不行。",
+          "……忙。",
+          "回头再说。"
+        ],
+        "short": [
+          "抱歉，我正要走。",
+          "能晚点说吗？我手上有事。",
+          "现在……还是算了吧。"
+        ],
+        "full": [
+          "我现在不太想说话，可以吗？",
+          "今天就别谈了吧。我想透透气。",
+          "我知道这很重要，但我现在真的不行。"
+        ]
+      },
+      "express_surprise": {
+        "terse": [
+          "啊！",
+          "等等，什么？",
+          "咦！"
+        ],
+        "short": [
+          "啊！没想到会这样。",
+          "等等，真的吗？",
+          "你吓我一跳！"
+        ],
+        "full": [
+          "啊！这个我是真的完全没料到。",
+          "等等等等，你再说一遍，我好像听错了。",
+          "哇。好吧。这可不是我以为你会说的话。"
+        ]
+      },
+      "show_affection": {
+        "terse": [
+          "你来了真好。",
+          "想你了。",
+          "嘿，是你呀。"
+        ],
+        "short": [
+          "你能来我真的很高兴。",
+          "有你在，这里都变得舒服多了。",
+          "我给你留了位子。当然啦。"
+        ],
+        "full": [
+          "说真的？你一出现，今天就变好多了。",
+          "我刚还在想你，你就来了。",
+          "多待一会儿吧？有你在什么都容易些。"
+        ]
+      },
+      "express_frustration": {
+        "terse": [
+          "不是吧？",
+          "唉。",
+          "又来？"
+        ],
+        "short": [
+          "你就不能消停一次吗？",
+          "这真的让我很烦。",
+          "我第一次就听到了。"
+        ],
+        "full": [
+          "我在很努力地保持冷静，而你一点忙都没帮上。",
+          "每次都这样。你听得见自己在说什么吗？",
+          "好了，够了。我不想再假装没事了。"
+        ]
+      },
+      "ask_question": {
+        "terse": [
+          "为什么？",
+          "什么意思？",
+          "……你想干嘛？"
+        ],
+        "short": [
+          "你这话是什么意思？",
+          "你为什么要告诉我这个？",
+          "等等，这是怎么回事？"
+        ],
+        "full": [
+          "抱歉，我得先弄明白。你到底想问我什么？",
+          "等一下。为什么是现在，为什么是我？",
+          "回答之前，你能先告诉我到底发生了什么吗？"
+        ]
+      },
+      "respond_cautiously": {
+        "terse": [
+          "……好。",
+          "也许吧。",
+          "嗯。行。"
+        ],
+        "short": [
+          "我考虑一下。",
+          "好……什么事？",
+          "那要看情况。"
+        ],
+        "full": [
+          "我在听。只是想先确认自己听懂了。",
+          "如果你不介意，我们慢慢来。",
+          "也许吧。我想先多了解一点再决定。"
+        ]
+      },
+      "respond_playfully": {
+        "terse": [
+          "哈！想得美。",
+          "哦？是吗？",
+          "胆子不小嘛。"
+        ],
+        "short": [
+          "哈！你想得美。",
+          "小心点，我可能会开始喜欢你。",
+          "这是贿赂吗？因为挺管用的。"
+        ],
+        "full": [
+          "当然啦。接下来你是不是要说，岛会飘是因为它们心情好？",
+          "哈！再说一遍，慢一点，我要记一辈子。",
+          "好好好，这一局算你赢。好好享受吧，不会太久的。"
+        ]
+      },
+      "respond_defensively": {
+        "terse": [
+          "我知道自己在干什么。",
+          "这不公平。",
+          "你说的。"
+        ],
+        "short": [
+          "我心里有数。",
+          "事情不是那样的。",
+          "你不知道全部经过。"
+        ],
+        "full": [
+          "换了任何一个明白人都会这么做，别装作不是这样。",
+          "教训我之前，不如先问问我为什么这么做。",
+          "我的工作怎么做，用不着你来教。"
+        ],
+        "praise": {
+          "terse": [
+            "……这话什么意思？",
+            "是吗。",
+            "哼。"
+          ],
+          "short": [
+            "你想从我这里得到什么？",
+            "别以为这样就能改变什么。",
+            "我不需要你的认可。"
+          ],
+          "full": [
+            "你突然这么客气，肯定有所图。说吧，是什么？",
+            "如果你打算靠奉承讨好我，那就省省吧。",
+            "省省吧。我不在的时候你怎么说我，我清楚得很。"
+          ]
+        }
+      },
+      "change_subject": {
+        "terse": [
+          "总之。",
+          "所以……天气不错。",
+          "……看，有只鸟。"
+        ],
+        "short": [
+          "对了，你今天看到天空了吗？",
+          "我们聊点别的吧。",
+          "那个！地图怎么样了？"
+        ],
+        "full": [
+          "好，下一个话题。有人去看过那座桥还飘着没？",
+          "好啦，别说我了。你最近在忙什么？",
+          "你这么说挺有意思。不过跟这无关，你吃饭了吗？"
+        ]
+      },
+      "challenge": {
+        "terse": [
+          "证明给我看。",
+          "来啊。",
+          "是吗？"
+        ],
+        "short": [
+          "有本事当面说。",
+          "要不要好好比一场？",
+          "你真觉得你赢得了我？"
+        ],
+        "full": [
+          "行。跟我比到灯塔，看看谁说得对。",
+          "既然你那么有把握，那就现在比一比。",
+          "你一直在说。我更想看你真的做到。"
+        ]
+      },
+      "acknowledge": {
+        "terse": [
+          "……有道理。",
+          "好，记下了。",
+          "行。"
+        ],
+        "short": [
+          "你说得对。我会改。",
+          "说得有理。我没想到这点。",
+          "好，这次按你的方法来。"
+        ],
+        "full": [
+          "虽然不太想听，但你说得对。我会做得更好。",
+          "这话公道。我有点冲动了。谢谢你直说。",
+          "好吧。我们一起好好做，吵架的事以后再说。"
+        ],
+        "praise": {
+          "terse": [
+            "……谢谢。",
+            "啊，谢谢。",
+            "多谢。"
+          ],
+          "short": [
+            "你真好。谢谢。",
+            "谢谢，这对我很重要。",
+            "啊，没想到。谢谢。"
+          ],
+          "full": [
+            "真的谢谢你。我还以为没人注意到。",
+            "这话说得真暖。我会记住的。",
+            "谢谢。从你嘴里说出来，这真的很重要。"
+          ]
+        }
+      }
+    },
+    "narr": {
+      "approach": [
+        "{name}朝{other}走近了一点。",
+        "{name}慢慢走到{other}身边。"
+      ],
+      "retreat": [
+        "{name}从{other}身边退后一步。",
+        "{name}悄悄往后挪，和{other}拉开一点距离。"
+      ],
+      "stay_still": [
+        "{name}站在原地，一动不动。",
+        "{name}没有动。"
+      ],
+      "face_target": [
+        "{name}转身面向{other}。",
+        "{name}仔细打量着{other}。"
+      ],
+      "stay_silent": [
+        "{name}什么也没说。",
+        "{name}抿着嘴，一言不发。"
+      ]
+    },
+    "hidden": {
+      "affection": [
+        "{name}的耳朵有点红了。",
+        "{name}移开视线的速度有点太快了。"
+      ],
+      "fear": [
+        "{name}的手不太稳。",
+        "{name}努力让声音保持平稳。差不多做到了。"
+      ],
+      "sadness": [
+        "{name}的表情黯淡了一瞬。",
+        "{name}眨了几下眼，什么也没提。"
+      ]
+    },
+    "triggers": {
+      "approached": "被走近：",
+      "spoken_to": "被搭话：",
+      "criticized": "被批评：",
+      "complimented": "被夸奖：",
+      "provoked": "被挑衅：",
+      "forced_cooperation": "被迫合作：",
+      "helped": "被帮助：",
+      "teased": "被调侃：",
+      "brushed_off": "被冷落："
+    },
+    "actions": {
+      "approach": "走近",
+      "retreat": "后退",
+      "stay_still": "原地不动",
+      "face_target": "转身面对",
+      "greet": "打招呼",
+      "initiate_conversation": "主动搭话",
+      "avoid_conversation": "回避谈话",
+      "express_surprise": "表现惊讶",
+      "show_affection": "表达好感",
+      "express_frustration": "表现不满",
+      "ask_question": "提问",
+      "respond_cautiously": "谨慎回应",
+      "respond_playfully": "俏皮回应",
+      "respond_defensively": "辩解",
+      "stay_silent": "沉默",
+      "change_subject": "转移话题",
+      "challenge": "挑战对方",
+      "acknowledge": "承认"
+    }
+  },
+  "debug": {
+    "title": "行为调试",
+    "intro": "角色为什么这样做。选一个事件，触发它，看每个选项的权重。仅供开发者。",
+    "close": "隐藏行为调试面板",
+    "scenario": "场景",
+    "liveCast": "你自己的角色（正式游戏）",
+    "sandboxNotice": "示例场景，运行在真实舞台上。只用示例角色：这里的一切都不会存进你的故事。",
+    "reactor": "谁来反应",
+    "trigger": "事件",
+    "by": "由谁引起",
+    "seed": "随机种子（可选）",
+    "seedPlaceholder": "例如 42 —— 相同种子 + 相同状态 = 相同结果",
+    "seedNote": "已固定种子：从相同状态再次触发会得到相同结果。状态变化（情绪、冷却）仍会让之后的结果不同。",
+    "run": "触发事件",
+    "preview": "运行 {n} 次看概率",
+    "passTime": "让时间流逝",
+    "resetScenario": "重置场景",
+    "distribution": "预览：{n} 次运行，不改变任何状态",
+    "log": "最近的决定（点按查看）",
+    "empty": "还没有决定。触发一个事件，或者直接玩：游戏里的每个反应都会显示在这里。",
+    "selected": "选中的行为",
+    "because": "原因：",
+    "noStrongReason": "没有特别突出的原因；在相近的选项里挑了一个",
+    "chance": "以 {p}% 的概率选中（温度 {temp}）",
+    "shows": "表现为{emotion}（{level}）",
+    "showsNothing": "外表看不出来",
+    "masked": "刻意压住了",
+    "pause": "停顿 {ms} 毫秒",
+    "subtle": "轻微",
+    "moderate": "明显",
+    "strong": "强烈",
+    "style": "说话风格",
+    "directness": "直接",
+    "humor": "幽默",
+    "formality": "正式",
+    "disclosure": "坦露",
+    "hesitant": "先犹豫",
+    "movement": "动作",
+    "candidates": "可选行为（已排除硬性限制）",
+    "score": "分数",
+    "repeatPenalty": "重复惩罚 ×{x}",
+    "rejected": "被硬性限制排除（在掷骰之前）",
+    "noneRejected": "无。",
+    "canonRules": "找到的设定规则：{rules}",
+    "notApplicable": "另有 {n} 个行为不适用于这类事件。",
+    "reasons": {
+      "canon": "锁定设定 / 规则（{detail}）",
+      "busy": "正在说话",
+      "player_command": "玩家正在操控",
+      "unreachable": "走不到对方身边",
+      "already_close": "已经站得很近",
+      "no_room": "没有后退的空间",
+      "cooldown": "刚用过（冷却 {detail}）"
+    },
+    "feelings": "{name} 的情绪（第一反应前 → 后）",
+    "calm": "没有强烈的情绪。",
+    "relation": "关系（两个方向分别计算）",
+    "labelNote": "标签只作参考；行为读取的是数值。",
+    "rel": {
+      "trust": "信任",
+      "affection": "好感",
+      "respect": "尊重",
+      "familiarity": "熟悉",
+      "rivalry": "竞争",
+      "tension": "紧张",
+      "fear": "畏惧",
+      "label": "标签"
+    },
+    "labels": {
+      "stranger": "陌生人",
+      "acquaintance": "认识",
+      "friend": "朋友",
+      "family": "家人",
+      "partner": "恋人",
+      "rival": "对手",
+      "enemy": "敌人"
+    },
+    "memories": "和对方的记忆",
+    "noMemories": "暂无。",
+    "turn": "第 {n} 回合",
+    "memoryKinds": {
+      "helped": "被帮助",
+      "argument": "争吵",
+      "rejected": "被冷落",
+      "complimented": "被夸奖",
+      "criticized": "被批评",
+      "promise": "约定",
+      "secret": "分享秘密",
+      "reunion": "重逢",
+      "betrayed": "被背叛",
+      "provoked": "被挑衅",
+      "cooperated": "一起合作",
+      "teased": "被调侃",
+      "met": "初次见面",
+      "approached": "被走近",
+      "spoken_to": "被搭话",
+      "forced_cooperation": "一起合作",
+      "brushed_off": "被冷落"
+    },
+    "personality": "性格因子（0–1）",
+    "legend": "p = 性格，e = 情绪，r = 关系，m = 记忆，c = 场所与距离，pref = 角色自己的倾向。× 表示两者同时成立才算。",
+    "triggers": {
+      "approached": "被走近：",
+      "spoken_to": "被搭话：",
+      "criticized": "被批评：",
+      "complimented": "被夸奖：",
+      "provoked": "被挑衅：",
+      "forced_cooperation": "被迫合作：",
+      "helped": "被帮助：",
+      "teased": "被调侃：",
+      "brushed_off": "被冷落："
+    },
+    "feelingNames": {
+      "happiness": "开心",
+      "anger": "愤怒",
+      "sadness": "难过",
+      "fear": "恐惧",
+      "anxiety": "焦虑",
+      "excitement": "兴奋",
+      "embarrassment": "害羞",
+      "affection": "喜爱",
+      "frustration": "挫败",
+      "surprise": "惊讶",
+      "confusion": "困惑"
+    },
+    "scenarios": {
+      "introStranger": "内向的人被陌生人走近",
+      "introFriend": "同一个内向的人被好友走近",
+      "extroFearedRival": "外向的人被畏惧的对手走近",
+      "impulsiveCriticized": "冲动的人突然被批评",
+      "proudComplimentedByEnemy": "骄傲的人被敌人夸奖",
+      "rivalsCooperate": "两个对手被迫合作",
+      "calmTurnsAngry": "冷静的人被逼到生气",
+      "betrayedBefore": "再见背叛过自己的人",
+      "sameTraitsDifferentPast": "滑块相同，过去不同",
+      "hiddenAffection": "藏起强烈的喜欢"
+    }
+  },
+  "talk": {
+    "hint": "把角色拖到别人身上会去聊天，拖到物品上会去使用它，拖到地面上会走过去。",
+    "hintTouch": "长按角色，然后拖到别人、物品或地面上。",
+    "orTap": "或者：",
+    "chooseButton": "找人聊天…",
+    "chooseNeedsSelection": "请先选择一个角色",
+    "chooseFor": "让{name}和谁聊天？",
+    "chooseHelp": "在场景里点一下对方，或选择名字：",
+    "cancel": "取消",
+    "walking": "{name}正走向{other}…",
+    "drag": {
+      "talk": "和{other}聊天",
+      "noRoute": "走不到{other}那里",
+      "empty": "放到某个角色身上才能聊天",
+      "self": "松手即取消"
+    },
+    "notices": {
+      "unreachable": "{name}找不到去{other}那里的路，有东西挡住了。",
+      "blocked": "有人挡在路上，{name}过不去，走不到{other}那里。可以先让挡路的人走开，或选一个近一点的人。",
+      "noRoom": "{other}旁边没有空位可以站。",
+      "busy": "{name}正忙着呢，稍后再试。",
+      "targetLeft": "{other}已经不在这里了。",
+      "lostTarget": "{name}没能追上{other}。",
+      "tooLong": "{name}放弃了走向{other}。",
+      "cancelled": "已取消，没有人移动。",
+      "emptySpace": "要开始对话，请把{name}放到另一个角色身上。",
+      "ended": "{name}和{other}聊完了。",
+      "listenerEnded": "{other}结束了这次对话。",
+      "unreachablePlace": "{name}到不了那里，有东西挡住了。",
+      "unreachableObject": "{name}够不到{other}。",
+      "nearby": "那个位置被挡住了，{name}会走到最近能到的地方。",
+      "refused": "{other}现在不想和{name}说话。",
+      "walkedAway": "{other}从{name}身边走开了。",
+      "goingTo": "{name}照自己说的，往{other}那边走去。",
+      "noSuchPlace": "{name}本想去“{other}”，但这里没有那个地方，所以留在原地。",
+      "inviteAccepted": "{name}邀请{other}过来看看，{other}跟了过去。",
+      "inviteDeclined": "{name}邀请{other}过来看看，{other}说现在不想去。"
+    },
+    "dismiss": "关闭",
+    "panel": {
+      "title": "对话",
+      "pair": "{name}和{other}聊天",
+      "relationship": "关系",
+      "relationshipOf": "{name}眼中的{other}",
+      "mood": "{other}的情绪",
+      "hardToRead": "看不出来",
+      "suggested": "推荐话题",
+      "askElse": "问问其他的事",
+      "end": "结束对话",
+      "speaking": "点一下对话框，听听{other}怎么回答。",
+      "answering": "{other}正在回答…",
+      "continue": "继续聊，或者结束对话。",
+      "endShort": "结束"
+    },
+    "relation": {
+      "labels": {
+        "stranger": "陌生人",
+        "acquaintance": "点头之交",
+        "friend": "朋友",
+        "family": "家人",
+        "partner": "伴侣",
+        "rival": "对手",
+        "enemy": "敌人"
+      },
+      "warm": "亲近",
+      "cold": "冷淡",
+      "trusting": "信任",
+      "wary": "戒备",
+      "tense": "紧张",
+      "competitive": "较劲",
+      "neutral": "还没有明显的感情"
+    },
+    "composer": {
+      "label": "{name}要对{other}说什么？",
+      "placeholder": "可以输入中文或 English…",
+      "send": "发送",
+      "cancel": "取消",
+      "count": "{n} / {max}",
+      "hint": "回车发送 · Shift+回车换行 · Esc 关闭（草稿会保留）",
+      "empty": "请先输入内容。"
+    },
+    "listens": [
+      "{other}静静地听着。",
+      "{other}把这话听进去了。",
+      "{other}慢慢点了点头。"
+    ],
+    "topics": {
+      "howFeeling": "问问{other}感觉怎么样",
+      "cheerUp": "试着让{other}开心起来",
+      "worries": "问问{other}在担心什么",
+      "recentDisagreement": "聊聊最近的分歧",
+      "apologize": "向{other}道歉",
+      "betrayal": "问{other}为什么辜负你的信任",
+      "challenge": "向{other}发起挑战",
+      "sharedMemory": "聊起{memory}",
+      "compliment": "夸夸{other}",
+      "tease": "逗逗{other}",
+      "confide": "向{other}说说心里话",
+      "askHelp": "请{other}帮你实现目标",
+      "theirGoal": "问问{other}的目标",
+      "introduce": "介绍一下自己",
+      "place": "聊聊这个地方",
+      "rumor": "分享一些当地传闻"
+    },
+    "reasons": {
+      "looks": "看得出的情绪：{emotion}",
+      "argued": "你们最近起过冲突",
+      "tension": "气氛有点紧张",
+      "betrayed": "{other}曾辜负你的信任",
+      "rivals": "你们是对手",
+      "memory": "共同的回忆",
+      "close": "你们关系亲近",
+      "playful": "{name}爱开玩笑",
+      "trust": "你们彼此信任",
+      "yourGoal": "{name}的目标",
+      "theirGoal": "{other}有自己的目标",
+      "stranger": "你们还不太熟",
+      "place": "地点：{place}",
+      "world": "世界：{world}",
+      "smallTalk": "闲聊"
+    },
+    "memory": {
+      "helped": "我们互相帮忙的那次",
+      "cooperated": "我们一起合作的那次",
+      "reunion": "我们重逢的那天",
+      "promise": "我们许下的约定",
+      "secret": "我们分享的秘密",
+      "complimented": "我们互相夸奖的那次",
+      "teased": "我们互相打趣的那些时候",
+      "met": "我们初次见面的那天"
+    },
+    "say": {
+      "howFeeling": {
+        "soft": [
+          "{other}……你还好吗？",
+          "{other}，你现在感觉怎么样？说真的。"
+        ],
+        "bold": [
+          "嘿，{other}！最近还撑得住吗？",
+          "{other}，今天过得怎么样？"
+        ]
+      },
+      "cheerUp": {
+        "soft": [
+          "{other}，你看起来有点低落。要不要陪我坐一会儿？",
+          "不管是什么事，{other}，你都不用一个人扛。"
+        ],
+        "bold": [
+          "好啦，别愁眉苦脸了，{other}。我们来找找今天的好事吧。",
+          "打起精神，{other}！需要的话我这儿有个超冷的笑话。"
+        ]
+      },
+      "worries": {
+        "soft": [
+          "{other}，你是不是在担心什么？",
+          "{other}，想说的话可以告诉我。你愿意的话。"
+        ],
+        "bold": [
+          "{other}，什么事让你这么烦？说出来吧。",
+          "{other}，你明显有心事。到底怎么了？"
+        ]
+      },
+      "recentDisagreement": {
+        "soft": [
+          "关于我们之间的事……{other}，我们能聊聊吗？",
+          "{other}，我一直在想我们之前的分歧。"
+        ],
+        "bold": [
+          "{other}，我们得好好谈谈之前的事。",
+          "{other}，把话说开吧。那次吵架我还放不下。"
+        ]
+      },
+      "apologize": {
+        "soft": [
+          "{other}，之前的事对不起。是我没处理好。",
+          "{other}，我欠你一句道歉。"
+        ],
+        "bold": [
+          "听着，{other}，是我太过分了。对不起。",
+          "好吧，是我搞砸了，{other}。对不起。"
+        ]
+      },
+      "betrayal": {
+        "soft": [
+          "{other}，你为什么要那样做？我想弄明白。",
+          "{other}，你做过的事我还没忘。"
+        ],
+        "bold": [
+          "{other}，给我个解释。你为什么背叛我？",
+          "{other}，你以为我会就这么忘了吗？"
+        ]
+      },
+      "challenge": {
+        "soft": [
+          "{other}，我觉得这次我能赢你。",
+          "{other}，要不要比比看谁更厉害？"
+        ],
+        "bold": [
+          "{other}，我赌你跟不上我！",
+          "{other}，再比一场。就现在。"
+        ]
+      },
+      "sharedMemory": {
+        "soft": [
+          "{other}，你还记得{memory}吗？",
+          "{other}，我刚才想起了{memory}。"
+        ],
+        "bold": [
+          "{other}！我到现在还会想起{memory}。",
+          "{other}，还记得{memory}吗？那时候真好。"
+        ]
+      },
+      "compliment": {
+        "soft": [
+          "{other}，我喜欢你看待事情的方式。",
+          "{other}，你真的很擅长这个。我是认真的。"
+        ],
+        "bold": [
+          "{other}，说真的，你有点厉害。",
+          "{other}，这事没人比你做得更好！"
+        ]
+      },
+      "tease": {
+        "soft": [
+          "{other}，这是你的思考脸吗？好严肃哦。",
+          "{other}，你昨晚睡了吗？你的头发说没有。"
+        ],
+        "bold": [
+          "哇，{other}，你是摸黑穿的衣服吗？",
+          "{other}，你还是比我慢吧？"
+        ]
+      },
+      "confide": {
+        "soft": [
+          "{other}，我能告诉你一件事吗？只有我们俩知道。",
+          "{other}，有件事我从没告诉过别人。"
+        ],
+        "bold": [
+          "{other}，我信得过你，所以我就直说了。",
+          "好，{other}，秘密时间到了。不许笑。"
+        ]
+      },
+      "askHelp": {
+        "soft": [
+          "{other}，你能帮我一个忙吗？这件事对我很重要。",
+          "{other}，我卡在一件重要的事上了。你愿意帮我吗？"
+        ],
+        "bold": [
+          "{other}，我需要帮手。你来不来？",
+          "{other}，帮我个忙好吗？这对我来说是大事。"
+        ]
+      },
+      "theirGoal": {
+        "soft": [
+          "{other}，你在期待什么？你最想要的是什么？",
+          "{other}，你有正在努力的目标吗？"
+        ],
+        "bold": [
+          "{other}，你的大计划是什么？",
+          "说说看，{other}，你真正想要的是什么？"
+        ]
+      },
+      "introduce": {
+        "soft": [
+          "嗯……你好。我是{name}。我们好像还没好好认识过。",
+          "你好，我是{name}。你是{other}，对吧？"
+        ],
+        "bold": [
+          "嗨！我是{name}。你是{other}吧？",
+          "嘿，我们还没正式认识呢。我是{name}！"
+        ]
+      },
+      "place": {
+        "interior": [
+          "这里挺温馨的，对吧，{other}？",
+          "{other}，你有没有发现这个房间有时候特别安静？",
+          "真该有人来收拾一下这里了。"
+        ],
+        "street": [
+          "{other}，今天外面好热闹。",
+          "{other}，你看到街角那个小摊了吗？",
+          "我喜欢看来来往往的人。你呢，{other}？"
+        ],
+        "wilderness": [
+          "{other}，外面好开阔。听到风声了吗？",
+          "{other}，走路小心点，这里的植物长得飞快。",
+          "我能在这里待上一整天。"
+        ],
+        "ruins": [
+          "{other}，这地方让我浑身发冷。",
+          "{other}，你觉得这些是谁建的？",
+          "{other}，跟紧点。我信不过这些墙。"
+        ],
+        "dreamscape": [
+          "{other}，这些都是真的吗？",
+          "天空的颜色一直在变。只有我这么觉得吗？",
+          "{other}，我总觉得以前来过这里。"
+        ]
+      },
+      "rumor": {
+        "western-fantasy": [
+          "你听说了吗？公会贴出了屠龙悬赏。",
+          "{other}，听说老巫师的塔昨晚又亮起来了。"
+        ],
+        "modern": [
+          "{other}，你看今天早上的新闻了吗？",
+          "听说街角那家咖啡馆要关门了。你敢信吗？"
+        ],
+        "ancient-china": [
+          "听说今天有位游侠从城门经过。",
+          "{other}，听说知府要办一场诗会。"
+        ],
+        "otherworld": [
+          "{other}，听说浮空群岛昨晚又漂近了一些。",
+          "有人在水晶原那边看到一只戴帽子的史莱姆。"
+        ]
+      }
+    },
+    "ai": {
+      "testTag": "开发者测试回复：没有使用 AI",
+      "thinking": "{other}正在想……",
+      "slow": "{other}还在想……（网络有点慢？）",
+      "modeAi": "AI 回复",
+      "modeAiDesc": "回复由 Claude 根据角色设定、心情、关系和记忆写出。",
+      "modeMock": "测试回复",
+      "modeMockDesc": "开发者测试模式：固定回复，没有使用 AI。添加 Anthropic API 密钥后才是真正的回复。",
+      "modeOff": "内置回复",
+      "modeOffDesc": "AI 对话已关闭或未设置，由游戏自带的规则回答。",
+      "offTyped": "{other}听到了，但回应你自己写的话需要 AI 对话。在设置里打开“AI 书写故事”（服务器上需要 Anthropic API 密钥）。这里不会用预设台词冒充回答。",
+      "failed": "{other}的 AI 回复没有送达：",
+      "usedBuiltin": "改为显示内置反应。",
+      "retry": "再试一次",
+      "intents": {
+        "warm": "温暖",
+        "curious": "好奇",
+        "playful": "俏皮",
+        "serious": "认真",
+        "challenging": "挑战",
+        "supportive": "支持",
+        "apologetic": "道歉",
+        "honest": "坦白"
+      }
+    }
+  },
+  "memoryEditor": {
+    "help": "记忆会影响角色的行为和说的话。你可以更正、标记为已解决或让角色忘掉。",
+    "edited": "已修改",
+    "textLabel": "记住的内容",
+    "save": "保存",
+    "cancel": "取消",
+    "edit": "更正",
+    "forget": "忘掉",
+    "forgetConfirm": "确定忘掉",
+    "markResolved": "标记为已解决",
+    "reopen": "重新打开",
+    "resolved": "已解决",
+    "open": "未解决",
+    "threads": {
+      "conflict": "矛盾",
+      "promise": "约定",
+      "discovery": "发现",
+      "secret": "秘密"
+    },
+    "kinds": {
+      "note": "谈话",
+      "helped": "帮助",
+      "argument": "争吵",
+      "rejected": "被拒绝",
+      "complimented": "称赞",
+      "criticized": "批评",
+      "promise": "约定",
+      "secret": "秘密",
+      "reunion": "重逢",
+      "betrayed": "背叛",
+      "provoked": "挑衅",
+      "cooperated": "合作",
+      "teased": "打趣",
+      "met": "初次见面"
+    }
+  },
+  "keepsakes": {
+    "menu": {
+      "label": "和{name}互动",
+      "photo": "照片",
+      "gift": "礼物",
+      "demo": "添加你自己的角色（或示例角色）后，就能分享照片和礼物。"
+    },
+    "done": "完成",
+    "saveFailed": "没能保存到这个世界。请再试一次，或从“我的世界”重新进入。",
+    "photo": {
+      "title": "给{name}的照片",
+      "take": "拍照",
+      "retake": "重拍",
+      "upload": "上传照片",
+      "another": "换一张",
+      "capture": "咔嚓！",
+      "flip": "切换镜头",
+      "stopCamera": "关闭相机",
+      "tryAgain": "再试一次",
+      "viewfinder": "相机画面",
+      "previewAlt": "你的照片",
+      "empty": "还没有照片",
+      "reading": "正在打开照片…",
+      "caption": "说明（可选）",
+      "captionPlaceholder": "想让{name}知道这张照片的什么？",
+      "show": "给{name}看",
+      "privacy": "只有按下“拍照”时才会打开相机。在你选择展示照片之前，照片不会离开这台设备。",
+      "problem": {
+        "type": "这个文件不是照片。请选择 JPG、PNG、WebP 或 HEIC 图片。",
+        "size": "照片太大了（超过 25 MB），请选一张小一点的。",
+        "empty": "这个文件是空的，请换一张照片。",
+        "unreadable": "这张照片打不开，可能已损坏，或是浏览器无法读取的格式。",
+        "denied": "相机权限被拒绝，相机不会打开。你可以改为上传照片，或在浏览器的网站设置里允许使用相机。",
+        "noCamera": "这台设备上没有找到相机，可以改为上传照片。",
+        "cameraBusy": "相机正被其他应用使用。关闭后再试，或上传照片。",
+        "cameraFailed": "相机没能启动。请再试一次，或上传照片。",
+        "saveFailed": "没能把照片保存到这个世界，请再试一次。"
+      },
+      "sendTitle": "把这张照片给{name}看？",
+      "sendBody": "{name}会通过 Claude（Anthropic 提供的 AI 服务）来看照片。按下“发送”后，这张照片和你的说明会发送给 Anthropic，只用于这一次反应。",
+      "sendKeep": "之后除非你把这一刻存为记忆，否则游戏不会保留这张照片。",
+      "sendMock": "测试模式：照片不会离开这台设备，{name}会给出一个不看照片的测试回复。",
+      "send": "发送",
+      "back": "返回",
+      "thinking": "{name}正在看你的照片……",
+      "stop": "停止",
+      "aiOff": "照片反应需要用到 AI。请在设置里打开“AI 写故事”（服务器也需要 Anthropic API 密钥）。",
+      "testTag": "测试",
+      "error": {
+        "not_configured": "这台服务器还没设置照片反应（需要 Anthropic API 密钥）。",
+        "unsupported": "服务器上设置的 AI 模型看不了图片。",
+        "refused": "{name}不想对这张照片作出反应。换一张试试。",
+        "invalid_output": "{name}的反应没能正常生成。再试一次。",
+        "rate_limited": "AI 现在有点忙，稍后再试。",
+        "busy": "上一张照片还在看。稍后再试。",
+        "limit": "今天的照片有点多了，稍后再试。",
+        "auth": "服务器的 Anthropic API 密钥被拒绝了。",
+        "failed": "发送给 AI 时出了点问题。再试一次。",
+        "offline": "你现在离线。连上网络后再试。",
+        "timeout": "等太久了。再试一次。",
+        "bad_request": "照片没能发出去。换一张试试。",
+        "bad_image": "照片读不出来。换一张试试。",
+        "too_large": "这张照片太复杂，发不出去。换一张试试。",
+        "cancelled": "已停止。",
+        "billing": "AI 账户余额不足。充值后再试。",
+        "ai_off": "离线模式下 AI 反应已关闭，{name}没有看到照片。可在 API 用量面板切换到“平衡”模式。",
+        "budget": "本次开发会话的 AI 预算已用完，{name}没有反应。可在 API 用量面板中提高或重置预算。"
+      }
+    },
+    "gift": {
+      "title": "送给{name}的礼物",
+      "name": "礼物名称",
+      "namePlaceholder": "例如：月光饼干",
+      "description": "礼物描述",
+      "descriptionPlaceholder": "这是什么？为什么送这份礼物？",
+      "picture": "图案",
+      "mode": {
+        "draw": "自己画",
+        "ai": "AI 生成"
+      },
+      "unavailableTag": "未开启",
+      "drawNote": "在 32×32 的格子上画出礼物。不画的话，就会送出一个包好的礼盒。",
+      "canvas": "礼物像素画，32×32。用指针绘制。",
+      "aiIntro": "根据礼物名称和描述生成图案，生成后还可以再修改。",
+      "generate": "生成图案",
+      "regenerate": "换一个",
+      "touchUp": "修改",
+      "generating": "正在画你的礼物…最多需要一分钟。",
+      "aiUnavailableTitle": "AI 图案暂不可用",
+      "aiChecking": "正在检查 AI 图案…",
+      "aiUnavailableBody": "这个游戏还没有设置图像生成服务，所以无法生成。你可以自己画礼物。",
+      "drawInstead": "改为自己画",
+      "aiError": {
+        "not_configured": "图像生成服务未设置，没有生成图案。",
+        "offline": "你已离线，请联网后再试。",
+        "rate_limited": "已经在画一张图了，请稍后再试。",
+        "refused": "图像服务拒绝了这个描述，换个说法试试。",
+        "failed": "图案没能生成，请再试一次。",
+        "billing": "图像服务账户余额不足，没有生成图片。请到 platform.openai.com → Billing 充值。"
+      },
+      "needName": "请先给礼物起个名字。",
+      "preview": "物品预览",
+      "previewAlt": "{gift}的像素图",
+      "noPicture": "礼盒",
+      "untitled": "未命名礼物",
+      "noDescription": "还没有描述。",
+      "aiMade": "图案由 AI 生成",
+      "save": "保存礼物",
+      "give": "送给{name}",
+      "saved": "“{gift}”已存入这个世界的礼物箱。",
+      "box": "礼物箱（{count}）",
+      "openSaved": "打开已保存的礼物 {gift}",
+      "unwrapping": "{name}正在拆礼物……",
+      "sendNote": "送出礼物时，礼物的名称、描述和图片会发送给 Claude（Anthropic），让{name}作出反应。",
+      "sendMock": "测试模式：{name}会给出测试反应（不会发送到任何地方）。",
+      "aiOff": "礼物反应需要用到 AI。请在设置里打开“AI 写故事”（服务器也需要 Anthropic API 密钥）。",
+      "transfer": {
+        "not_in_world": "这份礼物属于另一个世界。",
+        "unknown_character": "{name}不在这个世界里。",
+        "already_has": "{name}已经有这份礼物了。",
+        "no_name": "先给礼物起个名字。"
+      },
+      "error": {
+        "not_configured": "这台服务器还没设置礼物反应（需要 Anthropic API 密钥）。",
+        "unsupported": "服务器上设置的 AI 模型看不了图片。",
+        "refused": "{name}不想对这份礼物作出反应。换一张试试。",
+        "invalid_output": "{name}的反应没能正常生成。再试一次。",
+        "rate_limited": "AI 现在有点忙，稍后再试。",
+        "busy": "上一份礼物还在拆。稍后再试。",
+        "limit": "今天的礼物有点多了，稍后再试。",
+        "auth": "服务器的 Anthropic API 密钥被拒绝了。",
+        "failed": "发送给 AI 时出了点问题。再试一次。",
+        "offline": "你现在离线。连上网络后再试。",
+        "timeout": "等太久了。再试一次。",
+        "bad_request": "礼物没能送出去。",
+        "bad_image": "礼物图片读不出来。",
+        "too_large": "这份礼物太复杂，发不出去。换一张试试。",
+        "cancelled": "已停止。",
+        "billing": "AI 账户余额不足。充值后再试。",
+        "ai_off": "离线模式下 AI 反应已关闭，{name}没有收到礼物。可在 API 用量面板切换到“平衡”模式。",
+        "budget": "本次开发会话的 AI 预算已用完，{name}没有收到礼物。可在 API 用量面板中提高或重置预算。"
+      }
+    },
+    "log": {
+      "photo": "你给{name}看了一张照片。",
+      "photoCaption": "你给{name}看了一张照片：“{caption}”",
+      "gift": "你送给{name}一份礼物：{gift}。",
+      "photoSaved": "{name}会记住你的照片。",
+      "giftRefused": "{name}拒收了你的礼物：{gift}。",
+      "giftMoved": {
+        "displayed": "{name}把{gift}摆出来展示了。",
+        "carried": "{name}开始随身带着{gift}。",
+        "private": "{name}把{gift}收进了自己的东西里。",
+        "hidden": "{name}把{gift}藏到了没人找得到的地方。",
+        "stored": "{name}把{gift}收进了仓库。"
+      }
+    },
+    "moment": {
+      "title": "{name}看了你的照片",
+      "suggest": "{name}似乎想记住这一刻。",
+      "unclear": "{name}没太看清楚。",
+      "save": "存为记忆",
+      "notNow": "先不用",
+      "saved": "已存入{name}的记忆。",
+      "open": "在记忆里查看",
+      "saveFailed": "照片没能保存。再试一次。",
+      "privacy": "保存的照片只留在这个浏览器、这个世界里。选“先不用”则不保留照片。",
+      "thumbAlt": "你给{name}看的照片"
+    },
+    "memory": {
+      "label": "你给的照片",
+      "inPhoto": "照片里",
+      "why": "为什么重要",
+      "caption": "你的说明",
+      "said": "{name}说",
+      "deletePhoto": "删除照片",
+      "deleteConfirm": "删除这张照片？{name}仍会记得这一刻，但照片会永久删除。",
+      "deleted": "照片已删除，记忆还在。",
+      "missing": "这台设备上没有这张照片",
+      "alt": "给{name}看的照片",
+      "giftLabel": "你送的礼物"
+    },
+    "giftState": {
+      "displayed": "摆出来展示",
+      "carried": "随身带着",
+      "private": "私下收着",
+      "hidden": "藏起来了",
+      "stored": "收进仓库",
+      "refused": "拒收"
+    },
+    "giftMoment": {
+      "title": "{name}收到了你的礼物",
+      "accepted": "{name}收下了{gift}。",
+      "indifferent": "{name}收下了{gift}，不过兴趣不大。",
+      "refused": "{name}没有收下{gift}，它回到了你的礼物盒。",
+      "where": "现在：{state}",
+      "thinks": "{name}觉得：",
+      "open": "查看{name}的物品"
+    },
+    "things": {
+      "tab": "物品",
+      "empty": "{name}还没有收到你的礼物。",
+      "knownBy": "知道的人：{names}",
+      "onlyOwner": "只有{name}知道。",
+      "refused": "拒收了",
+      "history": "经历",
+      "alt": "{gift}，你送的礼物",
+      "onStage": "{owner}的{gift}（你送的）"
+    }
+  },
+  "library": {
+    "heading": "角色库",
+    "kicker": "你的原创角色",
+    "intro": "可以反复使用的原创角色。把角色加入任意世界后，那个世界会得到一份可以自由修改的副本，这里的原版保持不变。",
+    "menu": "角色库",
+    "emptyTitle": "角色库还是空的",
+    "emptyBody": "在这里创建角色，或者在角色工作室中对任意角色使用「另存为新角色模板」。",
+    "createNew": "创建新角色",
+    "count": "{count} 个原版角色",
+    "countOne": "1 个原版角色",
+    "editingOriginal": "正在编辑原版",
+    "originalEditNote": "这里的修改只保存在角色库中。已经加入世界的角色会保留各自的版本。",
+    "addToWorld": "加入「{world}」",
+    "added": "已将「{name}」加入「{world}」。",
+    "noWorld": "在标题画面打开一个世界后，就可以把角色加入其中。",
+    "delete": "从角色库删除",
+    "deleteTitle": "删除这个原版角色？",
+    "deleteBody": "「{name}」将从你的角色库中移除。",
+    "deleteSafe": "已经拥有{name}的世界会保留各自的版本。",
+    "deleteConfirm": "删除原版",
+    "list": "角色库中的角色",
+    "addFromLibrary": "从角色库添加",
+    "pickTitle": "从角色库添加",
+    "pickIntro": "选择一个角色加入「{world}」。这个世界会得到一份自己的副本：修改它永远不会改变原版或你的其他世界。",
+    "pickEmpty": "角色库中还没有角色。可以对任意角色使用「另存为新角色模板」，或在角色库中创建。",
+    "addThis": "加入这个世界",
+    "alreadyHere": "已在这个世界中",
+    "openLibrary": "打开角色库",
+    "worldVersion": "这个世界的版本",
+    "worldVersionNote": "在这里做的修改只会影响「{world}」。",
+    "fromLibrary": "来自角色库",
+    "madeHere": "在这个世界创建",
+    "editThis": "编辑这个世界的版本",
+    "viewOriginal": "查看原版角色",
+    "saveTemplate": "另存为新角色模板",
+    "savedTemplate": "已将「{name}」作为新的原版角色保存到角色库。",
+    "removeFromWorld": "从这个世界移除",
+    "removeTitle": "从这个世界移除？",
+    "removeBody": "{name}将离开「{world}」。之前的故事仍保留在记录中，其他角色也仍然记得{name}。",
+    "removeKept": "角色库中的原版会被保留。",
+    "removeNotSaved": "{name}不在你的角色库中，所以这个版本会被删除。如果想保留一份，请先使用「另存为新角色模板」。",
+    "removeConfirm": "从世界移除",
+    "originalTitle": "原版角色",
+    "originalNote": "这是{name}加入时所用的角色库原版。编辑这个世界的版本不会改变原版，编辑原版也不会改变这个世界。",
+    "originalMissing": "原版已从角色库中删除。这个世界的版本不受影响。",
+    "thisWorld": "这个世界",
+    "relationships": "在这个世界中的关系",
+    "noRelationships": "还没有和其他角色建立关系。关系会随着故事发展而形成。",
+    "bond": "亲近 {affinity} · 信任 {trust}",
+    "unnamedOriginal": "未命名的原版角色"
+  },
+  "rel": {
+    "say": {
+      "refuse_polite": [
+        "这个我不太想聊，{other}。",
+        "那件事我不想多说。",
+        "这个话题就先放一边吧。"
+      ],
+      "refuse_firm": [
+        "不。我不会聊这个。",
+        "这是我自己的事，{other}。别问了。",
+        "不行。别再提了。"
+      ],
+      "explain_boundary": [
+        "我已经说过不了，{other}。有些事我只留给自己，这就是其中之一。",
+        "再问一次答案也不会变。这是我的底线。",
+        "我第一次就是认真的。这件事没得商量。"
+      ],
+      "deflect": [
+        "嗯……问点别的吧。",
+        "你真想聊这个？跳过。",
+        "想得美。下一个问题。"
+      ],
+      "change_subject": [
+        "对了，你今天过得怎么样？",
+        "我们聊点别的吧，什么都行。",
+        "话说……你看到外面的天气了吗？"
+      ],
+      "question_intent": [
+        "你为什么想知道？",
+        "{other}，你怎么会问这个？",
+        "是你想知道，还是别人让你问的？"
+      ],
+      "express_discomfort": [
+        "你一直在问，{other}。我不喜欢这样。",
+        "我已经拒绝两次了。这让我很不舒服。",
+        "请别再逼我了。这样不好。"
+      ],
+      "end_conversation": [
+        "我不想再聊下去了。",
+        "就到这里吧，{other}。",
+        "够了。我们不用再说了。"
+      ],
+      "hesitate": [
+        "……我不确定要不要说。",
+        "以后再说吧，不是现在。",
+        "我……不知道。让我想想。"
+      ],
+      "disagree": [
+        "我不同意，{other}。",
+        "不，我不这么看。",
+        "我觉得你这次说错了。"
+      ]
+    },
+    "stage": {
+      "trust": {
+        "distrustful": "不信任",
+        "guarded": "戒备",
+        "cautious": "谨慎",
+        "developing": "逐渐信任",
+        "strong": "很信任",
+        "deep": "深信不疑"
+      },
+      "affection": {
+        "hostile": "敌意",
+        "cold": "冷淡",
+        "neutral": "中立",
+        "warm": "有好感",
+        "fond": "喜欢",
+        "devoted": "全心在意"
+      },
+      "respect": {
+        "contempt": "看不起",
+        "doubtful": "怀疑",
+        "neutral": "中立",
+        "respect": "尊重",
+        "admiration": "钦佩"
+      },
+      "familiarity": {
+        "stranger": "陌生",
+        "acquaintance": "认识",
+        "familiar": "熟悉",
+        "close": "亲近"
+      },
+      "tension": {
+        "calm": "平静",
+        "strained": "紧张",
+        "hostile": "敌对"
+      }
+    },
+    "label": {
+      "stranger": "陌生人",
+      "acquaintance": "点头之交",
+      "friend": "朋友",
+      "close_friend": "挚友",
+      "family": "家人",
+      "partner": "恋人",
+      "rival": "对手",
+      "respected_rival": "可敬的对手",
+      "enemy": "敌人",
+      "wary": "心存戒备"
+    },
+    "impression": {
+      "prefix": {
+        "tentative": "{name}开始觉得",
+        "growing": "{name}越来越相信",
+        "firm": "{name}确信"
+      },
+      "reliable": {
+        "pos": "{other}靠得住。",
+        "neg": "{other}靠不住。"
+      },
+      "kind": {
+        "pos": "{other}很善良。",
+        "neg": "{other}有时会伤人。"
+      },
+      "competent": {
+        "pos": "{other}很有本事。",
+        "neg": "{other}不知道自己在做什么。"
+      },
+      "honest": {
+        "pos": "{other}很诚实。",
+        "neg": "{other}不诚实。"
+      },
+      "respectful": {
+        "pos": "{other}尊重自己的界限。",
+        "neg": "{other}总是越过自己的界限。"
+      },
+      "sincere": {
+        "pos": "{other}说的是真心话。",
+        "neg": "{other}是在讨好，别有用心。"
+      },
+      "safe": {
+        "pos": "和{other}在一起很安全。",
+        "neg": "{other}是个威胁。"
+      }
+    },
+    "milestone": {
+      "reliable_behavior": "多次靠得住",
+      "promise_kept": "信守了承诺",
+      "helped_in_difficulty": "在困难时帮了忙",
+      "voluntary_secret": "主动分享了秘密",
+      "shared_experience": "共同的经历",
+      "resolved_disagreement": "化解了分歧",
+      "respected_boundaries": "尊重了界限",
+      "earned_respect": "赢得了尊重",
+      "boundary_reconsidered": "稍微敞开了心扉",
+      "betrayed": "背叛",
+      "promise_broken": "违背了承诺",
+      "threatened": "威胁",
+      "boundary_violated": "一再越界"
+    }
+  },
+  "relInspector": {
+    "title": "关系检查器",
+    "close": "隐藏关系检查器",
+    "intro": "一个角色如何看另一个角色：长期数值与阶段、印象、里程碑，以及每一次经过验证的变化。仅供开发者使用。",
+    "from": "谁的视角",
+    "toward": "对谁",
+    "visitor": "访客（玩家）",
+    "longTerm": "长期关系",
+    "grandfathered": "阶段由之前的数值读出",
+    "next": "下一阶段：{stage}（{at}）（低于 {exit} 才会回落）",
+    "top": "已是最高阶段",
+    "needs": "还需要",
+    "impressions": "当前印象",
+    "evidence": "证据 {n}",
+    "none": "暂无。",
+    "milestones": "里程碑",
+    "openThings": "冲突、承诺、被拒绝的请求",
+    "conflict": "未解决的{kind}（第 {turn} 回合）：道歉 {apologies} 次，弥补 {repair}/{need}",
+    "promise": "承诺（{status}，第 {turn} 回合）：{text}",
+    "pressure": "问过{topic}：{asks} 次，拒绝 {refusals} 次（最近：{last}）",
+    "opened": "已为对方敞开的软界限：{id}",
+    "memories": "相关记忆",
+    "importance": "重要度 {n}",
+    "log": "变化（最新在前，点按查看详情）",
+    "noLog": "还没有记录。开始游戏后，每次关系变化都会显示在这里。",
+    "turn": "第 {n} 回合",
+    "proposedAs": "原提议为 {kind}",
+    "accepted": "实际生效",
+    "proposed": "提议",
+    "before": "之前",
+    "after": "之后",
+    "feelings": "情绪（之前 → 之后）",
+    "reasons": "原因",
+    "noReasons": "按提议生效",
+    "stages": "阶段",
+    "noStageChange": "阶段未变",
+    "why": "当时",
+    "noCast": "添加角色后即可查看他们的关系。",
+    "tests": "测试场景（固定种子）",
+    "testsIntro": "用示例角色和真实的游戏规则重放关系测试场景。不会保存到你的世界。",
+    "seed": "种子",
+    "runScenarios": "运行场景",
+    "runSimulation": "20 次互动模拟",
+    "passed": "通过 {n}/{total}",
+    "simSummary": "米拉对托比的看法：{start} → {end}；关系 {from} → {to}。"
+  },
+  "objects": {
+    "names": {
+      "window": "窗户",
+      "bookshelf": "书架",
+      "wallArt": "墙上的画",
+      "door": "门",
+      "tableNote": "桌上的纸条",
+      "rug": "地毯",
+      "plant": "盆栽",
+      "shopSign": "店铺招牌",
+      "shopDoor": "店门",
+      "lamp": "路灯",
+      "mushroom": "蘑菇",
+      "bigMushroom": "大蘑菇",
+      "rubble": "碎石堆",
+      "oldStone": "古老的石头",
+      "roundWindow": "圆窗",
+      "potionShelf": "药水架",
+      "cushion": "坐垫",
+      "lantern": "灯笼",
+      "crystals": "水晶",
+      "slime": "史莱姆",
+      "tinyHouse": "小房子",
+      "pond": "池塘",
+      "steps": "旧台阶",
+      "potion": "药水",
+      "gift": "礼物"
+    },
+    "actions": {
+      "read": "阅读",
+      "examine": "查看",
+      "sit": "坐下",
+      "open": "打开",
+      "inspect": "观察",
+      "pick_up": "拿起",
+      "look_out": "向外看",
+      "admire": "欣赏",
+      "climb": "爬上去",
+      "talk": "找店员说话",
+      "order": "点单",
+      "close": "关上",
+      "knock": "敲门",
+      "unlock": "开锁",
+      "browse": "翻看",
+      "place": "放下东西",
+      "rest": "休息",
+      "search": "翻找",
+      "leave": "离开",
+      "enter": "穿过去"
+    },
+    "do": {
+      "read": "{name}从{object}上取下一本，读了几行。",
+      "examine": "{name}凑近仔细看了看{object}。",
+      "sit": "{name}在{object}上坐了下来。",
+      "open": "{name}把{object}推开一条缝，向外望去。",
+      "inspect": "{name}仔细观察着{object}。",
+      "pick_up": "{name}拿起{object}，小心地带在身边。",
+      "look_out": "{name}在{object}边望了好一会儿。",
+      "admire": "{name}停下来欣赏{object}。",
+      "climb": "{name}爬上了{object}。",
+      "talk": "{name}在{object}边招呼了一下。",
+      "order": "{name}在{object}点了东西。",
+      "close": "{name}关上了{object}。",
+      "knock": "{name}敲了敲{object}。",
+      "unlock": "{name}打开了{object}的锁。",
+      "browse": "{name}翻看着{object}。",
+      "place": "{name}把东西放在{object}上。",
+      "rest": "{name}在{object}上休息。",
+      "search": "{name}翻找着{object}。",
+      "leave": "{name}从{object}走了出去。",
+      "enter": "{name}走向{object}。"
+    },
+    "drag": {
+      "use": "{action}：{object}",
+      "walkHere": "走到这里",
+      "nearby": "被挡住了，会停在最近的地方",
+      "noWay": "到不了那里",
+      "objectNoWay": "够不到{object}",
+      "busy": "正忙"
+    },
+    "notice": {
+      "unreachablePlace": "{actor}到不了那里，有东西挡住了。",
+      "unreachableObject": "{actor}够不到{object}。",
+      "nearby": "那个位置被挡住了，{actor}走到了最近的地方。"
+    }
+  },
+  "refine": {
+    "title": "反馈与修正",
+    "intro": "告诉 AI 它哪里理解错了或漏掉了。它会提出修订后的分析，并清楚列出要改什么。你接受之前什么都不会改变，而且你锁定的设定永远优先。",
+    "current": "当前 · v{n}",
+    "label": "反馈与修正",
+    "placeholder": "虽然这个角色不擅长表达感情，但他并不冷漠。他会通过实际行动表达关心，不应该总是拒绝他人的帮助。",
+    "hint": "只会修改这个世界里的角色版本。",
+    "apply": "根据反馈重新分析",
+    "applying": "正在修订分析",
+    "testMode": "测试回复（非 AI）",
+    "unavailable": "修订需要 AI（ANTHROPIC_API_KEY）。",
+    "restorePrevious": "恢复上一版本",
+    "proposalTitle": "修订建议",
+    "yourFeedback": "你的反馈：",
+    "understood": "AI 的理解：",
+    "conflictTitle": "这条反馈与锁定设定冲突",
+    "keepCanon": "保留设定，去掉冲突部分再修订",
+    "editCanon": "改为修改设定",
+    "keptCanon": "已在保留锁定设定的前提下修订：反馈中冲突的部分没有采用。",
+    "ambiguousTitle": "请确认这样理解是否正确",
+    "confirmReading": "是的，我就是这个意思",
+    "changes": "将要修改",
+    "noChanges": "没有需要修改的地方。",
+    "why": "原因：{why}",
+    "kept": "保持不变",
+    "preview": "查看完整的修订分析",
+    "stale": "提出建议之后分析已经改变，请重新提交反馈。",
+    "accept": "接受修改",
+    "reject": "拒绝修改",
+    "blockedCanon": "请先解决与设定的冲突。",
+    "blockedAmbiguous": "请先确认上面的理解。",
+    "history": "修订记录（{n}）",
+    "status": {
+      "accepted": "已接受",
+      "rejected": "已拒绝",
+      "restored": "已恢复"
+    },
+    "restoreEntry": "恢复了较早的版本（从 v{n}）",
+    "useThis": "使用这个版本",
+    "useBefore": "恢复到这之前的版本",
+    "sections": {
+      "summary": "概述",
+      "coreTraits": "核心特质",
+      "speech": "说话方式",
+      "emotionalPatterns": "情绪模式",
+      "decisionStyle": "决策方式",
+      "socialStyle": "社交风格",
+      "motivations": "动机",
+      "boundaries": "界限",
+      "dialogueApproaches": "对话方式",
+      "reactionTendencies": "反应倾向",
+      "storyHooks": "故事钩子"
+    }
+  },
+  "autonomy": {
+    "title": "自主行动",
+    "intro": "角色自己在做什么、为什么。只用规则，不调用 AI；玩家的指令总是优先，但不能越过角色的边界。",
+    "active": "现在",
+    "recent": "最近",
+    "nothing": "暂时没有。",
+    "boundaries": "对话边界",
+    "boundary": "{who} ↛ {other} · 严重程度 {severity} · 被追问 {pushes} 次",
+    "ready": "愿意再聊了",
+    "goals": "说出口的打算",
+    "kinds": {
+      "approach": "走向{target}",
+      "move_away": "离{target}远一点",
+      "go_to_place": "去{object}",
+      "inspect_object": "看看{object}",
+      "use_object": "使用{object}",
+      "sit": "坐到{object}上",
+      "stand": "站起来",
+      "turn_toward": "转向{target}",
+      "turn_away": "背对{target}",
+      "pause": "停一下",
+      "leave_conversation": "离开对话",
+      "decline": "拒绝",
+      "seek_privacy": "找个安静的地方（{object}）",
+      "return_to_task": "回到{object}那边",
+      "stay_still": "待在原地",
+      "observe": "观察四周",
+      "avoid_object": "离{object}远一点",
+      "reflect": "在{object}旁沉默下来"
+    },
+    "status": {
+      "proposed": "提出",
+      "validated": "已核实",
+      "queued": "排队中",
+      "executing": "进行中",
+      "completed": "完成",
+      "interrupted": "被打断",
+      "failed": "没有发生"
+    },
+    "goalStatus": {
+      "pending": "对话结束后",
+      "started": "在路上",
+      "done": "到了",
+      "unavailable": "这里没有那个地方",
+      "failed": "去不了"
+    },
+    "reasons": {
+      "keepingDistance": "对话不欢而散后，和对方保持距离",
+      "standingGround": "很不高兴，但不是会走开的人",
+      "coolingOff": "心情不好，想一个人静一静",
+      "seeksComfort": "想待在信任的人身边",
+      "needsQuiet": "情绪低落，想找个安静的地方坐坐",
+      "embarrassed": "不好意思",
+      "wantsCompany": "心情好，想找人作伴",
+      "contentAlone": "心情好，自己随便看看",
+      "curious": "有东西引起了注意",
+      "takingItIn": "在消化刚才发生的事",
+      "backToIt": "回去继续刚才的事",
+      "idleCuriosity": "随便看看",
+      "stretchLegs": "活动一下",
+      "content": "待在原地挺好",
+      "endedConversation": "结束了对话，走开了",
+      "saidSo": "说过要去",
+      "wantsToLeave": "想离开这里",
+      "asksAround": "想向吧台的人打听点事",
+      "drawnTo": "被喜欢的东西吸引",
+      "uneasyNear": "靠近害怕的东西，感到不安",
+      "quietMemory": "触动了一段难过的回忆",
+      "remindsOf": "让他们想起了某个人",
+      "invitesOver": "想分享自己喜欢的东西",
+      "acceptedInvite": "接受了邀请",
+      "declinedInvite": "拒绝了邀请"
+    },
+    "why": {
+      "cooldown": "还需要一点时间",
+      "upset": "还在生气或难过",
+      "repair": "在等一句道歉或一个善意的举动",
+      "trust": "信任已经破裂",
+      "fear": "害怕对方"
+    },
+    "notes": {
+      "in_conversation": "正在对话",
+      "player_command": "玩家正在指挥",
+      "busy": "忙着",
+      "boundary": "有边界挡着",
+      "too_many_walks": "走动的人已经够多了",
+      "unknown_object": "这个房间里没有",
+      "not_allowed": "不是自己的东西",
+      "no_path": "被挡住了",
+      "timeout": "太久了",
+      "expired": "一直没轮到",
+      "replaced": "有更重要的事先发生了",
+      "resumed": "读档后继续",
+      "no_room": "没有空间",
+      "unknown_target": "对方离开了",
+      "outranked": "有更重要的事在发生"
+    }
+  },
+  "playArea": {
+    "title": "可玩区域",
+    "edit": "编辑可玩区域",
+    "untitled": "你的地图",
+    "loadingMap": "正在读取你的地图",
+    "intro": "图片本身无法告诉游戏哪里是地面、哪里是家具，所以请在这里标出来：把角色能走的地面涂成绿色，给家具和可以互动的东西画框，再放几个出生点。",
+    "toolsLabel": "可玩区域工具",
+    "tools": {
+      "floor": "地面",
+      "wall": "非地面",
+      "object": "物体",
+      "spawn": "出生点",
+      "walk": "涂可行走区",
+      "block": "涂不可行走区",
+      "rect": "框选",
+      "pen": "钢笔勾勒",
+      "edit": "编辑形状",
+      "anchor": "站立点",
+      "pan": "移动视图"
+    },
+    "hints": {
+      "floor": "在图片上拖动，涂出角色可以走的地方。",
+      "wall": "拖动擦除地面：墙壁、画面上方，以及任何不该站人的地方。",
+      "object": "在家具或可互动的东西周围拖出一个框。点击已有的框可以修改。",
+      "spawn": "点击添加角色出现的位置，再点一次可以删掉。",
+      "walk": "在图上拖动，涂出角色可以走的地方。笔刷以地图格为单位，缩放不会改变涂抹范围。",
+      "block": "拖动来去掉地面：墙、水面、任何不能站人的地方。",
+      "rect": "拖一个框把家具或可用的东西框起来。点击物件即可选中。",
+      "pen": "沿着物件边缘逐点点击。点回第一个点（或按“完成”）闭合轮廓。退格键删掉上一个点，Esc 取消。",
+      "edit": "拖动顶点移动它，在形状内拖动可整体移动，点“+”添加顶点。选中顶点后按 Delete（或双击）删除。",
+      "anchor": "点击选中物件旁角色应该站的位置。",
+      "pan": "拖动来查看放大后的图片，也可以用鼠标滚轮滚动。"
+    },
+    "brush": "笔刷",
+    "brushes": {
+      "s": "小",
+      "m": "中",
+      "l": "大",
+      "xl": "特大"
+    },
+    "name": "地图名称",
+    "perspective": "视角",
+    "perspectives": {
+      "angled": "斜视 / 俯视",
+      "side": "侧视"
+    },
+    "characterSize": "角色大小",
+    "sizes": {
+      "large": "大",
+      "medium": "中",
+      "small": "小",
+      "tiny": "很小"
+    },
+    "floor": "地面",
+    "resetGuess": "粗略猜测",
+    "fillAll": "全部是地面",
+    "clearAll": "清空地面",
+    "startOver": "重新开始",
+    "noFloor": "几乎还没有地面，角色没有地方可以站。",
+    "objects": "物体",
+    "noObjects": "还没有物体。选择“物体”，在吧台、桌子或壁炉周围拖出一个框。",
+    "objectName": "名称",
+    "objectNamePlaceholder": "例如：吧台",
+    "objectType": "类型",
+    "solid": "实心（角色会绕开它）",
+    "front": "遮住站在它后面的角色",
+    "unreachable": "没人能走到这里：在它旁边涂一些地面。",
+    "deleteObject": "删除物体",
+    "spawnCount": "出生点：{n} 个（没有的话，角色会聚在地面中间）",
+    "save": "保存可玩区域",
+    "saveFailed": "保存失败，请再试一次。",
+    "types": {
+      "feature": "物件",
+      "seat": "座位",
+      "item": "物品",
+      "book": "书",
+      "door": "门",
+      "window": "窗户",
+      "painting": "画",
+      "plant": "植物",
+      "light": "灯",
+      "sign": "招牌",
+      "gift": "礼物",
+      "stairs": "楼梯",
+      "counter": "柜台 / 吧台",
+      "table": "桌子",
+      "bed": "床",
+      "chest": "箱子",
+      "exit": "出口",
+      "portal": "传送门"
+    },
+    "guessNotice": "“{name}”是你生成的地图。目前可行走区域只是粗略猜测。",
+    "missingNotice": "这个存档使用的地图已不在这个浏览器中，所以显示内置场景。",
+    "openBuilder": "世界构建",
+    "inPlay": "游戏中使用",
+    "notInPlay": "游戏使用内置图片",
+    "useInPlay": "在游戏中使用",
+    "builderHint": "游戏会使用这张图片本身。在“可玩区域”里设置角色能走的地方。",
+    "exitField": "通往别的区域",
+    "keeper": "谁在这里工作",
+    "keeperAuto": "站在后面的人",
+    "locked": "上锁",
+    "keyName": "需要的物品名称",
+    "keyNamePlaceholder": "钥匙",
+    "startsOpen": "一开始是开着的",
+    "note": "上面写着什么 / 备注",
+    "notePlaceholder": "例如“楼上客房，一晚两枚铜币”",
+    "contents": "里面有什么（用逗号分隔）",
+    "contentsPlaceholder": "例如 旧地图，银铃铛",
+    "pixelGridSize": "角色与这张地图的像素网格一致：地图上的一个像素就是角色的一个像素，所以大小是固定的。",
+    "groundHint": "好读的地图会让可玩画面里大约三分之二是开阔、连通的地面。",
+    "toolGroups": {
+      "paint": "行走区域",
+      "objects": "物件",
+      "view": "视图"
+    },
+    "active": "当前工具：{tool}",
+    "brushSize": "笔刷大小",
+    "brushCells": "宽 {n} 格 · 约 {px} 地图像素",
+    "zoom": "缩放",
+    "undo": "撤销",
+    "redo": "重做",
+    "finish": "完成轮廓",
+    "cancelOutline": "取消",
+    "points": "{n} 个点",
+    "deletePoint": "删除顶点",
+    "toRect": "改回方框",
+    "outline": "轮廓",
+    "outlineBox": "方框",
+    "outlinePoly": "手绘轮廓 · {n} 个点",
+    "collision": "碰撞",
+    "collisionWalk": "可穿过",
+    "collisionSolid": "挡路",
+    "range": "互动距离",
+    "rangeValue": "{n} 像素",
+    "walkTo": "站立点",
+    "walkToAuto": "自动（在它前面）",
+    "walkToSet": "在地图上设置",
+    "walkToClear": "改回自动",
+    "walkToCustom": "已手动设置",
+    "actions": "角色可以做什么",
+    "linkedNpc": "关联角色",
+    "linkedNone": "无",
+    "linkedScene": "关联场景",
+    "interests": "它和什么有关（用逗号分隔）",
+    "interestsPlaceholder": "例如：花、玫瑰、春天",
+    "interestsHint": "在意这些东西的角色会注意到它（喜好、恐惧、回忆）。",
+    "hiddenObject": "隐藏（角色不知道它在这里）",
+    "ambient": "环境动画",
+    "ambientAuto": "自动",
+    "ambientNone": "无",
+    "ambientKinds": {
+      "ripple": "水波",
+      "sway": "轻轻摇曳",
+      "flicker": "灯火闪烁",
+      "flame": "小火苗",
+      "twinkle": "闪烁星光",
+      "pulse": "光晕脉动"
+    },
+    "ambientSpeed": "速度",
+    "ambientOn": "播放动画",
+    "noObjectsPen": "还没有物件。用“框选”或“钢笔勾勒”标出吧台、桌子或花坛。",
+    "unsavedTool": "编辑中：窗口打开时游戏暂停。"
+  },
+  "theme": {
+    "title": "界面风格",
+    "intro": "这个世界里窗口、按钮和边框的样子。它依然是 PLOT TWIST!，只是换上了「{world}」皮肤。更改风格不会重新绘制地图或角色。",
+    "mood": "氛围",
+    "motifsLabel": "小装饰（最多 {n} 个）",
+    "primary": "主色",
+    "accent": "点缀色",
+    "colorOption": "颜色选项 {n}：{hex}",
+    "colorsNote": "只提供为这个世界设计的颜色，文字始终清晰可读。",
+    "density": "装饰程度",
+    "densities": {
+      "minimal": "简洁",
+      "standard": "标准",
+      "decorative": "丰富"
+    },
+    "moods": {
+      "default": "原始设计",
+      "cozy": "温馨",
+      "cheerful": "欢快",
+      "dreamy": "梦幻",
+      "mysterious": "神秘",
+      "calm": "宁静",
+      "sacred": "庄严",
+      "moody": "阴郁",
+      "rustic": "质朴",
+      "elegant": "典雅"
+    },
+    "motifs": {
+      "leaf": "叶子",
+      "vine": "藤蔓",
+      "book": "书本",
+      "key": "钥匙",
+      "potion": "药水",
+      "quill": "羽毛笔",
+      "crest": "纹章",
+      "raindrop": "雨滴",
+      "window": "窗格",
+      "camera": "相机",
+      "message": "消息",
+      "folder": "文件夹",
+      "pin": "定位",
+      "citylight": "街灯",
+      "cloud": "祥云",
+      "lantern": "灯笼",
+      "bamboo": "竹子",
+      "seal": "印章",
+      "mountain": "山峦",
+      "fan": "折扇",
+      "scroll": "卷轴",
+      "jade": "玉璧",
+      "star": "星星",
+      "mushroom": "蘑菇",
+      "moon": "月亮",
+      "crystal": "水晶",
+      "bubble": "泡泡",
+      "sparkle": "闪光"
+    },
+    "suggest": {
+      "label": "建议",
+      "none": "在上方写下世界描述，就会据此建议氛围和装饰。在那之前使用这个世界自己的风格。",
+      "summary": "{mood}氛围 · {motifs}",
+      "because": "依据这些词：{words}。这是简单的关键词匹配，不是 AI。",
+      "baseHint": "有些词听起来像「{other}」，但风格仍是「{world}」，因为这是这个世界的类型。",
+      "use": "采用建议"
+    },
+    "preview": {
+      "label": "「{world}」皮肤预览",
+      "panel": "预览",
+      "tabA": "故事",
+      "tabB": "回忆",
+      "speaker": "米拉",
+      "line": "哇！这里一直这么漂亮吗？",
+      "primary": "继续",
+      "secondary": "观察"
+    },
+    "confirm": "使用这个风格",
+    "restore": "恢复基础风格",
+    "saved": "已为这个世界保存。",
+    "unsaved": "尚未保存。",
+    "defaultInUse": "正在使用世界默认风格。",
+    "mapNote": "只改变这个世界。其他世界、标题画面和角色库保持各自的样子。"
+  },
+  "portrait": {
+    "title": "立绘与头像",
+    "intro": "生成的图片只是起点。你可以修改任意像素、保留每个版本，并选择哪一部分作为头像。",
+    "emptyIntro": "在下方上传参考图并保存结果，即可得到可编辑的立绘。也可以从这个角色现有的图开始。",
+    "startFromArt": "让当前立绘可编辑",
+    "startFromPlaceholder": "从占位立绘开始",
+    "started": "立绘可以编辑了。旧图保留为第一个版本。",
+    "loadFailed": "无法读取这张立绘。",
+    "full": "完整立绘",
+    "fullAlt": "{name}的完整立绘",
+    "avatar": "头像",
+    "avatarAlt": "头像预览",
+    "referenceAlt": "你的参考图（小副本）",
+    "referenceNote": "你上传图片的小副本，不会被修改。",
+    "forgetReference": "删除参考图",
+    "outdated": "头像是从这张立绘的旧版本裁出的。可以用同样的裁剪框更新，或重新选择。",
+    "updateFromCrop": "用已保存的裁剪更新头像",
+    "recrop": "重新裁剪",
+    "keepAvatar": "保留当前头像",
+    "edit": "编辑立绘",
+    "editShort": "编辑立绘与头像",
+    "chooseAvatar": "选择头像",
+    "restoreGenerated": "恢复生成版本",
+    "restored": "已恢复生成版本。你的修改仍在列表中。",
+    "savedNew": "已另存为新版本。",
+    "savedChanges": "修改已保存。",
+    "avatarSaved": "头像已保存。",
+    "avatarUpdated": "已用保存的裁剪更新头像。",
+    "versions": "立绘版本",
+    "versionsCount": "版本（{n}）",
+    "original": "原始",
+    "use": "使用",
+    "inUse": "使用中",
+    "deleteVersion": "删除{kind}版本",
+    "kind": {
+      "generated": "AI 生成",
+      "converted": "转换",
+      "edited": "已编辑",
+      "legacy": "早期图"
+    },
+    "worldOnly": "这里的修改只属于这个世界里的版本。角色库原版和其他世界保持不变。",
+    "saveTemplate": "另存为新模板",
+    "remove": "移除立绘",
+    "removeTitle": "移除这张立绘？",
+    "removeConfirm": "移除立绘",
+    "removeBody": "这个世界中该角色的全部 {n} 个版本和头像裁剪将被移除。精灵图和其他世界不受影响。",
+    "customAvatar": "自定义头像",
+    "editor": {
+      "title": "编辑立绘",
+      "save": "保存修改",
+      "saveNew": "另存为新版本",
+      "editing": "正在编辑：{version}（{w}×{h}）。",
+      "inPlace": "「保存修改」会更新这个已编辑版本。",
+      "keepsOriginal": "原始版本保持不变：保存会新增一个版本。",
+      "canvas": "立绘像素，{w} × {h}。用指针绘制。",
+      "note": "快捷键：B 铅笔 · E 橡皮 · G 填充 · I 取色 · H 平移 · M 镜像 · +/− 缩放 · Ctrl+Z 撤销"
+    },
+    "crop": {
+      "title": "选择头像",
+      "confirm": "使用这个头像",
+      "presets": "裁剪预设",
+      "preset": {
+        "head": "仅头部",
+        "bust": "半身",
+        "square": "方形头像",
+        "custom": "自定义"
+      },
+      "auto": "自动头部裁剪",
+      "autoNote": "自动头部裁剪会把框放在人物轮廓的顶部。它不会识别人脸，位置不对时请拖动或调整大小。",
+      "area": "裁剪框位于 {x}, {y}，大小 {w} × {h} 像素。拖动可移动，拖角可缩放，方向键微调，Shift+方向键缩放。",
+      "hint": "拖动框、拉动四角，或重新画一个框。会对齐到整像素。",
+      "preview": "头像预览",
+      "thumb": "小列表图标"
+    }
+  },
+  "explore": {
+    "do": {
+      "openOther": "{name}打开了{object}。",
+      "throughDoor": "{name}走到敞开的{object}前。",
+      "alreadyOpen": "{object}已经开着了。",
+      "locked": "{name}试着推了推{object}，锁着的。",
+      "chestOpen": "{name}掀开了{object}的盖子。",
+      "chestOpenFull": "{name}掀开了{object}的盖子，里面有东西。",
+      "doorOpen": "{name}推开了{object}，现在可以走过去了。",
+      "doorOpenExit": "{name}拉开了{object}，门外的路通向别处。",
+      "alreadyClosed": "{object}已经关着了。",
+      "close": "{name}关上了{object}。",
+      "knock": "{name}敲了敲{object}，没有人应。",
+      "alreadyUnlocked": "{object}没有上锁。",
+      "noKey": "{name}身上没有能打开{object}的东西。",
+      "unlock": "{name}用{item}打开了{object}的锁。",
+      "notAnExit": "{object}不通往任何地方。",
+      "portal": "{name}把手伸进{object}，它轻轻嗡鸣，向里牵引。",
+      "leave": "{name}走到了{object}前。",
+      "climbExit": "{name}爬上了{object}。",
+      "climbStay": "{name}在{object}上走了几级，抬头看了看，又走了下来。",
+      "noKeeper": "{name}靠在{object}上，可是现在没人招呼。",
+      "chatKeeper": "{name}靠在{object}上，和{other}闲聊了几句。",
+      "callKeeper": "{name}靠在{object}上，朝{other}招了招手。",
+      "order": "{name}在{object}向{other}点了一杯，{other}把杯子推了过来。",
+      "sitBed": "{name}在{object}边上坐了下来。",
+      "rest": "{name}在{object}上躺下，小憩一会儿。",
+      "browse": "{name}的手指划过{object}，抽出了一本来看。",
+      "signText": "{object}上写着：“{text}”",
+      "signFaded": "{name}看了看{object}，上面的字已经褪得差不多了。",
+      "readText": "{name}读起{object}上的内容：“{text}”",
+      "chestClosed": "{object}关着，要先打开。",
+      "found": "{name}翻了翻{object}，找到了：{text}。",
+      "empty": "{name}翻了翻{object}，里面是空的。",
+      "nothingToPlace": "{name}手上没有可以放下的东西。",
+      "place": "{name}把{item}放在了{object}上。",
+      "noteLook": "{name}看着{object}。{text}"
+    },
+    "unavailable": {
+      "locked": "锁着",
+      "no_key": "没有钥匙",
+      "no_keeper": "没人招呼",
+      "closed": "关着",
+      "nothing_to_place": "手上没东西",
+      "not_owner": "不是自己的",
+      "already_open": "已经开着",
+      "already_closed": "已经关着",
+      "not_an_exit": "不通往别处"
+    },
+    "menu": {
+      "title": "{name}在{object}旁",
+      "cancel": "算了",
+      "label": "要{name}做什么？",
+      "noActor": "先选一个角色，再点{object}。"
+    },
+    "drag": {
+      "choose": "选择要做的事：{object}",
+      "blocked": "{reason}：{object}"
+    },
+    "leave": {
+      "title": "是否离开当前空间？",
+      "bodyTo": "{name}来到了{exit}前，这里通往{scene}。",
+      "bodyNew": "{name}来到了{exit}前。这里还没有通往任何地方，接下来由你选择或创建下一个区域。",
+      "npc": "{name}说要去{scene}，现在已经到了{exit}前。",
+      "stay": "留在这里",
+      "leave": "离开",
+      "party": "谁一起走",
+      "partyHint": "其他人留在原地，位置不变。",
+      "saved": "这个区域会按现在的样子保存。"
+    },
+    "travel": {
+      "loading": "正在前往{scene}…",
+      "failed": "无法打开{scene}。你仍在原地，什么都没有丢失。",
+      "arrived": "{names}到达了{scene}。",
+      "log": "{names}从{from}去了{to}。",
+      "stayed": "{name}留在了{exit}旁。"
+    },
+    "picker": {
+      "title": "这里通往哪里？",
+      "intro": "选择这个世界里的一个区域，或者创建一个新的。",
+      "tabNew": "创建新场景",
+      "tabExisting": "选择已有场景",
+      "name": "场景名称",
+      "namePlaceholder": "例如 楼上客房",
+      "description": "描述这个地方",
+      "descriptionPlaceholder": "一座安静的图书馆，高高的书架、温暖的灯光和一道螺旋楼梯。",
+      "type": "环境类型",
+      "theme": "沿用这个世界的主题（{world}）和 PLOT TWIST! 像素画风。",
+      "generate": "生成地图",
+      "usePlaceholder": "使用占位图",
+      "placeholderNote": "不会生成地图：使用这种地点类型的内置图片，并标注为占位图。之后可以在世界构建器里为它生成地图。",
+      "noImage": "现在无法生成地图，新场景会使用占位图。",
+      "generating": "正在绘制新地图…最多可能需要一分钟。",
+      "failed": "地图没能生成（{reason}）。你仍在原地，什么都没有丢失。",
+      "retry": "再试一次",
+      "cancel": "取消",
+      "back": "返回",
+      "noScenes": "这个世界里还没有其他场景。",
+      "connected": "已连接",
+      "notConnected": "尚未连接",
+      "twoWay": "添加返回的路",
+      "go": "去那里",
+      "here": "{n} 人在这里",
+      "nobody": "没有人",
+      "placeholderTag": "占位图",
+      "needsDescription": "请先描述这个地方。",
+      "full": "这个世界的场景数量已经到上限了。"
+    },
+    "scene": {
+      "incomplete": "“{name}”是一张新地图：哪里能走、里面有什么，目前都只是粗略的猜测。请在“可玩区域”里标出地面、家具和出口。",
+      "placeholder": "“{name}”使用的是占位图（没有生成地图）。随时可以在世界构建器里生成。",
+      "unnamed": "新区域",
+      "scenes": "区域"
+    },
+    "marker": {
+      "to": "通往{scene}",
+      "back": "回去的路"
+    }
+  },
+  "camera": {
+    "controls": "镜头",
+    "follow": "跟随",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "zooms": {
+      "wide": "远景",
+      "normal": "标准",
+      "close": "近景"
+    },
+    "followSpeed": "镜头跟随",
+    "speeds": {
+      "gentle": "柔和",
+      "normal": "标准",
+      "snappy": "灵敏"
+    },
+    "followSpeedDesc": "游戏镜头追上所跟随角色的速度。",
+    "followTalk": "回到对话",
+    "free": "自由",
+    "freeHint": "自由镜头：停在你放的位置。拖动地图四处看看。",
+    "followHint": "跟随选中或正在说话的角色",
+    "modeFollow": "跟随中",
+    "modeFree": "自由镜头"
+  },
+  "sync": {
+    "badge": {
+      "unconfigured": "云存档未开启",
+      "signedOut": "未登录",
+      "saving": "正在保存…",
+      "synced": "已同步",
+      "offline": "离线",
+      "error": "同步失败",
+      "conflict": "需要选择"
+    },
+    "title": "云存档",
+    "open": "云存档与备份",
+    "intro": "登录后，你的世界会保存在你自己的私密云账户里，可以在任何设备上继续：角色、关系、记忆、故事进度、地图、照片和礼物都会一起同步。",
+    "unconfiguredTitle": "这个版本的游戏还没有设置云存档",
+    "unconfiguredBody": "一切照常保存在这台设备上。下方的“导出存档”和“导入存档”仍然可以在设备之间转移世界。",
+    "email": "邮箱",
+    "password": "密码",
+    "passwordHint": "至少 8 个字符。",
+    "signIn": "登录",
+    "signUp": "创建账户",
+    "haveAccount": "我已经有账户了",
+    "noAccount": "第一次来？创建账户",
+    "signingIn": "正在登录…",
+    "signOut": "退出登录",
+    "signedInAs": "已登录：{email}",
+    "confirmEmail": "快好了：打开我们刚发到 {email} 的邮件，点击确认链接，然后回来登录。",
+    "authInvalid": "邮箱和密码不匹配任何账户。",
+    "authExists": "这个邮箱已经有账户了，请直接登录。",
+    "authWeak": "请使用更长的密码（至少 8 个字符）。",
+    "authNetwork": "现在连不上云端。请检查网络后再试。",
+    "authUnconfirmed": "请先确认邮箱（查看收件箱），然后再登录。",
+    "authRate": "尝试次数太多，请稍等一分钟再试。",
+    "authOther": "无法登录：{message}",
+    "statusSaving": "正在把你的修改保存到云端…",
+    "statusSynced": "账户里的所有世界都是最新的。",
+    "statusSyncedAt": "上次同步：{time}。",
+    "statusOffline": "离线中。修改已保存在这台设备上，联网后会自动同步。",
+    "statusError": "同步失败。你的世界安全地保存在这台设备上，稍后会自动重试。",
+    "statusErrorAuth": "登录已过期。请退出后重新登录以继续同步。这台设备上的内容不会丢失。",
+    "statusConflict": "有一个世界在两台设备上都被修改了。请在下面选择要保留的版本。",
+    "syncNow": "立即同步",
+    "retry": "重试",
+    "hiddenWorlds": "这台设备上有 {count} 个属于其他账户的世界，在该账户登录前会被隐藏。",
+    "deviceTitle": "只在这台设备上的世界",
+    "deviceBody": "这些世界还不在你的账户里。添加时会原样上传，内容不会改变，并且会先做一次备份。",
+    "deviceAdd": "备份并添加到我的账户",
+    "deviceAdding": "正在添加…",
+    "deviceAdded": "已将 {count} 个世界添加到你的账户。",
+    "deviceNone": "这台设备上的所有世界都已在你的账户里。",
+    "selectAll": "全选",
+    "downloadBackupFirst": "先下载一个备份文件（推荐）",
+    "conflictsTitle": "在两台设备上都有修改",
+    "conflictBoth": "“{name}”自上次一致以来，在这里和 {device} 上都被修改了。",
+    "conflictDeleted": "“{name}”在另一台设备上被删除了，但在这里有修改。",
+    "keepBoth": "两个都保留",
+    "keepBothHint": "推荐。另一个版本会成为一个单独的世界。",
+    "useLocal": "保留这台设备的版本",
+    "useCloud": "使用另一个版本",
+    "useCloudDeleted": "这里也删除",
+    "useLocalDeleted": "保留它（恢复到我的账户）",
+    "anotherDevice": "另一台设备",
+    "copyName": "{name}（另一台设备）",
+    "importedCopyName": "{name}（导入）",
+    "transferTitle": "导出与导入",
+    "transferBody": "把世界保存成文件，可以留作备份，也可以在另一台设备上打开，不需要云存档。",
+    "exportAll": "导出所有世界",
+    "exportWorld": "导出",
+    "importSave": "导入存档",
+    "importing": "正在导入…",
+    "imported": "已导入：{list}。",
+    "importedSame": "{name} 已经在这里（无变化）",
+    "importedCopy": "{name} 已作为单独的副本添加",
+    "importedNew": "已添加 {name}",
+    "importInvalid": "这个文件不是 PLOT TWIST! 存档，或者已经损坏。没有做任何修改。",
+    "importSomeInvalid": "文件中有 {count} 个世界已损坏，已跳过。",
+    "importFailed": "无法导入：浏览器存储空间可能已满。没有做任何修改。",
+    "exported": "已保存 {file}。",
+    "backupsTitle": "这台设备上的自动备份",
+    "backupsBody": "在这里有任何世界被替换或移除之前自动创建。可以下载为文件，或恢复为单独的副本。",
+    "backupsNone": "还没有备份。",
+    "backupReason": {
+      "before-cloud-import": "添加到账户之前",
+      "before-cloud-update": "云端更新版本之前",
+      "before-remote-delete": "移除之前（在另一台设备上已删除）",
+      "before-use-cloud": "使用另一个版本之前",
+      "before-import-file": "导入之前",
+      "manual": "手动创建"
+    },
+    "backupLine": "{name} · {chars} 个角色 · {when} · {reason}",
+    "download": "下载",
+    "restoreCopy": "恢复为副本",
+    "restoredName": "{name}（已恢复）",
+    "restored": "已将“{name}”恢复为一个单独的世界。",
+    "cardCloud": "在你的账户中",
+    "cardDevice": "仅在这台设备上",
+    "cardConflict": "在两台设备上都有修改",
+    "cardResolve": "选择版本",
+    "deviceBanner": "这台设备上有 {count} 个世界还不在你的云账户里。",
+    "deviceBannerAction": "查看并添加",
+    "unnamed": "未命名世界"
+  },
+  "mapKit": {
+    "labels": {
+      "house": "小屋",
+      "house2": "邻居的小屋",
+      "door": "小屋的门",
+      "door2": "邻居家的门",
+      "well": "老井",
+      "bench": "长椅",
+      "sign": "路标",
+      "tree": "大树",
+      "roadEast": "侧边的路",
+      "roadSouth": "往南的路",
+      "stall": "集市摊位",
+      "lamp": "路灯",
+      "log": "倒下的树干",
+      "shrine": "石灯龛",
+      "stones": "立石",
+      "arch": "古老拱门",
+      "column": "古老石柱",
+      "fallenColumn": "倒下的石柱",
+      "palm": "棕榈树",
+      "bridge": "桥"
+    }
+  },
+  "mapLab": {
+    "kicker": "地图实验室",
+    "heading": "测试地图生成",
+    "intro": "输入场景关键词，看看“生成地图”会画出什么。这里用的是和游戏完全相同的生成流程。预览不会保存，除非你点“在我的世界里使用”。",
+    "form": "场景描述",
+    "world": "世界",
+    "type": "地点类型",
+    "fields": {
+      "environment": "环境",
+      "architecture": "建筑",
+      "mood": "氛围",
+      "terrain": "地形",
+      "props": "重要物件"
+    },
+    "placeholders": {
+      "environment": "林间小径、河岸、沙漠绿洲…",
+      "architecture": "木架小屋、残破拱门…",
+      "mood": "宁静的清晨、神秘…",
+      "terrain": "小溪、岩石台地、沙地…",
+      "props": "水井、长椅、立石…"
+    },
+    "sent": "送入生成流程的描述",
+    "sentHint": "各栏会合成一段描述，和世界构建器的文本框发送的内容一样。",
+    "variation": "变体",
+    "newVariation": "新的变体",
+    "generate": "生成预览",
+    "generating": "正在绘制…",
+    "pipeline": "生成流程",
+    "kit": "像素地图工具（在浏览器中）",
+    "kitWhy": "免费、即时。相同的文字和变体编号总是得到完全相同的像素。",
+    "ai": "图像服务",
+    "aiWhy": "每张图都要花钱。没有种子控制：同样的提示词每次结果可能不同。",
+    "aiOff": "图像服务尚未设置，所以这个世界和地点类型无法预览。",
+    "aiConfirm": "这会调用一次付费图像服务。",
+    "model": "模型",
+    "kind": "场景种类",
+    "biome": "生态",
+    "seed": "种子",
+    "attempts": "尝试的变体数",
+    "prompt": "发送给模型的完整提示词",
+    "checks": "可读性检查",
+    "walkable": "可行走地面",
+    "connected": "连通",
+    "visible": "可见的空地",
+    "front": "被前景遮挡",
+    "colours": "颜色数",
+    "objects": "物件",
+    "overlay": "显示可行走区域",
+    "use": "在我的世界里使用",
+    "used": "已保存为新的地图版本并启用。",
+    "useOtherWorld": "把“世界”切换成你当前的世界，才能在那里使用预览。",
+    "empty": "还没有生成任何地图。",
+    "failed": "预览没能生成。",
+    "board": "风格一致性对照板",
+    "boardHint": "用同一个变体编号画出六种不同的场景描述并排比较，检查它们是否像同一款游戏。",
+    "runBoard": "全部绘制",
+    "loadCase": "填入表单",
+    "open": "地图实验室",
+    "kinds": {
+      "village": "村庄",
+      "forest": "林间小径",
+      "riverbank": "河岸",
+      "ruins": "遗迹",
+      "desert": "沙漠",
+      "glade": "魔法空地"
+    },
+    "biomes": {
+      "temperate": "温带",
+      "arid": "干旱",
+      "enchanted": "魔法"
     }
   }
 }

@@ -65,6 +65,11 @@ function readLocale(): Locale {
   return current;
 }
 
+/** The language in use right now, outside React (e.g. to name the objects on a new map). */
+export function currentLocale(): Locale {
+  return typeof window === "undefined" ? "en" : readLocale();
+}
+
 export function setLocale(locale: Locale) {
   current = locale;
   try {

@@ -1,9 +1,9 @@
 import "server-only";
 import type { AnalyzeRequest, CharacterBrief, TurnRequest } from "../contracts";
 
-const LANGUAGE: Record<string, string> = { en: "English", "zh-CN": "Simplified Chinese" };
+export const LANGUAGE: Record<string, string> = { en: "English", "zh-CN": "Simplified Chinese" };
 
-const TRAIT_POLES: Record<string, [string, string]> = {
+export const TRAIT_POLES: Record<string, [string, string]> = {
   extroversion: ["introverted", "extroverted"],
   impulsiveness: ["cautious", "impulsive"],
   expressiveness: ["reserved", "expressive"],
@@ -16,7 +16,7 @@ const TRAIT_POLES: Record<string, [string, string]> = {
   rebelliousness: ["rule-following", "rebellious"],
 };
 
-const WORLD_RULES: Record<string, string> = {
+export const WORLD_RULES: Record<string, string> = {
   "western-fantasy": "Western fantasy: mossy villages, crooked castles, prophecies, low magic that is common but unreliable.",
   modern: "Modern day: cafés, late trains, phones and group chats. No magic.",
   "ancient-china": "Ancient China: courtyards, roadside inns, wandering swordsfolk, honor debts. Grounded wuxia flavor, no modern technology.",
@@ -24,18 +24,28 @@ const WORLD_RULES: Record<string, string> = {
 };
 
 /** Player-written fields, quoted exactly. Empty fields are skipped. */
-function characterBlock(c: CharacterBrief, label: string) {
+export function characterBlock(c: CharacterBrief, label: string) {
   const lines = [`<${label} id="${c.id}">`];
   for (const [k, v] of Object.entries(c.fields)) {
     if (!v || !v.trim()) continue;
     const locked = c.lockedFields.includes(k as never) ? " locked=\"true\"" : "";
     lines.push(`  <${k}${locked}>${v.trim()}</${k}>`);
   }
+  if (c.identity) {
+    lines.push(`  <gender_and_pronouns note="chosen by the player: refer to this character with these pronouns (in Chinese: she/her = 她, he/him = 他, they/them or custom = TA or the name); never infer personality, interests, abilities or behavior from gender">gender: ${c.identity.gender}; pronouns: ${c.identity.pronouns}</gender_and_pronouns>`);
+  } else {
+    lines.push(`  <gender_and_pronouns note="not specified by the player: don't assume a gender; use the character's name, or singular they (Chinese: the name or TA)">not specified</gender_and_pronouns>`);
+  }
   const traits = Object.entries(c.traits);
   if (traits.length) {
     lines.push("  <sliders note=\"0 = first word, 100 = second word; tendencies, not rules\">");
     for (const [k, v] of traits) lines.push(`    ${TRAIT_POLES[k]?.[0]} ↔ ${TRAIT_POLES[k]?.[1]}: ${v}`);
     lines.push("  </sliders>");
+  }
+  if (c.boundaries?.length) {
+    lines.push(`  <boundaries note="hard = never crossed in play; soft = avoided, may be reconsidered only through real shared experience">`);
+    for (const b of c.boundaries) lines.push(`    ${b.strength} ${b.kind}: ${b.text}`);
+    lines.push(`  </boundaries>`);
   }
   if (c.profile) {
     lines.push(`  <approved_profile>`);
@@ -52,7 +62,8 @@ function characterBlock(c: CharacterBrief, label: string) {
 export const ANALYSIS_SYSTEM = `You analyze original characters for PLOT TWIST!, a cozy pixel-art storytelling game, and return a structured behavioral profile the game uses to drive dialogue and events.
 
 How to read the input:
-- The player's written profile is canon. Interpret it; never rewrite, soften or contradict it. Fields marked locked="true" are fixed facts.
+- The player's written profile is canon. Interpret it; never rewrite, soften or contradict it. Fields marked locked="true" are fixed facts: when you state or quote one, use the player's exact words in their original language, never a translation or paraphrase.
+- <gender_and_pronouns> only tells you how to refer to the character. Never infer personality, interests, abilities, emotional style or behavior from gender. If it is not specified, don't assume one.
 - Sliders (0–100 between two poles) are tendencies, not rules. Use them to fill gaps and set intensity.
 - When the written profile and a slider disagree, do not pick a winner. Report it in "conflicts" with a short, friendly note on how both could be true or what the player might adjust.
 - Use background, goals, fears, values, relationships, memories and current mood as evidence.
@@ -94,10 +105,11 @@ Rules:
 - speaker must be one of the allowed speaker ids. Never write names in the speaker field; the game adds names.
 - memoryNote: one short sentence the character would remember about this moment (or an empty string if nothing notable happened).
 - Write in the requested language. Keep character names exactly as written. Quote player-written phrases exactly if you quote them.
-- Tone: warm, funny, lightly mysterious. Suitable for all ages.`;
+- Tone: warm, funny, lightly mysterious. Suitable for all ages.
+- If a <behavior_plan> is given, the game engine has ALSO decided how each listed character reacts (their intention, what shows on their face, how they move). Write that character's line so it carries out that intention in the given style: length (terse = a few words, short = one sentence, full = one or two sentences; silent = no line from them), tone, directness, humor, formality and how much they reveal. If hesitant, let them pause or trail off. If a feeling is hidden, they must NOT state it outright; at most a narrator line may hint at it. Never describe a movement other than the one given, and never invent new actions, touches or state changes: movement and state are controlled by the game.`;
 
 const BEAT_HELP: Record<string, string> = {
-  talk: "The selected character talks to the player about the given topic.",
+  talk: "The selected character talks about the given topic (to the other character if one is given, otherwise to the player).",
   observe: "The narrator describes what the player notices about the character right now (appearance, habits, mood). No dialogue needed.",
   wait: "A quiet moment passes in this place; small ambient details. Keep it low-key.",
   confide: "The other character opens up to the actor about a fear or something from their past.",
@@ -141,8 +153,40 @@ export function turnUser(req: TurnRequest) {
     req.memories.length ? `<actor_memories>\n${req.memories.map((m) => `  ${m.eventType}${m.withName ? ` with ${m.withName}` : ""}${m.note ? `: ${m.note}` : ""}`).join("\n")}\n</actor_memories>` : "",
     `<outcome>\n${outcome.join("\n")}\n</outcome>`,
     req.recentLines.length ? `<recent_lines do_not_repeat="true">\n${req.recentLines.map((l) => `  ${l}`).join("\n")}\n</recent_lines>` : "",
+    req.behaviors?.length ? behaviorPlan(req) : "",
     `Allowed speaker ids: ${allowed.join(", ")}`,
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+const MOVE_TEXT: Record<string, string> = {
+  toward: "walks up to them",
+  closer: "steps a little closer",
+  away: "backs away",
+  step_back: "takes a step or two back",
+  face: "turns to face them",
+  still: "stays where they are",
+  hop: "gives a small hop",
+  stomp: "stomps once",
+  glance: "glances around",
+  sigh: "sighs",
+  shift: "shifts their weight",
+  turn_away: "turns away",
+};
+
+function behaviorPlan(req: TurnRequest) {
+  const lines = (req.behaviors ?? []).map((b) => {
+    const s = b.style;
+    return [
+      `  <reaction character="${b.characterId}" to="${b.trigger}"${b.causedBy ? ` by="${b.causedBy}"` : ""}>`,
+      `    intention: ${b.intent}${b.speaks ? "" : " (no spoken line)"}`,
+      `    movement (already happening on screen): ${MOVE_TEXT[b.movement] ?? b.movement}`,
+      `    style: ${s.length}, ${s.tone} tone, directness ${s.directness}, humor ${s.humor}, formality ${s.formality}, reveals ${s.disclosure}${s.hesitant ? ", hesitates first" : ""}${s.useName ? ", may use the listener's name" : ""}`,
+      `    feels: ${b.feelings.map((f) => `${f.feeling} ${f.value}`).join(", ") || "nothing strong"}`,
+      `    shows: ${b.shows ? `${b.shows.emotion} (strength ${b.shows.level}/3)` : "nothing visible"}${b.hiddenFeeling ? `; hides ${b.hiddenFeeling}` : ""}`,
+      `  </reaction>`,
+    ].join("\n");
+  });
+  return `<behavior_plan decided_by_game="true">\n${lines.join("\n")}\n</behavior_plan>`;
 }

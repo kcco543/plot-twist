@@ -8,6 +8,7 @@ import { LanguageSwitch } from "./LanguageSwitch";
 import { PixelButton } from "./ui/PixelButton";
 import { PixelIcon } from "./ui/PixelIcon";
 import { SettingsModal } from "./SettingsModal";
+import { SyncBadge } from "./sync/SyncBadge";
 import { useI18n, type MessageKey } from "@/i18n";
 import { useOnline } from "@/lib/useOnline";
 
@@ -27,7 +28,7 @@ export function AppBar() {
 
   return (
     <header className="sticky top-0 z-40 border-b-2 border-line bg-surface/95 shadow-[0_4px_14px_rgba(91,74,134,0.08)] backdrop-blur-sm" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
-      <div className="gutter mx-auto flex max-w-6xl items-center justify-between gap-3 py-2">
+      <div className="content-grid flex items-center justify-between gap-1.5 py-2 min-[360px]:gap-3">
         <Link href="/" className="px-focus flex min-h-11 shrink-0 items-center" aria-label={t("nav.home")}>
           <Logo size="sm" />
         </Link>
@@ -60,19 +61,22 @@ export function AppBar() {
             })}
           </ol>
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 min-[360px]:gap-2">
           {!online && (
             <span className="flex items-center gap-1 bg-coral px-1.5 py-1 font-label text-[10px] uppercase text-ink" role="status">
               <PixelIcon name="offline" size={10} />
               {t("nav.offline")}
             </span>
           )}
+          {/* Offline already says it all; otherwise the cloud save state (Saving / Synced / Sync failed…). */}
+          {online && <SyncBadge compact />}
           <LanguageSwitch />
           <PixelButton size="sm" variant="ghost" icon="gear" onClick={() => setSettingsOpen(true)} aria-label={t("common.settings")} className="min-w-11" />
         </div>
       </div>
       {current >= 0 && (
-        <div className="gutter flex items-center justify-between gap-3 border-t border-line bg-well/80 py-1.5 lg:hidden">
+        <div className="border-t border-line bg-well/80 lg:hidden" data-step-row>
+          <div className="content-grid flex items-center justify-between gap-3 py-1.5">
           <span className="font-label text-[10px] uppercase text-ink-soft">{t("nav.stepOf", { n: current + 1, total: STEPS.length })}</span>
           <span className="font-head text-sm font-semibold text-label">{t(STEPS[current].label)}</span>
           <span className="flex gap-1" aria-hidden>
@@ -80,6 +84,7 @@ export function AppBar() {
               <span key={s.href} className={`block h-2 w-5 ${i === current ? "bg-label" : i < current ? "bg-mint" : "bg-line"}`} />
             ))}
           </span>
+          </div>
         </div>
       )}
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />

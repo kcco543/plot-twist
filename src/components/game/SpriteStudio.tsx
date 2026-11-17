@@ -8,17 +8,19 @@ import { Panel } from "@/components/ui/Panel";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { PixelIcon } from "@/components/ui/PixelIcon";
 import { PixelEditor } from "./PixelEditor";
+import { PortraitManager, portraitsAfterGeneration } from "@/components/portraits/PortraitManager";
+import { referenceCopy } from "@/lib/portraits/browser";
 import { defaultWorld, environmentArt } from "@/assets/manifest";
 import { AiRequestError, requestSprite, useAiStatus } from "@/lib/ai/client";
 import { artFor } from "@/lib/character/art";
 import { gameActions, useSave } from "@/lib/gameStore";
 import { checkFile, convertToGameArt, imgToDataURL, prepareUpload } from "@/lib/sprites/canvas";
-import { checkSprite, DEFAULT_CONVERT, type ConvertOptions, type Img } from "@/lib/sprites/pixelize";
+import { checkSprite, DEFAULT_CONVERT, WARM_OUTLINE, type ConvertOptions, type Img } from "@/lib/sprites/pixelize";
 import type { Character, SpriteSource } from "@/lib/types";
 import { useI18n } from "@/i18n";
 
 type Source = { url: string; kind: "ai" | "converted" };
-type Result = { sprite: string; portrait: string; spriteImg: Img };
+type Result = { sprite: string; portrait: string; spriteImg: Img; fullImg: Img };
 
 /** Sprite preview standing in the current world's scene, so the player sees it at game scale. */
 function StagePreview({ sprite, label }: { sprite: string; label: string }) {
@@ -49,7 +51,8 @@ export function SpriteStudio({ character }: { character: Character }) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<Source | null>(null);
-  const [options, setOptions] = useState<ConvertOptions>(DEFAULT_CONVERT);
+  // Western Fantasy sprites get the cast's dark warm outline, so they sit in the same world as the map.
+  const [options, setOptions] = useState<ConvertOptions>(() => (save.worldId === "western-fantasy" ? { ...DEFAULT_CONVERT, outlineColor: WARM_OUTLINE } : DEFAULT_CONVERT));
   const [result, setResult] = useState<Result | null>(null);
   const [nothing, setNothing] = useState(false);
   const [edited, setEdited] = useState<Result | null>(null);
@@ -120,10 +123,15 @@ export function SpriteStudio({ character }: { character: Character }) {
   const sourceKind: SpriteSource = edited ? "edited" : (source?.kind ?? "converted");
   const name = character.name.trim() || t("common.unnamed");
 
-  const saveResult = () => {
-    if (!shown) return;
+  const portraitRef = useRef<HTMLDivElement>(null);
+  const saveResult = async () => {
+    if (!shown || !source) return;
     gameActions.saveSprite({ sprite: shown.sprite, portrait: shown.portrait, source: sourceKind }, name, character.id);
-    setSavedMsg(t("sprite.saved", { name }));
+    // The full portrait becomes an immutable original version; the reference is kept as a small copy beside it.
+    const reference = refUrl ? await referenceCopy(refUrl) : null;
+    gameActions.setPortraits(character.id, portraitsAfterGeneration(character.portraits, shown.fullImg, source.kind === "ai" ? "generated" : "converted", reference));
+    setSavedMsg(t(character.portraits ? "sprite.savedNewVersion" : "sprite.saved", { name }));
+    requestAnimationFrame(() => portraitRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 
   return (
@@ -274,6 +282,10 @@ export function SpriteStudio({ character }: { character: Character }) {
           </div>
         </div>
       </Panel>
+
+      <div ref={portraitRef} className="scroll-mt-24">
+        <PortraitManager character={character} />
+      </div>
 
       <Panel title={t("sprite.library")}>
         <div className="mb-4 flex flex-wrap items-center gap-4">

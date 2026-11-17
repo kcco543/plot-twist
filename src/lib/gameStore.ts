@@ -1,13 +1,23 @@
 "use client";
 
-import { createPersistentStore } from "./persistentStore";
+import { createActiveWorldStore, eraseAllWorlds } from "./saves/worldSaves";
+import { libraryActions } from "./library/characterLibrary";
+import { characterFromTemplate, forgetCharacterInStory, type CharacterTemplate } from "./library/templates";
 import { makeId } from "./id";
+import { emptyAgency } from "./autonomy/types";
 import { createBlankCharacter, normalizeCharacter } from "./character/model";
-import { emptyStory, withMemoryNote } from "./story/engine";
+import { emptyStory, neutralState, withMemoryNote } from "./story/engine";
+import { sanitizeUiTheme, type WorldUiTheme } from "./theme/themes";
+import type { CharacterPortraits } from "./portraits/model";
+import { withEmotion, type Emotion } from "./emotion/emotions";
+import { normalizeScenes, syncActive, type WorldScenes } from "./explore/scenes";
 import type { Character, CharacterArt, EnvironmentDraft, SaveData, SpriteAsset, StoryLine, StoryState, WorldId } from "./types";
 
-/** Same key as v0.1–v0.3, so existing saves load. Older saves are upgraded in place without losing anything. */
-const SAVE_KEY = "plot-twist:save:v1";
+/**
+ * Each world save keeps its own copy of this data (see src/lib/saves/). The
+ * single v0.1–v0.4 save is migrated into the first world, and older data
+ * inside a world is still upgraded on load without losing anything.
+ */
 
 export const emptySave: SaveData = {
   version: 1,
@@ -20,6 +30,7 @@ export const emptySave: SaveData = {
   updatedAt: null,
 };
 
+
 function normalizeStory(raw: unknown): StoryState {
   const r = (raw ?? {}) as Partial<StoryState>;
   return {
@@ -27,6 +38,19 @@ function normalizeStory(raw: unknown): StoryState {
     characters: r.characters && typeof r.characters === "object" ? r.characters : {},
     bonds: r.bonds && typeof r.bonds === "object" ? r.bonds : {},
     events: Array.isArray(r.events) ? r.events : [],
+    // Behavior engine state (relationships, recent decisions) must survive a reload too.
+    ...(r.relations && typeof r.relations === "object" ? { relations: r.relations } : {}),
+    ...(Array.isArray(r.decisions) ? { decisions: r.decisions } : {}),
+    // The visitor's bonds (photos, gifts) and this world's gift instances.
+    ...(r.player && typeof r.player === "object" ? { player: r.player } : {}),
+    ...(r.gifts && typeof r.gifts === "object" ? { gifts: r.gifts } : {}),
+    // Conversation history, relationship shifts and relationship development (stages, milestones,
+    // impressions, refusals) must survive a reload too; older saves simply don't have them yet.
+    ...(r.talk && typeof r.talk === "object" ? { talk: r.talk } : {}),
+    ...(r.relationLog && typeof r.relationLog === "object" ? { relationLog: r.relationLog } : {}),
+    ...(r.progress && typeof r.progress === "object" ? { progress: r.progress } : {}),
+    // Character autonomy: intents, stated goals, conversation boundaries, saved positions.
+    ...(r.agency && typeof r.agency === "object" && Array.isArray(r.agency.intents) ? { agency: { ...emptyAgency(), ...r.agency } } : {}),
   };
 }
 
@@ -37,25 +61,36 @@ export function migrateSave(raw: unknown): SaveData {
     ...r,
     version: 1,
     environment: { ...emptySave.environment, ...(r.environment ?? {}) },
-    characters: Array.isArray(r.characters) ? r.characters.map(normalizeCharacter) : [],
+    characters: Array.isArray(r.characters) ? r.characters.map(normalizeCharacter).map(backfillSampleBoundaries) : [],
     log: Array.isArray(r.log) ? r.log : [],
     story: normalizeStory(r.story),
     sprites: Array.isArray(r.sprites) ? r.sprites.filter((s) => s && typeof s.sprite === "string") : [],
+    // Versioned, validated: an unknown or mismatched theme falls back to the world type's default (never reset to nothing).
+    uiTheme: sanitizeUiTheme(r.uiTheme, (r.worldId as WorldId | null) ?? null) ?? undefined,
+    // Connected scenes: validated, and older saves get one scene made from their environment (nothing is lost).
+    scenes: normalizeScenes(r.scenes, { ...emptySave.environment, ...(r.environment ?? {}) }),
   };
 }
 
-const store = createPersistentStore<SaveData>(SAVE_KEY, emptySave, migrateSave);
+/** Only ever the ACTIVE world: there is no list of every world's characters in memory. */
+const store = createActiveWorldStore<SaveData>(emptySave, migrateSave);
 
 export const useSave = store.useStore;
 export const getSave = store.get;
 
 const touch = (fn: (s: SaveData) => SaveData) => store.set((s) => ({ ...fn(s), updatedAt: Date.now() }));
 
+import { backfillSampleBoundaries, sampleCharacter } from "./mind/scenarios";
 export { CHARACTER_TEXT_FIELDS, createBlankCharacter } from "./character/model";
 
 export const gameActions = {
   selectWorld(worldId: WorldId) {
-    touch((s) => ({ ...s, worldId }));
+    // A different world type starts from that type's own default skin.
+    touch((s) => ({ ...s, worldId, uiTheme: s.uiTheme?.baseTheme === worldId ? s.uiTheme : undefined }));
+  },
+  /** Save this world's UI skin (World Builder → Look & feel). Only changes the UI: maps and art are untouched. */
+  setUiTheme(theme: WorldUiTheme | null) {
+    touch((s) => ({ ...s, uiTheme: theme ? (sanitizeUiTheme({ ...theme, updatedAt: Date.now() }, s.worldId) ?? undefined) : undefined }));
   },
   addCharacter(): Character {
     // Give each new character the first placeholder portrait nobody is using yet.
@@ -72,11 +107,31 @@ export const gameActions = {
       characters: s.characters.map((c) => (c.id === id ? { ...c, ...patch, updatedAt: Date.now() } : c)),
     }));
   },
+  /** Add the sample cast (Mira, Wren, Tobi: very different personalities, a friendship and a rivalry) for trying conversations. */
+  addSampleCast(locale: "en" | "zh-CN") {
+    touch((s) => {
+      const have = new Set(s.characters.map((c) => c.id));
+      const add = (["mira", "wren", "tobi"] as const).map((id) => sampleCharacter(id, locale)).filter((c) => !have.has(c.id));
+      return { ...s, worldId: s.worldId ?? "otherworld", characters: [...s.characters, ...add] };
+    });
+  },
   deleteCharacter(id: string) {
     touch((s) => ({ ...s, characters: s.characters.filter((c) => c.id !== id) }));
   },
   updateEnvironment(patch: Partial<EnvironmentDraft>) {
-    touch((s) => ({ ...s, environment: { ...s.environment, ...patch } }));
+    // The active scene mirrors the environment (World Builder changes the map of the scene being played).
+    touch((s) => {
+      const environment = { ...s.environment, ...patch };
+      return { ...s, environment, scenes: s.scenes ? syncActive(s.scenes, environment) : s.scenes };
+    });
+  },
+  /** Replace this world's scenes (and, when travelling, the environment shown) in one save. */
+  setScenes(scenes: WorldScenes, environment?: EnvironmentDraft) {
+    touch((s) => ({ ...s, scenes, ...(environment ? { environment } : {}) }));
+  },
+  /** Scenes + story in one write (travelling also moves saved positions in the story's agency state). */
+  setScenesAndStory(scenes: WorldScenes, story: StoryState, environment?: EnvironmentDraft) {
+    touch((s) => ({ ...s, scenes, story, ...(environment ? { environment } : {}) }));
   },
   appendLog(line: StoryLine) {
     gameActions.appendLines([line]);
@@ -95,6 +150,13 @@ export const gameActions = {
   setMemoryNote(actorId: string, memoryId: string, note: string) {
     touch((s) => ({ ...s, story: withMemoryNote(s.story, actorId, memoryId, note) }));
   },
+  /** Set a character's current emotion (test panel, or later an AI event via the stage action check). Personality is untouched. */
+  setEmotion(characterId: string, emotion: Emotion, level: number, at = Date.now()) {
+    touch((s) => ({
+      ...s,
+      story: { ...s.story, characters: { ...s.story.characters, [characterId]: withEmotion(s.story.characters[characterId] ?? neutralState(), emotion, level, at) } },
+    }));
+  },
   resetStory() {
     touch((s) => ({ ...s, story: emptyStory(), log: [] }));
   },
@@ -108,6 +170,21 @@ export const gameActions = {
     }));
     return asset;
   },
+  /**
+   * Save a character's portrait stack (versions + avatar crop) in THIS world
+   * only. null removes the custom portrait (the sprite / placeholder shows again).
+   */
+  setPortraits(characterId: string, portraits: CharacterPortraits | null) {
+    touch((s) => ({
+      ...s,
+      characters: s.characters.map((c) => {
+        if (c.id !== characterId) return c;
+        const { portraits: _old, ...rest } = c;
+        void _old;
+        return { ...rest, ...(portraits ? { portraits } : {}), updatedAt: Date.now() };
+      }),
+    }));
+  },
   applySprite(characterId: string, asset: SpriteAsset | null) {
     gameActions.updateCharacter(characterId, { art: asset ? pick(asset) : null });
   },
@@ -115,8 +192,28 @@ export const gameActions = {
     // Characters already wearing it keep their copy.
     touch((s) => ({ ...s, sprites: s.sprites.filter((a) => a.assetId !== assetId) }));
   },
+  /** Every world save and the Character Library (Settings → Erase all data). */
   eraseAll() {
-    store.reset();
+    eraseAllWorlds();
+    libraryActions.eraseAll();
+  },
+  /** Add a Character Library original to THIS world as its own independent copy. */
+  addFromLibrary(template: CharacterTemplate): Character {
+    const c = characterFromTemplate(template, makeId("char"), Date.now());
+    touch((s) => ({ ...s, characters: [...s.characters, c] }));
+    return c;
+  },
+  /** Link a world-made character to the library original just saved from it. */
+  linkToTemplate(characterId: string, templateId: string) {
+    touch((s) => ({ ...s, characters: s.characters.map((c) => (c.id === characterId && !c.templateId ? { ...c, templateId } : c)) }));
+  },
+  /**
+   * Remove a character from this world only (the library original and other
+   * worlds are untouched). Their own state and pair records go; the story log
+   * and other characters' memories of them stay.
+   */
+  removeFromWorld(id: string) {
+    touch((s) => ({ ...s, characters: s.characters.filter((c) => c.id !== id), story: forgetCharacterInStory(s.story, id) }));
   },
 };
 

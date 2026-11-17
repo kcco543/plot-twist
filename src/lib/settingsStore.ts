@@ -10,5 +10,5 @@ const store = createPersistentStore<Settings>("plot-twist:settings:v1", defaultS
 export const useSettings = store.useStore;
 export const updateSettings = (patch: Partial<Settings>) => store.set((s) => ({ ...s, ...patch }));
 
-/** Milliseconds per character for the dialogue typewriter. */
-export const TEXT_SPEED_MS: Record<TextSpeed, number> = { slow: 55, normal: 28, fast: 12, instant: 0 };
+/** Dialogue speed: milliseconds per visible character (grapheme). 0 = show the whole line at once. */
+export const TEXT_SPEED_MS: Record<TextSpeed, number> = { slow: 80, normal: 40, fast: 15, instant: 0 };

@@ -40,3 +40,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# live AI test output
+/tests/live/last-run.md
+/tests/live/photo-last-run.md
+/tests/live/photos/
+/tests/live/images/
+/tests/live/refine-last-run.md
+
+# AI usage mode + limits saved by the dev usage dashboard
+/.plot-twist-ai.json

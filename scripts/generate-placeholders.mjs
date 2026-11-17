@@ -282,18 +282,22 @@ const BODY = [
   "....oKKKko.oKKKko...",
   ".....oooo...oooo....",
 ];
+// Adventure-RPG cast (matches the Western Fantasy map kit, PIXEL_ART_STYLE_GUIDE.md §17): earthy cloth,
+// leather and wool, warm hue-shifted shading lit from the upper left, one dark warm outline.
+const HERO_INK = "#24180f";
+const BOOTS = ["#2f1f19", "#4d3024"];
 const CAST = [
-  { hair: ["#4f2e3a", "#8a4f4a", "#c47a5e"], skin: 0, top: R.pink, scarf: R.butter, pants: [R.plum[1], R.plum[2]], shoes: R.lavender, style: "short" },
-  { hair: ["#1b1526", "#30273f", "#5c4a7a"], skin: 1, top: R.mint, scarf: R.pink, pants: ["#3e2f6b", "#5c4a99"], shoes: R.coral, style: "long" },
-  { hair: ["#c98f3c", "#f8d77c", "#fff3c4"], skin: 0, top: R.lavender, scarf: R.mint, pants: [R.wood[0], R.wood[1]], shoes: R.pink, style: "buns" },
-  { hair: ["#6a55a6", "#9d86ce", "#d2c4f2"], skin: 2, top: R.butter, scarf: R.teal, pants: [R.plum[1], R.plum[2]], shoes: R.mint, style: "short" },
-  { hair: ["#a8a0c0", "#f1ecf7", "#ffffff"], skin: 1, top: R.teal, scarf: R.coral, pants: ["#24493f", "#3c7a52"], shoes: R.butter, style: "long" },
-  { hair: ["#5a3a36", "#8c5a45", "#c08a5f"], skin: 2, top: R.coral, scarf: R.lavender, pants: ["#3e2f6b", "#5c4a99"], shoes: R.teal, style: "buns" },
+  { hair: ["#4a2418", "#8a3f22", "#c0683a"], skin: 0, top: ["#1f4a44", "#2f7466", "#4fa08a"], scarf: ["#8a6420", "#c49a34", "#e6c25a"], pants: ["#3b2a20", "#5c4232"], shoes: BOOTS, belt: "#4d3024", style: "short" },
+  { hair: ["#1a1414", "#2e2624", "#4e4440"], skin: 1, top: ["#5a2222", "#8c3a2c", "#b85438"], scarf: ["#a89070", "#d9c49a", "#efdfb6"], pants: ["#2e3238", "#4a5058"], shoes: BOOTS, belt: "#2f1f19", style: "long" },
+  { hair: ["#8a5a1e", "#d0a040", "#f0d070"], skin: 0, top: ["#2c3a1c", "#4a6028", "#6f8a36"], scarf: ["#6e2e1e", "#a4502e", "#cd7a46"], pants: ["#5e4630", "#8a6a48"], shoes: BOOTS, belt: "#3f2c22", style: "buns" },
+  { hair: ["#6a6458", "#a8a090", "#ddd6c4"], skin: 2, top: ["#7a5418", "#b07a24", "#dca23e"], scarf: ["#3e2430", "#5e3646", "#84505e"], pants: ["#2c3020", "#454b30"], shoes: BOOTS, belt: "#2f1f19", style: "short" },
+  { hair: ["#2e1c14", "#5a3a26", "#86583a"], skin: 1, top: ["#1c3a4a", "#2a5a70", "#4a86a0"], scarf: ["#6e2a18", "#a04a24", "#cf7a2c"], pants: ["#3b2a20", "#5c4232"], shoes: BOOTS, belt: "#4d3024", style: "long" },
+  { hair: ["#5a1e14", "#9a3820", "#d0603a"], skin: 2, top: ["#7a5a3a", "#a88458", "#d0b080"], scarf: ["#2f3420", "#4a5128", "#6b7330"], pants: ["#2a2228", "#463a40"], shoes: BOOTS, belt: "#2f1f19", style: "buns" },
 ];
 CAST.forEach((p, i) => {
   const n = String(i + 1).padStart(2, "0");
   const sk = R.skin[p.skin];
-  const pal = { o: R.ink, E: R.ink, w: "#ffffff", H: p.hair[1], h: p.hair[0], L: p.hair[2], S: sk[1], s: sk[0], B: R.pink[1],
+  const pal = { o: HERO_INK, E: HERO_INK, w: "#fbe7a0", H: p.hair[1], h: p.hair[0], L: p.hair[2], S: sk[1], s: sk[0], B: sk[0],
     T: p.top[1], t: p.top[0], U: p.top[2], Y: p.scarf[1], y: p.scarf[0], P: p.pants[1], p: p.pants[0], K: p.shoes[1], k: p.shoes[0] };
   // ---- sprite 32x32
   const sp = new Canvas(32, 32);
@@ -301,7 +305,10 @@ CAST.forEach((p, i) => {
     L.grid(BODY, pal, 6, 3);
     if (p.style === "long") for (let y = 10; y < 22; y++) { L.set(6 + 1, y, p.hair[y > 18 ? 0 : 1]); L.set(6 + 2, y, p.hair[0]); L.set(6 + 17, y, p.hair[0]); L.set(6 + 18, y, p.hair[y > 18 ? 0 : 1]); }
     if (p.style === "buns") { L.ellipse(6 + 3, 4, 3, 3, p.hair); L.ellipse(6 + 16, 4, 3, 3, p.hair); }
-  }, R.ink);
+    // Leather belt with a brass buckle, and a satchel strap across the chest.
+    L.rect(6 + 4, 3 + 20, 12, 1, p.belt); L.set(6 + 10, 3 + 20, "#d08a2a");
+    for (let i = 0; i < 5; i++) L.set(6 + 6 + i, 3 + 15 + i, p.belt);
+  }, HERO_INK);
   sp.savePNG(`${OUT}assets/characters/sprite-${n}.png`);
 
   // ---- portrait 96x96
@@ -323,11 +330,11 @@ CAST.forEach((p, i) => {
     // shine on hair
     for (let i = 0; i < 12; i++) L.set(32 + i, 20 + Math.round(Math.abs(i - 6) / 2), p.hair[2]);
     // eyes
-    for (const ex of [37, 59]) { L.ellipse(ex, 51, 4, 6, R.ink); L.rect(ex - 2, 47, 2, 3, "#ffffff"); L.set(ex + 1, 54, "#ffffff"); L.rect(ex - 3, 54, 7, 2, p.top[0]); }
+    for (const ex of [37, 59]) { L.ellipse(ex, 51, 4, 6, HERO_INK); L.rect(ex - 2, 47, 2, 3, "#ffffff"); L.set(ex + 1, 54, "#ffffff"); L.rect(ex - 3, 54, 7, 2, p.top[0]); }
     L.rect(33, 42, 7, 2, p.hair[0]); L.rect(56, 42, 7, 2, p.hair[0]);
-    L.ellipse(30, 59, 4, 2, R.pink[1]); L.ellipse(66, 59, 4, 2, R.pink[1]);
-    L.rect(45, 61, 6, 1, R.ink); L.set(44, 60, R.ink); L.set(51, 60, R.ink); L.rect(46, 62, 4, 1, R.pink[0]);
-  }, R.ink);
+    L.ellipse(30, 59, 4, 2, sk[0]); L.ellipse(66, 59, 4, 2, sk[0]);
+    L.rect(45, 61, 6, 1, HERO_INK); L.set(44, 60, HERO_INK); L.set(51, 60, HERO_INK); L.rect(46, 62, 4, 1, sk[0]);
+  }, HERO_INK);
   pt.savePNG(`${OUT}assets/characters/portrait-${n}.png`);
 });
 

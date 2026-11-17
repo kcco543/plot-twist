@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal } from "./ui/Modal";
 import { Choice, Toggle } from "./ui/Choice";
+import { AiConnectionCheck } from "./AiConnectionCheck";
 import { PixelButton } from "./ui/PixelButton";
 import { PixelIcon } from "./ui/PixelIcon";
 import { LanguageSwitch } from "./LanguageSwitch";
@@ -11,12 +12,16 @@ import { gameActions } from "@/lib/gameStore";
 import { useI18n } from "@/i18n";
 import type { EventFrequency, TextSpeed } from "@/lib/types";
 import { useAiStatus } from "@/lib/ai/client";
+import { eraseMaps } from "@/lib/mapGenerator";
+import { useDevMode } from "@/lib/devMode";
+import { clearAllKeepsakes } from "@/lib/keepsakes/store";
 
 const Section = ({ children }: { children: React.ReactNode }) => <div className="border-t-[3px] border-dashed border-line pt-5">{children}</div>;
 
 export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useI18n();
   const settings = useSettings();
+  const devMode = useDevMode();
   const ai = useAiStatus();
   const [confirmErase, setConfirmErase] = useState(false);
   const [erased, setErased] = useState(false);
@@ -46,12 +51,15 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
           <p className="text-sm text-ink-soft">{t("language.note")}</p>
         </div>
         <Section>
-          <Choice<TextSpeed>
-            label={t("settings.textSpeed")}
-            value={settings.textSpeed}
-            onChange={(textSpeed) => updateSettings({ textSpeed })}
-            options={(["slow", "normal", "fast", "instant"] as const).map((v) => ({ value: v, label: t(`settings.speeds.${v}`) }))}
-          />
+          <div className="flex flex-col gap-1">
+            <Choice<TextSpeed>
+              label={t("settings.textSpeed")}
+              value={settings.textSpeed}
+              onChange={(textSpeed) => updateSettings({ textSpeed })}
+              options={(["slow", "normal", "fast", "instant"] as const).map((v) => ({ value: v, label: t(`settings.speeds.${v}`) }))}
+            />
+            <p className="text-sm text-ink-soft">{t("settings.textSpeedDesc")}</p>
+          </div>
         </Section>
         <Section>
           <div className="flex flex-col gap-5">
@@ -64,6 +72,34 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
               onLabel={t("settings.on")}
               offLabel={t("settings.off")}
             />
+            <Toggle
+              label={t("settings.testPanel")}
+              description={t("settings.testPanelDesc")}
+              checked={settings.testPanel ?? false}
+              onChange={(testPanel) => updateSettings({ testPanel })}
+              onLabel={t("settings.on")}
+              offLabel={t("settings.off")}
+            />
+            {devMode && (
+              <Toggle
+                label={t("settings.behaviorDebug")}
+                description={t("settings.behaviorDebugDesc")}
+                checked={settings.behaviorDebug ?? false}
+                onChange={(behaviorDebug) => updateSettings({ behaviorDebug })}
+                onLabel={t("settings.on")}
+                offLabel={t("settings.off")}
+              />
+            )}
+            {devMode && (
+              <Toggle
+                label={t("settings.relationshipInspector")}
+                description={t("settings.relationshipInspectorDesc")}
+                checked={settings.relationshipInspector ?? false}
+                onChange={(relationshipInspector) => updateSettings({ relationshipInspector })}
+                onLabel={t("settings.on")}
+                offLabel={t("settings.off")}
+              />
+            )}
           </div>
         </Section>
         <Section>
@@ -102,6 +138,17 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                   </li>
                 ))}
               </ul>
+              <AiConnectionCheck />
+              {ai?.mode && (
+                <p className="mt-3 text-sm text-ink-soft" data-ai-mode={ai.mode}>
+                  {t("settings.aiMode", { mode: t(`settings.aiModes.${ai.mode}`) })}
+                </p>
+              )}
+              {process.env.NODE_ENV !== "production" && (
+                <a href="/dev/usage" target="_blank" rel="noopener" className="mt-1 inline-block text-sm underline">
+                  {t("settings.usageDashboard")}
+                </a>
+              )}
             </div>
           </div>
         </Section>
@@ -135,6 +182,8 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 icon="trash"
                 onClick={() => {
                   gameActions.eraseAll();
+                  void eraseMaps();
+                  void clearAllKeepsakes();
                   setConfirmErase(false);
                   setErased(true);
                 }}

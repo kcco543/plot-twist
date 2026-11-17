@@ -1,6 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+
+/**
+ * What part of the stage is on screen, in CSS px of the scaled stage.
+ * Without a camera the whole stage is visible (offsetX 0, viewW = stage width).
+ */
+export type StageView = { offsetX: number; viewW: number; offsetY?: number; viewH?: number } | null;
+export const StageViewContext = createContext<StageView>(null);
+export const useStageView = () => useContext(StageViewContext);
+
+/** The stage's size in art px (320×192 for built-in rooms; generated maps have their own). */
+export const StageSizeContext = createContext({ width: 320, height: 192 });
+export const useStageSize = () => useContext(StageSizeContext);
+
+/** Below this container width, `squareOnPhones` switches to the taller, panning view. */
+const PHONE_MAX = 640;
 import type { ArtAsset } from "@/assets/manifest";
 
 /**
@@ -12,6 +27,9 @@ import type { ArtAsset } from "@/assets/manifest";
  * `fit="device"` (Play Mode) scales in whole DEVICE pixels instead, so on a
  * retina screen it can use 2.5×, 3.5× … and fill more of the space while every
  * art pixel stays perfectly square. `maxHeight` keeps the stage on screen.
+ * `squareOnPhones` (height ÷ width, e.g. 0.92) makes the view almost square on
+ * narrow screens: the art fills the height and a simple camera pans
+ * sideways to keep `focusX` (art px) in view.
  */
 export function PixelStage({
   art,
@@ -23,6 +41,8 @@ export function PixelStage({
   className = "",
   fit = "integer",
   maxHeight,
+  squareOnPhones,
+  focusX,
 }: {
   art: ArtAsset;
   label: string;
@@ -36,42 +56,65 @@ export function PixelStage({
   fit?: "integer" | "device";
   /** Upper bound for the stage height in CSS px. */
   maxHeight?: number;
+  squareOnPhones?: number;
+  /** Art-pixel x the camera keeps centred (when the view is narrower than the art). */
+  focusX?: number;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
+  const [boxW, setBoxW] = useState(0);
 
   useEffect(() => {
     const el = box.current;
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => {
       const w = entry.contentRect.width;
-      let s = w / art.width;
-      if (maxHeight) s = Math.min(s, Math.max(1, maxHeight / art.height));
       const dpr = fit === "device" ? Math.max(1, Math.round(window.devicePixelRatio || 1)) : 1;
-      setScale(s >= 1 ? Math.floor(s * dpr) / dpr : s);
+      let s = w / art.width;
+      if (squareOnPhones && w < PHONE_MAX) s = Math.max(s, (w * squareOnPhones) / art.height);
+      else if (maxHeight) s = Math.min(s, Math.max(1, maxHeight / art.height));
+      setBoxW(w);
+      // Generated maps are smooth pictures: no whole-pixel snapping, so they fill the frame.
+      setScale(art.smooth || s < 1 ? s : Math.floor(s * dpr) / dpr);
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [art.width, art.height, fit, maxHeight]);
+  }, [art.width, art.height, art.smooth, fit, maxHeight, squareOnPhones]);
 
   const w = art.width * scale;
   const h = art.height * scale;
+  // Camera: only when the scaled art is wider than the frame (phones).
+  const panning = scale > 0 && boxW > 0 && w > boxW + 0.5;
+  const viewArt = panning ? boxW / scale : art.width;
+  const camX = panning ? Math.min(art.width - viewArt, Math.max(0, (focusX ?? art.width / 2) - viewArt / 2)) : 0;
+  const offsetX = Math.round(camX * scale);
+  const view: StageView = scale > 0 ? { offsetX, viewW: panning ? boxW : w } : null;
+  const size = useMemo(() => ({ width: art.width, height: art.height }), [art.width, art.height]);
 
   return (
     <div className={`px-frame px-shadow ${className}`} style={{ "--frame": `var(--frame-${frame})` } as CSSProperties}>
-      <div ref={box} className="px-checker relative grid w-full place-items-center overflow-hidden" style={{ height: scale ? h : undefined, aspectRatio: scale ? undefined : `${art.width} / ${art.height}` }}>
+      <div ref={box} data-stage-view className="px-checker relative grid w-full place-items-center overflow-hidden" style={{ height: scale ? h : undefined, aspectRatio: scale ? undefined : `${art.width} / ${art.height}` }}>
         {scale > 0 && (
-          <div className="relative" style={{ width: w, height: h }}>
+          <StageViewContext.Provider value={view}>
+          <StageSizeContext.Provider value={size}>
+          <div
+            className={`${panning ? "absolute left-0 top-0 transition-transform duration-500 ease-out" : "relative"}`}
+            style={{ width: w, height: h, transform: panning ? `translateX(${-offsetX}px)` : undefined }}
+          >
             <div className="absolute left-0 top-0 origin-top-left" style={{ width: art.width, height: art.height, transform: `scale(${scale})` }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={art.src} alt={label} width={art.width} height={art.height} draggable={false} className="pixelated absolute inset-0 block size-full" />
+              <img src={art.src} alt={label} width={art.width} height={art.height} draggable={false} data-stage-art={art.smooth ? "generated" : "builtin"} className={`${art.smooth ? "" : "pixelated "}absolute inset-0 block size-full`} />
               {children}
             </div>
             {overlay && <div className="pointer-events-none absolute inset-0">{overlay}</div>}
-            {tag && art.placeholder && (
-              <span className="absolute right-1 top-1 bg-white/90 px-1.5 py-0.5 font-label text-[9px] uppercase leading-none text-ink-soft">{tag}</span>
-            )}
           </div>
+          </StageSizeContext.Provider>
+          </StageViewContext.Provider>
+        )}
+        {scale > 0 && tag && art.placeholder && (
+          <span className="absolute top-1 bg-white/90 px-1.5 py-0.5 font-label text-[9px] uppercase leading-none text-ink-soft" style={{ right: panning ? 4 : Math.max(4, (boxW - w) / 2 + 4) }}>
+            {tag}
+          </span>
         )}
       </div>
     </div>
