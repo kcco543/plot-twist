@@ -43,7 +43,20 @@ export type EngineEnv = {
   rng: (key: string) => () => number;
   /** Something the player may want to know happened (an invitation and its answer). */
   onEvent?: (e: EngineEvent) => void;
+  /** Observation frequency (frequency.ts): multiplies the solo think / act gaps (>1 = calmer). Default 1. */
+  pace?: number;
+  /** …and the environmental reaction cooldowns. Default 1. */
+  envScale?: number;
+  /**
+   * Wanting someone's company becomes a real conversation (convoDirector.ts)
+   * instead of a bare walk up to them. Returns true if a conversation session
+   * was started. Without it (older callers, tests) the walk happens as before.
+   */
+  converse?: (actor: string, target: string, reason: string) => boolean;
 };
+
+/** Planner reasons that mean "I want to talk to them" (handled as conversations when env.converse is set). */
+export const SOCIAL_REASONS = ["wantsCompany", "seeksComfort"];
 
 export type EngineEvent = { kind: "invite"; actor: string; target: string; object: string; answer: InviteAnswer };
 
@@ -116,7 +129,7 @@ export function tick(a0: AgencyState, env: EngineEnv): AgencyState {
     if (a.intents.some((i) => i.actor === actor.id && isActive(i))) continue;
     const p = personalityOf(actor);
     // Impulsive people think (and act) a bit more often, cautious ones less.
-    const pace = 1 + 0.4 * p.cautious - 0.4 * p.impulsive;
+    const pace = (1 + 0.4 * p.cautious - 0.4 * p.impulsive) * (env.pace ?? 1);
     const thought = a.lastThought?.[actor.id] ?? 0;
     const acted = a.lastActed?.[actor.id] ?? 0;
     if (now - thought < AUTONOMY.thinkMs * pace || now - acted < AUTONOMY.actGapMs * pace) continue;
@@ -132,8 +145,12 @@ export function tick(a0: AgencyState, env: EngineEnv): AgencyState {
       rng: env.rng(`${actor.id}:${Math.floor(now / AUTONOMY.thinkMs)}`),
       now,
       busy: (id) => env.inConversation(id) || !!env.stage.walkOf(id) || env.stage.isCommanded(id),
+      envScale: env.envScale,
     });
-    if (plan?.kind === "invite") a = invite(a, actor, plan, env);
+    if (plan?.kind === "approach" && plan.target && SOCIAL_REASONS.includes(plan.reason) && env.converse) {
+      // A conversation, or nothing: never a silent walk up to someone that ends in a one-line reaction.
+      if (env.converse(actor.id, plan.target, plan.reason)) a = { ...a, lastActed: { ...(a.lastActed ?? {}), [actor.id]: now } };
+    } else if (plan?.kind === "invite") a = invite(a, actor, plan, env);
     else if (plan) {
       if (plan.env) a = noteReaction(a, actor.id, plan.object ?? null, now);
       a = submit(a, newIntent({ actor: actor.id, kind: plan.kind, target: plan.target, object: plan.object, at: plan.at, reason: plan.reason, source: "rules" }, now), env).agency;

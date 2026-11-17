@@ -739,7 +739,19 @@
       "balanced": "Balanced (AI only when you start it)",
       "full": "Full AI"
     },
-    "usageDashboard": "Open the API usage dashboard (development)"
+    "usageDashboard": "Open the API usage dashboard (development)",
+    "autoFrequency": "Autonomous interaction frequency",
+    "autoFrequencies": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "autoFrequencyDesc": {
+      "low": "Characters spend more time on their own things. Conversations are occasional and have room to develop.",
+      "medium": "A balance of time alone and time together: occasional conversations and reactions to the room.",
+      "high": "More chances to talk and react to the room. Who they are still decides whether they do: nobody is forced to chat."
+    },
+    "autoFrequencyNote": "Saved with this world. Applies while you watch; separate from Event frequency (what Wait does)."
   },
   "traits": {
     "extroversion": {
@@ -3615,6 +3627,197 @@
       "temperate": "Temperate",
       "arid": "Arid",
       "enchanted": "Enchanted"
+    }
+  },
+  "autoTalk": {
+    "indicator": "{a} and {b} are talking. Show the conversation",
+    "inspect": "Show the conversation between {a} and {b}",
+    "cardTitle": "{a} & {b}",
+    "noLinesYet": "Nothing said yet.",
+    "writing": "Finding the words…",
+    "builtinNote": "Built-in lines: the AI writer is off or paused, so this is a short, simple exchange.",
+    "focus": "Focus camera",
+    "states": {
+      "proposed": "Wants to talk",
+      "approaching": "Walking over",
+      "awaiting": "Asking",
+      "active": "Talking",
+      "ending": "Wrapping up",
+      "completed": "Finished",
+      "interrupted": "Cut short",
+      "declined": "Declined"
+    },
+    "reasons": {
+      "chats": "{a} came over for a chat.",
+      "checksOn": "{a} came to check on {b}.",
+      "sharesInterest": "{a} wanted to talk about something here.",
+      "unfinished": "{a} has something unfinished to raise with {b}.",
+      "confronts": "{a} wants to have it out with {b}.",
+      "saysHello": "{a} came over to say hello.",
+      "sharesNews": "{a} is in a good mood and wanted to share it."
+    },
+    "reasonsPlain": {
+      "chats": "wanted a chat",
+      "checksOn": "noticed b seemed low and came to check on them",
+      "sharesInterest": "wanted to talk about something here they care about",
+      "unfinished": "has unfinished business with b",
+      "confronts": "wants to have it out with b",
+      "saysHello": "wanted to say hello to someone they barely know",
+      "sharesNews": "is in a good mood and wanted to share it"
+    },
+    "ends": {
+      "natural": "The conversation came to a natural end.",
+      "walkedOff": "{who} ended it and walked off.",
+      "player": "Cut short when you stepped in.",
+      "scene_change": "Cut short by a change of scene.",
+      "reload": "Cut short when the game was closed or reloaded.",
+      "timeout": "Cut short: it took too long to get going.",
+      "unreachable": "{a} couldn't get over to {b}.",
+      "left": "Cut short: one of them left.",
+      "busy": "Cut short: one of them was busy.",
+      "too_long": "Wound down after running long.",
+      "ai": "Stopped: the AI writer wasn't available, so no lines were made up.",
+      "other": "It ended.",
+      "declined_boundary": "{b} isn't ready to talk to {a} again yet.",
+      "declined_notWithYou": "{b} didn't want to talk to {a}.",
+      "declined_notNow": "{b} wasn't in the mood to talk.",
+      "declined_busy": "{b} would rather keep at what they were doing.",
+      "declined_shy": "{b} was too shy to talk to someone new.",
+      "declined_fine": "{b} declined."
+    },
+    "log": {
+      "cutShort": "{a} and {b}'s conversation was cut short.",
+      "aiStopped": "{a} and {b} stopped talking: the AI writer is unavailable, so no lines were invented."
+    },
+    "history": {
+      "empty": "No conversations yet. Leave the characters be for a while and they may start one.",
+      "lines": "{n} lines",
+      "changed": "What changed",
+      "towards": "{a} → {b}:",
+      "remembered": "Remembered",
+      "tag": "Conversation",
+      "tab": {
+        "all": "Everything",
+        "convos": "Conversations"
+      }
+    },
+    "rel": {
+      "trust": "trust",
+      "affection": "affection",
+      "respect": "respect",
+      "familiarity": "familiarity",
+      "tension": "tension"
+    },
+    "builtin": {
+      "introduce": {
+        "a1": {
+          "0": "Hi. I don't think we've really talked yet. I'm {a}.",
+          "1": "Hello there. {a}. And you're {b}, right?",
+          "2": "Mind if I say hello? I'm {a}."
+        },
+        "b1": {
+          "0": "Oh, hi. Yes, I'm {b}. Nice to meet you properly.",
+          "1": "That's me. Hello, {a}.",
+          "2": "Hello. I've seen you around."
+        },
+        "b1Terse": "…Hi. {b}.",
+        "a2": {
+          "0": "Well, I'm glad we finally said hello.",
+          "1": "I'll let you get back to it. See you around.",
+          "2": "Good to put a name to the face."
+        },
+        "b2": "Likewise. See you around."
+      },
+      "interest": {
+        "a1": {
+          "0": "Have you had a proper look at the {object}?",
+          "1": "I keep coming back to the {object}. Do you like it?",
+          "2": "That {object} is something, isn't it?"
+        },
+        "b1": {
+          "0": "Not properly. What's so good about it?",
+          "1": "I suppose. I hadn't thought about it much.",
+          "2": "It's nice. Why, what do you see in it?"
+        },
+        "b1Terse": "Hm. It's fine.",
+        "a2": "I don't know. It just puts me in a good mood.",
+        "b2": "Fair enough. Maybe I'll look again later.",
+        "b2Terse": "Maybe."
+      },
+      "checkOn": {
+        "a1": {
+          "0": "Hey. Are you all right?",
+          "1": "You've been quiet. Everything okay?",
+          "2": "I just wanted to see how you're doing."
+        },
+        "b1": "I'm… fine. Just a lot on my mind.",
+        "b1Terse": "I'm fine.",
+        "a2": "All right. I'm around if you want to talk.",
+        "b2": "Thanks. I'll keep that in mind."
+      },
+      "news": {
+        "a1": {
+          "0": "Guess what, today's turning out to be a good day.",
+          "1": "I'm in such a good mood, I had to tell someone.",
+          "2": "Something good happened. Well, sort of."
+        },
+        "b1": "Oh? Good for you.",
+        "b1Terse": "Huh. Good.",
+        "a2": "Anyway. That's all. I just wanted to say it."
+      },
+      "unfinished": {
+        "a1": "About earlier. I've been thinking about it.",
+        "b1": "So have I. I'm not sure I'm ready to go over it again.",
+        "b1Terse": "Not now.",
+        "a2": "Fair. Another time, then.",
+        "b2": "Another time."
+      },
+      "smallTalk": {
+        "a1": {
+          "0": "Quiet here today, isn't it?",
+          "1": "Strange sort of day.",
+          "2": "Do you ever just stop and look around this place?"
+        },
+        "b1": {
+          "0": "Mm. I don't mind it.",
+          "1": "Is it? I hadn't noticed.",
+          "2": "Now and then."
+        },
+        "b1Terse": "Mm.",
+        "a2": "Well. I'll leave you to it."
+      },
+      "decline": {
+        "boundary": {
+          "0": "Not now. I'm not ready to talk to you yet.",
+          "1": "I said what I had to say earlier.",
+          "2": "Please, just give me some space."
+        },
+        "notWithYou": {
+          "0": "I'd rather not.",
+          "1": "No. Not with you.",
+          "2": "Leave it, {a}."
+        },
+        "notNow": {
+          "0": "Sorry, I'm not in the mood to talk.",
+          "1": "Maybe later.",
+          "2": "Not right now."
+        },
+        "busy": {
+          "0": "I'm in the middle of something.",
+          "1": "Can it wait? I'm busy.",
+          "2": "Later, okay? I want to finish this."
+        },
+        "shy": {
+          "0": "Oh— um, maybe another time?",
+          "1": "S-sorry, I… later?",
+          "2": "I don't really… sorry."
+        },
+        "fine": {
+          "0": "Not now.",
+          "1": "Maybe later.",
+          "2": "Sorry."
+        }
+      }
     }
   }
 }

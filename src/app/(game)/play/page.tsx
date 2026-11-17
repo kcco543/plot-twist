@@ -11,7 +11,7 @@ import { StageTestPanel } from "@/components/game/StageTestPanel";
 import { BehaviorDebugPanel } from "@/components/game/BehaviorDebugPanel";
 import { useCharacterDrag } from "@/components/game/CharacterDrag";
 import { ConversationPanel, TalkStrip } from "@/components/game/ConversationPanel";
-import { SettingsModal } from "@/components/SettingsModal";
+import { AutonomyFrequency, SettingsModal } from "@/components/SettingsModal";
 import { LoadingState } from "@/components/ui/LoadingDots";
 import { Modal } from "@/components/ui/Modal";
 import { Panel } from "@/components/ui/Panel";
@@ -32,6 +32,11 @@ import { emotionOf, fadeEmotion } from "@/lib/emotion/emotions";
 import { bondBetween, choreographBeat, rngFrom, talkDistance } from "@/lib/stage/behavior";
 import { useAutonomy, type AutonomyController } from "@/lib/autonomy/useAutonomy";
 import { AutonomyDebug } from "@/components/game/AutonomyDebug";
+import { useAutoConversations, type AutoConversations } from "@/lib/talk/useAutoConversations";
+import { AutoConvoLayer } from "@/components/game/AutoConvoLayer";
+import { AutoConvoCard } from "@/components/game/AutoConvoCard";
+import { ConvoHistory } from "@/components/game/ConvoHistory";
+import { DEFAULT_FREQUENCY } from "@/lib/autonomy/frequency";
 import { applyDecision, behaviorBrief, buildScenario, decide, decisionLines, scenarioByKey, triggerForBeat, type BehaviorEvent, type Decision, type Rng } from "@/lib/mind";
 import type { Priority } from "@/lib/stage/actions";
 import { applyDevParam, useDevMode } from "@/lib/devMode";
@@ -224,6 +229,8 @@ export default function PlayPage() {
   const aiTalk: "ai" | "mock" | null = !settings.aiStory ? null : ai?.text ? "ai" : ai?.talk === "mock" ? "mock" : null;
 
   const [logOpen, setLogOpen] = useState(false);
+  /** Story Log view: everything, or only the conversations characters had on their own. */
+  const [logTab, setLogTab] = useState<"all" | "convos">("all");
   const [pauseOpen, setPauseOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -486,6 +493,13 @@ export default function PlayPage() {
         return;
       }
       setPickedId(id);
+      // Talking on their own: show that conversation (the camera stays where it is).
+      const auto = !s ? autoRef.current?.director.sessionOf(id) : null;
+      if (auto && (auto.state === "awaiting" || auto.state === "active" || auto.state === "ending")) {
+        setInteraction(null);
+        setInspectConvo(auto.id);
+        return;
+      }
       if (!s) setInteraction((cur) => (cur?.kind === "menu" && cur.characterId === id ? null : { kind: "menu", characterId: id }));
     },
     [drag],
@@ -560,6 +574,10 @@ export default function PlayPage() {
     },
     [stage, getStory, t],
   );
+  /** Autonomous conversations (set up just below; autonomy reaches them through this ref). */
+  const autoRef = useRef<AutoConversations | null>(null);
+  const frequency = save.observation?.frequency ?? DEFAULT_FREQUENCY;
+  const autonomyOn = !isDemo && !sandbox && !anyModal && !frozen;
   // ---- Character autonomy: characters act on their own (rules, not AI), keep their distance after a
   // conversation ends, and follow through on plans they said out loud. Off in the demo and debug scenarios.
   const autonomy = useAutonomy({
@@ -569,13 +587,60 @@ export default function PlayPage() {
     roomKey,
     getStory,
     setStoryState,
-    enabled: !isDemo && !sandbox && !anyModal && !frozen,
-    inConversation: (id) => !!talkRef.current?.session && (talkRef.current.session.actorId === id || talkRef.current.session.targetId === id),
+    enabled: autonomyOn,
+    // In the player's walk-and-talk, or owned by an autonomous conversation session: nothing else is planned for them.
+    inConversation: (id) => (!!talkRef.current?.session && (talkRef.current.session.actorId === id || talkRef.current.session.targetId === id)) || !!autoRef.current?.director.owns(id),
+    frequency,
+    converse: (a, b) => !!autoRef.current?.director.request(a, b),
     notify: (kind, actorId, other) => talk.tellNames(kind, castRef.current.find((c) => c.id === actorId)?.name.trim() ?? "", other),
     objectName,
     nameOf: (id) => castRef.current.find((c) => c.id === id)?.name.trim() ?? "",
   });
   autonomyRef.current = autonomy;
+  // ---- Autonomous conversations: characters start, hold, finish and remember whole conversations on
+  // their own while the player watches (lib/autonomy/convoDirector.ts). Both stay locked in place while talking.
+  const autoConvo = useAutoConversations({
+    stage,
+    cast: onStage,
+    objects,
+    getStory,
+    setStoryState,
+    logLines,
+    inPlayerTalk: (id) => !!talkRef.current?.session && (talkRef.current.session.actorId === id || talkRef.current.session.targetId === id),
+    talkDistance: (a, b) => {
+      const s = getStory();
+      const me = castRef.current.find((c) => c.id === a);
+      return me ? Math.max(22, talkDistance(me, bondBetween(s, a, b), emotionOf(s.characters[a]).emotion)) : 30;
+    },
+    writer: aiTalk,
+    frequency,
+    enabled: autonomyOn && !travel,
+    roomKey,
+    sceneId,
+    sceneName: here.name.trim() || (scene.kind === "map" ? scene.name || t("playArea.untitled") : t(`environments.${envType}.name` as const)),
+    worldId: !isDemo && !sandbox ? activeWorldId() : null,
+    textSpeed: settings.textSpeed,
+    locale,
+    world: world?.id ?? "otherworld",
+    place: envType,
+    placeDescription,
+    recentText: () =>
+      getSave()
+        .log.slice(-4)
+        .map((e) => renderLine(e, locale))
+        .map((r) => `${r.speaker}: ${r.text}`),
+    objectName,
+    renderText: (line) => renderLine(line, locale).text,
+    depart: (a, b) => autonomy.departAfterTalk(a, b),
+    doing: (id) => {
+      const act = activityOf(id, stage, { person: (x) => castRef.current.find((c) => c.id === x)?.name.trim() || "", object: (x) => objectName(x) }, null);
+      return act.key === "idle" ? "" : `${act.key}${"object" in act && act.object ? ` ${act.object}` : ""}`;
+    },
+    reasonText: (r) => t(`autoTalk.reasonsPlain.${r}` as "autoTalk.reasonsPlain.chats"),
+  });
+  autoRef.current = autoConvo;
+  /** Which autonomous conversation the player is inspecting (live session id, or a finished record id). */
+  const [inspectConvo, setInspectConvo] = useState<string | null>(null);
   // ---- Object interactions (explore/interact.ts): what can be done right now, and what doing it really does.
   const objectState = useCallback((o: WorldObject) => objectStateOf(o, objectStatesRef.current[o.id]), []);
   const interactCtx = useCallback(
@@ -913,7 +978,10 @@ export default function PlayPage() {
   // already handle their own reactions, and each pair has a short cooldown so nobody loops.
   const lastArrive = useRef(new Map<string, number>());
   useEffect(() => {
-    stage.onArrive = (actorId, targetId) => {
+    stage.onArrive = (actorId, targetId, priority) => {
+      // Only the player's own "walk closer" gets an approached reaction. Characters walking up to each other
+      // on their own are handled as whole conversations (autoConvo), never as a one-line reaction.
+      if (priority !== "player" || autoRef.current?.director.owns(actorId) || autoRef.current?.director.owns(targetId)) return;
       if (lineInProgressRef.current || talkRef.current?.involves(actorId, targetId)) return;
       const key = `${actorId}>${targetId}`;
       const now = performance.now();
@@ -993,6 +1061,8 @@ export default function PlayPage() {
       setStoryState(story);
       // 1b. The same rules decide how the actor moves: face the other, show the feeling, approach / step back.
       const choreo = choreographBeat(beat, cast, story, (id) => stage.nearest(id), { otherByEngine: true });
+      // The player's story beat takes over: an autonomous conversation involving them ends first.
+      for (const id of new Set([selected.id, ...choreo.participants])) autoRef.current?.director.interruptFor(id, "player");
       stage.beginConversation(choreo.participants);
       for (const a of choreo.actions) {
         if (a.type === "show_emotion") {
@@ -1168,6 +1238,9 @@ export default function PlayPage() {
   const keepWorldId = canKeep ? activeWorldId() : null;
   /** Saved photos are shown (from this world only) outside the demo cast and debug scenarios. */
   const keepPhotosWorld = !isDemo && !sandbox ? activeWorldId() : null;
+  // The autonomous conversation being inspected: still running, or finished (its saved record).
+  const inspectedSession = inspectConvo ? (autoConvo.sessions.find((c) => c.id === inspectConvo) ?? null) : null;
+  const inspectedRecord = inspectConvo && !inspectedSession ? ((story.agency?.convos?.history ?? []).find((r) => r.id === inspectConvo) ?? null) : null;
 
 
   // Emotion & movement test panel: beside the stage on desktop, under the dialogue on phones
@@ -1378,7 +1451,12 @@ export default function PlayPage() {
                   showNav={!!settings.testPanel}
                   chooser={talk.session?.phase === "SELECT_TARGET" ? { actorId: talk.session.actorId, choices: onStage.filter((c) => c.id !== talk.session!.actorId).map((c) => c.id) } : null}
                   objectHint={objectHint}
-                  extra={<WorldMarks objects={ownObjects} stateOf={objectState} labelOf={(o) => o.label ?? null} reducedMotion={reducedMotion} />}
+                  extra={
+                    <>
+                      <WorldMarks objects={ownObjects} stateOf={objectState} labelOf={(o) => o.label ?? null} reducedMotion={reducedMotion} />
+                      <AutoConvoLayer stage={stage} director={autoConvo.director} characters={cast} mainSpeakerId={speakerId} textSpeed={settings.textSpeed} onInspect={setInspectConvo} />
+                    </>
+                  }
                 />
               }
             >
@@ -1388,6 +1466,9 @@ export default function PlayPage() {
               <StageGifts placed={placeDisplayed(story, spots, sceneOfGifts)} nameOf={(id) => cast.find((c) => c.id === id)?.name.trim() ?? ""} />
               <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={onStageSelect} onPressStart={drag.onPressStart} reducedMotion={reducedMotion} />
             </WorldViewport>
+            {inspectConvo && (inspectedSession || inspectedRecord) && (
+              <AutoConvoCard session={inspectedSession} record={inspectedSession ? null : inspectedRecord} cast={save.characters.length ? save.characters : cast} onFocus={(id) => focusCharacter(id)} onClose={() => setInspectConvo(null)} />
+            )}
           </div>
         );
         const moments = (photoMoment.moment?.played || giftMoment.moment?.played) ? (
@@ -1648,7 +1729,17 @@ export default function PlayPage() {
           </>
         }
       >
-        {save.log.length === 0 ? (
+        <div role="tablist" aria-label={t("play.storyLog")} className="mb-3 flex gap-2">
+          {(["all", "convos"] as const).map((k) => (
+            <PixelButton key={k} role="tab" aria-selected={logTab === k} size="sm" variant={logTab === k ? "accent" : "ghost"} onClick={() => setLogTab(k)} data-log-tab={k}>
+              {t(`autoTalk.history.tab.${k}` as "autoTalk.history.tab.all")}
+              {k === "convos" && <span className="ml-1 bg-lavender-hi px-1 text-[11px] text-label tabular-nums">{story.agency?.convos?.history?.length ?? 0}</span>}
+            </PixelButton>
+          ))}
+        </div>
+        {logTab === "convos" ? (
+          <ConvoHistory records={story.agency?.convos?.history ?? []} cast={save.characters} locale={locale} />
+        ) : save.log.length === 0 ? (
           <p className="text-lg text-ink-soft">{t("play.log.empty")}</p>
         ) : (
           <ol className="flex flex-col gap-3">
@@ -1660,6 +1751,11 @@ export default function PlayPage() {
                     {r.speaker} · {new Date(e.at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                     {"source" in e && e.source === "ai" && <span className="ml-1 bg-lavender-hi px-1 text-label">AI</span>}
                     {"source" in e && e.source === "mock" && <span className="ml-1 bg-butter-hi px-1 text-ink" title={t("talk.ai.testTag")}>TEST</span>}
+                    {"convo" in e && e.convo && (
+                      <button type="button" className="ml-1 bg-mint-hi px-1 text-ink underline-offset-2 hover:underline" onClick={() => setLogTab("convos")} data-log-convo={e.convo}>
+                        {t("autoTalk.history.tag")}
+                      </button>
+                    )}
                   </p>
                   <p className="text-lg leading-snug">{r.text}</p>
                 </li>
@@ -1715,6 +1811,11 @@ export default function PlayPage() {
           <PixelButton variant="ghost" icon="home" onClick={() => router.push("/")}>
             {t("play.quit")}
           </PixelButton>
+          {!isDemo && !sandbox && (
+            <div className="border-t-[3px] border-dashed border-line pt-3">
+              <AutonomyFrequency value={frequency} />
+            </div>
+          )}
           <p className="text-center text-sm text-ink-soft">{t("play.autosaveNote")}</p>
         </nav>
       </Modal>

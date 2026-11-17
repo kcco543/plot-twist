@@ -151,10 +151,20 @@
 @keyframes twinkle { 0%, 60% { opacity: 1; transform: scale(1); } 61%, 80% { opacity: 0.35; transform: scale(0.6); } 81%, 100% { opacity: 1; transform: scale(1); } }
 @keyframes dots { 0% { clip-path: inset(0 100% 0 0); } 100% { clip-path: inset(0 0 0 0); } }
 
+/*
+ * The page background comes only from the theme tokens (--color-bg,
+ * --bg-pattern): the brand values here, a world skin's on world screens
+ * (WorldThemeApplier puts them on <html>). <html> carries the same colour and
+ * pattern as <body>, so overscroll / rubber-band areas, safe areas
+ * (viewport-fit=cover) and anything past a short page match it exactly.
+ */
 html {
-  background: var(--color-bg);
+  background-color: var(--color-bg);
+  background-image: var(--bg-pattern);
+  background-size: 96px 96px;
   color-scheme: light;
   -webkit-text-size-adjust: 100%;
+  min-height: 100%;
 }
 body {
   background-color: var(--color-bg);
@@ -168,6 +178,10 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: none;
   -webkit-tap-highlight-color: transparent;
+}
+/* A mood / look change inside a world eases the page colour (never on load: the skin is painted before first paint). */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduced"]), html:not([data-motion="reduced"]) body { transition: background-color 240ms steps(4); }
 }
 html[lang="zh-CN"] body { line-height: 1.6; -webkit-font-smoothing: antialiased; }
 html[lang="zh-CN"] .font-label { letter-spacing: 0.04em; }

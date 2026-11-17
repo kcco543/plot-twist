@@ -127,7 +127,7 @@ export type Pressure = { asks: number; refusals: number; lastTurn: number; discl
 
 export type InteractionRecord = { turn: number; at: number; kind: InteractionKind; significance: Significance; positive: boolean; key?: string };
 
-export type ChangeSource = "talk-ai" | "talk-mock" | "talk-topic" | "talk-builtin" | "behavior" | "story" | "gift" | "photo" | "sim";
+export type ChangeSource = "talk-ai" | "talk-mock" | "talk-topic" | "talk-builtin" | "auto-talk" | "behavior" | "story" | "gift" | "photo" | "sim";
 
 export type StageChange = { axis: Axis; from: string; to: string };
 /** Why a stage didn't move although the value allows it. */

@@ -211,10 +211,10 @@ export const emptyEnvMemory = (): EnvMemory => ({ lastAt: {}, seen: {}, globalAt
 export const envOf = (a: AgencyState): EnvMemory => ({ ...emptyEnvMemory(), ...(a.env ?? {}) });
 
 /** May `actor` react to `object` now (cooldowns)? */
-export function mayReact(mem: EnvMemory, actor: string, object: string | null, now: number): boolean {
-  if (now - mem.globalAt < ENV.globalGapMs) return false;
-  if (now - (mem.lastAt[actor] ?? -Infinity) < ENV.actorGapMs) return false;
-  if (object && now - (mem.seen[`${actor}>${object}`] ?? -Infinity) < ENV.objectGapMs) return false;
+export function mayReact(mem: EnvMemory, actor: string, object: string | null, now: number, scale = 1): boolean {
+  if (now - mem.globalAt < ENV.globalGapMs * scale) return false;
+  if (now - (mem.lastAt[actor] ?? -Infinity) < ENV.actorGapMs * scale) return false;
+  if (object && now - (mem.seen[`${actor}>${object}`] ?? -Infinity) < ENV.objectGapMs * scale) return false;
   return true;
 }
 
@@ -331,6 +331,8 @@ export type EnvContext = {
   apart: (a: string, b: string) => boolean;
   busy: (id: string) => boolean;
   rng: () => number;
+  /** Observation frequency scale for the cooldowns (frequency.ts envScale). Default 1. */
+  scale?: number;
 };
 
 /** What the room around this character suggests doing, best first (empty most of the time). */
@@ -339,7 +341,7 @@ export function envProposals(ctx: EnvContext): EnvProposal[] {
   const me = ctx.position(actor.id);
   if (!me) return [];
   const mem = envOf(agency);
-  if (!mayReact(mem, actor.id, null, now)) return [];
+  if (!mayReact(mem, actor.id, null, now, ctx.scale)) return [];
   const near = noticeable(me, objects, actor.id);
   const mine = interestsOf(actor, story, near.flatMap(objectTopics));
   const p = personalityOf(actor);
@@ -349,7 +351,7 @@ export function envProposals(ctx: EnvContext): EnvProposal[] {
   const bright = Math.max(level(f, "happiness"), level(f, "excitement")) / 100;
   const out: EnvProposal[] = [];
   for (const o of near) {
-    if (!mayReact(mem, actor.id, o.id, now)) continue;
+    if (!mayReact(mem, actor.id, o.id, now, ctx.scale)) continue;
     const concepts = objectTopics(o);
     const d = dist(me, center(o));
     for (const k of concepts) {
@@ -386,7 +388,7 @@ export function envProposals(ctx: EnvContext): EnvProposal[] {
       if (upset < 0.4 && p.extro + p.expressive > 0.5) {
         for (const b of ctx.cast) {
           if (b.id === actor.id || !ctx.position(b.id) || ctx.busy(b.id) || ctx.apart(actor.id, b.id)) continue;
-          if (now - (mem.invites[`${actor.id}>${b.id}`] ?? -Infinity) < ENV.inviteGapMs) continue;
+          if (now - (mem.invites[`${actor.id}>${b.id}`] ?? -Infinity) < ENV.inviteGapMs * (ctx.scale ?? 1)) continue;
           const rel = currentRelation(story, actor, b);
           const knows = knowsLike(story, agency, actor, b, k);
           if (!knows && rel.affection < 40) continue;

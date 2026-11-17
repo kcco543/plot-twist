@@ -118,6 +118,8 @@ export type AgencyState = {
   lastActed?: Record<string, number>;
   /** Environment-aware behaviour (environment.ts): cooldowns and what each character has seen others enjoy. */
   env?: EnvMemory;
+  /** Autonomous conversations (convo.ts): running sessions, finished records, cooldowns, AI budget window. */
+  convos?: import("./convo").ConvoBook;
 };
 
 export type EnvMemory = {

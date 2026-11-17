@@ -25,6 +25,7 @@ import { agencyOf, resumeAfterLoad } from "./lifecycle";
 import { AUTONOMY, type AgencyState } from "./types";
 import { newIntent } from "./validate";
 import { witness } from "./environment";
+import { frequencySpec, type Frequency } from "./frequency";
 
 export type AutonomyNotice = "walkedAway" | "refused" | "goingTo" | "noSuchPlace" | "inviteAccepted" | "inviteDeclined";
 
@@ -43,6 +44,10 @@ export type AutonomyDeps = {
   notify: (kind: AutonomyNotice, actorId: string, other: string) => void;
   objectName: (id: string) => string;
   nameOf: (id: string) => string;
+  /** Observation frequency of this world (frequency.ts). */
+  frequency?: Frequency;
+  /** Wanting someone's company starts a real conversation (convoDirector.ts); true if one started. */
+  converse?: (actor: string, target: string) => boolean;
 };
 
 export function useAutonomy(d: AutonomyDeps) {
@@ -68,6 +73,9 @@ export function useAutonomy(d: AutonomyDeps) {
       rng: (key) => rngFrom(key),
       // An invitation and its answer are worth a short notice (no AI; the answer is the invitee's own).
       onEvent: (e) => x.notify(e.answer.accept ? "inviteAccepted" : "inviteDeclined", e.actor, x.nameOf(e.target)),
+      pace: frequencySpec(x.frequency).thinkScale,
+      envScale: frequencySpec(x.frequency).envScale,
+      converse: x.converse ? (a, b) => x.converse!(a, b) : undefined,
     };
   }, []);
 
@@ -236,7 +244,33 @@ export function useAutonomy(d: AutonomyDeps) {
     [env, write],
   );
 
-  return { endedConversation, refusesTalk, refused, talking, heard, conversationOver };
+  /**
+   * After an autonomous conversation that someone ended by walking off: the
+   * session is already over (lock released), so this is an ordinary,
+   * deliberate departure, not a walk out of an active conversation.
+   */
+  const departAfterTalk = useCallback(
+    (actorId: string, fromId: string) => {
+      window.setTimeout(() => {
+        const y = deps.current;
+        const sp = y.stage.position(fromId);
+        const quiet = y.objects
+          .filter((o) => o.private && !o.giftId && o.anchors.length)
+          .map((o) => ({ o, d: sp ? Math.hypot(o.anchors[0].x - sp.x, o.anchors[0].y - sp.y) : 0 }))
+          .filter((q) => q.d > 70)
+          .sort((p, q) => q.d - p.d)[0]?.o;
+        const intent = quiet
+          ? newIntent({ actor: actorId, kind: "seek_privacy", object: quiet.id, target: fromId, reason: "endedConversation", source: "story" })
+          : newIntent({ actor: actorId, kind: "move_away", target: fromId, reason: "endedConversation", source: "story" });
+        write((a) => submit(a, intent, env()).agency);
+      }, AUTONOMY_DEPART_MS);
+    },
+    [env, write],
+  );
+
+  return { endedConversation, refusesTalk, refused, talking, heard, conversationOver, departAfterTalk };
 }
 
 export type AutonomyController = ReturnType<typeof useAutonomy>;
+/** Pause between the end of a conversation and someone deliberately walking off (the stage hold is shorter). */
+const AUTONOMY_DEPART_MS = 1800;

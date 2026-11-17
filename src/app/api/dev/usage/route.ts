@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { STORY_MODEL, TALK_MODEL, TEXT_MODEL, textConfigured } from "@/lib/ai/server/config";
+import { AUTO_TALK_MODEL, STORY_MODEL, TALK_MODEL, TEXT_MODEL, textConfigured } from "@/lib/ai/server/config";
 import { dashboardEnabled, MODES, resetUsage, setLimits, setMode, snapshot } from "@/lib/ai/server/usage";
 
 export const runtime = "nodejs";
@@ -15,7 +15,7 @@ const noStore = { "Cache-Control": "no-store" };
 
 function body() {
   const s = snapshot();
-  return { ...s, keyConfigured: textConfigured(), models: { talk: TALK_MODEL, photo: TALK_MODEL, gift_reaction: TALK_MODEL, turn: STORY_MODEL, analyze: TEXT_MODEL, refine: TEXT_MODEL } };
+  return { ...s, keyConfigured: textConfigured(), models: { talk: TALK_MODEL, photo: TALK_MODEL, gift_reaction: TALK_MODEL, auto_talk: AUTO_TALK_MODEL, turn: STORY_MODEL, analyze: TEXT_MODEL, refine: TEXT_MODEL } };
 }
 
 export function GET() {

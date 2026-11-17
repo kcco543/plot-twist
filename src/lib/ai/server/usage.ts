@@ -17,7 +17,12 @@ import type { AiMode } from "./config";
  *             reactions, personality analysis and refinement, and the wording
  *             of "Talk" and story-event beats. Observe/Wait beats use built-in lines.
  *   full      the AI also words Observe/Wait beats. Same limits and budget.
- * Nothing in any mode calls the AI from timers, movement or idle autonomy.
+ * Nothing in any mode calls the AI from timers, movement or the autonomy
+ * planner. The one exception is "auto_talk": when two characters agree to a
+ * conversation on their own, ONE bounded request writes the whole exchange
+ * (autonomy/convoDirector.ts; capped per hour by the observation frequency,
+ * per visitor by limits.ts takeAutoTalkSlot, and by this gate). Offline mode
+ * uses labelled built-in lines instead.
  *
  * LIMITS (environment variables, or the dashboard in development)
  *   AI_MAX_REQUESTS_PER_MINUTE  Anthropic requests per minute, whole server  (default 20)
@@ -33,8 +38,8 @@ import type { AiMode } from "./config";
  * the project folder (git-ignored) so they survive a restart.
  */
 
-export type Feature = "talk" | "turn" | "analyze" | "refine" | "photo" | "gift_reaction";
-export const FEATURES: Feature[] = ["talk", "turn", "analyze", "refine", "photo", "gift_reaction"];
+export type Feature = "talk" | "turn" | "analyze" | "refine" | "photo" | "gift_reaction" | "auto_talk";
+export const FEATURES: Feature[] = ["talk", "turn", "analyze", "refine", "photo", "gift_reaction", "auto_talk"];
 export const MODES: AiMode[] = ["offline", "balanced", "full"];
 
 export type Limits = { perMinute: number; concurrent: number; maxOutputTokens: number; sessionBudgetUsd: number };

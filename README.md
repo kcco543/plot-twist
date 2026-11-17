@@ -121,6 +121,18 @@ Dropping a character on an **object** (bookshelf, door, rug, window…) makes th
 - **Saved per world** in `StoryState.agency`: intents, boundaries, goals and where everyone stands (restored on reload). The test panel shows a live view of all of it.
 - Tests: `tests/autonomy.test.ts`
 
+### Conversations between characters
+
+`src/lib/autonomy/convo.ts` (rules, states) and `convoDirector.ts` (runs them on the stage). While you watch, two characters can have a whole conversation on their own.
+
+- **One shared session per conversation:** id, world, scene, both participants, state, current speaker, every line, timestamps, topic. Proposed → Approaching → Awaiting acceptance → Active → Ending → Completed, or Declined / Interrupted. A character belongs to at most one session, and the autonomy planner leaves them alone meanwhile.
+- **Who starts, who says yes:** local rules from personality, mood, relationship, boundaries and what's in the room (a quiet character with something real to say still starts one). The other can decline, with a short line ("Not now…"), and that's recorded.
+- **Strict movement lock** (`StageSim.lockConversation`): once Active, walks of any priority, idle shuffles, crowd steps and resumed walks are all refused. Gestures, faces and emotions still play. Only a transition out of Active releases it; the player's own command ends the session first. Someone who walks off ends the conversation, then leaves. Scene changes, removed characters, AI errors, timeouts and reloads always end the session and free both.
+- **Lines:** one AI request writes the whole 2–12 line exchange (`/api/ai/converse`), revealed turn by turn. Nothing changes (emotion, talk history, relationships, memories) until a line is shown; relationship changes are applied through the normal gradual rules when it ends, and only notable things become long-term memories. Without an AI writer (Offline, no key, hourly cap reached, AI paused after a billing error) short built-in lines are used and labelled **BUILT-IN**; mock mode is labelled **TEST**.
+- **Watching:** a small talking indicator over both; click either character (or the indicator) to see the transcript; *Focus camera* is optional, the camera never moves by itself. Story Log → *Conversations* lists every one (transcript, what changed, what was remembered).
+- **Autonomous Interaction Frequency / 自主互动频率** (pause menu, saved per world, default Medium): `frequency.ts` sets how often a new interaction is considered, the start / per-character / per-pair cooldowns, how often characters act on their own and react to the room, and the AI-conversation cap per hour. It never forces anyone to talk. Separate from the offline storytelling setting.
+- Tests: `tests/autoConvo.test.ts`
+
 ## Gender and pronouns
 
 Character Studio → Identity: gender (unspecified, female, male, non-binary, self-described) and pronouns (unspecified, she/her, he/him, they/them, custom) are separate settings, saved on each world's own copy of the character. Older characters load as unspecified. They are only used to refer to the character (built-in English narration uses the chosen pronouns; unspecified uses "they"); the AI is told never to infer personality or behavior from them. `src/lib/character/gender.ts`, tests in `tests/gender.test.ts`.

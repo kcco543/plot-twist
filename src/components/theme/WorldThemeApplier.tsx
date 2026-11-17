@@ -1,11 +1,11 @@
 "use client";
 
-import { useLayoutEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useSave } from "@/lib/gameStore";
 import { useActiveWorld } from "@/lib/saves/worldSaves";
-import { applyTheme } from "@/lib/theme/apply";
-import { resolveUiTheme, type WorldUiTheme } from "@/lib/theme/themes";
+import { applyTheme, syncThemeColor } from "@/lib/theme/apply";
+import { buildThemeVars, resolveUiTheme, type WorldUiTheme } from "@/lib/theme/themes";
 import { ThemeAmbient } from "./ThemeAmbient";
 
 /** Screens that are "inside" a world. Everything else (title, My Worlds, Character Library…) wears the brand theme. */
@@ -30,6 +30,20 @@ export function WorldThemeApplier() {
   useLayoutEffect(() => {
     applyTheme(document.documentElement, stable, stable ? worldId : null);
   }, [stable, worldId]);
+
+  // Next.js re-renders the viewport <meta name="theme-color"> on navigation (back to the
+  // brand value): keep the browser's UI colour on the page colour while in a world.
+  const pageColor = useMemo(() => (stable ? (buildThemeVars(stable)["--color-bg"] ?? null) : null), [stable]);
+  useEffect(() => {
+    const keep = () => {
+      const m = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+      if (m && m.content !== (pageColor ?? m.dataset.brand ?? m.content)) syncThemeColor(document, pageColor);
+    };
+    keep();
+    const obs = new MutationObserver(keep);
+    obs.observe(document.head, { subtree: true, childList: true, attributes: true, attributeFilter: ["content"] });
+    return () => obs.disconnect();
+  }, [pageColor]);
 
   return stable ? <ThemeAmbient theme={stable} /> : null;
 }

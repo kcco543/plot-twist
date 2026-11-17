@@ -413,6 +413,8 @@ export type StoryLine = {
   params: Record<string, string>;
   /** Where the line came from, shown as a tiny tag in the log ("mock" = developer TEST reply, never real AI). */
   source?: "ai" | "builtin" | "mock";
+  /** Part of an autonomous conversation (autonomy/convo.ts): its session id, so the log can group it. */
+  convo?: string;
 };
 
 /** v0.2 entries are StoryLines. v0.1 saves stored plain `speaker` + `text`; both still render. */
@@ -440,6 +442,12 @@ export type SaveData = {
    * between scenes. Missing in older saves = one scene made from `environment`.
    */
   scenes?: import("./explore/scenes").WorldScenes;
+  /**
+   * Observation settings of this world (autonomy/frequency.ts): how often
+   * characters consider interacting on their own while the player watches.
+   * Missing = Medium.
+   */
+  observation?: { frequency: import("./autonomy/frequency").Frequency };
 };
 
 export type TextSpeed = "slow" | "normal" | "fast" | "instant";

@@ -8,7 +8,9 @@ import { PixelButton } from "./ui/PixelButton";
 import { PixelIcon } from "./ui/PixelIcon";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { updateSettings, useSettings } from "@/lib/settingsStore";
-import { gameActions } from "@/lib/gameStore";
+import { gameActions, useSave } from "@/lib/gameStore";
+import { useActiveWorld } from "@/lib/saves/worldSaves";
+import { DEFAULT_FREQUENCY, FREQUENCIES, type Frequency } from "@/lib/autonomy/frequency";
 import { useI18n } from "@/i18n";
 import type { EventFrequency, TextSpeed } from "@/lib/types";
 import { useAiStatus } from "@/lib/ai/client";
@@ -23,6 +25,8 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const settings = useSettings();
   const devMode = useDevMode();
   const ai = useAiStatus();
+  const save = useSave();
+  const activeWorld = useActiveWorld();
   const [confirmErase, setConfirmErase] = useState(false);
   const [erased, setErased] = useState(false);
 
@@ -113,6 +117,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
               />
               <p className="text-sm text-ink-soft">{t("settings.eventFrequencyDesc")}</p>
             </div>
+            {activeWorld && <AutonomyFrequency value={save.observation?.frequency ?? DEFAULT_FREQUENCY} />}
             <Toggle
               label={t("settings.aiStory")}
               description={t("settings.aiStoryDesc")}
@@ -202,5 +207,22 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
         </Section>
       </div>
     </Modal>
+  );
+}
+
+/** Per world: how often characters consider interacting on their own while you watch. */
+export function AutonomyFrequency({ value }: { value: Frequency }) {
+  const { t } = useI18n();
+  return (
+    <div className="flex flex-col gap-1" data-autonomy-frequency={value}>
+      <Choice<Frequency>
+        label={t("settings.autoFrequency")}
+        value={value}
+        onChange={(f) => gameActions.setObservationFrequency(f)}
+        options={FREQUENCIES.map((v) => ({ value: v, label: t(`settings.autoFrequencies.${v}`) }))}
+      />
+      <p className="text-sm text-ink-soft">{t(`settings.autoFrequencyDesc.${value}`)}</p>
+      <p className="text-sm text-ink-mute">{t("settings.autoFrequencyNote")}</p>
+    </div>
   );
 }

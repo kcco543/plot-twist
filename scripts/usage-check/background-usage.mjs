@@ -1,7 +1,9 @@
 /**
- * BACKGROUND USAGE CHECK — proves (or disproves) that idle screens, walking
- * and character autonomy make no Anthropic requests, and counts the requests
- * that player actions make. Uses the mock Anthropic server, so it costs nothing.
+ * BACKGROUND USAGE CHECK — proves (or disproves) that idle screens and
+ * walking make no Anthropic requests, that character autonomy makes only
+ * bounded "auto_talk" requests (one per accepted conversation between two
+ * characters, capped per hour), and counts the requests that player actions
+ * make. Uses the mock Anthropic server, so it costs nothing.
  *
  *   1. node scripts/usage-check/mock-anthropic.mjs 4555
  *   2. ANTHROPIC_API_KEY=mock ANTHROPIC_BASE_URL=http://127.0.0.1:4555 AI_USAGE_DASHBOARD=1 npx next start -p 3100
@@ -21,18 +23,23 @@ const MOCK = process.argv[3] ?? "http://127.0.0.1:4555";
 const IDLE_MS = Number(process.argv[4] ?? 45) * 1000;
 const SHOTS = process.env.SHOTS_DIR;
 
-const count = async () => (await (await fetch(`${MOCK}/__count`)).json()).total;
+const counts = async () => await (await fetch(`${MOCK}/__count`)).json();
+const count = async () => (await counts()).total;
 const results = [];
 let failed = false;
 
-async function scenario(name, fn, { expectZero = false } = {}) {
-  const before = await count();
+/** allow: request kinds an idle scenario may make, with a maximum each (e.g. autonomous conversations). */
+async function scenario(name, fn, { expectZero = false, allow = {} } = {}) {
+  const before = await counts();
   const t0 = Date.now();
   const note = await fn();
-  const n = (await count()) - before;
+  const after = await counts();
+  const n = after.total - before.total;
+  const byKind = Object.fromEntries(Object.entries(after.byKind).map(([k, v]) => [k, v - (before.byKind[k] ?? 0)]).filter(([, v]) => v > 0));
   const secs = Math.round((Date.now() - t0) / 1000);
-  results.push({ scenario: name, anthropicRequests: n, seconds: secs, ...(note ? { note } : {}) });
-  const bad = expectZero && n > 0;
+  results.push({ scenario: name, anthropicRequests: n, byKind, seconds: secs, ...(note ? { note } : {}) });
+  const unexpected = Object.entries(byKind).filter(([k, v]) => v > (allow[k] ?? 0));
+  const bad = expectZero && unexpected.length > 0;
   if (bad) failed = true;
   console.log(`${bad ? "FAIL" : "ok  "}  ${name.padEnd(46)} ${String(n).padStart(2)} request(s) in ${secs}s${note ? `  (${note})` : ""}`);
 }
@@ -82,7 +89,8 @@ await scenario("3+4. Play Mode idle, characters act on their own", async () => {
   const b = await page.locator("[data-stage-view]").first().screenshot();
   await shot("3-play-after-idle");
   return Buffer.compare(a, b) === 0 ? "stage did not change" : "stage changed while idle (characters moved/animated)";
-}, { expectZero: true });
+  // Two characters may talk on their own: at most a couple of bounded auto_talk requests in this window, nothing else.
+}, { expectZero: true, allow: { auto_talk: 2 } });
 
 await scenario("Story button: Observe (Balanced = built-in)", async () => {
   await page.getByRole("button", { name: /^Observe$/ }).click();
@@ -123,7 +131,7 @@ await scenario("8. Refresh the page, then idle", async () => {
   await page.reload();
   await page.waitForTimeout(IDLE_MS);
   await shot("8-after-refresh");
-}, { expectZero: true });
+}, { expectZero: true, allow: { auto_talk: 1 } });
 
 await scenario("Usage dashboard open, idle", async () => {
   await page.goto(`${APP}/dev/usage`);

@@ -289,7 +289,7 @@ export function pushTalkLine(story: StoryState, a: string, b: string, line: Talk
 /** Similar enough to count as the same memory (merged instead of duplicated). */
 export const SAME_MEMORY = 0.5;
 
-function rememberNote(story: StoryState, who: Character, other: Character, m: NonNullable<ValidatedReply["memory"]>, note: string | null, source: "ai" | "mock", now: number): StoryState {
+export function rememberNote(story: StoryState, who: Character, other: Character, m: NonNullable<ValidatedReply["memory"]>, note: string | null, source: "ai" | "mock", now: number): StoryState {
   const st = story.characters[who.id] ?? neutralState();
   // Same moment told again (or a near-identical summary): strengthen it, don't add a duplicate.
   const twin = note ? st.memories.find((x) => x.withId === other.id && x.note && similarity(x.note, note) >= SAME_MEMORY) : undefined;

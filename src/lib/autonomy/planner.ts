@@ -59,6 +59,8 @@ export type PlanContext = {
   now?: number;
   /** In a conversation or walking somewhere: can't take up an invitation now. */
   busy?: (id: string) => boolean;
+  /** Observation frequency scale for environmental cooldowns (frequency.ts). Default 1. */
+  envScale?: number;
 };
 
 const dist = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -164,7 +166,7 @@ export function proposals(ctx: PlanContext): Proposal[] {
 
   // 8. The room itself: things they love, fear or that touch a memory; inviting someone over (environment.ts).
   if (ctx.now !== undefined)
-    for (const e of envProposals({ actor, story, cast, objects, position: ctx.position, agency, now: ctx.now, apart: (x, y) => keepsApart(agency, x, y), busy: ctx.busy ?? (() => false), rng })) {
+    for (const e of envProposals({ actor, story, cast, objects, position: ctx.position, agency, now: ctx.now, apart: (x, y) => keepsApart(agency, x, y), busy: ctx.busy ?? (() => false), rng, scale: ctx.envScale })) {
       out.push({ kind: e.kind, object: e.object, target: e.target, at: e.at, reason: e.reason, score: e.score, env: { concept: e.concept, knowledge: e.knowledge } });
     }
 
