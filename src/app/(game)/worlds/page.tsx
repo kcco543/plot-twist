@@ -16,7 +16,7 @@ export default function WorldSelectPage() {
 
   return (
     <>
-      <main className="gutter mx-auto w-full max-w-6xl flex-1 pt-8 sm:pt-10">
+      <main className="content-grid flex-1 pt-8 sm:pt-10">
         <ScreenHeader kicker={t("worlds.kicker")} title={t("worlds.heading")}>
           {t("worlds.intro")}
         </ScreenHeader>

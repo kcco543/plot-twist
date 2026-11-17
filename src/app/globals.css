@@ -76,13 +76,38 @@
 /* One UI pixel. Every frame, notch and offset is a multiple of it. */
 :root {
   --u: 2px;
-  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
-  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+  --gutter-l: max(var(--page-gutter), env(safe-area-inset-left, 0px));
+  --gutter-r: max(var(--page-gutter), env(safe-area-inset-right, 0px));
   /* Shared content grid: one set of left/right edges for every block on a screen. */
   --content-max: 72rem;
   --stack-gap: 12px;
-  /* Level 2: distance from a panel's outer edge to its text / icons. */
-  --panel-pad-x: 12px;
+  /* ---- Shared layout tokens (docs/DESIGN_SYSTEM.md §6). Change them here, every screen follows. ----
+     Level 1 (primary) alignment: the outer edges of blocks in a column (page gutters, column gaps).
+     Level 2 (secondary): distance from a framed panel's OUTER edge to its text and icons. The frame's
+     border counts toward it, so text never lines up with a decorative border, only with other text. */
+  --page-gutter: 16px;
+  --panel-pad-x: 14px;
+  --panel-pad-y: 12px;
+  --grid-gap: 16px;
+  --section-gap: 32px;
+  /* Dialogue window (Play): its own, slightly tighter vertical rhythm. */
+  --dialogue-pad-x: var(--panel-pad-x);
+  --dialogue-pad-y: 8px;
+  --dialogue-gap: 6px;
+  /* Play: the dialogue / character column beside the game viewport. */
+  --sidebar-w: clamp(18rem, 31%, 28rem);
+  --sidebar-w-short: clamp(18rem, 40%, 24rem);
+  /* Control heights (touch-sized; PixelButton sm / md / lg). */
+  --control-h-sm: 44px;
+  --control-h-md: 48px;
+  --control-h-lg: 56px;
+  /* Pixel geometry: frame border and the one shadow offset everything shares. */
+  --border-px: calc(var(--u) * 4);
+  /* Sticky chrome: what a sticky side column must stay clear of. */
+  --sticky-top: 88px;
+  --bottom-bar-h: 84px;
+  --shadow-off: calc(var(--u) * 2);
+  --shadow-off-btn: calc(var(--u) * 1.5);
 
   /* Semantic tokens (Layer A names). World skins override these and the
      brand colour tokens above together; see src/lib/theme/themes.ts. */
@@ -112,7 +137,10 @@
   --motif-corner-b: none;
 }
 @media (min-width: 640px) {
-  :root { --u: 3px; }
+  :root { --u: 3px; --page-gutter: 24px; --panel-pad-x: 20px; --panel-pad-y: 16px; --grid-gap: 24px; --section-gap: 48px; --dialogue-pad-y: 10px; }
+}
+@media (min-width: 1024px) {
+  :root { --page-gutter: 32px; }
 }
 
 @keyframes blink { 0%, 90% { opacity: 1; } 91%, 97% { opacity: 0.2; } }
@@ -233,15 +261,15 @@ html[data-crt="on"] body::after {
   /* 9-slice storybook frame. Pick the art with --frame: var(--frame-panel) etc. */
   .px-frame {
     --frame: var(--frame-panel);
-    border: calc(var(--u) * 4) solid transparent;
+    border: var(--border-px) solid transparent;
     border-image-source: var(--frame);
     border-image-slice: 4 fill;
-    border-image-width: calc(var(--u) * 4);
+    border-image-width: var(--border-px);
     border-image-repeat: stretch;
     image-rendering: pixelated;
   }
   /* Soft offset shadow (lavender, not black). */
-  .px-shadow { filter: drop-shadow(0 calc(var(--u) * 2) 0 rgba(var(--shadow-rgb), 0.14)); }
+  .px-shadow { filter: drop-shadow(0 var(--shadow-off) 0 rgba(var(--shadow-rgb), 0.14)); }
   .px-lift { transition: transform 100ms steps(2), filter 100ms steps(2); }
   @media (hover: hover) {
     .px-lift:hover { transform: translateY(calc(var(--u) * -1)); filter: drop-shadow(0 calc(var(--u) * 3) 0 rgba(var(--shadow-rgb), 0.2)); }
@@ -360,8 +388,34 @@ html[data-crt="on"] body::after {
   }
   .content-block { box-sizing: border-box; width: 100%; margin-inline: 0; }
   /* Inner padding for a .px-frame panel: the frame border counts toward --panel-pad-x. */
-  .panel-pad-x { padding-inline: max(0px, calc(var(--panel-pad-x) - var(--u) * 4)); }
+  .panel-pad-x { padding-inline: max(0px, calc(var(--panel-pad-x) - var(--border-px))); }
+  .panel-pad-y { padding-block: max(0px, calc(var(--panel-pad-y) - var(--border-px))); }
+  .panel-pad { padding: max(0px, calc(var(--panel-pad-y) - var(--border-px))) max(0px, calc(var(--panel-pad-x) - var(--border-px))); }
   .plain-pad-x { padding-inline: var(--panel-pad-x); }
+  /* Dialogue dock rhythm: header → text → actions use the dialogue tokens (tighter on short windows). */
+  .dialogue-head { padding-top: max(2px, calc(var(--dialogue-pad-y) - var(--border-px) + 2px)); }
+  .dialogue-text { padding-top: var(--dialogue-gap); padding-bottom: var(--dialogue-gap); }
+  .dialogue-actions { padding-block: var(--dialogue-gap); }
+  [data-compact] { --dialogue-gap: 4px; --dialogue-pad-y: 4px; }
+  /* Nameplate tabs on a frame's top edge start on the same line as the panel's text (level 2). */
+  .panel-tab-row { left: max(0px, calc(var(--panel-pad-x) - var(--border-px))); right: max(0px, calc(var(--panel-pad-x) - var(--border-px))); }
+  /* Two columns that share outer edges (Studio, Builder, Library): gap from the token, never ad hoc. */
+  .layout-gap { gap: var(--grid-gap); }
+  /*
+   * A side column that stays in view while the page scrolls (Studio roster, Library list, Builder preview).
+   * It owns its own scroll when it is taller than the space between the sticky top bar and the bottom
+   * action bar, so nothing in it is ever cut off on short windows. Below 1024px it's ordinary flow.
+   */
+  @media (min-width: 1024px) {
+    .sticky-col {
+      position: sticky; top: var(--sticky-top); align-self: start;
+      max-height: calc(100dvh - var(--sticky-top) - var(--bottom-bar-h));
+      overflow-y: auto; overscroll-behavior: auto; scrollbar-width: thin;
+      /* Room for frame shadows and nameplate tabs inside the scroll box. */
+      padding: 28px 6px 10px; margin: -28px -6px -10px;
+    }
+  }
+  .section-gap { margin-top: var(--section-gap); }
   .content-stack { display: flex; flex-direction: column; gap: var(--stack-gap); min-width: 0; }
   .content-stack > * { box-sizing: border-box; width: 100%; margin-inline: 0; }
 
@@ -419,8 +473,6 @@ html[data-crt="on"] body::after {
   .px-tabbar::-webkit-scrollbar { display: none; }
 }
 
-/* Level 2 padding grows a little on larger screens. */
-@media (min-width: 640px) { :root { --panel-pad-x: 16px; } }
 /* Screens that opt into the wide layout (Play) widen the shared grid, top bar included. */
 :root:has([data-layout="wide"]) { --content-max: 1600px; }
 

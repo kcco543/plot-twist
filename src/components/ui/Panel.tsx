@@ -37,7 +37,7 @@ export function Panel({
     >
       {sparkles && <CornerSparkles />}
       {title && (
-        <div className="absolute -top-7 left-1 right-1 flex items-start justify-between gap-2 sm:-top-8">
+        <div className="panel-tab-row absolute -top-7 flex items-start justify-between gap-2 sm:-top-8">
           <h2 className="px-tab">
             <Sparkle size={7} className="text-butter-hi" />
             {title}
@@ -45,7 +45,7 @@ export function Panel({
           {titleRight}
         </div>
       )}
-      <div className={`${padded ? "p-2 sm:p-3" : ""} ${title ? "pt-4 sm:pt-5" : ""} h-full`}>{children}</div>
+      <div className={`${padded ? "panel-pad" : ""} ${title ? "!pt-4 sm:!pt-5" : ""} h-full`}>{children}</div>
     </Tag>
   );
 }

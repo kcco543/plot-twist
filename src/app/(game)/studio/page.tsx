@@ -70,7 +70,7 @@ export default function CharacterStudioPage() {
 
   return (
     <>
-      <main className="gutter mx-auto w-full max-w-6xl flex-1 pt-8 sm:pt-10">
+      <main className="content-grid flex-1 pt-8 sm:pt-10">
         <ScreenHeader kicker={t("studio.kicker")} title={t("studio.heading")}>
           {world ? (
             <Rich template={t("studio.introWorld")} values={{ world: <span style={{ color: world.accent }}>{t(`worlds.list.${world.id}.name` as const)}</span> }} />
@@ -98,8 +98,8 @@ export default function CharacterStudioPage() {
             </div>
           </Panel>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
-            <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+          <div className="grid layout-gap lg:grid-cols-[15rem_minmax(0,1fr)]">
+            <aside className="sticky-col min-w-0">
               <p className="mb-2 font-label text-xs uppercase text-ink-soft">{t("studio.castCount", { count: save.characters.length })}</p>
               <CharacterRoster characters={save.characters} selectedId={selected?.id ?? null} onSelect={setPickedId} onAdd={add} onImport={() => setPicking(true)} />
             </aside>

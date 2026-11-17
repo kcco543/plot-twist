@@ -9,7 +9,7 @@ import { useI18n } from "@/i18n";
 export default function LoadGamePage() {
   const { t } = useI18n();
   return (
-    <main className="gutter mx-auto w-full max-w-6xl flex-1 py-8 sm:py-10">
+    <main className="content-grid flex-1 py-8 sm:py-10">
       <ScreenHeader kicker={t("load.kicker")} title={t("myWorlds.heading")} />
       <MyWorlds showHeading={false} />
       <div className="mt-10">

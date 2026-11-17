@@ -59,7 +59,7 @@ export default function CharacterLibraryPage() {
 
   return (
     <>
-      <main className="gutter mx-auto w-full max-w-6xl flex-1 pt-8 sm:pt-10">
+      <main className="content-grid flex-1 pt-8 sm:pt-10">
         <ScreenHeader kicker={t("library.kicker")} title={t("library.heading")}>
           {t("library.intro")}
         </ScreenHeader>
@@ -78,8 +78,8 @@ export default function CharacterLibraryPage() {
             </div>
           </Panel>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-[18rem_minmax(0,1fr)]">
-            <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+          <div className="grid layout-gap lg:grid-cols-[18rem_minmax(0,1fr)]">
+            <aside className="sticky-col min-w-0">
               <p className="mb-2 font-label text-xs uppercase text-ink-soft">{templates.length === 1 ? t("library.countOne") : t("library.count", { count: templates.length })}</p>
               <ul className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0" aria-label={t("library.list")}>
                 {templates.map((tpl) => {

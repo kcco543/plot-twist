@@ -1427,15 +1427,17 @@ export default function PlayPage() {
             style={wide || !playH ? undefined : pinStage ? { minHeight: playH } : { height: playH }}
           >
             {wide ? (
-              <div className="grid items-start gap-3 xl:gap-4" style={{ gridTemplateColumns: layout.short ? "minmax(0, 1fr) clamp(18rem, 40%, 24rem)" : "minmax(0, 1fr) clamp(18rem, 31%, 28rem)" }}>
-                <div className="flex min-w-0 flex-col gap-1">
-                  {viewport}
-                  {hintH > 0 && <p className="truncate font-label text-[10px] uppercase leading-[14px] text-ink-mute">{t("play.keyboardHint")}</p>}
+              <>
+                {/* Primary alignment: the viewport and the dock share one row, so their top and bottom edges line
+                    up; the keyboard hint sits under both, never inside one column. */}
+                <div className="grid items-start" style={{ gap: "var(--grid-gap)", gridTemplateColumns: `minmax(0, 1fr) var(${layout.short ? "--sidebar-w-short" : "--sidebar-w"})` }}>
+                  <div className="min-w-0">{viewport}</div>
+                  <div className="relative min-w-0 self-stretch" style={{ minHeight: playH ? sideDockMin(playH) : 360 }}>
+                    <div className="absolute inset-0">{dock}</div>
+                  </div>
                 </div>
-                <div className="relative min-w-0 self-stretch" style={{ minHeight: playH ? sideDockMin(playH) : 360 }}>
-                  <div className="absolute inset-0">{dock}</div>
-                </div>
-              </div>
+                {hintH > 0 && <p className="mt-1 truncate font-label text-[10px] uppercase leading-[14px] text-ink-mute">{t("play.keyboardHint")}</p>}
+              </>
             ) : (
               <div className="flex h-full min-h-0 flex-col gap-2">
                 <div className={pinStage ? "sticky z-30" : undefined} style={pinStage ? { top: headerH } : undefined}>

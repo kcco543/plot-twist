@@ -32,11 +32,14 @@ export function ThemePreview({ theme, label }: { theme: WorldUiTheme; label: str
             <span className="px-btn min-h-10 px-1 text-[14px]" style={buttonStyle("accent")}>{t("theme.preview.tabA")}</span>
             <span className="px-btn min-h-10 px-1 text-[14px]" style={buttonStyle("ghost")}>{t("theme.preview.tabB")}</span>
           </div>
-          <div className="px-frame relative mt-6" style={{ "--frame": "var(--frame-cream)" } as CSSProperties}>
-            <span className="px-tab absolute -top-7 left-[calc(var(--u)*-4)] sm:-top-8" style={{ borderImageSource: "var(--frame-pink)" }}>
-              {t("theme.preview.speaker")}
-            </span>
-            <p className="px-2 pt-2 pb-1 text-base leading-snug">{t("theme.preview.line")}</p>
+          {/* Same structure as Play's dialogue dock: speaker tab in the header row, the line right under it. */}
+          <div className="px-frame relative" style={{ "--frame": "var(--frame-cream)" } as CSSProperties}>
+            <div className="dialogue-head panel-pad-x">
+              <span className="px-tab" style={{ borderImageSource: "var(--frame-pink)" }}>
+                {t("theme.preview.speaker")}
+              </span>
+            </div>
+            <p className="dialogue-text panel-pad-x m-0 text-base leading-snug">{t("theme.preview.line")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <PixelButton size="sm" variant="primary" tabIndex={-1}>

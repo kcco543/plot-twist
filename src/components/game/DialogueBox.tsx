@@ -110,7 +110,7 @@ export function DialogueBox({
       style={{ "--frame": "var(--frame-cream)" } as CSSProperties}
     >
       {/* Speaker header */}
-      <div className={`panel-pad-x flex shrink-0 items-center gap-2 ${compact ? "pt-0.5" : "pt-1.5"}`}>
+      <div className="dialogue-head panel-pad-x flex shrink-0 items-center gap-2">
         <span className="px-tab min-w-0 max-w-[70%] shrink truncate" style={{ borderImageSource: "var(--frame-pink)" }} data-dialogue-speaker>
           <span className="truncate">{speaker}</span>
         </span>
@@ -125,7 +125,10 @@ export function DialogueBox({
       <div
         ref={scroller}
         data-dialogue-scroll
-        className={`panel-pad-x relative ${hideActions || compact ? "min-h-[3.4rem]" : "min-h-[4.25rem]"} flex-[1_1_5.5rem] overflow-y-auto overscroll-contain ${compact ? "pt-1" : "pt-2"}`}
+        // Content-aware: as tall as the lines need, between ~2.5 lines and (during a conversation) about half the
+        // dock, so the choices keep their room. Outside a conversation the text area takes the spare height.
+        className={`dialogue-text panel-pad-x relative min-h-[3.4rem] overflow-y-auto overscroll-contain ${hideActions ? "flex-[0_1_auto]" : "flex-[1_1_auto]"}`}
+        style={hideActions ? { maxHeight: "50%" } : undefined}
       >
         {history.length > 0 && (
           <ol className="mb-1.5 flex flex-col gap-1" aria-label={t("play.earlierLines")}>
@@ -145,7 +148,7 @@ export function DialogueBox({
                 {speaker}: {text}
               </span>
             )}
-            <p className="whitespace-pre-line break-words text-[15px] leading-snug text-ink sm:text-[17px]" aria-hidden={!busy}>
+            <p className="dialogue-line m-0 whitespace-pre-line break-words text-[15px] leading-snug text-ink sm:text-[17px]" aria-hidden={!busy}>
               {busy ? (
                 <span className="flex items-center gap-2 font-label text-xs uppercase text-ink-soft">
                   {t("play.writing")} <LoadingDots className="text-label" />
@@ -176,10 +179,10 @@ export function DialogueBox({
 
       {/* Conversation / talk strip: its own internal scroll for long choice lists */}
       {/* If even the shrunken choices don't fit (tiny windows), this area scrolls instead of overlapping. */}
-      {talk && <div className="flex min-h-0 shrink flex-col overflow-y-auto overscroll-contain border-t-2 border-dashed border-line" data-dock-talk>{talk}</div>}
+      {talk && <div className={`flex min-h-0 flex-col overflow-y-auto overscroll-contain border-t-2 border-dashed border-line ${hideActions ? "flex-1" : "shrink"}`} data-dock-talk>{talk}</div>}
 
       {!hideActions && (
-        <div className={`panel-pad-x grid shrink-0 grid-cols-2 gap-1.5 @[17rem]:grid-cols-4 @[17rem]:[&_svg]:hidden @[17rem]:[&>button]:px-0 @[17rem]:[&>button]:text-[13px] @[24rem]:[&>button]:text-[15px] @[27rem]:[&_svg]:block ${compact ? "py-1" : "py-1.5"}`}>
+        <div className="dialogue-actions panel-pad-x grid shrink-0 grid-cols-2 gap-1.5 @[17rem]:grid-cols-4 @[17rem]:[&_svg]:hidden @[17rem]:[&>button]:px-0 @[17rem]:[&>button]:text-[13px] @[24rem]:[&>button]:text-[15px] @[27rem]:[&_svg]:block">
           <PixelButton size="sm" variant="accent" icon="chat" disabled={disabled} onClick={() => onAction("talk")} className="px-1" data-action="talk">
             {t("play.actions.talk")}
           </PixelButton>

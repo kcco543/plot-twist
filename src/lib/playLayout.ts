@@ -69,10 +69,12 @@ export function usePlayLayout(ref: RefObject<HTMLElement | null>, bottomGap = 12
     probe.style.cssText = "position:fixed;left:0;top:0;width:0;visibility:hidden;pointer-events:none;height:env(safe-area-inset-bottom,0px)";
     document.body.appendChild(probe);
     let raf = 0;
+    let attach = () => {};
     const measure = () => {
       raf = 0;
       const el = ref.current;
       if (!el) return;
+      attach();
       const w = window.innerWidth;
       const h = window.innerHeight;
       const shape = choosePlayShape(w, h);
@@ -94,16 +96,39 @@ export function usePlayLayout(ref: RefObject<HTMLElement | null>, bottomGap = 12
     measure();
     window.addEventListener("resize", schedule);
     window.addEventListener("orientationchange", schedule);
-    // Notices above the play area appearing / going away move it down / up.
+    // Notices above the play area appearing / going away move it down / up. The body's own size may not
+    // change when that happens (it is at least the window's height), so watch what sits above the play area.
     const ro = new ResizeObserver(schedule);
     ro.observe(document.body);
     const header = document.querySelector("header");
     if (header) ro.observe(header);
+    const watchAbove = () => {
+      let n: Element | null = ref.current;
+      while (n && n !== document.body) {
+        for (let sib = n.previousElementSibling; sib; sib = sib.previousElementSibling) ro.observe(sib);
+        n = n.parentElement;
+      }
+    };
+    const mo = new MutationObserver(() => {
+      watchAbove();
+      schedule();
+    });
+    // The play area may mount after this effect (the save loads first): attach once it exists.
+    let watched: Element | null = null;
+    attach = () => {
+      const parent = ref.current?.parentElement ?? null;
+      if (!parent || parent === watched) return;
+      watched = parent;
+      mo.observe(parent, { childList: true });
+      watchAbove();
+    };
+    attach();
     return () => {
       if (raf) cancelAnimationFrame(raf);
       window.removeEventListener("resize", schedule);
       window.removeEventListener("orientationchange", schedule);
       ro.disconnect();
+      mo.disconnect();
       probe.remove();
     };
   }, [ref, bottomGap]);

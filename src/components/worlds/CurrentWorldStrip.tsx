@@ -16,7 +16,7 @@ export function CurrentWorldStrip() {
   const theme = getWorld(world.theme);
   return (
     <div className="border-b border-line bg-surface/80" data-world-strip>
-      <div className="gutter mx-auto flex max-w-6xl items-center justify-between gap-3 py-1">
+      <div className="content-grid flex items-center justify-between gap-3 py-1">
         <p className="flex min-w-0 items-center gap-2 text-base">
           <span className="shrink-0 font-label text-[10px] uppercase text-rose">{t("myWorlds.inWorld")}</span>
           <span className="flex shrink-0" style={{ color: theme?.accent }}>

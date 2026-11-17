@@ -27,7 +27,7 @@ export function ActionBar({ children }: { children: ReactNode }) {
       className="action-bar px-scallop sticky bottom-0 z-30 mt-12 bg-surface/95 shadow-[0_-6px_16px_rgba(91,74,134,0.08)] backdrop-blur-sm"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div className="gutter mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 py-3">{children}</div>
+      <div className="content-grid flex flex-wrap items-center justify-between gap-3 py-3">{children}</div>
     </div>
   );
 }

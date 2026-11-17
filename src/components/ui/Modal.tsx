@@ -59,7 +59,7 @@ export function Modal({
         className={`px-frame px-panel relative mt-10 flex max-h-[85dvh] w-full ${width} animate-pop flex-col`}
         style={{ "--frame": "var(--frame-panel)" } as React.CSSProperties}
       >
-        <div className="absolute -top-8 left-1 right-0 flex items-start justify-between gap-2">
+        <div className="panel-tab-row absolute -top-8 !right-0 flex items-start justify-between gap-2">
           <h2 id={titleId} className="px-tab" style={{ borderImageSource: "var(--frame-pink)" }}>
             {title}
           </h2>
@@ -67,8 +67,8 @@ export function Modal({
             <PixelIcon name="close" size={12} />
           </button>
         </div>
-        <div className="overflow-y-auto overscroll-contain px-2 pt-6 pb-3 sm:px-3">{children}</div>
-        {footer && <footer className="flex flex-wrap justify-end gap-3 border-t-[3px] border-dashed border-line px-2 pt-3 pb-1">{footer}</footer>}
+        <div className="panel-pad-x min-h-0 flex-1 overflow-y-auto overscroll-contain pt-6 pb-3" data-modal-body>{children}</div>
+        {footer && <footer className="panel-pad-x flex shrink-0 flex-wrap justify-end gap-3 border-t-[3px] border-dashed border-line pt-3 pb-1">{footer}</footer>}
       </div>
     </div>,
     document.body,

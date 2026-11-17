@@ -231,12 +231,12 @@ export default function WorldBuilderPage() {
 
   return (
     <>
-      <main className="gutter mx-auto w-full max-w-6xl flex-1 pt-8 sm:pt-10">
+      <main className="content-grid flex-1 pt-8 sm:pt-10">
         <ScreenHeader kicker={t("builder.kicker")} title={t("builder.heading")}>
           {t("builder.intro")}
         </ScreenHeader>
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+        <div className="grid layout-gap lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           <div className="flex min-w-0 flex-col gap-8">
             <Panel title={t("builder.description")}>
               <Field
@@ -315,7 +315,7 @@ export default function WorldBuilderPage() {
             <ThemePanel />
           </div>
 
-          <div className="hidden min-w-0 lg:sticky lg:top-24 lg:block lg:self-start">{previewPanel}</div>
+          <div className="sticky-col hidden min-w-0 lg:block">{previewPanel}</div>
         </div>
       </main>
 
