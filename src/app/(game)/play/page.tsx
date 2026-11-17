@@ -1286,7 +1286,7 @@ export default function PlayPage() {
           {sceneId !== firstSceneId ? t("explore.scene.incomplete", { name: envName }) : t("playArea.guessNotice", { name: envName })}
         </SceneNotice>
       )}
-      {scene.kind === "map" && <SceneEditor open={areaOpen} map={scene.map} onClose={() => setAreaOpen(false)} cast={save.characters.map((c) => ({ id: c.id, name: c.name.trim() || t("common.unnamed") }))} />}
+      {scene.kind === "map" && <SceneEditor open={areaOpen} map={scene.map} onClose={() => setAreaOpen(false)} cast={save.characters.map((c) => ({ id: c.id, name: c.name.trim() || t("common.unnamed") }))} scenes={scenes.list.filter((sc) => sc.id !== sceneId).map((sc) => ({ id: sc.id, name: sceneLabel(sc) }))} />}
 
       {isDemo && !sandbox && (
         <p className="content-block plain-pad-x mb-4 flex flex-wrap items-center gap-2 bg-butter-hi py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">

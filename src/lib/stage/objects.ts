@@ -26,6 +26,7 @@
  */
 import type { EnvironmentTypeId, GiftInstance, WorldId } from "../types";
 import { FOOT, insideWalk, hitsObstacle, type Point, type Rect, type RoomLayout } from "./room";
+import { distToPolygon, polygonArea } from "../scene/geometry";
 
 export const OBJECT_TYPES = ["book", "sign", "seat", "door", "painting", "item", "window", "gift", "plant", "light", "feature", "stairs", "counter", "table", "bed", "chest", "exit", "portal"] as const;
 export type ObjectType = (typeof OBJECT_TYPES)[number];
@@ -89,6 +90,17 @@ export type WorldObject = {
   contents?: string[];
   /** An exit marker added by the game (the way back to another scene), not part of the map. */
   marker?: boolean;
+  // ---- Drawn regions and story metadata (Play area editor; all optional)
+  /** The object's outline (stage px) when it was drawn as a polygon: hit tests use it instead of `bounds`. */
+  shape?: Point[];
+  /** A character linked to this object (a shopkeeper, the owner of a desk). */
+  linkedNpc?: string | null;
+  /** What it is about, in the player's words ("flowers", "knights", "deep water"): characters' interests match these. */
+  interests?: string[];
+  /** Hidden from characters (a secret passage nobody has found): never noticed, never reacted to. */
+  hidden?: boolean;
+  /** Ambient animation drawn over it (src/lib/scene/ambient.ts). */
+  ambient?: import("../scene/ambient").AmbientSpec | null;
 };
 
 /**
@@ -235,7 +247,9 @@ export function hitObject(objects: WorldObject[], p: Point, pad = 2): WorldObjec
   for (const o of objects) {
     const b = o.bounds;
     if (p.x < b.x0 - pad || p.x > b.x1 + pad || p.y < b.y0 - pad || p.y > b.y1 + pad) continue;
-    const area = (b.x1 - b.x0) * (b.y1 - b.y0);
+    // A drawn outline is the real region: the corners of its bounding box are not the object.
+    if (o.shape && o.shape.length >= 3 && distToPolygon(p, o.shape) > pad) continue;
+    const area = o.shape && o.shape.length >= 3 ? polygonArea(o.shape) : (b.x1 - b.x0) * (b.y1 - b.y0);
     if (area < bestArea) {
       best = o;
       bestArea = area;

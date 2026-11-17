@@ -28,7 +28,9 @@
 import { FOOT, type NavMask, type Obstacle, type Point, type Rect, type RoomLayout } from "../stage/room";
 import { nearestFree } from "../stage/path";
 import type { EnvironmentTypeId } from "../types";
-import { ACTIONS_BY_TYPE, EXIT_TYPES, type ObjectType, type WorldObject } from "../stage/objects";
+import { ACTIONS_BY_TYPE, EXIT_TYPES, OBJECT_ACTIONS, type ObjectAction, type ObjectType, type WorldObject } from "../stage/objects";
+import { clipBelow, polygonBounds, validPolygon } from "./geometry";
+import { readAmbient, type AmbientSpec } from "./ambient";
 import { isNativeSize } from "../pixelArt/mapPixels";
 
 export type Perspective = "side" | "angled";
@@ -58,6 +60,25 @@ export type SceneObject = {
   note?: string;
   /** Chests: what's inside, comma separated when edited. */
   contents?: string[];
+  // ---- Drawn regions and object metadata (Play area editor; optional, older layouts don't have them)
+  /** The outline drawn with the pen tool (fractions of the image). `bounds` is always its bounding box. */
+  shape?: Point[];
+  /** How close (stage px) a character must get to use it. Missing = the default. */
+  range?: number;
+  /** Where a character stands to use it (fractions). Missing = worked out from the shape. */
+  anchor?: Point | null;
+  /** What can be done with it. Missing = everything its type allows. */
+  actions?: ObjectAction[];
+  /** A character linked to it (a shopkeeper, the owner of a desk). */
+  npc?: string | null;
+  /** A scene it leads to or belongs with (shown in the editor; travel itself uses scene links). */
+  linkedScene?: string | null;
+  /** What it is about ("flowers", "knights"), for characters' interests (src/lib/autonomy/environment.ts). */
+  interests?: string[];
+  /** Hidden from characters until found (a secret passage): never noticed or reacted to. */
+  hidden?: boolean;
+  /** Ambient animation. undefined = automatic from its kind and name, null = none. */
+  ambient?: AmbientSpec | null;
 };
 
 export type SceneLayout = {
@@ -165,11 +186,40 @@ export function readLayout(raw: unknown, mapW: number, mapH: number): SceneLayou
         ...(o.startsOpen ? { startsOpen: true } : {}),
         ...(typeof o.note === "string" && o.note.trim() ? { note: o.note.slice(0, 280) } : {}),
         ...(Array.isArray(o.contents) ? { contents: o.contents.filter((x): x is string => typeof x === "string" && !!x.trim()).map((x) => x.trim().slice(0, 40)).slice(0, 8) } : {}),
-      })),
+        ...readExtras(o),
+      }))
+      // A drawn outline decides the bounds (they can never disagree).
+      .map((o) => (o.shape ? { ...o, bounds: polygonBounds(o.shape) } : o)),
     spawns: (Array.isArray(r.spawns) ? r.spawns : []).filter((p) => p && typeof p.x === "number" && typeof p.y === "number").map((p) => ({ x: clamp01(p.x), y: clamp01(p.y) })).slice(0, 12),
     reviewed: !!r.reviewed,
     updatedAt: typeof r.updatedAt === "number" ? r.updatedAt : 0,
   };
+}
+
+const words40 = (v: unknown): string[] =>
+  Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === "string").map((x) => x.trim().slice(0, 40)).filter(Boolean))].slice(0, 12) : [];
+
+/** The optional drawn-region / metadata fields, validated (anything damaged is simply left out). */
+function readExtras(o: SceneObject): Partial<SceneObject> {
+  const out: Partial<SceneObject> = {};
+  if (validPolygon(o.shape)) out.shape = o.shape.map((p) => ({ x: clamp01(p.x), y: clamp01(p.y) }));
+  if (typeof o.range === "number" && Number.isFinite(o.range)) out.range = Math.min(40, Math.max(2, Math.round(o.range)));
+  if (o.anchor && Number.isFinite(o.anchor.x) && Number.isFinite(o.anchor.y)) out.anchor = { x: clamp01(o.anchor.x), y: clamp01(o.anchor.y) };
+  if (Array.isArray(o.actions)) {
+    const acts = o.actions.filter((a): a is ObjectAction => (OBJECT_ACTIONS as readonly string[]).includes(a));
+    if (acts.length) out.actions = [...new Set(acts)];
+  }
+  if (typeof o.npc === "string" && o.npc) out.npc = o.npc.slice(0, 80);
+  if (typeof o.linkedScene === "string" && o.linkedScene) out.linkedScene = o.linkedScene.slice(0, 80);
+  const interests = words40(o.interests);
+  if (interests.length) out.interests = interests;
+  if (o.hidden) out.hidden = true;
+  if (o.ambient === null) out.ambient = null;
+  else {
+    const a = readAmbient(o.ambient);
+    if (a) out.ambient = a;
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- floor painting
@@ -204,7 +254,7 @@ export type BuiltScene = {
   room: RoomLayout;
   objects: WorldObject[];
   /** Solid objects drawn over characters behind them (stage art px). */
-  fronts: { id: string; bounds: Rect; baseY: number }[];
+  fronts: { id: string; bounds: Rect; baseY: number; shape?: Point[] }[];
   /** Problems the editor shows ("bar counter can't be reached"). */
   problems: { objectId: string; kind: "unreachable" }[];
 };
@@ -269,11 +319,15 @@ export function buildScene(layout: SceneLayout, mapW: number, mapH: number, plac
 
   const obstacles: Obstacle[] = [];
   const fronts: BuiltScene["fronts"] = [];
+  const toStagePoly = (poly: Point[]): Point[] => poly.map((p) => ({ x: p.x * width, y: p.y * height }));
   for (const o of layout.objects) {
     if (!o.solid) continue;
     const b = toStage(o.bounds);
-    obstacles.push({ id: o.id, ...footprintOf(b, layout.perspective) });
-    if (o.front) fronts.push({ id: o.id, bounds: b, baseY: b.y1 });
+    const foot = footprintOf(b, layout.perspective);
+    // Drawn outline: only the part of it inside the footprint band blocks walking (not its whole box).
+    const footPoly = o.shape ? clipBelow(toStagePoly(o.shape), foot.y0) : null;
+    obstacles.push(footPoly && footPoly.length >= 3 ? { id: o.id, ...polygonBounds(footPoly), poly: footPoly } : { id: o.id, ...foot });
+    if (o.front) fronts.push({ id: o.id, bounds: b, baseY: b.y1, ...(o.shape ? { shape: toStagePoly(o.shape) } : {}) });
   }
   const spawns = layout.spawns.map((p) => ({ x: p.x * width, y: p.y * height }));
   const room: RoomLayout = { walk, obstacles, size: { width, height }, mask, spawns };
@@ -282,8 +336,13 @@ export function buildScene(layout: SceneLayout, mapW: number, mapH: number, plac
   const problems: BuiltScene["problems"] = [];
   for (const o of layout.objects) {
     const b = toStage(o.bounds);
-    const anchors = anchorsFor(room, b, o.solid ? (obstacles.find((x) => x.id === o.id) ?? null) : null);
+    const auto = anchorsFor(room, b, o.solid ? (obstacles.find((x) => x.id === o.id) ?? null) : null);
+    // The player's walk-to spot comes first (moved to the nearest standable point if it isn't one).
+    const own = o.anchor ? nearestFree(room, { x: o.anchor.x * width, y: o.anchor.y * height }, [], 0, 28) : null;
+    const anchors = own ? [own, ...auto.filter((p) => Math.hypot(p.x - own.x, p.y - own.y) >= 8)].slice(0, 3) : auto;
     if (!anchors.length) problems.push({ objectId: o.id, kind: "unreachable" });
+    const allowed = OBJECT_ACTIONS_BY_TYPE[o.type] ?? ["inspect"];
+    const chosen = o.actions?.filter((a) => allowed.includes(a));
     objects.push({
       id: o.id,
       type: o.type,
@@ -294,9 +353,14 @@ export function buildScene(layout: SceneLayout, mapW: number, mapH: number, plac
       bounds: b,
       collider: o.solid ? o.id : null,
       anchors,
-      radius: 6,
-      actions: OBJECT_ACTIONS_BY_TYPE[o.type] ?? ["inspect"],
-      tags: [...new Set([...words(o.label), o.type, ...TYPE_WORDS[o.type]])],
+      radius: o.range ?? 6,
+      actions: chosen?.length ? chosen : allowed,
+      tags: [...new Set([...words(o.label), o.type, ...TYPE_WORDS[o.type], ...(o.interests ?? []).flatMap(words)])],
+      ...(o.shape ? { shape: toStagePoly(o.shape) } : {}),
+      ...(o.npc ? { linkedNpc: o.npc } : {}),
+      ...(o.interests?.length ? { interests: o.interests } : {}),
+      ...(o.hidden ? { hidden: true } : {}),
+      ...(o.ambient !== undefined ? { ambient: o.ambient } : {}),
       ...(o.note ? { description: o.note } : {}),
       exit: o.exit ?? EXIT_TYPES.includes(o.type),
       ...(o.keeper ? { keeper: o.keeper } : {}),

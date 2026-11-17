@@ -1,4 +1,5 @@
 "use client";
+import { clipPathOf } from "@/lib/scene/geometry";
 
 import { useEffect, useRef, type ReactNode } from "react";
 import type { Rect } from "@/lib/stage/room";
@@ -37,7 +38,7 @@ export function SceneFronts({
 }: {
   src: string;
   size: { width: number; height: number };
-  fronts: { id: string; bounds: Rect; baseY: number }[];
+  fronts: { id: string; bounds: Rect; baseY: number; shape?: { x: number; y: number }[] }[];
   /** The map is on the art-pixel grid: draw the cut-outs with nearest-neighbour pixels like the map itself. */
   pixelated?: boolean;
   /** Characters on stage, to fade cut-outs that hide someone. */
@@ -88,6 +89,8 @@ export function SceneFronts({
             backgroundImage: `url(${JSON.stringify(src)})`,
             backgroundSize: `${size.width}px ${size.height}px`,
             backgroundPosition: `${-f.bounds.x0}px ${-f.bounds.y0}px`,
+            // Drawn outline: only that part of the picture covers characters behind it.
+            ...(f.shape ? { clipPath: clipPathOf(f.shape, f.bounds) } : {}),
           }}
         />
       ))}

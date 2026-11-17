@@ -11,10 +11,12 @@
  * differently) getting its own. If you replace a background, update its
  * obstacles here.
  */
+import { rectHitsPolygon } from "../scene/geometry";
 import type { EnvironmentTypeId, WorldId } from "../types";
 
 export type Rect = { x0: number; y0: number; x1: number; y1: number };
-export type Obstacle = Rect & { id: string };
+/** Furniture that blocks walking. `poly` (stage px) narrows it to a drawn outline inside the rectangle. */
+export type Obstacle = Rect & { id: string; poly?: Point[] };
 export type Point = { x: number; y: number };
 /**
  * Optional walkable-floor grid for rooms whose floor isn't a rectangle (an
@@ -129,7 +131,7 @@ export function maskAt(m: NavMask, x: number, y: number): boolean {
 
 export function hitsObstacle(room: RoomLayout, p: Point): Obstacle | null {
   const f = footRect(p);
-  return room.obstacles.find((o) => overlaps(f, o)) ?? null;
+  return room.obstacles.find((o) => overlaps(f, o) && (!o.poly || rectHitsPolygon(f, o.poly))) ?? null;
 }
 
 /**
