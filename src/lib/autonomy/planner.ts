@@ -31,7 +31,7 @@ import type { Point } from "../stage/room";
 import type { Character, StoryState } from "../types";
 import { boundaryOf } from "./convoBoundary";
 import type { AgencyState, IntentKind } from "./types";
-import { envProposals, type ConceptId, type KnowledgeSource } from "./environment";
+import { envProposals, type KnowledgeSource, type Topic } from "./environment";
 
 export type Proposal = {
   kind: IntentKind | "invite";
@@ -42,7 +42,7 @@ export type Proposal = {
   /** avoid_object: where to step to. */
   at?: Point;
   /** Came from the environment (environment.ts): cooldowns apply, and what it's about. */
-  env?: { concept: ConceptId; knowledge?: KnowledgeSource };
+  env?: { concept: Topic; knowledge?: KnowledgeSource };
 };
 
 export type PlanContext = {

@@ -271,3 +271,27 @@ describe("text", () => {
     for (const k of ["inviteAccepted", "inviteDeclined"] as const) expect(en.talk.notices[k] && zh.talk.notices[k]).toBeTruthy();
   });
 });
+
+describe("the player's own words on an object", () => {
+  const statue: WorldObject = { ...pond, id: "statue", type: "feature", name: "statue", label: "Statue", tags: [], interests: ["knights"] };
+  it("match the same word in a character's profile (likes, fears) and memories, EN + ZH", () => {
+    const fan = makeChar({ id: "fan", identity: "Squire who adores the old knight stories" });
+    const scared = makeChar({ id: "sc", fears: "Knights in armour" });
+    const zhFan = makeChar({ id: "zf", identity: "从小崇拜骑士" });
+    expect(interestsOf(fan, undefined, ["word:knights"]).likes["word:knights"]).toBeGreaterThan(0);
+    expect(interestsOf(scared, undefined, ["word:knights"]).fears).toContain("word:knights");
+    expect(interestsOf(zhFan, undefined, ["word:骑士"]).likes["word:骑士"]).toBeGreaterThan(0);
+    // Without the word on an object, nothing is read into the profile.
+    expect(interestsOf(fan).likes).toEqual({});
+  });
+
+  it("a rival is reminded of someone only through a real association", () => {
+    const a = makeChar({ id: "a", name: "Ash", identity: "Loves knights" });
+    const rival = makeChar({ id: "r", name: "Rook" });
+    const linked = makeChar({ id: "r", name: "Rook", relationships: "Ash is my rival. Ash never stops going on about knights." });
+    const s = storyFor([a, rival]);
+    const ctx = (r: Character): EnvContext => ({ actor: r, story: s, cast: [r, a], objects: [statue], position: (id) => (id === "r" ? { x: 170, y: 176 } : null), agency: emptyAgency(), now: T0, apart: () => false, busy: () => false, rng: rngFrom("k") });
+    expect(envProposals(ctx(rival))).toEqual([]);
+    expect(envProposals(ctx(linked))[0]).toMatchObject({ kind: "reflect", reason: "remindsOf", target: "a", concept: "word:knights" });
+  });
+});

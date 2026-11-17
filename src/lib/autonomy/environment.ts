@@ -63,6 +63,36 @@ const PATTERNS: Record<ConceptId, RegExp> = Object.fromEntries(
   CONCEPT_IDS.map((id) => [id, new RegExp(`\\b(?:${LEXICON[id].en.join("|")})|${LEXICON[id].zh.join("|")}`, "gi")]),
 ) as Record<ConceptId, RegExp>;
 
+/**
+ * What something is about: one of the lexicon's concepts, or a word the
+ * player wrote on an object ("knights", "骑士") that matches the same word in
+ * a character's own profile or memories.
+ */
+export type Topic = ConceptId | `word:${string}`;
+const isConcept = (t: Topic): t is ConceptId => !t.startsWith("word:");
+const escapeRe = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const wordPatterns = new Map<string, RegExp>();
+function patternOf(t: Topic): RegExp {
+  if (isConcept(t)) return PATTERNS[t];
+  let re = wordPatterns.get(t);
+  if (!re) {
+    const raw = t.slice(5);
+    // "knights" also matches "knight" (and the other way round).
+    const w = /^[a-z]{4,}$/i.test(raw) ? raw.replace(/(?:es|s)$/i, "") : raw;
+    // Latin words match whole words (and a plural); Chinese has no spaces, so it matches anywhere.
+    re = /^[\x00-\x7f]+$/.test(w) ? new RegExp(`\\b${escapeRe(w)}(?:s|es)?\\b`, "gi") : new RegExp(escapeRe(w), "g");
+    wordPatterns.set(t, re);
+  }
+  return re;
+}
+/** Does a text mention this topic? */
+export function mentionsTopic(text: string, t: Topic): boolean {
+  if (!text) return false;
+  const re = patternOf(t);
+  re.lastIndex = 0;
+  return re.test(text);
+}
+
 /** Every concept a text mentions. */
 export function conceptsIn(text: string): ConceptId[] {
   if (!text) return [];
@@ -77,12 +107,12 @@ const AVERSE = /(hate|hates|dislike|afraid|scared|terrified|fear|can'?t stand|av
 /** Words near a mention that make it a painful association ("lost her brother at sea"). */
 const PAINFUL = /(lost|died|death|dead|drown|burn|war\b|accident|grief|mourn|funeral|失去|去世|死|淹|烧毁|战争|事故|悲伤|葬礼)/i;
 
-type Mention = { id: ConceptId; before: string; around: string };
-function mentions(text: string): Mention[] {
+type Mention = { id: Topic; before: string; around: string };
+function mentions(text: string, topics: readonly Topic[]): Mention[] {
   const out: Mention[] = [];
   if (!text) return out;
-  for (const id of CONCEPT_IDS) {
-    const re = PATTERNS[id];
+  for (const id of topics) {
+    const re = patternOf(id);
     re.lastIndex = 0;
     for (let m = re.exec(text); m; m = re.exec(text)) {
       out.push({ id, before: text.slice(Math.max(0, m.index - 18), m.index), around: text.slice(Math.max(0, m.index - 40), m.index + m[0].length + 40) });
@@ -103,30 +133,31 @@ const LIKE_FIELDS: [keyof Character, number][] = [
 ];
 
 export type Interests = {
-  /** Concept → strength (about 0.5–4). */
-  likes: Partial<Record<ConceptId, number>>;
-  fears: ConceptId[];
+  /** Topic → strength (about 0.5–4). */
+  likes: Partial<Record<Topic, number>>;
+  fears: Topic[];
   /** Things tied to a painful memory: being near them makes the character go quiet. */
-  painful: ConceptId[];
+  painful: Topic[];
 };
 
-/** What a character loves, fears and finds painful, from their own profile and memories. */
-export function interestsOf(c: Character, story?: StoryState): Interests {
-  const likes: Partial<Record<ConceptId, number>> = {};
-  const fears = new Set<ConceptId>();
-  const painful = new Set<ConceptId>();
+/** What a character loves, fears and finds painful, from their own profile and memories (plus any player words to look for). */
+export function interestsOf(c: Character, story?: StoryState, words: readonly Topic[] = []): Interests {
+  const topics: Topic[] = [...CONCEPT_IDS, ...words.filter((w) => !isConcept(w))];
+  const likes: Partial<Record<Topic, number>> = {};
+  const fears = new Set<Topic>();
+  const painful = new Set<Topic>();
   for (const [field, w] of LIKE_FIELDS) {
-    for (const m of mentions(String(c[field] ?? ""))) {
+    for (const m of mentions(String(c[field] ?? ""), topics)) {
       if (AVERSE.test(m.before)) fears.add(m.id);
       else if (field === "background" && PAINFUL.test(m.around)) painful.add(m.id);
       else likes[m.id] = (likes[m.id] ?? 0) + w;
     }
   }
-  for (const id of conceptsIn(c.fears)) fears.add(id);
+  for (const id of topics) if (mentionsTopic(c.fears, id)) fears.add(id);
   for (const mem of story?.characters[c.id]?.memories ?? []) {
     if (!mem.note || mem.importance < 2) continue;
     const bad = mem.mood === "sad" || mem.mood === "anxious" || mem.kind === "betrayed" || mem.kind === "rejected" || PAINFUL.test(mem.note);
-    if (bad && !mem.resolved) for (const id of conceptsIn(mem.note)) painful.add(id);
+    if (bad && !mem.resolved) for (const id of topics) if (mentionsTopic(mem.note, id)) painful.add(id);
   }
   for (const id of fears) delete likes[id];
   return { likes, fears: [...fears], painful: [...painful] };
@@ -140,6 +171,12 @@ export function objectConcepts(o: Pick<WorldObject, "type" | "name" | "label" | 
   const t = TYPE_CONCEPT[o.type];
   if (t) set.add(t);
   return [...set];
+}
+
+/** Concepts plus the player's own interest words that no concept covers ("knights"). */
+export function objectTopics(o: Pick<WorldObject, "type" | "name" | "label" | "tags" | "interests" | "description">): Topic[] {
+  const own = (o.interests ?? []).map((w) => w.trim().toLowerCase()).filter((w) => w.length >= 2 && !conceptsIn(w).length).map((w) => `word:${w}` as Topic);
+  return [...objectConcepts(o), ...new Set(own)];
 }
 
 // ---------------------------------------------------------------- perception
@@ -204,7 +241,7 @@ export function witness(a: AgencyState, actor: string, objectId: string, objects
   const o = objects.find((x) => x.id === objectId);
   const at = position(actor);
   if (!o || !at) return a;
-  const concepts = objectConcepts(o);
+  const concepts = objectTopics(o);
   if (!concepts.length) return a;
   const mem = envOf(a);
   let witnessed = mem.witnessed;
@@ -231,19 +268,19 @@ const sentencesAbout = (text: string, name: string) => (name ? text.split(/[.!?�
  * a memory with b about it, a's own written relationships text, or having
  * seen b enjoy it. Never from b's private profile.
  */
-export function knowsLike(story: StoryState, agency: AgencyState, a: Character, b: Character, concept: ConceptId): KnowledgeSource | null {
+export function knowsLike(story: StoryState, agency: AgencyState, a: Character, b: Character, concept: Topic): KnowledgeSource | null {
   const mems = story.characters[a.id]?.memories ?? [];
-  if (mems.some((m) => m.withId === b.id && m.note && conceptsIn(m.note).includes(concept) && !AVERSE.test(m.note))) return "memory";
-  if (sentencesAbout(a.relationships, b.name.trim()).some((s) => conceptsIn(s).includes(concept) && !AVERSE.test(s))) return "relationship";
+  if (mems.some((m) => m.withId === b.id && m.note && mentionsTopic(m.note, concept) && !AVERSE.test(m.note))) return "memory";
+  if (sentencesAbout(a.relationships, b.name.trim()).some((s) => mentionsTopic(s, concept) && !AVERSE.test(s))) return "relationship";
   if ((envOf(agency).witnessed[a.id] ?? []).includes(`${b.id}:${concept}`)) return "witnessed";
   return null;
 }
 
 /** Does `concept` remind `a` of `b`? Only when a's memories or written relationships connect them. */
-export function remindsOf(story: StoryState, a: Character, b: Character, concept: ConceptId): boolean {
+export function remindsOf(story: StoryState, a: Character, b: Character, concept: Topic): boolean {
   const mems = story.characters[a.id]?.memories ?? [];
-  if (mems.some((m) => m.withId === b.id && m.note && conceptsIn(m.note).includes(concept))) return true;
-  return sentencesAbout(a.relationships, b.name.trim()).some((s) => conceptsIn(s).includes(concept));
+  if (mems.some((m) => m.withId === b.id && m.note && mentionsTopic(m.note, concept))) return true;
+  return sentencesAbout(a.relationships, b.name.trim()).some((s) => mentionsTopic(s, concept));
 }
 
 // ---------------------------------------------------------------- invitations
@@ -251,8 +288,8 @@ export function remindsOf(story: StoryState, a: Character, b: Character, concept
 export type InviteAnswer = { accept: boolean; why: "likesIt" | "forYou" | "notInterested" | "notNow" | "afraid" | "notWithYou" };
 
 /** B decides, from B's own interests, mood, relationship with A and personality. Deterministic for a given rng. */
-export function answerInvite(story: StoryState, invitee: Character, inviter: Character, concept: ConceptId, rng: () => number): InviteAnswer {
-  const mine = interestsOf(invitee, story);
+export function answerInvite(story: StoryState, invitee: Character, inviter: Character, concept: Topic, rng: () => number): InviteAnswer {
+  const mine = interestsOf(invitee, story, [concept]);
   if (mine.fears.includes(concept) || mine.painful.includes(concept)) return { accept: false, why: "afraid" };
   const p = personalityOf(invitee);
   const f = story.characters[invitee.id]?.feelings ?? {};
@@ -276,7 +313,7 @@ export type EnvProposal = {
   target?: string;
   /** Where to step to (avoid_object). */
   at?: Point;
-  concept: ConceptId;
+  concept: Topic;
   reason: "drawnTo" | "uneasyNear" | "quietMemory" | "remindsOf" | "invitesOver";
   score: number;
   knowledge?: KnowledgeSource;
@@ -303,17 +340,17 @@ export function envProposals(ctx: EnvContext): EnvProposal[] {
   if (!me) return [];
   const mem = envOf(agency);
   if (!mayReact(mem, actor.id, null, now)) return [];
-  const mine = interestsOf(actor, story);
+  const near = noticeable(me, objects, actor.id);
+  const mine = interestsOf(actor, story, near.flatMap(objectTopics));
   const p = personalityOf(actor);
   const f = story.characters[actor.id]?.feelings ?? {};
   const upset = Math.max(level(f, "anger"), level(f, "frustration")) / 100;
   const low = Math.max(level(f, "sadness"), level(f, "anxiety")) / 100;
   const bright = Math.max(level(f, "happiness"), level(f, "excitement")) / 100;
   const out: EnvProposal[] = [];
-  const near = noticeable(me, objects, actor.id);
   for (const o of near) {
     if (!mayReact(mem, actor.id, o.id, now)) continue;
-    const concepts = objectConcepts(o);
+    const concepts = objectTopics(o);
     const d = dist(me, center(o));
     for (const k of concepts) {
       // Fear: uneasy, and steps away if it's close (anxious people more so).
