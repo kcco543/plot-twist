@@ -225,3 +225,14 @@ Run it on every new environment and on the test scene. A failed check is fixed b
 | Maps generated before this guide (1536×1024) | Painted density about 3× finer than the characters, smooth-scaled in Play, often cluttered | **Revise:** use *Pixel-grid copy* in World Builder (free, keeps the original). If the layout itself is cluttered, **regenerate** with the new prompt. |
 | Built-in placeholder rooms (`public/assets`) | Flat side-view rooms, a different perspective from generated maps | **Keep** as placeholders for now; **replace** with generated three-quarter maps per world over time. |
 | Character sprites | Fit the grid (32 px, 1 px outline, flat shading). Outline is violet rather than brown. | **Keep.** Optionally move the default outline to a dark warm brown in a later pass (it changes every existing sprite's look, so it should be a separate decision). |
+
+## 17. The pixel map kit (layout first)
+
+For **Western Fantasy street and wilderness** places, *Generate Map* no longer asks the image service. `src/lib/mapgen/` plans the map, then draws it one art pixel at a time on the 480×320 grid, then takes the play area from the same plan. Other worlds and place types still use the image service until they have a kit.
+
+1. **Plan** (`village.ts → planVillage`): a woodland hedge along the top, high ground with a boulder cliff on one side, a stone plaza in front of the house, one road 46 px wide from a side edge to the bottom edge, an optional pond in a far corner. Obstacles only along the edges; 2–4 props on open ground (well, bench, signpost, plus a door per house); decoration in 4–8 small groups. The description picks features in English or Chinese (pond, well, a second house, more or fewer trees, flowers); a seed picks the variation, mirrored left↔right half the time (light always from the upper left).
+2. **Pixels** (`village.ts → paintVillage`, `sprites.ts`, `palette.ts`): fixed ramps of 3–5 tones per material (about 45–50 colours per map), texture evaluated on 2×2 blocks so it forms clusters, a 1 px dark warm outline on props (dark green on foliage), solid cast shadows to the lower right.
+3. **Play area** (`index.ts → layoutFromBlueprint`): a 5 px cell is floor only if at least 80% of it is open ground (never water, cliff, hedge or a house). Only the largest connected floor is kept. Solid props become objects at the exact place they were drawn.
+4. **Checks before use** (`KIT_LIMITS`): floor ≥ 55% of the map, ≥ 97% of the floor in one connected area, ≥ 88% of the open ground not covered by any drawn object, ≤ 3% of it under objects drawn over characters. A plan that misses them is replaced by the next variation. `tests/mapKit.test.ts` also walks from every start spot to every object and exit with the game's own pathfinding.
+
+Kit maps are stored like any other map (map library, play area marked as reviewed), so the editor, Save, Load and Play treat them the same way.
