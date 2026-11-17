@@ -7,12 +7,15 @@ import { PixelButton, PixelLink } from "@/components/ui/PixelButton";
 import { gameActions, useSave } from "@/lib/gameStore";
 import { WORLDS, getWorld } from "@/lib/worlds";
 import { useI18n } from "@/i18n";
+import { useWorldIndex } from "@/lib/saves/worldSaves";
 
 export default function WorldSelectPage() {
   const { t, tx } = useI18n();
   const router = useRouter();
   const save = useSave();
   const selected = getWorld(save.worldId);
+  const index = useWorldIndex();
+  const savesOf = (id: string) => index.worlds.filter((w) => w.theme === id).length;
 
   return (
     <>
@@ -20,9 +23,9 @@ export default function WorldSelectPage() {
         <ScreenHeader kicker={t("worlds.kicker")} title={t("worlds.heading")}>
           {t("worlds.intro")}
         </ScreenHeader>
-        <div role="radiogroup" aria-label={t("worlds.group")} className="grid grid-cols-1 gap-6 min-[560px]:grid-cols-2 xl:grid-cols-4">
+        <div role="radiogroup" aria-label={t("worlds.group")} className="grid layout-gap grid-cols-1 min-[560px]:grid-cols-2 xl:grid-cols-4">
           {WORLDS.map((w) => (
-            <WorldCard key={w.id} world={w} selected={save.worldId === w.id} onSelect={() => gameActions.selectWorld(w.id)} />
+            <WorldCard key={w.id} world={w} selected={save.worldId === w.id} saves={savesOf(w.id)} onSelect={() => gameActions.selectWorld(w.id)} />
           ))}
         </div>
       </main>

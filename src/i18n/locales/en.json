@@ -50,7 +50,12 @@
     "settings": "Settings",
     "pressStart": "Press start",
     "version": "v0.4 · prototype",
-    "menu": "Main menu"
+    "menu": "Main menu",
+    "menuTab": "Start",
+    "paradeLabel": "A few characters waiting for a story",
+    "paradeBubble": "Plot twist?!",
+    "worldsTeaser": "Four worlds to start in",
+    "savesBand": "Saved worlds"
   },
   "nav": {
     "steps": "Game steps",
@@ -110,7 +115,11 @@
           "Strange"
         ]
       }
-    }
+    },
+    "saves": "{count} saved",
+    "savesOne": "1 saved",
+    "savesNone": "New",
+    "motifsLabel": "Motifs"
   },
   "studio": {
     "kicker": "Step 2 · Character studio",

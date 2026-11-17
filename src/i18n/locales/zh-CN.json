@@ -50,7 +50,12 @@
     "settings": "设置",
     "pressStart": "按下开始",
     "version": "v0.4 · 原型",
-    "menu": "主菜单"
+    "menu": "主菜单",
+    "menuTab": "开始",
+    "paradeLabel": "几位等着故事开场的角色",
+    "paradeBubble": "剧情反转？！",
+    "worldsTeaser": "四个世界，任你开局",
+    "savesBand": "已保存的世界"
   },
   "nav": {
     "steps": "游戏步骤",
@@ -110,7 +115,11 @@
           "奇异"
         ]
       }
-    }
+    },
+    "saves": "已保存 {count} 个",
+    "savesOne": "已保存 1 个",
+    "savesNone": "新的",
+    "motifsLabel": "图样"
   },
   "studio": {
     "kicker": "第 2 步 · 角色工作室",
