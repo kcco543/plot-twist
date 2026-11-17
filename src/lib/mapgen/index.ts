@@ -18,13 +18,14 @@
 import type { Img } from "../sprites/pixelize";
 import { GRID_COLS, gridFor, type SceneLayout, type SceneObject } from "../scene/layout";
 import type { EnvironmentTypeId, WorldId } from "../types";
-import { MAP_H, MAP_W, M, WALKABLE_MATERIALS, markBlocked, paintVillage, planVillage, villageSeed, type Blueprint, type LabelKey, type Placed } from "./village";
+import { MAP_H, MAP_W, M, WALKABLE_MATERIALS, markBlocked, paintVillage, villageSeed, type Blueprint, type LabelKey, type Placed, type SceneKind } from "./village";
+import { planScene, sceneKindFor, biomeFor, SCENE_KINDS } from "./scenes";
 
-export const KIT_ID = "pixel-kit/village-1";
+export const KIT_ID = "pixel-kit/adventure-2";
 
-/** The test world first (PIXEL_ART_STYLE_GUIDE.md §13): Western Fantasy outdoor places. */
+/** The test world first (PIXEL_ART_STYLE_GUIDE.md §13): Western Fantasy outdoor places (village, forest path, riverbank, ruins, desert, magical clearing). */
 export function kitSupports(worldId: WorldId | null, type: EnvironmentTypeId): boolean {
-  return worldId === "western-fantasy" && (type === "street" || type === "wilderness");
+  return worldId === "western-fantasy" && (type === "street" || type === "wilderness" || type === "ruins");
 }
 
 export type KitReport = {
@@ -41,6 +42,11 @@ export type KitReport = {
   colours: number;
   seed: number;
   nonce: number;
+  /** Which kind of place and biome the words picked. */
+  kind: SceneKind;
+  biome: string;
+  /** Variations tried before one met the limits (1 = the first one did). */
+  attempts: number;
 };
 
 export type KitMap = { img: Img; scene: SceneLayout; report: KitReport };
@@ -52,6 +58,13 @@ const INTERESTS: Partial<Record<LabelKey, string[]>> = {
   tree: ["tree", "nature"],
   roadEast: ["travel"],
   roadSouth: ["travel"],
+  log: ["rest", "nature"],
+  shrine: ["light", "quiet"],
+  stones: ["magic", "old"],
+  arch: ["old", "stone"],
+  column: ["old", "stone"],
+  fallenColumn: ["rest", "old"],
+  palm: ["tree", "nature"],
   stall: ["market", "food"],
   lamp: ["light"],
 };
@@ -119,7 +132,9 @@ export function layoutFromBlueprint(bp: Blueprint, props: Placed[], label: (k: L
     let box = pl.box;
     if (pl.kind === "exit") {
       // A strip where the road leaves the map.
-      box = pl.x > bp.w - 20 ? { x0: bp.w - 14, y0: pl.base - 22, x1: bp.w, y1: pl.base + 10 } : { x0: pl.x - 22, y0: bp.h - 12, x1: pl.x + 22, y1: bp.h };
+      if (pl.x > bp.w - 20) box = { x0: bp.w - 14, y0: pl.base - 22, x1: bp.w, y1: pl.base + 10 };
+      else if (pl.x < 20) box = { x0: 0, y0: pl.base - 22, x1: 14, y1: pl.base + 10 }; // a mirrored map leaves by the left edge
+      else box = { x0: pl.x - 22, y0: bp.h - 12, x1: pl.x + 22, y1: bp.h };
     }
     if (!box) continue;
     const name = label(pl.object.label);
@@ -177,22 +192,23 @@ function measure(bp: Blueprint, cover: Uint8Array, scene: SceneLayout, img: Img)
 export const KIT_LIMITS = { walkable: 0.55, connected: 0.97, visibleGround: 0.88, frontCover: 0.03 };
 
 /**
- * Build a map for `description`. `nonce` picks the variation (a new one per
- * click). A plan that misses the limits is replaced by the next variation.
+ * Build a map for `description` and place `type`. `nonce` picks the variation
+ * (a new one per click). A plan that misses the limits is replaced by the
+ * next variation. Same inputs → the same pixels, always.
  */
-export function generateKitMap(opts: { description: string; nonce: number; label: (k: LabelKey) => string }): KitMap {
+export function generateKitMap(opts: { description: string; type?: EnvironmentTypeId; nonce: number; label: (k: LabelKey) => string }): KitMap {
   let fallback: KitMap | null = null;
   for (let attempt = 0; attempt < 8; attempt++) {
     const nonce = opts.nonce + attempt;
     const seed = villageSeed(opts.description, nonce);
-    const bp = planVillage(opts.description, seed);
+    const bp = planScene(opts.description, seed, opts.type ?? "street");
     const { canvas, props, cover } = paintVillage(bp);
     const img = canvas.toImg();
     const { scene, connected } = layoutFromBlueprint(bp, props, opts.label);
     const m = measure(bp, cover, scene, img);
-    const report: KitReport = { ...m, connected, objects: scene.objects.length, decorGroups: bp.decor.length, seed, nonce };
+    const report: KitReport = { ...m, connected, objects: scene.objects.length, decorGroups: bp.decor.length, seed, nonce, kind: bp.kind, biome: bp.biome, attempts: attempt + 1 };
     const result = { img, scene, report };
-    const ok = m.walkable >= KIT_LIMITS.walkable && connected >= KIT_LIMITS.connected && m.visibleGround >= KIT_LIMITS.visibleGround && m.frontCover <= KIT_LIMITS.frontCover;
+    const ok = m.walkable >= KIT_LIMITS.walkable && connected >= KIT_LIMITS.connected && m.visibleGround >= KIT_LIMITS.visibleGround && m.frontCover <= KIT_LIMITS.frontCover && bp.spawns.length === 4;
     if (ok) return result;
     fallback ??= result;
   }
@@ -200,4 +216,5 @@ export function generateKitMap(opts: { description: string; nonce: number; label
 }
 
 export { MAP_W, MAP_H, M, GRID_COLS };
-export type { LabelKey };
+export type { LabelKey, SceneKind };
+export { planScene, sceneKindFor, biomeFor, SCENE_KINDS };

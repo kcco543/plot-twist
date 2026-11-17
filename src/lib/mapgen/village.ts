@@ -18,18 +18,23 @@
  * trees, flowers) in English or Chinese; the seed picks the variation.
  */
 import { Canvas, Sprite, hashSeed, rng, stamp, valueNoise, type RGB, type Rng } from "./canvas";
-import { WESTERN_FANTASY, lightFor, shadeFor, type Palette } from "./palette";
+import { lightFor, paletteFor, shadeFor, type Biome, type Palette } from "./palette";
 import * as art from "./sprites";
 
 export const MAP_W = 480;
 export const MAP_H = 320;
 
 /** Ground materials (per pixel). RIM = the stone ring around a pond (walkable). */
-export const M = { VOID: 0, GRASS: 1, DIRT: 2, STONE: 3, WATER: 4, HIGH: 5, FACE: 6, BACK: 7, RIM: 8 } as const;
+export const M = { VOID: 0, GRASS: 1, DIRT: 2, STONE: 3, WATER: 4, HIGH: 5, FACE: 6, BACK: 7, RIM: 8, BRIDGE: 9, LEDGE: 10, STEPS: 11 } as const;
 export type Material = (typeof M)[keyof typeof M];
-export const WALKABLE_MATERIALS: readonly number[] = [M.GRASS, M.DIRT, M.STONE, M.RIM];
+export const WALKABLE_MATERIALS: readonly number[] = [M.GRASS, M.DIRT, M.STONE, M.RIM, M.BRIDGE, M.STEPS];
 
-export type PropKind = "tree" | "bigtree" | "bush" | "cottage" | "stall" | "well" | "bench" | "sign" | "lamp" | "barrel" | "crate" | "pot" | "rock" | "door" | "exit";
+export type PropKind =
+  | "tree" | "bigtree" | "bush" | "cottage" | "stall" | "well" | "bench" | "sign" | "lamp" | "barrel" | "crate" | "pot" | "rock" | "door" | "exit"
+  | "palm" | "column" | "brokenColumn" | "fallenColumn" | "ruinWall" | "arch" | "stone" | "log" | "stump" | "shrine" | "mushrooms";
+
+/** The kinds of place the kit can build. All share one renderer, palette structure and camera. */
+export type SceneKind = "village" | "forest" | "riverbank" | "ruins" | "desert" | "glade";
 
 /** Something placed on the map. x/base = where it touches the ground (art px). */
 export type Placed = {
@@ -47,12 +52,16 @@ export type Placed = {
   deep?: boolean;
 };
 
+export type DecorKind = "flowers" | "ferns" | "leaves" | "pebbles" | "reeds" | "lilies" | "fireflies";
+
 export type Features = { pond: boolean; well: boolean; houses: 1 | 2; trees: "few" | "some" | "many"; flowers: boolean };
 
 export type Blueprint = {
   w: number;
   h: number;
   seed: number;
+  kind: SceneKind;
+  biome: Biome;
   /** Mirror the composition left↔right (light still comes from the upper left). */
   flip: boolean;
   features: Features;
@@ -61,7 +70,7 @@ export type Blueprint = {
   blocked: Uint8Array;
   props: Placed[];
   /** Small non-solid details in groups. */
-  decor: { kind: "flowers" | "ferns" | "leaves" | "pebbles" | "reeds" | "lilies"; x: number; y: number; n: number }[];
+  decor: { kind: DecorKind; x: number; y: number; n: number }[];
   spawns: { x: number; y: number }[];
   /** Road centre lines (map coordinates), for ruts and worn edges. */
   roads: { x: number; y: number }[][];
@@ -69,7 +78,7 @@ export type Blueprint = {
 
 // ---------------------------------------------------------------- features from words
 
-const has = (text: string, words: string[]) => words.some((w) => text.includes(w));
+export const has = (text: string, words: string[]) => words.some((w) => text.includes(w));
 
 export function featuresFrom(description: string, r: Rng): Features {
   const t = description.toLowerCase();
@@ -85,16 +94,57 @@ export function featuresFrom(description: string, r: Rng): Features {
 
 // ---------------------------------------------------------------- blueprint
 
-const inRoundRect = (x: number, y: number, x0: number, y0: number, x1: number, y1: number, rad: number) => {
+/**
+ * Raised paving: where a plaza or courtyard ends above grass, its front edge
+ * is a low retaining wall (LEDGE, not walkable) and where a road meets it,
+ * stone steps (STEPS, walkable). Vertical faces like these are what make the
+ * three-quarter camera read: the ground has levels, not one flat sheet.
+ */
+export function addLedges(mat: Uint8Array, W: number, H: number, depth = 8) {
+  const out = new Uint8Array(mat);
+  for (let x = 0; x < W; x++)
+    for (let y = 1; y < H - depth; y++) {
+      if (mat[(y - 1) * W + x] !== M.STONE || mat[y * W + x] === M.STONE) continue;
+      for (let k = 0; k < depth; k++) {
+        const m = mat[(y + k) * W + x];
+        if (m === M.GRASS) out[(y + k) * W + x] = M.LEDGE;
+        else if (m === M.DIRT) out[(y + k) * W + x] = M.STEPS;
+      }
+    }
+  // A ledge only a few pixels wide is noise: turn it back into grass.
+  for (let y = 0; y < H; y++) {
+    let run = 0;
+    for (let x = 0; x <= W; x++) {
+      if (x < W && out[y * W + x] === M.LEDGE) run++;
+      else {
+        if (run > 0 && run < 10) for (let k = x - run; k < x; k++) out[y * W + k] = M.GRASS;
+        run = 0;
+      }
+    }
+  }
+  mat.set(out);
+}
+
+/** Cliff face below high ground (one column at a time, so it follows the curve of the edge). */
+export function addCliffFaces(mat: Uint8Array, W: number, H: number, faceH = FACE_H) {
+  for (let x = 0; x < W; x++) {
+    let bottom = -1;
+    for (let y = 0; y < H; y++) if (mat[y * W + x] === M.HIGH) bottom = y;
+    if (bottom < 0) continue;
+    for (let y = bottom + 1; y <= bottom + faceH && y < H; y++) if (mat[y * W + x] !== M.BACK) mat[y * W + x] = M.FACE;
+  }
+}
+
+export const inRoundRect = (x: number, y: number, x0: number, y0: number, x1: number, y1: number, rad: number) => {
   const cx = Math.min(Math.max(x, x0 + rad), x1 - rad);
   const cy = Math.min(Math.max(y, y0 + rad), y1 - rad);
   return (x - cx) ** 2 + (y - cy) ** 2 <= rad * rad && x >= x0 && x <= x1 && y >= y0 && y <= y1;
 };
 
-const bez = (t: number, a: number, b: number, c: number) => (1 - t) ** 2 * a + 2 * (1 - t) * t * b + t * t * c;
+export const bez = (t: number, a: number, b: number, c: number) => (1 - t) ** 2 * a + 2 * (1 - t) * t * b + t * t * c;
 
 /** Shortest distance from a point to a quadratic curve (sampled). */
-function distToCurve(x: number, y: number, pts: { x: number; y: number }[]) {
+export function distToCurve(x: number, y: number, pts: { x: number; y: number }[]) {
   let best = Infinity;
   for (let i = 0; i <= 48; i++) {
     const t = i / 48;
@@ -106,7 +156,7 @@ function distToCurve(x: number, y: number, pts: { x: number; y: number }[]) {
 }
 
 export const ROAD_HALF_WIDTH = 23; // a 46 px road: two characters side by side, with room to spare
-const FACE_H = 30;
+export const FACE_H = 36; // tall cliff faces: the three-quarter camera shows vertical surfaces
 
 export function planVillage(description: string, seed: number): Blueprint {
   const r = rng(seed);
@@ -154,7 +204,7 @@ export function planVillage(description: string, seed: number): Blueprint {
         // Plaza with a ragged edge where grass creeps over the stones.
         const ragged = (noise(bxu, y, 10) - 0.5) * 10;
         if (inRoundRect(bxu, y, plaza.x0 - ragged, plaza.y0, plaza.x1 + ragged, plaza.y1 + ragged * 0.6, 20)) m = M.STONE;
-        else if (house2 && inRoundRect(bxu, y, plaza.x1 - 30, house2.base - 4, house2.x + 30, house2.base + 18, 8)) m = M.STONE;
+        else if (house2 && inRoundRect(bxu, y, plaza.x1 - 30, house2.base - 4, house2.x + 30, house2.base + 30, 8)) m = M.STONE;
         else {
           const wobble = (noise(bxu, y, 14) - 0.5) * 7;
           if (distToCurve(bxu, y, roadEast) < ROAD_HALF_WIDTH + wobble || distToCurve(bxu, y, roadSouth) < ROAD_HALF_WIDTH + wobble) m = M.DIRT;
@@ -168,13 +218,8 @@ export function planVillage(description: string, seed: number): Blueprint {
       }
       for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) mat[(by + dy) * W + bx + dx] = m;
     }
-  // Cliff face below the high ground (one column at a time, so it follows the curve).
-  for (let x = 0; x < W; x++) {
-    let bottom = -1;
-    for (let y = 0; y < H; y++) if (mat[y * W + x] === M.HIGH) bottom = y;
-    if (bottom < 0) continue;
-    for (let y = bottom + 1; y <= bottom + FACE_H && y < H; y++) if (mat[y * W + x] !== M.BACK) mat[y * W + x] = M.FACE;
-  }
+  addCliffFaces(mat, W, H);
+  addLedges(mat, W, H);
 
   const props: Placed[] = [];
   const decor: Blueprint["decor"] = [];
@@ -251,7 +296,7 @@ export function planVillage(description: string, seed: number): Blueprint {
   ];
 
   const roads = [roadEast, roadSouth].map((pts) => pts.map((q) => ({ x: X(q.x), y: q.y })));
-  return { w: W, h: H, seed, flip, features, mat, blocked, props, decor, spawns, roads };
+  return { w: W, h: H, seed, kind: "village", biome: "temperate", flip, features, mat, blocked, props, decor, spawns, roads };
 }
 
 // ---------------------------------------------------------------- painting helpers
@@ -341,6 +386,17 @@ function paintGround(cv: Canvas, bp: Blueprint, p: Palette) {
           break;
         case M.STONE:
           c = flagstone(x, y, bp, p, at, sun);
+          // Ruins: some stones are gone and grass grows in the holes.
+          if (bp.kind === "ruins" && hash(cellAt(x, y, 15, 10, bp.seed).id, 4, bp.seed) < 0.16) c = p.grass[clumpTone(x, y) >= 4 ? 3 : 2];
+          break;
+        case M.BRIDGE:
+          c = plankPixel(x, y, p, at);
+          break;
+        case M.LEDGE:
+          c = ledgePixel(x, y, bp, p, at);
+          break;
+        case M.STEPS:
+          c = stepPixel(x, y, p, at);
           break;
         case M.RIM:
           c = rimStone(x, y, bp, p, at);
@@ -363,6 +419,10 @@ function paintGround(cv: Canvas, bp: Blueprint, p: Palette) {
       cv.set(x, y, c);
     }
   leafyEdges(cv, bp, p);
+  // The retaining wall throws a short shadow on the grass below it.
+  for (let y = 1; y < h - 3; y++)
+    for (let x = 0; x < w; x++)
+      if (mat[(y - 1) * w + x] === M.LEDGE && mat[y * w + x] !== M.LEDGE && mat[y * w + x] !== M.STEPS) for (let k = 0; k < 3; k++) if (k < 2 || (x >> 1) % 2 === 0) shadeAt(cv, x, y + k, p);
 }
 
 /**
@@ -411,6 +471,49 @@ function grassClumps(bp: Blueprint, sunAt: (x: number, y: number) => number): Ui
       } else if (base[up] < base[i]) out[i] = Math.min(5, base[i] + 1);
     }
   return out;
+}
+
+/** The retaining wall's front face: a lit lip, cut blocks, a dark foot. */
+function ledgePixel(x: number, y: number, bp: Blueprint, p: Palette, at: (x: number, y: number) => number): RGB {
+  let t = 0;
+  while (at(x, y - t - 1) === M.LEDGE) t++;
+  let b = 0;
+  while (at(x, y + b + 1) === M.LEDGE) b++;
+  if (t === 0) return p.stone[5];
+  if (b === 0) return p.outline;
+  const row = Math.floor((t - 1) / 4);
+  const off = (row % 2) * 6;
+  const xx = (x + off) % 12;
+  const yy = (t - 1) % 4;
+  if (yy === 3 || xx === 11) return p.rock[1];
+  if (bp.kind === "ruins" && hash(Math.floor((x + off) / 12), row, bp.seed) < 0.2) return yy === 0 ? p.moss[3] : p.moss[2];
+  if (yy === 0) return p.stone[3];
+  return xx > 8 ? p.stone[1] : p.stone[2];
+}
+
+/** Stone steps where a road climbs onto the paving: treads lit on top, risers in shade. */
+function stepPixel(x: number, y: number, p: Palette, at: (x: number, y: number) => number): RGB {
+  let t = 0;
+  while (at(x, y - t - 1) === M.STEPS) t++;
+  const side = at(x - 1, y) !== M.STEPS || at(x + 1, y) !== M.STEPS;
+  if (side) return p.stone[1];
+  const yy = t % 3;
+  return yy === 0 ? p.stone[4] : yy === 1 ? p.stone[3] : p.stone[1];
+}
+
+/** Bridge planks across the water: boards running across, a lit top edge, dark gaps, rails at the sides. */
+function plankPixel(x: number, y: number, p: Palette, at: (x: number, y: number) => number): RGB {
+  const up = at(x, y - 1) !== M.BRIDGE;
+  const down = at(x, y + 1) !== M.BRIDGE;
+  const down2 = at(x, y + 2) !== M.BRIDGE;
+  if (up) return p.wood[4];
+  if (down) return p.outline;
+  if (down2) return p.wood[1];
+  const k = Math.floor(x / 6);
+  const xx = x % 6;
+  if (xx === 5) return p.wood[0];
+  if (xx === 0) return p.wood[4];
+  return hash(k, 1, 7) < 0.3 ? p.wood[2] : p.wood[3];
 }
 
 /** A worn road: two wheel ruts, darker worn edges under the grass, a few stones pressed into the dirt. */
@@ -559,6 +662,7 @@ function cliffPixel(x: number, y: number, p: Palette, at: (x: number, y: number)
 
 /** The deep woods along the top: layers of big dark canopies with a few trunks showing at their foot. */
 function paintBackWoods(cv: Canvas, bp: Blueprint, p: Palette, r: Rng) {
+  if (bp.biome === "arid") return paintMesa(cv, bp, p);
   const { w, h, mat } = bp;
   const isBark = (c: RGB) => p.bark.some((b) => b[0] === c[0] && b[1] === c[1] && b[2] === c[2]);
   const bottom: number[] = [];
@@ -598,6 +702,30 @@ function paintBackWoods(cv: Canvas, bp: Blueprint, p: Palette, r: Rng) {
     const b = bottom[x];
     if (b < 0) continue;
     for (let k = 1; k <= 6; k++) if (WALKABLE_MATERIALS.includes(mat[(b + k) * w + x]) && (k < 5 || (x >> 1) % 2 === 0)) shadeAt(cv, x, b + k, p);
+  }
+}
+
+/** Desert back edge: a sandstone mesa wall in big stacked boulders, its top in sun, deep shade at its foot. */
+function paintMesa(cv: Canvas, bp: Blueprint, p: Palette) {
+  const { w, h, mat } = bp;
+  for (let x = 0; x < w; x++) {
+    let b = -1;
+    for (let y = 0; y < h && y < 90; y++) if (mat[y * w + x] === M.BACK) b = y;
+    if (b < 0) continue;
+    const topH = 6 + Math.round(hash(x >> 3, 2, bp.seed) * 3);
+    for (let y = 0; y <= b; y++) {
+      let c: RGB;
+      if (y < topH) c = y === topH - 1 ? p.rock[3] : y < 2 ? p.grass[2] : p.grass[3];
+      else {
+        const seam = (xx: number, yy: number) => cellAt(xx, yy, 22, 13, 91).gap < 0.12;
+        if (seam(x, y)) c = p.rock[0];
+        else if (seam(x - 1, y - 1) || seam(x, y - 1)) c = p.rock[4];
+        else if (seam(x + 1, y + 1)) c = p.rock[1];
+        else c = y > b - 4 ? p.rock[1] : hash(cellAt(x, y, 22, 13, 91).id, 1, 3) < 0.35 ? p.rock[3] : p.rock[2];
+      }
+      cv.set(x, y, c);
+    }
+    for (let k = 1; k <= 7; k++) if (b + k < h && WALKABLE_MATERIALS.includes(mat[(b + k) * w + x]) && (k < 5 || (x >> 1) % 2 === 0)) shadeAt(cv, x, b + k, p);
   }
 }
 
@@ -658,6 +786,13 @@ function paintDecor(cv: Canvas, bp: Blueprint, p: Palette, r: Rng) {
           if (ok(rx, y + 6 - tall)) cv.set(rx, y + 6 - tall, p.dirt[1]);
           if (ok(rx, y + 5 - tall)) cv.set(rx, y + 5 - tall, p.dirt[2]);
         }
+      } else if (d.kind === "fireflies") {
+        // Tiny lights hovering low: a bright pixel with a soft cross.
+        const fx = x + r.int(-10, 10);
+        const fy = y + r.int(-8, 8);
+        if (!cv.inside(fx, fy)) continue;
+        cv.set(fx, fy, p.glow[3]);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (cv.inside(fx + dx, fy + dy) && r.chance(0.6)) cv.set(fx + dx, fy + dy, p.glow[1]);
       } else if (d.kind === "lilies") {
         const water = on([M.WATER]);
         if (!water(x, y) || !water(x + 9, y + 6) || !water(x + 4, y - 4)) continue;
@@ -707,6 +842,28 @@ function buildProp(pl: Placed, p: Palette, r: Rng) {
       return art.pot(p);
     case "rock":
       return art.rock(p, r, pl.size ?? 16);
+    case "palm":
+      return art.palm(p, r, pl.size ?? 1);
+    case "column":
+      return art.column(p, r, false);
+    case "brokenColumn":
+      return art.column(p, r, true);
+    case "fallenColumn":
+      return art.fallenColumn(p, r);
+    case "ruinWall":
+      return art.ruinWall(p, r, pl.size ?? 60);
+    case "arch":
+      return art.archway(p, r);
+    case "stone":
+      return art.standingStone(p, r, pl.size ?? 30);
+    case "log":
+      return art.log(p, r);
+    case "stump":
+      return art.stump(p, r);
+    case "shrine":
+      return art.shrine(p, r);
+    case "mushrooms":
+      return art.mushrooms(p, r);
     default:
       return null;
   }
@@ -754,6 +911,26 @@ function lightPool(cv: Canvas, bp: Blueprint, p: Palette, cx: number, cy: number
     }
 }
 
+/** Shafts of light slanting down from the upper left through the canopy (forest and glade). */
+function sunbeams(cv: Canvas, bp: Blueprint, p: Palette) {
+  const r = rng(bp.seed ^ 0x51ab);
+  const beams = [r.int(60, 140), r.int(220, 300), r.int(360, 420)];
+  for (let y = 0; y < bp.h; y++)
+    for (let x = 0; x < bp.w; x++) {
+      const m = bp.mat[y * bp.w + x];
+      if (!WALKABLE_MATERIALS.includes(m) && m !== M.HIGH) continue;
+      const u = x - y * 0.55;
+      for (const b of beams) {
+        const d = Math.abs(u - b);
+        const fade = y / bp.h; // beams thin out toward the bottom
+        if (d < 9 - fade * 4 || (d < 13 - fade * 4 && (x + y) % 2 === 0)) {
+          lightAt(cv, x, y, p);
+          break;
+        }
+      }
+    }
+}
+
 /** Darker edges of the frame (in hard steps along a ragged line): the middle of the map is where the light is. */
 function vignette(cv: Canvas, bp: Blueprint, p: Palette) {
   const noise = valueNoise(bp.seed ^ 0x1234567);
@@ -768,7 +945,8 @@ function vignette(cv: Canvas, bp: Blueprint, p: Palette) {
     }
 }
 
-export function paintVillage(bp: Blueprint, p: Palette = WESTERN_FANTASY): Painted {
+export function paintVillage(bp: Blueprint, palette?: Palette): Painted {
+  const p = palette ?? paletteFor(bp.biome);
   const cv = new Canvas(bp.w, bp.h);
   const r = rng(bp.seed ^ 0x9e3779b9);
   paintGround(cv, bp, p);
@@ -801,13 +979,17 @@ export function paintVillage(bp: Blueprint, p: Palette = WESTERN_FANTASY): Paint
     if (pl.kind === "bigtree") canopyShade(cv, bp, p, pl.x + w * 0.16, pl.base + 4, w * 0.5, 16, bp.seed);
     else if (pl.kind === "tree" && !pl.deep) canopyShade(cv, bp, p, pl.x + 8, pl.base + 2, w * 0.42, 9, bp.seed + 1);
     else if (pl.kind === "cottage") castShadow(cv, bp, p, pl.x + 8, pl.base + 2, w * 0.52, 6);
+    else if (pl.kind === "palm") canopyShade(cv, bp, p, pl.x + 10, pl.base + 2, w * 0.36, 8, bp.seed + 2);
     else if (pl.kind !== "tree") castShadow(cv, bp, p, pl.x + w * 0.2, pl.base, Math.max(5, w * 0.45), Math.max(2, w * 0.14));
     if (pl.kind === "lamp") lightPool(cv, bp, p, pl.x, pl.base + 2, 24);
+    if (pl.kind === "shrine") lightPool(cv, bp, p, pl.x, pl.base + 3, 22);
+    if (pl.kind === "mushrooms" && bp.biome === "enchanted") lightPool(cv, bp, p, pl.x, pl.base, 12);
     if (pl.kind === "cottage") {
       const d = props.find((q) => q.id === `door-${pl.id}`);
       if (d?.box) lightPool(cv, bp, p, d.box.x1 + 6, pl.base + 8, 18);
     }
   }
+  if (bp.kind === "glade" || bp.kind === "forest") sunbeams(cv, bp, p);
   vignette(cv, bp, p);
   paintBackWoods(cv, bp, p, r);
   drawn.sort((a, b) => a.pl.base - b.pl.base);
@@ -829,7 +1011,9 @@ export function paintVillage(bp: Blueprint, p: Palette = WESTERN_FANTASY): Paint
 
 // ---------------------------------------------------------------- everything together
 
-export type LabelKey = "house" | "house2" | "door" | "door2" | "well" | "bench" | "sign" | "tree" | "roadEast" | "roadSouth" | "stall" | "lamp";
+export type LabelKey =
+  | "house" | "house2" | "door" | "door2" | "well" | "bench" | "sign" | "tree" | "roadEast" | "roadSouth" | "stall" | "lamp"
+  | "log" | "shrine" | "stones" | "arch" | "column" | "fallenColumn" | "palm" | "bridge";
 
 export function villageSeed(description: string, nonce: number) {
   return hashSeed(`${description.trim().toLowerCase()}#${nonce}`);
@@ -850,6 +1034,9 @@ export function markBlocked(bp: Blueprint, props: Placed[]) {
     else if (pl.kind === "tree" && !pl.object && (pl.box.x0 < 4 || pl.box.x1 > w - 4)) fill(pl.box.x0, pl.box.y0 + 6, pl.box.x1, pl.base + 2);
     else if (pl.kind === "tree" && !pl.object) fill(pl.box.x0 + 4, pl.base - 12, pl.box.x1 - 4, pl.base + 2);
     else if (pl.kind === "bush" && (pl.box.x0 < 4 || pl.box.x1 > w - 4 || pl.box.y1 > h - 4)) fill(pl.box.x0, pl.box.y0 + 2, pl.box.x1, pl.box.y1);
+    else if (pl.kind === "ruinWall" || pl.kind === "arch") fill(pl.box.x0, pl.box.y0, pl.box.x1, pl.base + 1);
+    else if (pl.kind === "palm") fill(pl.x - 5, pl.base - 6, pl.x + 6, pl.base + 2);
+    else if (pl.kind === "column" || pl.kind === "brokenColumn" || pl.kind === "stone" || pl.kind === "shrine" || pl.kind === "stump") fill(pl.box.x0, pl.base - 7, pl.box.x1, pl.base + 1);
     else if (pl.kind === "bush" || pl.kind === "barrel" || pl.kind === "crate" || pl.kind === "rock" || pl.kind === "pot") fill(pl.box.x0, pl.base - Math.min(8, pl.box.y1 - pl.box.y0), pl.box.x1, pl.base + 1);
   }
 }

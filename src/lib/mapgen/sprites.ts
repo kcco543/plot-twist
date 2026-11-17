@@ -681,3 +681,313 @@ export function rock(p: Palette, r: Rng, w = 16): Built {
   }
   return { sprite: s, baseX: w >> 1, baseY: h };
 }
+
+// ---------------------------------------------------------------- props for the other scene kinds
+// Same rules as above: three-quarter angle (top and front faces), light from
+// the upper left, ramp tones only, one dark warm outline added when stamped.
+
+/** Cut stone block face: lit top facet, mid front, shaded right side, dark seams. */
+function blockPixel(p: Palette, xx: number, yy: number, bw: number, bh: number, mossy: number): RGB {
+  if (yy === bh - 1 || xx === bw - 1) return p.rock[1];
+  if (yy === 0) return p.stone[4];
+  if (xx === 0) return p.stone[3];
+  if (xx > bw - 3) return p.stone[1];
+  if (mossy > 0.7 && yy < 3) return p.moss[3];
+  return p.stone[2];
+}
+
+/** A curved palm: a ringed, leaning trunk and a crown of drooping fronds. */
+export function palm(p: Palette, r: Rng, size = 1): Built {
+  const H = Math.round(70 * size);
+  const W = Math.round(64 * size);
+  const s = new Sprite(W, H);
+  const lean = r.chance(0.5) ? 1 : -1;
+  const baseX = Math.round(W / 2);
+  const topY = Math.round(16 * size);
+  const tx = (y: number) => baseX + lean * Math.round(((H - 1 - y) / (H - topY)) ** 2 * 10 * size);
+  for (let y = topY; y < H; y++) {
+    const c = tx(y);
+    for (let k = -3; k <= 3; k++) {
+      const ring = (H - y) % 5 === 0;
+      s.set(c + k, y, ring ? p.bark[1] : k < -1 ? p.bark[4] : k > 1 ? p.bark[1] : p.bark[3]);
+    }
+  }
+  const cx = tx(topY);
+  const cy = topY;
+  const fronds = 7;
+  for (let f = 0; f < fronds; f++) {
+    const a = Math.PI * (1.05 + (f / (fronds - 1)) * 0.9) + (hash(f, 1, 3) - 0.5) * 0.25; // fan over the top
+    const len = (20 + hash(f, 2, 3) * 8) * size;
+    for (let t = 0; t < len; t++) {
+      const k = t / len;
+      const x = cx + Math.cos(a) * t;
+      const y = cy + Math.sin(a) * t * 0.55 + k * k * 14 * size; // droop
+      const w = Math.max(1, Math.round((1 - Math.abs(k - 0.35)) * 4 * size));
+      for (let j = -w; j <= w; j++) {
+        const lit = Math.sin(a) < -0.3 || Math.cos(a) < 0;
+        s.set(x, y + j, j < 0 ? (lit ? p.leaf[4] : p.leaf[3]) : j === w ? p.leaf[1] : p.leaf[2]);
+      }
+    }
+  }
+  for (const [dx, dy] of [[-2, 2], [2, 3], [0, 4]]) s.ellipse(cx + dx, cy + dy, 2.2, 2.2, (_x, _y, nx, ny) => (nx + ny < -0.4 ? p.dirt[4] : p.dirt[2]));
+  return { sprite: s, baseX, baseY: H - 1 };
+}
+
+/** A carved column, standing (`broken` snaps its top off) in three-quarter view. */
+export function column(p: Palette, r: Rng, broken = false): Built {
+  const W = 20;
+  const H = broken ? 34 : 54;
+  const s = new Sprite(W, H);
+  const seed = r.int(0, 999);
+  const top = broken ? 6 : 8;
+  // Capital and base slabs (top face visible).
+  const slab = (y0: number, h: number) => {
+    for (let y = y0; y < y0 + h; y++) for (let x = 0; x < W; x++) s.set(x, y, y === y0 ? p.stone[5] : y === y0 + 1 ? p.stone[4] : x > W - 4 ? p.stone[1] : p.stone[2]);
+  };
+  if (!broken) slab(0, 7);
+  slab(H - 6, 6);
+  // Fluted shaft.
+  for (let y = top; y < H - 6; y++)
+    for (let x = 3; x < W - 3; x++) {
+      const xx = x - 3;
+      let c = xx < 3 ? p.stone[4] : xx > W - 10 ? p.stone[1] : xx % 4 === 3 ? p.stone[2] : p.stone[3];
+      if (hash(x >> 1, y >> 2, seed) < 0.08) c = p.moss[2];
+      s.set(x, y, c);
+    }
+  if (broken) {
+    // Jagged break, lit on top.
+    for (let x = 3; x < W - 3; x++) {
+      const cut = top + Math.round(Math.abs(Math.sin(x * 1.3 + seed)) * 4);
+      for (let y = 0; y < cut; y++) s.set(x, y, null);
+      s.set(x, cut, p.stone[5]);
+    }
+  }
+  // Ivy climbing the shaft.
+  for (let y = H - 8; y > H * 0.4; y--) if (hash(y, 3, seed) < 0.6) s.set(4 + Math.round(Math.sin(y * 0.5) * 2) + 2, y, y % 3 ? p.moss[3] : p.moss[2]);
+  return { sprite: s, baseX: W >> 1, baseY: H - 1 };
+}
+
+/** A fallen column lying on its side: a seat in the ruins. */
+export function fallenColumn(p: Palette, r: Rng): Built {
+  const W = 46;
+  const H = 16;
+  const s = new Sprite(W, H);
+  const seed = r.int(0, 999);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W - 8; x++) {
+      const ny = (y - H / 2) / (H / 2);
+      let c = ny < -0.5 ? p.stone[4] : ny < 0.1 ? p.stone[3] : ny < 0.6 ? p.stone[2] : p.stone[1];
+      if (x % 7 === 6) c = ny < 0 ? p.stone[2] : p.rock[1];
+      if (hash(x >> 1, y >> 1, seed) < 0.07) c = p.moss[2];
+      s.set(x + 4, y, c);
+    }
+  // The round end facing us, showing its section.
+  s.ellipse(W - 6, H / 2, 5, H / 2, (_x, _y, nx, ny) => (nx * nx + ny * ny < 0.35 ? p.stone[3] : nx + ny < 0 ? p.stone[4] : p.stone[2]));
+  for (let x = 4; x < W - 10; x++) if (hash(x, 9, seed) < 0.35) s.set(x, 0, p.moss[3]);
+  return { sprite: s, baseX: W >> 1, baseY: H - 1 };
+}
+
+/** A broken length of old wall: cut blocks, a jagged top, ivy and moss. */
+export function ruinWall(p: Palette, r: Rng, w = 60): Built {
+  const H = 40;
+  const s = new Sprite(w, H);
+  const seed = r.int(0, 9999);
+  // Broken top in block steps (whole stones missing), higher at one end, crumbling toward the other.
+  const tall = hash(1, 2, seed) < 0.5;
+  const topAt = (x: number) => {
+    const k = Math.floor(x / 7);
+    const slope = (tall ? x / w : 1 - x / w) * 16;
+    return 2 + Math.round(slope + hash(k, 1, seed) * 8 - (hash(k, 3, seed) < 0.2 ? 4 : 0) / 1) - (Math.round(slope + hash(k, 1, seed) * 8) % 4);
+  };
+  for (let x = 0; x < w; x++) {
+    const t = topAt(x);
+    for (let y = t; y < H; y++) {
+      // A 4 px top face (the wall's thickness seen from above), then the front face.
+      if (y < t + 4) {
+        s.set(x, y, y === t ? p.stone[4] : hash(x >> 1, y, seed) < 0.35 ? p.moss[3] : p.stone[3]);
+        continue;
+      }
+      const yy = y - t - 4;
+      const row = Math.floor((y - 4) / 8);
+      const off = (row % 2) * 7;
+      const bw = 14;
+      s.set(x, y, blockPixel(p, (x + off) % bw, (y - 4) % 8, bw, 8, hash(Math.floor((x + off) / bw), row, seed)));
+      if (yy === 0) s.set(x, y, p.rock[1]); // shade under the top face's lip
+    }
+  }
+  // Hanging ivy curtains.
+  for (let k = 0; k < 3; k++) {
+    const ix = Math.round(hash(k, 5, seed) * (w - 8)) + 4;
+    const len = 10 + Math.round(hash(k, 6, seed) * 14);
+    for (let i = 0; i < len; i++)
+      for (let j = -1; j <= 1; j++) {
+        const y = topAt(ix) + 3 + i;
+        if (s.get(ix + j, y) && hash(ix + j, y, seed) < 0.75) s.set(ix + j + Math.round(Math.sin(i * 0.6)), y, i > len - 3 ? p.moss[2] : j < 0 ? p.moss[4] : p.moss[3]);
+      }
+  }
+  return { sprite: s, baseX: w >> 1, baseY: H - 1 };
+}
+
+/** A tall ruined archway: two block piers and a round arch with a keystone. */
+export function archway(p: Palette, r: Rng): Built {
+  const W = 76;
+  const H = 74;
+  const s = new Sprite(W, H);
+  const seed = r.int(0, 999);
+  const pier = 16;
+  const cx = W / 2;
+  const ro = W / 2;
+  const ri = W / 2 - pier;
+  const springY = 34;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const dx = x + 0.5 - cx;
+      const dy = y + 0.5 - springY;
+      let inside = false;
+      if (y >= springY) inside = x < pier || x >= W - pier;
+      else {
+        const d = Math.hypot(dx, dy * 1.05);
+        inside = d <= ro && d >= ri;
+      }
+      if (!inside) continue;
+      const row = Math.floor(y / 8);
+      const off = (row % 2) * 6;
+      let c = blockPixel(p, (x + off) % 12, y % 8, 12, 8, hash(Math.floor((x + off) / 12), row, seed));
+      if (y < springY) {
+        // Voussoirs: seams run toward the arch's centre.
+        const a = Math.atan2(dy, dx);
+        const seam = Math.abs(((a / Math.PI) * 11) % 1) < 0.1;
+        const d = Math.hypot(dx, dy * 1.05);
+        c = seam ? p.rock[1] : d > ro - 2 ? p.stone[4] : d < ri + 2 ? p.stone[1] : dx < 0 ? p.stone[3] : p.stone[2];
+      }
+      s.set(x, y, c);
+    }
+  // Keystone, and a missing chunk on one side.
+  s.rect(cx - 4, 0, 8, pier, p.stone[3]);
+  s.rect(cx - 4, 0, 8, 1, p.stone[5]);
+  s.rect(cx + 3, 1, 1, pier - 1, p.stone[1]);
+  for (let y = 4; y < 14; y++) for (let x = W - 14; x < W - 14 + (14 - y); x++) s.set(x, y, null);
+  // Ivy over the top.
+  for (let x = 6; x < W - 16; x++) {
+    const a = Math.acos(Math.max(-1, Math.min(1, (x - cx) / ro)));
+    const y = Math.round(springY - Math.sin(a) * ro / 1.05);
+    if (hash(x, 1, seed) < 0.7) for (let k = 0; k < 2 + Math.round(hash(x, 2, seed) * 6); k++) if (s.get(x, y + k)) s.set(x, y + k, k % 3 === 0 ? p.moss[4] : p.moss[3]);
+  }
+  // Base blocks darker, a step.
+  for (let x = 0; x < W; x++) if (s.get(x, H - 1)) s.set(x, H - 1, p.rock[1]);
+  return { sprite: s, baseX: Math.round(cx), baseY: H - 1 };
+}
+
+/** A standing stone with carved runes that glow (enchanted palettes make the glow cool). */
+export function standingStone(p: Palette, r: Rng, h = 30): Built {
+  const W = Math.round(h * 0.5);
+  const s = new Sprite(W, h);
+  const seed = r.int(0, 999);
+  for (let y = 0; y < h; y++) {
+    const t = y / h;
+    const half = (W / 2) * (0.6 + 0.4 * Math.min(1, t * 2.2));
+    for (let x = 0; x < W; x++) {
+      const dx = x + 0.5 - W / 2;
+      if (Math.abs(dx) > half) continue;
+      const l = -dx / half;
+      let c = y < 3 ? p.rock[4] : l > 0.45 ? p.rock[4] : l > -0.2 ? p.rock[3] : l > -0.7 ? p.rock[2] : p.rock[1];
+      if (hash(x >> 1, y >> 1, seed) < 0.06) c = p.moss[3];
+      s.set(x, y, c);
+    }
+  }
+  // Runes: a few small marks down the middle.
+  const mx = Math.round(W / 2) - 1;
+  for (let k = 0; k < 3; k++) {
+    const y = Math.round(h * 0.3) + k * 6;
+    s.set(mx, y, p.glow[2]);
+    s.set(mx + 1, y + 1, p.glow[2]);
+    s.set(mx, y + 2, p.glow[1]);
+    if (k % 2) s.set(mx + 1, y, p.glow[3]);
+  }
+  for (let x = 1; x < W - 1; x++) if (hash(x, 7, seed) < 0.6) s.set(x, h - 1, p.moss[2]);
+  return { sprite: s, baseX: W >> 1, baseY: h - 1 };
+}
+
+/** A fallen log with a cut, ringed end and a mossy top: a seat on a forest path. */
+export function log(p: Palette, r: Rng): Built {
+  const W = 44;
+  const H = 15;
+  const s = new Sprite(W, H);
+  const seed = r.int(0, 999);
+  for (let y = 0; y < H; y++)
+    for (let x = 3; x < W - 6; x++) {
+      const ny = (y - H / 2) / (H / 2);
+      let c = ny < -0.55 ? p.bark[4] : ny < 0 ? p.bark[3] : ny < 0.55 ? p.bark[2] : p.bark[1];
+      if (hash(x, Math.floor(y / 3), seed) < 0.12) c = p.bark[1];
+      if (ny < -0.5 && hash(x >> 1, 1, seed) < 0.45) c = p.moss[3];
+      s.set(x, y, c);
+    }
+  s.ellipse(W - 6, H / 2, 5, H / 2, (_x, _y, nx, ny) => {
+    const d = Math.hypot(nx, ny);
+    return d > 0.8 ? p.bark[2] : Math.round(d * 4) % 2 ? p.wood[3] : p.wood[4];
+  });
+  // A broken branch stub and a little fungus shelf.
+  s.rect(14, -1, 3, 4, p.bark[3]);
+  s.rect(24, H - 5, 4, 2, p.fallen[3]);
+  s.rect(24, H - 4, 4, 1, p.fallen[1]);
+  return { sprite: s, baseX: W >> 1, baseY: H - 1 };
+}
+
+/** A tree stump with roots and rings on top. */
+export function stump(p: Palette, r: Rng): Built {
+  const W = 24;
+  const H = 18;
+  const s = new Sprite(W, H);
+  r.int(0, 1);
+  for (let y = 5; y < H; y++) {
+    const flare = y > H - 5 ? (y - (H - 5)) * 1.3 : 0;
+    const x0 = Math.round(5 - flare);
+    const x1 = Math.round(W - 5 + flare);
+    for (let x = x0; x < x1; x++) s.set(x, y, barkPixel(p, x, y, x0, x1));
+  }
+  s.ellipse(W / 2, 5, 7, 4, (_x, _y, nx, ny) => {
+    const d = Math.hypot(nx, ny);
+    return d > 0.82 ? p.bark[3] : Math.round(d * 5) % 2 ? p.wood[3] : p.wood[4];
+  });
+  return { sprite: s, baseX: W >> 1, baseY: H - 1 };
+}
+
+/** A stone lantern shrine with a warm (or cool, when enchanted) light inside. */
+export function shrine(p: Palette, r: Rng): Built {
+  const W = 22;
+  const H = 40;
+  const s = new Sprite(W, H);
+  const seed = r.int(0, 999);
+  // Base, post, light box, cap.
+  for (let y = H - 6; y < H; y++) for (let x = 2; x < W - 2; x++) s.set(x, y, blockPixel(p, x - 2, y - (H - 6), W - 4, 6, hash(x, y, seed)));
+  for (let y = 20; y < H - 6; y++) for (let x = 7; x < W - 7; x++) s.set(x, y, x === 7 ? p.stone[4] : x > W - 9 ? p.stone[1] : p.stone[2]);
+  for (let y = 10; y < 20; y++)
+    for (let x = 4; x < W - 4; x++) {
+      const inner = x > 6 && x < W - 7 && y > 11 && y < 18;
+      s.set(x, y, inner ? (y < 14 ? p.glow[3] : p.glow[2]) : x === 4 ? p.stone[4] : x > W - 6 ? p.stone[1] : p.stone[3]);
+    }
+  for (let y = 2; y < 10; y++) {
+    const inset = Math.max(0, 8 - y);
+    for (let x = inset; x < W - inset; x++) s.set(x, y, y === 2 + 0 ? p.stone[5] : y > 7 ? p.rock[1] : x < W / 2 ? p.stone[4] : p.stone[2]);
+  }
+  s.rect(W / 2 - 1, 0, 3, 2, p.stone[3]);
+  for (let x = 3; x < W - 3; x++) if (hash(x, 3, seed) < 0.4) s.set(x, H - 6, p.moss[3]);
+  return { sprite: s, baseX: W >> 1, baseY: H - 1 };
+}
+
+/** A cluster of mushrooms with glowing caps (decorative, not solid). */
+export function mushrooms(p: Palette, r: Rng): Built {
+  const W = 22;
+  const H = 16;
+  const s = new Sprite(W, H);
+  const caps: [number, number, number][] = [[6, 9, 4], [14, 6, 5], [18, 11, 3]];
+  for (const [cx, cy, rr] of caps) {
+    for (let y = cy; y < H; y++) {
+      s.set(cx, y, p.plaster[3]);
+      s.set(cx + 1, y, p.plaster[2]);
+    }
+    s.ellipse(cx + 0.5, cy, rr, rr * 0.7, (_x, _y, nx, ny) => (ny > 0.45 ? p.glow[0] : nx + ny < -0.5 ? p.glow[3] : p.glow[2]));
+    if (r.chance(0.7)) s.set(cx - 1, cy - 1, p.glow[3]);
+  }
+  return { sprite: s, baseX: W >> 1, baseY: H - 1 };
+}

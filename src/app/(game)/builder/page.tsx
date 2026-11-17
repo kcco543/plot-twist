@@ -260,6 +260,9 @@ export default function WorldBuilderPage() {
                   {map && !working && <span className="text-sm text-ink-mute">{t("builder.map.iterateHint")}</span>}
                 </div>
                 {kit && <p className="text-sm leading-snug text-ink-mute" data-map-kit>{t("builder.map.kitHint")}</p>}
+                <PixelLink href="/builder/map-lab" size="sm" variant="ghost" icon="map" className="self-start" data-open-map-lab>
+                  {t("mapLab.open")}
+                </PixelLink>
                 {!kit && status && !status.image && (
                   <p className="flex items-start gap-2 text-sm leading-snug text-ink-soft" role="note">
                     <PixelIcon name="offline" size={12} className="mt-1 shrink-0 text-coral-deep" />

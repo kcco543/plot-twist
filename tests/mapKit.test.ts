@@ -1,23 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { KIT_LIMITS, generateKitMap, kitSupports, layoutFromBlueprint } from "@/lib/mapgen";
+import { KIT_LIMITS, generateKitMap, kitSupports, layoutFromBlueprint, planScene, sceneKindFor, biomeFor } from "@/lib/mapgen";
 import { M, ROAD_HALF_WIDTH, WALKABLE_MATERIALS, paintVillage, planVillage, villageSeed } from "@/lib/mapgen/village";
 import { buildScene, readLayout } from "@/lib/scene/layout";
 import { findPath, isFree, spawnPoints } from "@/lib/stage/path";
 import { FOOT, hitsObstacle } from "@/lib/stage/room";
 
 const label = (k: string) => k;
-const DESCRIPTIONS = [
-  "a cozy village green with a pond and a well",
-  "a quiet meadow by the woods, open grass",
-  "两座小屋和一口老井，旁边有个池塘",
-  "a forest clearing with flowers",
-  "no water, a dusty little square",
+const DESCRIPTIONS: [string, "street" | "wilderness" | "ruins"][] = [
+  ["a cozy village green with a pond and a well", "street"],
+  ["a quiet meadow by the woods, open grass", "street"],
+  ["两座小屋和一口老井，旁边有个池塘", "street"],
+  ["no water, a dusty little square", "street"],
+  // The other scene kinds: same renderer, same checks.
+  ["a forest path through old woods with a mossy shrine", "wilderness"],
+  ["a riverbank with a wooden bridge and a mill cottage", "wilderness"],
+  ["overgrown temple ruins with a broken archway", "ruins"],
+  ["a desert oasis town with palms and a market stall", "street"],
+  ["a magical clearing with glowing standing stones", "wilderness"],
+  ["林间小径，有一座石灯龛", "wilderness"],
+  ["小河边的木桥", "wilderness"],
 ];
 
 describe("map kit: which worlds use it", () => {
   it("covers the Western Fantasy test world's outdoor places only (others keep the image service)", () => {
     expect(kitSupports("western-fantasy", "street")).toBe(true);
     expect(kitSupports("western-fantasy", "wilderness")).toBe(true);
+    expect(kitSupports("western-fantasy", "ruins")).toBe(true);
     expect(kitSupports("western-fantasy", "interior")).toBe(false);
     expect(kitSupports("modern", "street")).toBe(false);
     expect(kitSupports(null, "street")).toBe(false);
@@ -26,11 +34,11 @@ describe("map kit: which worlds use it", () => {
 
 describe("map kit: the same description and variation always draw the same map", () => {
   it("is deterministic", () => {
-    const a = generateKitMap({ description: DESCRIPTIONS[0], nonce: 7, label });
-    const b = generateKitMap({ description: DESCRIPTIONS[0], nonce: 7, label });
+    const a = generateKitMap({ description: DESCRIPTIONS[0][0], nonce: 7, label });
+    const b = generateKitMap({ description: DESCRIPTIONS[0][0], nonce: 7, label });
     expect(Buffer.from(a.img.data).equals(Buffer.from(b.img.data))).toBe(true);
     expect(a.scene).toEqual(b.scene);
-    const c = generateKitMap({ description: DESCRIPTIONS[0], nonce: 8, label });
+    const c = generateKitMap({ description: DESCRIPTIONS[0][0], nonce: 8, label });
     expect(Buffer.from(a.img.data).equals(Buffer.from(c.img.data))).toBe(false);
   });
 
@@ -43,8 +51,26 @@ describe("map kit: the same description and variation always draw the same map",
   });
 });
 
-describe.each(DESCRIPTIONS.flatMap((d) => [1, 2, 3].map((n) => [d, n] as const)))("map kit: %s (variation %i)", (description, nonce) => {
-  const map = generateKitMap({ description, nonce, label });
+describe("map kit: words pick the kind of place and the biome", () => {
+  it("in English and Chinese, with the place type as the fallback", () => {
+    expect(sceneKindFor("a forest path", "street")).toBe("forest");
+    expect(sceneKindFor("林间小径", "street")).toBe("forest");
+    expect(sceneKindFor("a stream with a bridge", "wilderness")).toBe("riverbank");
+    expect(sceneKindFor("遗迹", "street")).toBe("ruins");
+    expect(sceneKindFor("anything", "ruins")).toBe("ruins");
+    expect(sceneKindFor("沙漠绿洲", "street")).toBe("desert");
+    expect(sceneKindFor("a magical clearing", "wilderness")).toBe("glade");
+    expect(sceneKindFor("a village in the forest", "wilderness")).toBe("village");
+    expect(sceneKindFor("quiet place", "wilderness")).toBe("forest");
+    expect(sceneKindFor("quiet place", "street")).toBe("village");
+    expect(biomeFor("desert ruins", "ruins")).toBe("arid");
+    expect(biomeFor("enchanted ruins", "ruins")).toBe("enchanted");
+    expect(biomeFor("a magical clearing", "glade")).toBe("enchanted");
+  });
+});
+
+describe.each(DESCRIPTIONS.flatMap(([d, type]) => [1, 2, 3].map((n) => [d, type, n] as const)))("map kit: %s (%s, variation %i)", (description, type, nonce) => {
+  const map = generateKitMap({ description, type, nonce, label });
   const layout = readLayout(map.scene, 480, 320);
   const built = buildScene(layout, 480, 320, "street");
   const room = built.room;
@@ -87,7 +113,7 @@ describe.each(DESCRIPTIONS.flatMap((d) => [1, 2, 3].map((n) => [d, n] as const))
   });
 
   it("the floor never lies on water, cliffs, the back woodland or a house", () => {
-    const plan = planVillage(description, map.report.seed);
+    const plan = planScene(description, map.report.seed, type);
     const { props } = paintVillage(plan);
     const { scene } = layoutFromBlueprint(plan, props, label);
     expect(scene.floor).toBe(map.scene.floor);
@@ -119,7 +145,7 @@ describe("map kit: roads are wide enough for two characters side by side", () =>
   });
 
   it("dirt road cells really are walkable across their width", () => {
-    const plan = planVillage(DESCRIPTIONS[0], villageSeed(DESCRIPTIONS[0], 1));
+    const plan = planVillage(DESCRIPTIONS[0][0], villageSeed(DESCRIPTIONS[0][0], 1));
     // Scan the south road row by row near the bottom: the run of dirt is at least 40 px.
     for (const y of [300, 280, 260]) {
       let run = 0;

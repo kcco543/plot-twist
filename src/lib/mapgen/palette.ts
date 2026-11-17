@@ -69,3 +69,39 @@ export function lightFor(p: Palette): (c: RGB) => RGB {
   for (const r of [p.grass, p.moss, p.leaf, p.dirt, p.stone, p.rock, p.water, p.wood, p.roof, p.plaster]) for (let i = 0; i < r.length - 1; i++) if (!map.has(key(r[i]))) map.set(key(r[i]), r[i + 1]);
   return (c) => map.get(key(c)) ?? c;
 }
+
+/**
+ * Biomes reuse the SAME rendering and the same outline, light direction,
+ * ramp lengths and value structure; only some ramps change hue. That is what
+ * keeps a desert or an enchanted glade in the same visual world as the village.
+ */
+export type Biome = "temperate" | "arid" | "enchanted";
+
+/** Sun-baked: sand instead of grass, dry scrub, sandstone, clay roofs, adobe walls. */
+export const ARID: Palette = {
+  ...WESTERN_FANTASY,
+  grass: ramp("#5a3e26", "#8a6236", "#b48a4a", "#d2aa5e", "#e8c779", "#f6e0a0"),
+  moss: ramp("#3b3420", "#5c5428", "#7d7432", "#9e903c", "#bfae4c"),
+  leaf: ramp("#24301c", "#38481f", "#566a26", "#7d8a2e", "#a8a438", "#d0c454"),
+  deepwood: ramp("#2a1c16", "#43291e", "#5e3a26", "#7d5232", "#9c6a3e"),
+  dirt: ramp("#4a2e1e", "#6e4428", "#925c34", "#b07440", "#c88e52"),
+  rock: ramp("#3e2418", "#66392a", "#8f5234", "#b56f42", "#d49258"),
+  plaster: ramp("#9a6a48", "#c48e64", "#ddae80", "#f0cfa0"),
+  roof: ramp("#3a1d16", "#62301f", "#8c4428", "#b25a30", "#d07a3c", "#e69c58"),
+};
+
+/** Old magic in the woods: teal-shifted foliage and water, cool glow, the same warm lights on the ground. */
+export const ENCHANTED: Palette = {
+  ...WESTERN_FANTASY,
+  grass: ramp("#25362a", "#3d5a32", "#5f8338", "#8ca53c", "#b8c24a", "#dcdc74"),
+  moss: ramp("#1f3229", "#2f4d3a", "#3f6b48", "#5a8c55", "#86b066"),
+  leaf: ramp("#142422", "#1d3631", "#28503f", "#3a6f4c", "#5c9256", "#a6c66a"),
+  deepwood: ramp("#0e1618", "#142124", "#1c2f30", "#27413c", "#355447"),
+  water: ramp("#123441", "#1a5a63", "#24898a", "#3bb8aa", "#86e0c8", "#d6f6e6"),
+  glow: ramp("#1f6d72", "#3fb3a8", "#8ae6c8", "#e4fff0"),
+  fallen: ramp("#6a3e8a", "#9a5cb0", "#d08ac8", "#f2c4e0"),
+};
+
+export function paletteFor(biome: Biome): Palette {
+  return biome === "arid" ? ARID : biome === "enchanted" ? ENCHANTED : WESTERN_FANTASY;
+}

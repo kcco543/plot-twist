@@ -27,7 +27,7 @@ import { mapOwner, tagMap, type OwnedMap } from "./saves/worldMaps";
 import { isNativeSize, snapMapToGrid } from "./pixelArt/mapPixels";
 import { blobToImg, compositeNative, enlargeForEdit, firstLayout, imgToPng, snapGenerated } from "./pixelArt/mapPixelsBrowser";
 import { readLayout } from "./scene/layout";
-import { KIT_ID, generateKitMap, kitSupports, type LabelKey } from "./mapgen";
+import { KIT_ID, generateKitMap, kitSupports, type KitReport, type LabelKey } from "./mapgen";
 import { currentLocale, translate } from "@/i18n";
 
 /** Only the active world's maps (each world save keeps its own map history). */
@@ -152,18 +152,31 @@ async function toPixelMap(dataUrl: string): Promise<{ blob: Blob; width: number;
  * taken from the same plan. Free, instant, and no AI service is involved.
  * Every click gives a new variation of the same description.
  */
-async function kitMap(req: MapRequest): Promise<{ blob: Blob; width: number; height: number; scene: unknown; model: string }> {
+async function kitMap(req: MapRequest, nonce?: number): Promise<DrawnMap> {
   const locale = currentLocale();
   const label = (k: LabelKey) => translate(locale, `mapKit.labels.${k}`);
-  const { img, scene, report } = generateKitMap({ description: req.description.trim(), nonce: Date.now() % 1_000_000_007, label });
-  return { blob: await imgToPng(img), width: img.w, height: img.h, scene, model: `${KIT_ID}#${report.seed}` };
+  const { img, scene, report } = generateKitMap({ description: req.description.trim(), type: req.type, nonce: nonce ?? Date.now() % 1_000_000_007, label });
+  return { blob: await imgToPng(img), width: img.w, height: img.h, scene, model: `${KIT_ID}#${report.seed}`, report };
 }
 
-/** A new map for a request: the pixel map kit where it applies, otherwise the image service. */
-async function drawMap(req: MapRequest): Promise<{ blob: Blob; width: number; height: number; scene?: unknown; model: string }> {
-  if (kitSupports(req.worldId, req.type)) return kitMap(req);
+export type DrawnMap = { blob: Blob; width: number; height: number; scene?: unknown; model: string; report?: KitReport };
+
+/**
+ * A new map for a request: the pixel map kit where it applies, otherwise the image service.
+ * THE production path: World Builder, new scenes from Play and the Map Lab all call this.
+ * `nonce` (kit only) picks the variation; left out, every call is a new one.
+ */
+export async function drawMap(req: MapRequest, nonce?: number): Promise<DrawnMap> {
+  if (kitSupports(req.worldId, req.type)) return kitMap(req, nonce);
   const out = await requestMap({ description: req.description.trim(), type: req.type, world: req.worldId });
   return { ...(await toPixelMap(out.image)), model: out.model };
+}
+
+/** Map Lab → "Use this map": store a preview exactly as Generate Map would have, and put it in use. */
+export async function adoptMap(req: MapRequest, drawn: DrawnMap): Promise<void> {
+  const { blob, width, height, scene, model } = drawn;
+  const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model, createdAt: Date.now(), ...(scene ? { scene } : {}) };
+  await addMap(stored);
 }
 
 /** Store a new version, make it the map in use (unless `activate` is false), and drop the oldest beyond the history limit. */
