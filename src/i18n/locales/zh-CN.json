@@ -322,7 +322,8 @@
       "showingWhileDrawing": "正在生成 · 当前显示 v{n}",
       "pixelGridCopy": "像素网格副本",
       "pixelGridCopyHint": "较早的地图是高分辨率图片。这会在游戏的像素网格上做一份副本，存为新版本。原图保持不变，也不花钱。",
-      "pixelGridFailed": "这个浏览器无法生成像素网格副本。"
+      "pixelGridFailed": "这个浏览器无法生成像素网格副本。",
+      "kitHint": "由游戏自带的像素地图工具绘制：免费、即时，可行走区域与画面完全一致。"
     },
     "edit": {
       "enter": "编辑区域",
@@ -3519,5 +3520,19 @@
     "deviceBanner": "这台设备上有 {count} 个世界还不在你的云账户里。",
     "deviceBannerAction": "查看并添加",
     "unnamed": "未命名世界"
+  },
+  "mapKit": {
+    "labels": {
+      "house": "小屋",
+      "house2": "邻居的小屋",
+      "door": "小屋的门",
+      "door2": "邻居家的门",
+      "well": "老井",
+      "bench": "长椅",
+      "sign": "路标",
+      "tree": "大树",
+      "roadEast": "村道",
+      "roadSouth": "往南的路"
+    }
   }
 }

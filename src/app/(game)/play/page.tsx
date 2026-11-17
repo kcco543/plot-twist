@@ -73,6 +73,7 @@ import { availability, keeperOf, resolve as resolveInteraction, stateOf as objec
 import { FIRST_SCENE_ID, activeScene, addMarker, addScene, connect, linkAt, linkKindFor, neighbours, newScene, normalizeScenes, presentIn, sceneById, sceneOf, setObjectState, twoWayByDefault, type SceneRecord, type WorldScenes } from "@/lib/explore/scenes";
 import { travel as travelScenes } from "@/lib/explore/scenes";
 import { generateSceneMap, useMapStudio } from "@/lib/mapGenerator";
+import { kitSupports } from "@/lib/mapgen";
 import { mapDisplayName, sceneForMap } from "@/lib/scene/useScene";
 import { nearestFree, spawnPoints } from "@/lib/stage/path";
 import { roomSize as roomSizeOf } from "@/lib/stage/room";
@@ -1613,7 +1614,7 @@ export default function PlayPage() {
         sceneName={sceneLabel}
         thumbOf={(sc) => (sc.mapId ? (mapStudio.maps.find((m) => m.id === sc.mapId)?.url ?? environmentArt[world.id][sc.envType].src) : environmentArt[world.id][sc.envType].src)}
         presentCount={(sc) => presentIn(scenes, sc.id, save.characters).length}
-        canGenerate={!!ai?.image}
+        canGenerate={(type) => !!ai?.image || kitSupports(world.id, type)}
         generating={travel?.phase === "generating"}
         error={travel?.error ?? null}
         defaultType={envType as EnvironmentTypeId}

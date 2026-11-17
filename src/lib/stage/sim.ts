@@ -732,12 +732,20 @@ export class StageSim {
   previewObject(actorId: string, objectId: string): { path: Point[]; goal: Point; adjusted: boolean } | null {
     const a = this.actors.get(actorId);
     const o = this.objectById(objectId);
-    return a && o ? this.objectGoal(a, o) : null;
+    return a && o ? this.objectGoal(a, o, defaultAction(o, actorId) ?? undefined) : null;
   }
 
-  private objectGoal(a: Actor, o: WorldObject): { path: Point[]; goal: Point; adjusted: boolean } | null {
+  private objectGoal(a: Actor, o: WorldObject, action?: ObjectAction): { path: Point[]; goal: Point; adjusted: boolean } | null {
     let best: { path: Point[]; goal: Point; adjusted: boolean; len: number } | null = null;
-    for (const anchor of validAnchors(this.room, o)) {
+    // Seats are sat on from the front (their first anchor), not from whichever side is closest.
+    const anchors = validAnchors(this.room, o);
+    if (action === "sit" && anchors.length > 1) {
+      const front = anchors[0];
+      if (Math.hypot(a.x - front.x, a.y - front.y) <= o.radius) return { path: [], goal: { x: a.x, y: a.y }, adjusted: false };
+      const r = this.reachableNear(a, front, 16);
+      if (r) return r;
+    }
+    for (const anchor of anchors) {
       if (Math.hypot(a.x - anchor.x, a.y - anchor.y) <= o.radius) return { path: [], goal: { x: a.x, y: a.y }, adjusted: false };
       const r = this.reachableNear(a, anchor, 16);
       if (!r) continue;
@@ -763,7 +771,7 @@ export class StageSim {
   }
 
   private startObject(a: Actor, o: WorldObject, action: ObjectAction, act: StageAction): ActionResult {
-    const r = this.objectGoal(a, o);
+    const r = this.objectGoal(a, o, action);
     if (!r) return { ok: false, reason: "no_path", action: act };
     const m: Move = { kind: "object", objectId: o.id, action, targetId: null, distance: 0, goal: r.goal, path: r.path, speed: walkSpeed(a.c, a.emotion), blockedMs: 0, replans: 0, aimedAt: null, aimedMs: this.time };
     if (!r.path.length) {

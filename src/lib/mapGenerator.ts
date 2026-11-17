@@ -27,6 +27,8 @@ import { mapOwner, tagMap, type OwnedMap } from "./saves/worldMaps";
 import { isNativeSize, snapMapToGrid } from "./pixelArt/mapPixels";
 import { blobToImg, compositeNative, enlargeForEdit, firstLayout, imgToPng, snapGenerated } from "./pixelArt/mapPixelsBrowser";
 import { readLayout } from "./scene/layout";
+import { KIT_ID, generateKitMap, kitSupports, type LabelKey } from "./mapgen";
+import { currentLocale, translate } from "@/i18n";
 
 /** Only the active world's maps (each world save keeps its own map history). */
 const inActiveWorld = (m: OwnedMap) => mapOwner(m, getIndex().migration?.worldId ?? null) === activeWorldId() || m.id === getSave().environment.mapId || sceneMapIds().has(m.id);
@@ -144,6 +146,26 @@ async function toPixelMap(dataUrl: string): Promise<{ blob: Blob; width: number;
   }
 }
 
+/**
+ * The pixel map kit (lib/mapgen): for the worlds and place types it covers,
+ * the map is planned and drawn here, in the browser, with its play area
+ * taken from the same plan. Free, instant, and no AI service is involved.
+ * Every click gives a new variation of the same description.
+ */
+async function kitMap(req: MapRequest): Promise<{ blob: Blob; width: number; height: number; scene: unknown; model: string }> {
+  const locale = currentLocale();
+  const label = (k: LabelKey) => translate(locale, `mapKit.labels.${k}`);
+  const { img, scene, report } = generateKitMap({ description: req.description.trim(), nonce: Date.now() % 1_000_000_007, label });
+  return { blob: await imgToPng(img), width: img.w, height: img.h, scene, model: `${KIT_ID}#${report.seed}` };
+}
+
+/** A new map for a request: the pixel map kit where it applies, otherwise the image service. */
+async function drawMap(req: MapRequest): Promise<{ blob: Blob; width: number; height: number; scene?: unknown; model: string }> {
+  if (kitSupports(req.worldId, req.type)) return kitMap(req);
+  const out = await requestMap({ description: req.description.trim(), type: req.type, world: req.worldId });
+  return { ...(await toPixelMap(out.image)), model: out.model };
+}
+
 /** Store a new version, make it the map in use (unless `activate` is false), and drop the oldest beyond the history limit. */
 async function addMap(stored: StoredMap, activate = true) {
   tagMap(stored, activeWorldId()); // each world save keeps its own maps
@@ -169,10 +191,9 @@ async function addMap(stored: StoredMap, activate = true) {
  */
 export async function generateSceneMap(req: MapRequest, signal?: AbortSignal): Promise<GeneratedMap> {
   if (!req.description.trim()) throw new AiRequestError("invalid_output", "No description");
-  const out = await requestMap({ description: req.description.trim(), type: req.type, world: req.worldId });
+  const { blob, width, height, scene, model } = await drawMap(req);
   if (signal?.aborted) throw new AiRequestError("failed", "Cancelled");
-  const { blob, width, height, scene } = await toPixelMap(out.image);
-  const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model: out.model, createdAt: Date.now(), ...(scene ? { scene } : {}) };
+  const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model, createdAt: Date.now(), ...(scene ? { scene } : {}) };
   await addMap(stored, false);
   return toGenerated(stored);
 }
@@ -182,9 +203,8 @@ export async function generateMap(req: MapRequest): Promise<void> {
   if (state.working || !req.description.trim()) return;
   set({ working: req, error: null });
   try {
-    const out = await requestMap({ description: req.description.trim(), type: req.type, world: req.worldId });
-    const { blob, width, height, scene } = await toPixelMap(out.image);
-    const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model: out.model, createdAt: Date.now(), ...(scene ? { scene } : {}) };
+    const { blob, width, height, scene, model } = await drawMap(req);
+    const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model, createdAt: Date.now(), ...(scene ? { scene } : {}) };
     await addMap(stored);
     set({ working: null });
   } catch (e) {

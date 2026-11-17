@@ -18,6 +18,7 @@ import { ENVIRONMENT_TYPES } from "@/lib/environments";
 import type { EnvironmentTypeId } from "@/lib/types";
 import { gameActions, useSave } from "@/lib/gameStore";
 import { useAiStatus } from "@/lib/ai/client";
+import { kitSupports } from "@/lib/mapgen";
 import { currentMap, dismissMapError, generateMap, makePixelGridCopy, mapIsOutdated, placeholderArt, removeMap, selectMap, useMapStudio } from "@/lib/mapGenerator";
 import { isNativeSize } from "@/lib/pixelArt/mapPixels";
 import { getWorld } from "@/lib/worlds";
@@ -57,7 +58,9 @@ export default function WorldBuilderPage() {
   /** A full map or a region edit is being drawn: only one at a time. */
   const busy = working || studio.editing !== null;
   const outdated = map !== null && description.trim() !== "" && mapIsOutdated(map, request);
-  const canGenerate = Boolean(status?.image) && description.trim() !== "" && !busy;
+  /** The pixel map kit draws this world + place type itself (no image service needed). */
+  const kit = kitSupports(save.worldId, type);
+  const canGenerate = (kit || Boolean(status?.image)) && description.trim() !== "" && !busy;
   const edit = useRegionEdit(map, { editing: studio.editing, editError: studio.editError, busy, available: Boolean(status?.image) });
   const generate = () => {
     // Close the phone keyboard so the preview (and its loading state) is in view.
@@ -256,7 +259,8 @@ export default function WorldBuilderPage() {
                   </PixelButton>
                   {map && !working && <span className="text-sm text-ink-mute">{t("builder.map.iterateHint")}</span>}
                 </div>
-                {status && !status.image && (
+                {kit && <p className="text-sm leading-snug text-ink-mute" data-map-kit>{t("builder.map.kitHint")}</p>}
+                {!kit && status && !status.image && (
                   <p className="flex items-start gap-2 text-sm leading-snug text-ink-soft" role="note">
                     <PixelIcon name="offline" size={12} className="mt-1 shrink-0 text-coral-deep" />
                     <span>
@@ -264,7 +268,7 @@ export default function WorldBuilderPage() {
                     </span>
                   </p>
                 )}
-                {status?.image && !description.trim() && <p className="text-sm text-ink-mute">{t("builder.map.needDescription")}</p>}
+                {(kit || status?.image) && !description.trim() && <p className="text-sm text-ink-mute">{t("builder.map.needDescription")}</p>}
                 {studio.error && !working && (
                   <div role="alert" className="flex flex-wrap items-center gap-3 bg-peach-hi px-3 py-2 text-base shadow-[inset_4px_0_0_var(--color-peach-lo)]">
                     <span className="min-w-0 flex-1">{t("builder.map.failed", { reason: tx(`ai.errors.${studio.error}`) })}</span>

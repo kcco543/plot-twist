@@ -245,7 +245,8 @@ export function planVillage(description: string, seed: number): Blueprint {
 
 // ---------------------------------------------------------------- painting
 
-type Painted = { canvas: Canvas; props: Placed[] };
+/** `cover`: 1 where an object is drawn, 2 where an object drawn over characters is (per pixel). */
+type Painted = { canvas: Canvas; props: Placed[]; cover: Uint8Array };
 
 function paintGround(cv: Canvas, bp: Blueprint, p: Palette) {
   const { w, h, mat } = bp;
@@ -411,11 +412,13 @@ function grassClusters(cv: Canvas, bp: Blueprint, p: Palette, r: Rng) {
       for (const [m, ramp] of [[M.GRASS, p.grass], [M.HIGH, p.high]] as const) {
         if (!ok(x, y, m) || !ok(x + 3, y + 3, m)) continue;
         const dense = noise(x, y, 52);
-        const prob = dense > 0.62 ? 0.55 : dense > 0.5 ? 0.18 : 0.04;
+        const prob = dense > 0.6 ? 0.7 : dense > 0.45 ? 0.28 : 0.08;
         if (!r.chance(prob)) continue;
         const jx = x + r.int(0, 3);
         const jy = y + r.int(0, 3);
-        for (const [dx, dy, tone] of r.pick(stamps)) if (ok(jx + dx, jy + dy, m)) cv.set(jx + dx, jy + dy, ramp[Math.min(tone, ramp.length - 1)]);
+        // In the densest groups some clusters are shadowed clumps instead of lit blades (depth without noise).
+        const dark = dense > 0.7 && r.chance(0.15);
+        for (const [dx, dy, tone] of r.pick(stamps)) if (ok(jx + dx, jy + dy, m)) cv.set(jx + dx, jy + dy, ramp[Math.max(0, Math.min(dark ? tone - 2 : tone, ramp.length - 1))]);
       }
     }
 }
@@ -568,8 +571,20 @@ export function paintVillage(bp: Blueprint, p: Palette = WESTERN_FANTASY): Paint
     castShadow(cv, bp, p, pl.x + (big ? 6 : w * 0.18), pl.base + (big ? 1 : 0), big ? w * 0.52 : Math.max(5, w * 0.42), big ? 5 : Math.max(2, w * 0.13));
   }
   drawn.sort((a, b) => a.pl.base - b.pl.base);
-  for (const { pl, b } of drawn) stamp(cv, b.sprite, b.sprite.outline(pl.kind === "tree" || pl.kind === "bush" ? p.leafOutline : p.outline));
-  return { canvas: cv, props };
+  const cover = new Uint8Array(bp.w * bp.h);
+  for (const { pl, b } of drawn) {
+    const ol = b.sprite.outline(pl.kind === "tree" || pl.kind === "bush" ? p.leafOutline : p.outline);
+    stamp(cv, b.sprite, ol);
+    const f = pl.object?.front ? 2 : 1;
+    const mark = (x: number, y: number) => {
+      const mx = b.sprite.ox + x;
+      const my = b.sprite.oy + y;
+      if (mx >= 0 && my >= 0 && mx < bp.w && my < bp.h) cover[my * bp.w + mx] = Math.max(cover[my * bp.w + mx], f);
+    };
+    for (const [x, y] of ol) mark(x, y);
+    for (let y = 0; y < b.sprite.h; y++) for (let x = 0; x < b.sprite.w; x++) if (b.sprite.px[y * b.sprite.w + x]) mark(x, y);
+  }
+  return { canvas: cv, props, cover };
 }
 
 // ---------------------------------------------------------------- everything together

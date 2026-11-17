@@ -149,7 +149,8 @@ export function ScenePicker({
   thumbOf: (s: SceneRecord) => string;
   presentCount: (s: SceneRecord) => number;
   /** Map generation is configured (and allowed by the AI mode); false = placeholder only. */
-  canGenerate: boolean;
+  /** Whether a map can be generated for this place type (the pixel map kit, or the image service). */
+  canGenerate: (type: EnvironmentTypeId) => boolean;
   generating: boolean;
   error: string | null;
   defaultType: EnvironmentTypeId;
@@ -256,7 +257,7 @@ export function ScenePicker({
               <PixelIcon name="sparkle" size={10} className="mt-1 shrink-0 text-label" />
               {t("explore.picker.theme", { world: worldName })}
             </p>
-            {!canGenerate && <p className="bg-butter-hi px-2 py-1.5 text-sm text-ink">{t("explore.picker.noImage")}</p>}
+            {!canGenerate(draft.envType) && <p className="bg-butter-hi px-2 py-1.5 text-sm text-ink">{t("explore.picker.noImage")}</p>}
             {generating && (
               <p role="status" className="flex items-center gap-2 bg-lavender-hi px-2 py-2 text-base">
                 <LoadingDots />
@@ -294,7 +295,7 @@ export function ScenePicker({
               >
                 {t("explore.picker.usePlaceholder")}
               </PixelButton>
-              {canGenerate && (
+              {canGenerate(draft.envType) && (
                 <PixelButton
                   variant="magic"
                   icon="sparkle"

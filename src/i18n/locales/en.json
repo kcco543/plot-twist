@@ -322,7 +322,8 @@
       "showingWhileDrawing": "Drawing new · showing v{n}",
       "pixelGridCopy": "Pixel-grid copy",
       "pixelGridCopyHint": "Older maps are high-resolution pictures. This makes a copy on the game's pixel grid, as a new version. The original stays as it is, and it costs nothing.",
-      "pixelGridFailed": "The pixel-grid copy couldn't be made in this browser."
+      "pixelGridFailed": "The pixel-grid copy couldn't be made in this browser.",
+      "kitHint": "Drawn by the game's own pixel map kit: free, instant, and the play area matches the picture exactly."
     },
     "edit": {
       "enter": "Edit region",
@@ -3519,5 +3520,19 @@
     "deviceBanner": "{count} world(s) on this device aren't in your cloud account yet.",
     "deviceBannerAction": "Review and add",
     "unnamed": "Untitled world"
+  },
+  "mapKit": {
+    "labels": {
+      "house": "Cottage",
+      "house2": "Neighbour's cottage",
+      "door": "Cottage door",
+      "door2": "Neighbour's door",
+      "well": "Old well",
+      "bench": "Bench",
+      "sign": "Signpost",
+      "tree": "Big tree",
+      "roadEast": "Village road",
+      "roadSouth": "Road south"
+    }
   }
 }
