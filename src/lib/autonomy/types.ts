@@ -38,6 +38,8 @@ export const INTENT_KINDS = [
   "return_to_task",
   "stay_still",
   "observe",
+  "avoid_object",
+  "reflect",
 ] as const;
 export type IntentKind = (typeof INTENT_KINDS)[number];
 
@@ -56,6 +58,8 @@ export type Intent = {
   object?: string;
   /** For go_to_place: the place words it came from ("library", "窗边"). */
   place?: string;
+  /** For avoid_object: where to step to (stage px). */
+  at?: { x: number; y: number };
   /** Why (an i18n key under autonomy.reasons), shown in the debug view and log. */
   reason: string;
   source: IntentSource;
@@ -112,6 +116,21 @@ export type AgencyState = {
   /** Last time each character's planner ran / acted (ms). */
   lastThought?: Record<string, number>;
   lastActed?: Record<string, number>;
+  /** Environment-aware behaviour (environment.ts): cooldowns and what each character has seen others enjoy. */
+  env?: EnvMemory;
+};
+
+export type EnvMemory = {
+  /** Last environmental reaction per character (ms). */
+  lastAt: Record<string, number>;
+  /** "actor>object" → ms. */
+  seen: Record<string, number>;
+  /** Last environmental reaction anywhere in the scene (ms). */
+  globalAt: number;
+  /** "inviter>invitee" → ms. */
+  invites: Record<string, number>;
+  /** What each character saw others enjoy: actor → ["otherId:concept"]. */
+  witnessed: Record<string, string[]>;
 };
 
 export const emptyAgency = (): AgencyState => ({ intents: [], log: [], goals: [], boundaries: {} });

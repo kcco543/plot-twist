@@ -1893,7 +1893,9 @@
       "refused": "{other}现在不想和{name}说话。",
       "walkedAway": "{other}从{name}身边走开了。",
       "goingTo": "{name}照自己说的，往{other}那边走去。",
-      "noSuchPlace": "{name}本想去“{other}”，但这里没有那个地方，所以留在原地。"
+      "noSuchPlace": "{name}本想去“{other}”，但这里没有那个地方，所以留在原地。",
+      "inviteAccepted": "{name}邀请{other}过来看看，{other}跟了过去。",
+      "inviteDeclined": "{name}邀请{other}过来看看，{other}说现在不想去。"
     },
     "dismiss": "关闭",
     "panel": {
@@ -2862,7 +2864,9 @@
       "seek_privacy": "找个安静的地方（{object}）",
       "return_to_task": "回到{object}那边",
       "stay_still": "待在原地",
-      "observe": "观察四周"
+      "observe": "观察四周",
+      "avoid_object": "离{object}远一点",
+      "reflect": "在{object}旁沉默下来"
     },
     "status": {
       "proposed": "提出",
@@ -2898,7 +2902,14 @@
       "endedConversation": "结束了对话，走开了",
       "saidSo": "说过要去",
       "wantsToLeave": "想离开这里",
-      "asksAround": "想向吧台的人打听点事"
+      "asksAround": "想向吧台的人打听点事",
+      "drawnTo": "被喜欢的东西吸引",
+      "uneasyNear": "靠近害怕的东西，感到不安",
+      "quietMemory": "触动了一段难过的回忆",
+      "remindsOf": "让他们想起了某个人",
+      "invitesOver": "想分享自己喜欢的东西",
+      "acceptedInvite": "接受了邀请",
+      "declinedInvite": "拒绝了邀请"
     },
     "why": {
       "cooldown": "还需要一点时间",

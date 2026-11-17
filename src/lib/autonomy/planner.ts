@@ -31,8 +31,19 @@ import type { Point } from "../stage/room";
 import type { Character, StoryState } from "../types";
 import { boundaryOf } from "./convoBoundary";
 import type { AgencyState, IntentKind } from "./types";
+import { envProposals, type ConceptId, type KnowledgeSource } from "./environment";
 
-export type Proposal = { kind: IntentKind; target?: string; object?: string; reason: string; score: number };
+export type Proposal = {
+  kind: IntentKind | "invite";
+  target?: string;
+  object?: string;
+  reason: string;
+  score: number;
+  /** avoid_object: where to step to. */
+  at?: Point;
+  /** Came from the environment (environment.ts): cooldowns apply, and what it's about. */
+  env?: { concept: ConceptId; knowledge?: KnowledgeSource };
+};
 
 export type PlanContext = {
   actor: Character;
@@ -44,6 +55,10 @@ export type PlanContext = {
   pose: (id: string) => "sit" | null;
   agency: AgencyState;
   rng: () => number;
+  /** Game time (ms). Without it, the environment isn't considered (older callers, tests of the base rules). */
+  now?: number;
+  /** In a conversation or walking somewhere: can't take up an invitation now. */
+  busy?: (id: string) => boolean;
 };
 
 const dist = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -146,6 +161,12 @@ export function proposals(ctx: PlanContext): Proposal[] {
     if (ctx.pose(actor.id) === "sit") add({ kind: "stand", reason: "stretchLegs", score: 0.18 + p.impulsive * 0.15 });
     add({ kind: "stay_still", reason: "content", score: 0.3 + (p.calm + p.cautious) * 0.1 });
   }
+
+  // 8. The room itself: things they love, fear or that touch a memory; inviting someone over (environment.ts).
+  if (ctx.now !== undefined)
+    for (const e of envProposals({ actor, story, cast, objects, position: ctx.position, agency, now: ctx.now, apart: (x, y) => keepsApart(agency, x, y), busy: ctx.busy ?? (() => false), rng })) {
+      out.push({ kind: e.kind, object: e.object, target: e.target, at: e.at, reason: e.reason, score: e.score, env: { concept: e.concept, knowledge: e.knowledge } });
+    }
 
   // Don't repeat yourself: the same thing as one of the last two times scores much lower.
   const recent = agency.log.filter((i) => i.actor === actor.id).slice(-2);

@@ -24,8 +24,9 @@ import { goalFromLine } from "./goals";
 import { agencyOf, resumeAfterLoad } from "./lifecycle";
 import { AUTONOMY, type AgencyState } from "./types";
 import { newIntent } from "./validate";
+import { witness } from "./environment";
 
-export type AutonomyNotice = "walkedAway" | "refused" | "goingTo" | "noSuchPlace";
+export type AutonomyNotice = "walkedAway" | "refused" | "goingTo" | "noSuchPlace" | "inviteAccepted" | "inviteDeclined";
 
 export type AutonomyDeps = {
   stage: StageSim;
@@ -65,6 +66,8 @@ export function useAutonomy(d: AutonomyDeps) {
       inConversation: x.inConversation,
       now: Date.now(),
       rng: (key) => rngFrom(key),
+      // An invitation and its answer are worth a short notice (no AI; the answer is the invitee's own).
+      onEvent: (e) => x.notify(e.answer.accept ? "inviteAccepted" : "inviteDeclined", e.actor, x.nameOf(e.target)),
     };
   }, []);
 
@@ -92,6 +95,11 @@ export function useAutonomy(d: AutonomyDeps) {
       write((a) => {
         const was = a.intents.find((i) => i.actor === actor && i.status === "executing");
         let next = walkEnded(a, actor, outcome, Date.now());
+        // Others close by saw what they went to enjoy: that's how characters learn each other's interests.
+        if (was?.object && outcome === "arrived" && (was.kind === "inspect_object" || was.kind === "use_object" || was.kind === "sit" || was.kind === "return_to_task")) {
+          const x = deps.current;
+          next = witness(next, actor, was.object, x.objects, x.cast, (id) => x.stage.position(id));
+        }
         // A plan someone said out loud ("I'm going to the window") is done when they get there.
         if (was?.kind === "go_to_place") {
           const status = outcome === "arrived" ? ("done" as const) : ("failed" as const);

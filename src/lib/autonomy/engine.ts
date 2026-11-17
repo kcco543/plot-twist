@@ -19,7 +19,8 @@ import type { WorldObject } from "../stage/objects";
 import type { Point } from "../stage/room";
 import type { Character, StoryState } from "../types";
 import { activeOf, advance, isActive, putIntent } from "./lifecycle";
-import { planFor } from "./planner";
+import { planFor, type Proposal } from "./planner";
+import { answerInvite, noteReaction, type InviteAnswer } from "./environment";
 import { AUTONOMY, type AgencyState, type Intent } from "./types";
 import { newIntent, toStageAction, validateIntent, WALKING_KINDS, type ValidateContext } from "./validate";
 
@@ -40,7 +41,11 @@ export type EngineEnv = {
   inConversation: (id: string) => boolean;
   now: number;
   rng: (key: string) => () => number;
+  /** Something the player may want to know happened (an invitation and its answer). */
+  onEvent?: (e: EngineEvent) => void;
 };
+
+export type EngineEvent = { kind: "invite"; actor: string; target: string; object: string; answer: InviteAnswer };
 
 const validateCtx = (a: AgencyState, env: EngineEnv): ValidateContext => ({
   onStage: (id) => !!env.stage.position(id),
@@ -125,9 +130,40 @@ export function tick(a0: AgencyState, env: EngineEnv): AgencyState {
       pose: env.stage.poseOf,
       agency: a,
       rng: env.rng(`${actor.id}:${Math.floor(now / AUTONOMY.thinkMs)}`),
+      now,
+      busy: (id) => env.inConversation(id) || !!env.stage.walkOf(id) || env.stage.isCommanded(id),
     });
-    if (plan) a = submit(a, newIntent({ actor: actor.id, kind: plan.kind, target: plan.target, object: plan.object, reason: plan.reason, source: "rules" }, now), env).agency;
+    if (plan?.kind === "invite") a = invite(a, actor, plan, env);
+    else if (plan) {
+      if (plan.env) a = noteReaction(a, actor.id, plan.object ?? null, now);
+      a = submit(a, newIntent({ actor: actor.id, kind: plan.kind, target: plan.target, object: plan.object, at: plan.at, reason: plan.reason, source: "rules" }, now), env).agency;
+    }
     break; // at most one character thinks per tick
   }
+  return a;
+}
+
+/**
+ * A asks B to come and look at something (no AI). B answers from B's own
+ * interests, mood and relationship; yes = both walk over, no = A takes it
+ * in their stride. Either way the pair's invitation cooldown starts.
+ */
+function invite(a0: AgencyState, inviter: Character, plan: Proposal, env: EngineEnv): AgencyState {
+  const invitee = env.cast.find((c) => c.id === plan.target);
+  if (!invitee || !plan.object || !plan.env) return a0;
+  const answer = answerInvite(env.story, invitee, inviter, plan.env.concept, env.rng(`${inviter.id}>${invitee.id}:invite:${Math.floor(env.now / 60000)}`));
+  let a = noteReaction(a0, inviter.id, plan.object, env.now, invitee.id);
+  env.stage.request({ type: "face_target", actor: inviter.id, target: invitee.id }, "event", "auto");
+  if (answer.accept) {
+    a = submit(a, newIntent({ actor: inviter.id, kind: "inspect_object", object: plan.object, reason: "invitesOver", source: "rules", priority: "story" }, env.now), env).agency;
+    // B comes along: walks over to A (who is heading to the object), so the two never fight over one spot by it.
+    a = submit(a, newIntent({ actor: invitee.id, kind: "approach", target: inviter.id, reason: "acceptedInvite", source: "rules", priority: "story" }, env.now), env).agency;
+    a = noteReaction(a, invitee.id, plan.object, env.now);
+  } else {
+    env.stage.request({ type: "face_target", actor: invitee.id, target: inviter.id }, "event", "auto");
+    a = submit(a, newIntent({ actor: invitee.id, kind: "decline", target: inviter.id, reason: "declinedInvite", source: "rules" }, env.now), env).agency;
+    a = submit(a, newIntent({ actor: inviter.id, kind: "reflect", object: plan.object, reason: "declinedInvite", source: "rules" }, env.now), env).agency;
+  }
+  env.onEvent?.({ kind: "invite", actor: inviter.id, target: invitee.id, object: plan.object, answer });
   return a;
 }

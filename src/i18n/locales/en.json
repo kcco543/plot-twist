@@ -1893,7 +1893,9 @@
       "refused": "{other} doesn't want to talk to {name} right now.",
       "walkedAway": "{other} walked away from {name}.",
       "goingTo": "{name} is heading to the {other}, as they said.",
-      "noSuchPlace": "{name} meant to go to “{other}”, but there's no such place here, so {name} stays put."
+      "noSuchPlace": "{name} meant to go to “{other}”, but there's no such place here, so {name} stays put.",
+      "inviteAccepted": "{name} asked {other} to come and see. {other} came along.",
+      "inviteDeclined": "{name} asked {other} to come and see. {other} said no, not now."
     },
     "dismiss": "Dismiss",
     "panel": {
@@ -2862,7 +2864,9 @@
       "seek_privacy": "find a quiet spot ({object})",
       "return_to_task": "go back to the {object}",
       "stay_still": "stay put",
-      "observe": "watch the room"
+      "observe": "watch the room",
+      "avoid_object": "step away from the {object}",
+      "reflect": "go quiet by the {object}"
     },
     "status": {
       "proposed": "proposed",
@@ -2898,7 +2902,14 @@
       "endedConversation": "ended the conversation and stepped away",
       "saidSo": "said they would",
       "wantsToLeave": "wants to get out of here",
-      "asksAround": "has questions for the bartender"
+      "asksAround": "has questions for the bartender",
+      "drawnTo": "drawn to something they love",
+      "uneasyNear": "uneasy near something they fear",
+      "quietMemory": "it touches a painful memory",
+      "remindsOf": "it reminds them of someone",
+      "invitesOver": "wants to share something they love",
+      "acceptedInvite": "accepted an invitation",
+      "declinedInvite": "turned an invitation down"
     },
     "why": {
       "cooldown": "needs more time",

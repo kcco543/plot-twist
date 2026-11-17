@@ -24,7 +24,7 @@ export type ValidateContext = {
 };
 
 /** Kinds that make the character walk. */
-export const WALKING_KINDS: IntentKind[] = ["approach", "move_away", "go_to_place", "inspect_object", "use_object", "sit", "seek_privacy", "return_to_task"];
+export const WALKING_KINDS: IntentKind[] = ["approach", "move_away", "go_to_place", "inspect_object", "use_object", "sit", "seek_privacy", "return_to_task", "avoid_object"];
 const OBJECT_KINDS: IntentKind[] = ["go_to_place", "inspect_object", "use_object", "sit", "seek_privacy", "return_to_task"];
 const TARGET_KINDS: IntentKind[] = ["approach", "move_away", "turn_toward", "turn_away", "observe"];
 const IN_CONVERSATION_OK: IntentKind[] = ["leave_conversation", "decline", "turn_away", "turn_toward", "pause", "stay_still"];
@@ -44,6 +44,7 @@ export function validateIntent(i: Intent, ctx: ValidateContext): Validation {
     const act = objectActionFor(i.kind, o, i.actor);
     if (!act || !actionAllowed(o, act, i.actor)) return { ok: false, note: "not_allowed" };
   }
+  if (i.kind === "avoid_object" && !(i.at && Number.isFinite(i.at.x) && Number.isFinite(i.at.y))) return { ok: false, note: "invalid" };
   if (ctx.inConversation(i.actor) && !IN_CONVERSATION_OK.includes(i.kind)) return { ok: false, note: "in_conversation" };
   const walks = WALKING_KINDS.includes(i.kind);
   if (walks && ctx.commanded(i.actor)) return { ok: false, note: "player_command" };
@@ -82,6 +83,10 @@ export function toStageAction(i: Intent, objects: WorldObject[]): StageAction | 
       return { type: "stand_up", actor: i.actor };
     case "observe":
       return { type: "idle_reaction", actor: i.actor, kind: "look_around" };
+    case "reflect":
+      return { type: "idle_reaction", actor: i.actor, kind: "sigh" };
+    case "avoid_object":
+      return { type: "walk_to", actor: i.actor, x: Math.round(i.at!.x), y: Math.round(i.at!.y) };
     case "pause":
     case "stay_still":
     case "decline":
@@ -95,7 +100,7 @@ export function toStageAction(i: Intent, objects: WorldObject[]): StageAction | 
   }
 }
 
-export function newIntent(p: { actor: string; kind: IntentKind; target?: string; object?: string; place?: string; reason: string; source: IntentSource; priority?: "auto" | "story" }, now = Date.now()): Intent {
+export function newIntent(p: { actor: string; kind: IntentKind; target?: string; object?: string; place?: string; at?: { x: number; y: number }; reason: string; source: IntentSource; priority?: "auto" | "story" }, now = Date.now()): Intent {
   return {
     id: makeId("int"),
     actor: p.actor,
@@ -103,6 +108,7 @@ export function newIntent(p: { actor: string; kind: IntentKind; target?: string;
     ...(p.target ? { target: p.target } : {}),
     ...(p.object ? { object: p.object } : {}),
     ...(p.place ? { place: p.place } : {}),
+    ...(p.at ? { at: p.at } : {}),
     reason: p.reason,
     source: p.source,
     priority: p.priority ?? (p.source === "rules" ? "auto" : "story"),
