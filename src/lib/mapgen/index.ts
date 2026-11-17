@@ -52,6 +52,8 @@ const INTERESTS: Partial<Record<LabelKey, string[]>> = {
   tree: ["tree", "nature"],
   roadEast: ["travel"],
   roadSouth: ["travel"],
+  stall: ["market", "food"],
+  lamp: ["light"],
 };
 
 /** Plan → playable scene: the floor is exactly the plan's open ground, and each object is where it was drawn. */

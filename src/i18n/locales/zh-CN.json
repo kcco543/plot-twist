@@ -3532,7 +3532,9 @@
       "sign": "路标",
       "tree": "大树",
       "roadEast": "村道",
-      "roadSouth": "往南的路"
+      "roadSouth": "往南的路",
+      "stall": "集市摊位",
+      "lamp": "路灯"
     }
   }
 }

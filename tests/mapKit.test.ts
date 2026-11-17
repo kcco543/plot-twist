@@ -53,7 +53,8 @@ describe.each(DESCRIPTIONS.flatMap((d) => [1, 2, 3].map((n) => [d, n] as const))
     expect(map.img.w).toBe(480);
     expect(map.img.h).toBe(320);
     for (let i = 3; i < map.img.data.length; i += 4) if (map.img.data[i] !== 255) throw new Error("transparent pixel");
-    expect(map.report.colours).toBeLessThanOrEqual(56);
+    // The fixed palette has 78 colours; shadows of a few off-ramp colours add a handful more.
+    expect(map.report.colours).toBeLessThanOrEqual(96);
   });
 
   it("keeps most of the ground open, connected and visible", () => {

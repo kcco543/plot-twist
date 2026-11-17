@@ -13,7 +13,9 @@ export const SPRITE_SIZE = 32;
 export const PORTRAIT_SIZE = 96;
 export const OUTLINE = [0x5b, 0x4a, 0x86] as const;
 
-export type ConvertOptions = { colors: number; outline: boolean; removeBackground: boolean };
+export type ConvertOptions = { colors: number; outline: boolean; removeBackground: boolean; outlineColor?: readonly number[] };
+/** The Western Fantasy cast's dark warm outline (matches the map kit, PIXEL_ART_STYLE_GUIDE.md §17). */
+export const WARM_OUTLINE = [0x24, 0x18, 0x0f] as const;
 export const DEFAULT_CONVERT: ConvertOptions = { colors: 12, outline: true, removeBackground: true };
 
 export const blank = (w: number, h: number): Img => ({ w, h, data: new Uint8ClampedArray(w * h * 4) });
@@ -207,7 +209,7 @@ export function makeSprite(src: Img, opts: ConvertOptions = DEFAULT_CONVERT): Im
   let small = quantize(downsample(img, box, w, h), opts.colors);
   const bottom = 30 - pad; // last content row
   let out = place(small, SPRITE_SIZE, SPRITE_SIZE, Math.floor((SPRITE_SIZE - w) / 2), bottom - h + 1);
-  if (opts.outline) out = addOutline(out);
+  if (opts.outline) out = addOutline(out, opts.outlineColor);
   small = out;
   return small;
 }
@@ -227,7 +229,7 @@ export function makePortrait(src: Img, opts: ConvertOptions = DEFAULT_CONVERT): 
   const pad = opts.outline ? 1 : 0;
   const { w, h } = fit(crop, 46 - pad * 2, 46 - pad * 2);
   let grid = place(quantize(downsample(img, crop, w, h), Math.min(16, opts.colors + 4)), 48, 48, Math.floor((48 - w) / 2), 48 - h - pad);
-  if (opts.outline) grid = addOutline(grid);
+  if (opts.outline) grid = addOutline(grid, opts.outlineColor);
   return upscale(grid, 2);
 }
 
@@ -241,7 +243,7 @@ export function makeFullPortrait(src: Img, opts: ConvertOptions = DEFAULT_CONVER
   const pad = opts.outline ? 1 : 0;
   const { w, h } = fit(box, N - 4 - pad * 2, N - 4 - pad * 2);
   let out = place(quantize(downsample(img, box, w, h), Math.min(16, opts.colors + 4)), N, N, Math.floor((N - w) / 2), N - 2 - pad - h);
-  if (opts.outline) out = addOutline(out);
+  if (opts.outline) out = addOutline(out, opts.outlineColor);
   return out;
 }
 

@@ -15,7 +15,7 @@ import { AiRequestError, requestSprite, useAiStatus } from "@/lib/ai/client";
 import { artFor } from "@/lib/character/art";
 import { gameActions, useSave } from "@/lib/gameStore";
 import { checkFile, convertToGameArt, imgToDataURL, prepareUpload } from "@/lib/sprites/canvas";
-import { checkSprite, DEFAULT_CONVERT, type ConvertOptions, type Img } from "@/lib/sprites/pixelize";
+import { checkSprite, DEFAULT_CONVERT, WARM_OUTLINE, type ConvertOptions, type Img } from "@/lib/sprites/pixelize";
 import type { Character, SpriteSource } from "@/lib/types";
 import { useI18n } from "@/i18n";
 
@@ -51,7 +51,8 @@ export function SpriteStudio({ character }: { character: Character }) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<Source | null>(null);
-  const [options, setOptions] = useState<ConvertOptions>(DEFAULT_CONVERT);
+  // Western Fantasy sprites get the cast's dark warm outline, so they sit in the same world as the map.
+  const [options, setOptions] = useState<ConvertOptions>(() => (save.worldId === "western-fantasy" ? { ...DEFAULT_CONVERT, outlineColor: WARM_OUTLINE } : DEFAULT_CONVERT));
   const [result, setResult] = useState<Result | null>(null);
   const [nothing, setNothing] = useState(false);
   const [edited, setEdited] = useState<Result | null>(null);

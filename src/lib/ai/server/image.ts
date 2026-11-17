@@ -146,7 +146,7 @@ export function getImageProvider(): ImageProvider {
 }
 
 const WORLD_STYLE: Record<string, string> = {
-  "western-fantasy": "fits a cozy western-fantasy village",
+  "western-fantasy": "fits a storybook western-fantasy adventure (tunics, cloaks, leather boots and belts)",
   modern: "fits a cozy modern city",
   "ancient-china": "fits a cozy ancient-Chinese courtyard town",
   otherworld: "fits a whimsical pastel dreamland of floating islands",
@@ -158,10 +158,20 @@ export function spritePrompt(opts: { appearance: string; world: string | null })
     "Redraw the person or character in the reference image as a single full-body pixel-art game sprite.",
     "Keep what makes them recognizable: hairstyle and hair color, face shape, skin tone, key clothing pieces and their colors, accessories.",
     opts.appearance.trim() ? `Player's description of their appearance (follow it where it differs): ${opts.appearance.trim().slice(0, 500)}` : "",
-    "Style: charming, lighthearted 16-bit pixel art. Chibi proportions about 2 heads tall, big head, simple dot eyes with a small white shine, soft blush.",
-    "Standing pose, facing the viewer straight on with a very slight top-down view, arms relaxed at the sides, feet together at the bottom. One character only, centered, filling most of the height.",
-    "Large clean pixel clusters on a coarse grid (as if drawn at 32×32 and scaled up), a 1-pixel soft violet outline (#5b4a86) around the silhouette, never pure black.",
-    "Soft but colorful pastel palette, at most about 12 colors, 3-tone hue-shifted shading lit from the top-left: shadows cooler, highlights warmer.",
+    ...(opts.world === "western-fantasy"
+      ? [
+          // Matches the Western Fantasy map kit (PIXEL_ART_STYLE_GUIDE.md §17) and the default cast.
+          "Style: handcrafted adventure-RPG pixel art in a three-quarter top-down view. Chibi proportions about 2.5 heads tall, small dark eyes with a warm highlight.",
+          "Standing pose, facing the viewer with a slight top-down view, arms relaxed at the sides, feet together at the bottom. One character only, centered, filling most of the height.",
+          "Large clean pixel clusters on a coarse grid (as if drawn at 32×32 and scaled up), a 1-pixel dark warm brown outline (#24180f) around the silhouette, never pure black.",
+          "Earthy adventurer palette (cloth, leather, wool: teal, crimson, olive, ochre, warm browns), at most about 12 colors, 3-tone hue-shifted shading lit from the top-left: shadows deep and warm, highlights golden.",
+        ]
+      : [
+          "Style: charming, lighthearted 16-bit pixel art. Chibi proportions about 2 heads tall, big head, simple dot eyes with a small white shine, soft blush.",
+          "Standing pose, facing the viewer straight on with a very slight top-down view, arms relaxed at the sides, feet together at the bottom. One character only, centered, filling most of the height.",
+          "Large clean pixel clusters on a coarse grid (as if drawn at 32×32 and scaled up), a 1-pixel soft violet outline (#5b4a86) around the silhouette, never pure black.",
+          "Soft but colorful pastel palette, at most about 12 colors, 3-tone hue-shifted shading lit from the top-left: shadows cooler, highlights warmer.",
+        ]),
     "No anti-aliasing, no gradients, no blur, no dithering noise, no text, no shadow on the ground, no background: fully transparent background.",
     opts.world ? `The outfit ${WORLD_STYLE[opts.world] ?? "fits the game world"}, but keep the reference's clothing recognizable.` : "",
   ]

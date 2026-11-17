@@ -3532,7 +3532,9 @@
       "sign": "Signpost",
       "tree": "Big tree",
       "roadEast": "Village road",
-      "roadSouth": "Road south"
+      "roadSouth": "Road south",
+      "stall": "Market stall",
+      "lamp": "Lamp post"
     }
   }
 }
