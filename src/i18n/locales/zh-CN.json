@@ -310,7 +310,10 @@
       "remove": "删除",
       "usePlaceholder": "使用内置图片",
       "keepHint": "新地图完成前，你看到的仍是当前地图。",
-      "showingWhileDrawing": "正在生成 · 当前显示 v{n}"
+      "showingWhileDrawing": "正在生成 · 当前显示 v{n}",
+      "pixelGridCopy": "像素网格副本",
+      "pixelGridCopyHint": "较早的地图是高分辨率图片。这会在游戏的像素网格上做一份副本，存为新版本。原图保持不变，也不花钱。",
+      "pixelGridFailed": "这个浏览器无法生成像素网格副本。"
     },
     "edit": {
       "enter": "编辑区域",
@@ -438,7 +441,8 @@
       "feeling": "情绪",
       "howSees": "{name}怎么看其他人",
       "stageLine": "信任：{trust} · 好感：{affection} · 尊重：{respect}",
-      "visitor": "访客"
+      "visitor": "访客",
+      "hide": "收起信息"
     },
     "test": {
       "open": "测试面板",
@@ -531,7 +535,10 @@
       },
       "close": "隐藏测试面板"
     },
-    "sampleCast": "加入示例角色（米拉、雯雯、托比）"
+    "sampleCast": "加入示例角色（米拉、雯雯、托比）",
+    "earlierLines": "之前的台词",
+    "details": "角色详情",
+    "detailsHint": "关于{name}的全部信息。打开时上方的对话不会中断。"
   },
   "scene": {
     "narrator": "旁白",
@@ -1891,7 +1898,8 @@
       "end": "结束对话",
       "speaking": "点一下对话框，听听{other}怎么回答。",
       "answering": "{other}正在回答…",
-      "continue": "继续聊，或者结束对话。"
+      "continue": "继续聊，或者结束对话。",
+      "endShort": "结束"
     },
     "relation": {
       "labels": {
@@ -3000,7 +3008,9 @@
     "note": "上面写着什么 / 备注",
     "notePlaceholder": "例如“楼上客房，一晚两枚铜币”",
     "contents": "里面有什么（用逗号分隔）",
-    "contentsPlaceholder": "例如 旧地图，银铃铛"
+    "contentsPlaceholder": "例如 旧地图，银铃铛",
+    "pixelGridSize": "角色与这张地图的像素网格一致：地图上的一个像素就是角色的一个像素，所以大小是固定的。",
+    "groundHint": "好读的地图会让可玩画面里大约三分之二是开阔、连通的地面。"
   },
   "theme": {
     "title": "界面风格",
@@ -3294,6 +3304,7 @@
       "normal": "标准",
       "snappy": "灵敏"
     },
-    "followSpeedDesc": "游戏镜头追上所跟随角色的速度。"
+    "followSpeedDesc": "游戏镜头追上所跟随角色的速度。",
+    "followTalk": "回到对话"
   }
 }

@@ -24,6 +24,9 @@ import { regionIsUsable, type Region } from "./mapSelection";
 import type { EnvironmentTypeId, WorldId } from "./types";
 import { activeWorldId, getIndex } from "./saves/worldSaves";
 import { mapOwner, tagMap, type OwnedMap } from "./saves/worldMaps";
+import { isNativeSize, snapMapToGrid } from "./pixelArt/mapPixels";
+import { blobToImg, compositeNative, enlargeForEdit, firstLayout, imgToPng, snapGenerated } from "./pixelArt/mapPixelsBrowser";
+import { readLayout } from "./scene/layout";
 
 /** Only the active world's maps (each world save keeps its own map history). */
 const inActiveWorld = (m: OwnedMap) => mapOwner(m, getIndex().migration?.worldId ?? null) === activeWorldId() || m.id === getSave().environment.mapId || sceneMapIds().has(m.id);
@@ -120,6 +123,21 @@ async function decode(dataUrl: string): Promise<{ blob: Blob; width: number; hei
   }
 }
 
+/**
+ * A new picture from the image service → a map on the game's pixel grid
+ * (PIXEL_ART_STYLE_GUIDE.md §3) with a first-guess play area from its open
+ * ground. If the browser can't do the conversion, the picture is kept as it
+ * came (still playable, just not on the grid).
+ */
+async function toPixelMap(dataUrl: string): Promise<{ blob: Blob; width: number; height: number; scene?: unknown }> {
+  const raw = await decode(dataUrl);
+  try {
+    return await snapGenerated(raw.blob);
+  } catch {
+    return raw;
+  }
+}
+
 /** Store a new version, make it the map in use (unless `activate` is false), and drop the oldest beyond the history limit. */
 async function addMap(stored: StoredMap, activate = true) {
   tagMap(stored, activeWorldId()); // each world save keeps its own maps
@@ -147,8 +165,8 @@ export async function generateSceneMap(req: MapRequest, signal?: AbortSignal): P
   if (!req.description.trim()) throw new AiRequestError("invalid_output", "No description");
   const out = await requestMap({ description: req.description.trim(), type: req.type, world: req.worldId });
   if (signal?.aborted) throw new AiRequestError("failed", "Cancelled");
-  const { blob, width, height } = await decode(out.image);
-  const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model: out.model, createdAt: Date.now() };
+  const { blob, width, height, scene } = await toPixelMap(out.image);
+  const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model: out.model, createdAt: Date.now(), ...(scene ? { scene } : {}) };
   await addMap(stored, false);
   return toGenerated(stored);
 }
@@ -159,8 +177,8 @@ export async function generateMap(req: MapRequest): Promise<void> {
   set({ working: req, error: null });
   try {
     const out = await requestMap({ description: req.description.trim(), type: req.type, world: req.worldId });
-    const { blob, width, height } = await decode(out.image);
-    const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model: out.model, createdAt: Date.now() };
+    const { blob, width, height, scene } = await toPixelMap(out.image);
+    const stored: StoredMap = { id: makeId("map"), blob, width, height, description: req.description.trim(), type: req.type, worldId: req.worldId, model: out.model, createdAt: Date.now(), ...(scene ? { scene } : {}) };
     await addMap(stored);
     set({ working: null });
   } catch (e) {
@@ -183,7 +201,9 @@ export async function editMapRegion(job: MapEditJob): Promise<boolean> {
   set({ editing: job, editError: null });
   try {
     const original = await (await fetch(source.url)).blob();
-    const out = await requestMapEdit(original, {
+    // Maps on the pixel grid are enlarged for the image service, and its answer is snapped back onto the grid.
+    const native = isNativeSize(source.width);
+    const out = await requestMapEdit(native ? await enlargeForEdit(original, source.width, source.height) : original, {
       instruction: job.instruction.trim(),
       region: job.region,
       description: source.description,
@@ -191,7 +211,7 @@ export async function editMapRegion(job: MapEditJob): Promise<boolean> {
       world: source.worldId,
     });
     const edited = await (await fetch(out.image)).blob();
-    const { blob, width, height } = await compositeRegion(original, edited, job.region).catch(() => {
+    const { blob, width, height } = await (native ? compositeNative(original, edited, job.region) : compositeRegion(original, edited, job.region)).catch(() => {
       throw new AiRequestError("invalid_output", "The edited image could not be read");
     });
     const stored: StoredMap = {
@@ -215,6 +235,47 @@ export async function editMapRegion(job: MapEditJob): Promise<boolean> {
     return true;
   } catch (e) {
     set({ editing: null, editError: e instanceof AiRequestError ? e.code : "failed" });
+    return false;
+  }
+}
+
+/**
+ * PIXEL-GRID COPY — for maps made before the pixel-art style guide.
+ * Converts the picture onto the game's pixel grid and saves it as a NEW
+ * version (the original is never changed; Undo / the history goes back to
+ * it). The play area comes along: objects and start spots are stored as
+ * fractions of the picture, so they still line up. A floor the player has
+ * reviewed is kept; an unreviewed guess is replaced by a guess from the new
+ * picture's open ground. No image service is involved, so it costs nothing.
+ */
+export async function makePixelGridCopy(mapId: string): Promise<boolean> {
+  if (state.working || state.editing) return false;
+  const source = state.maps.find((m) => m.id === mapId);
+  if (!source || isNativeSize(source.width)) return false;
+  try {
+    const img = snapMapToGrid(await blobToImg(await (await fetch(source.url)).blob()));
+    const blob = await imgToPng(img);
+    const guess = firstLayout(img);
+    const old = source.scene ? readLayout(source.scene, source.width, source.height) : null;
+    const scene = old ? { ...old, stageWidth: guess.stageWidth, floor: old.reviewed && old.cols === guess.cols && old.rows === guess.rows ? old.floor : guess.floor } : guess;
+    const stored: StoredMap = {
+      id: makeId("map"),
+      description: source.description,
+      type: source.type,
+      worldId: source.worldId,
+      blob,
+      width: img.w,
+      height: img.h,
+      model: source.model,
+      createdAt: Date.now(),
+      parentId: source.id,
+      pixelGridFrom: source.id,
+      ...(source.name ? { name: source.name } : {}),
+      scene,
+    };
+    await addMap(stored);
+    return true;
+  } catch {
     return false;
   }
 }

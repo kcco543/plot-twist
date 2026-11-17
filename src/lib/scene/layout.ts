@@ -29,6 +29,7 @@ import { FOOT, type NavMask, type Obstacle, type Point, type Rect, type RoomLayo
 import { nearestFree } from "../stage/path";
 import type { EnvironmentTypeId } from "../types";
 import { ACTIONS_BY_TYPE, EXIT_TYPES, type ObjectType, type WorldObject } from "../stage/objects";
+import { isNativeSize } from "../pixelArt/mapPixels";
 
 export type Perspective = "side" | "angled";
 
@@ -117,9 +118,17 @@ export function guessFloor(cols: number, rows: number, perspective: Perspective)
   return cells.join("");
 }
 
+/**
+ * Maps drawn on the art-pixel grid (PIXEL_ART_STYLE_GUIDE.md §3) are played at
+ * exactly their own size: one map pixel = one character pixel, so the
+ * character-size choice doesn't apply to them. Older, high-resolution maps
+ * keep the choice.
+ */
+export const lockedStageWidth = (mapW: number): number | null => (isNativeSize(mapW) ? Math.round(mapW) : null);
+
 export function defaultLayout(mapW: number, mapH: number, perspective: Perspective = "angled"): SceneLayout {
   const { cols, rows } = gridFor(mapW, mapH);
-  return { v: 1, perspective, stageWidth: DEFAULT_STAGE_WIDTH, cols, rows, floor: guessFloor(cols, rows, perspective), objects: [], spawns: [], reviewed: false, updatedAt: 0 };
+  return { v: 1, perspective, stageWidth: lockedStageWidth(mapW) ?? DEFAULT_STAGE_WIDTH, cols, rows, floor: guessFloor(cols, rows, perspective), objects: [], spawns: [], reviewed: false, updatedAt: 0 };
 }
 
 /** Anything that isn't a usable layout (older maps, damaged data) gets the default guess. */
@@ -136,7 +145,7 @@ export function readLayout(raw: unknown, mapW: number, mapH: number): SceneLayou
   return {
     v: 1,
     perspective: r.perspective === "side" ? "side" : "angled",
-    stageWidth: typeof r.stageWidth === "number" && r.stageWidth >= 240 && r.stageWidth <= 1200 ? Math.round(r.stageWidth) : DEFAULT_STAGE_WIDTH,
+    stageWidth: lockedStageWidth(mapW) ?? (typeof r.stageWidth === "number" && r.stageWidth >= 240 && r.stageWidth <= 1200 ? Math.round(r.stageWidth) : DEFAULT_STAGE_WIDTH),
     cols: r.cols,
     rows: r.rows,
     floor: r.floor.replace(/[^1]/g, "0"),

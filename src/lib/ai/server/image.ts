@@ -87,7 +87,7 @@ const openaiProvider: ImageProvider = {
         background: "opaque",
         output_format: "webp",
         output_compression: 92,
-        quality: "high",
+        quality: "medium",
         n: 1,
       });
       const b64 = res.data?.[0]?.b64_json;
@@ -127,7 +127,7 @@ const openaiProvider: ImageProvider = {
         size,
         background: "opaque",
         output_format: "png",
-        quality: "high",
+        quality: "medium",
         n: 1,
       });
       const b64 = res.data?.[0]?.b64_json;

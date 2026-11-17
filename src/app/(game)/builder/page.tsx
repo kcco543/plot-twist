@@ -18,7 +18,8 @@ import { ENVIRONMENT_TYPES } from "@/lib/environments";
 import type { EnvironmentTypeId } from "@/lib/types";
 import { gameActions, useSave } from "@/lib/gameStore";
 import { useAiStatus } from "@/lib/ai/client";
-import { currentMap, dismissMapError, generateMap, mapIsOutdated, placeholderArt, removeMap, selectMap, useMapStudio } from "@/lib/mapGenerator";
+import { currentMap, dismissMapError, generateMap, makePixelGridCopy, mapIsOutdated, placeholderArt, removeMap, selectMap, useMapStudio } from "@/lib/mapGenerator";
+import { isNativeSize } from "@/lib/pixelArt/mapPixels";
 import { getWorld } from "@/lib/worlds";
 import { useI18n } from "@/i18n";
 import { SceneEditor } from "@/components/game/SceneEditor";
@@ -42,6 +43,8 @@ export default function WorldBuilderPage() {
   const phonePreviewRef = useRef<HTMLDivElement>(null);
   const studio = useMapStudio();
   const [areaOpen, setAreaOpen] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [convertFailed, setConvertFailed] = useState(false);
   const world = getWorld(save.worldId);
   const { description, type } = save.environment;
   const worldName = world ? t(`worlds.list.${world.id}.name` as const) : "";
@@ -159,6 +162,24 @@ export default function WorldBuilderPage() {
                     <span>{t("builder.map.download")}</span>
                   </a>
                 )}
+                {map && !isNativeSize(map.width) && (
+                  <PixelButton
+                    size="sm"
+                    variant="calm"
+                    icon="layers"
+                    disabled={busy || converting}
+                    loading={converting}
+                    title={t("builder.map.pixelGridCopyHint")}
+                    onClick={async () => {
+                      setConverting(true);
+                      setConvertFailed(!(await makePixelGridCopy(map.id)));
+                      setConverting(false);
+                    }}
+                    data-pixel-grid-copy
+                  >
+                    {t("builder.map.pixelGridCopy")}
+                  </PixelButton>
+                )}
                 {map && (
                   <PixelButton size="sm" variant="ghost" icon="trash" disabled={busy} onClick={() => void removeMap(map.id)}>
                     {t("builder.map.remove")}
@@ -171,6 +192,8 @@ export default function WorldBuilderPage() {
                 )}
               </span>
             </div>
+            {map && !isNativeSize(map.width) && <p className="text-sm text-ink-mute">{t("builder.map.pixelGridCopyHint")}</p>}
+            {convertFailed && <p className="text-sm text-coral-deep">{t("builder.map.pixelGridFailed")}</p>}
             <ul className="flex gap-2 overflow-x-auto pb-1" aria-label={t("builder.map.history")}>
               {studio.maps.map((m) => {
                 const active = m.id === map?.id;
@@ -186,7 +209,7 @@ export default function WorldBuilderPage() {
                       className={`px-focus relative block w-24 sm:w-28 ${active ? "shadow-[0_0_0_3px_var(--color-butter-lo)]" : "opacity-80 shadow-[0_0_0_2px_var(--color-line)] hover:opacity-100"}`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={m.url} alt="" className="block w-full object-cover" style={{ aspectRatio: `${m.width} / ${m.height}` }} />
+                      <img src={m.url} alt="" className={`${isNativeSize(m.width) ? "pixelated " : ""}block w-full object-cover`} style={{ aspectRatio: `${m.width} / ${m.height}` }} />
                       <span className="absolute bottom-0.5 left-0.5 flex items-center gap-0.5 bg-white/90 px-1 font-label text-[9px] uppercase leading-tight text-ink">
                         v{n}
                         {m.parentId && (

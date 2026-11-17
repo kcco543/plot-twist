@@ -20,6 +20,7 @@ import { environmentArt, type ArtAsset } from "@/assets/manifest";
 import { currentMap, useMapStudio, type GeneratedMap } from "../mapGenerator";
 import { roomFor, type RoomLayout } from "../stage/room";
 import type { EnvironmentTypeId, WorldId } from "../types";
+import { isNativeSize } from "../pixelArt/mapPixels";
 import { buildScene, nameFromDescription, readLayout, type BuiltScene, type SceneLayout } from "./layout";
 
 export type ActiveScene =
@@ -54,7 +55,7 @@ export function sceneForMap(map: GeneratedMap): Extract<ActiveScene, { kind: "ma
     kind: "map",
     key: `map:${map.id}`,
     place: map.type,
-    art: { src: map.url, width: built.size.width, height: built.size.height, placeholder: false, smooth: true },
+    art: { src: map.url, width: built.size.width, height: built.size.height, placeholder: false, smooth: !isNativeSize(map.width) },
     room: built.room,
     map,
     name: mapDisplayName(map),

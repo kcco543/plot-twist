@@ -12,7 +12,7 @@
  *
  * The lines themselves play in the speech bubbles and the dialogue box above.
  */
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { PixelIcon } from "@/components/ui/PixelIcon";
 import { useI18n } from "@/i18n";
@@ -36,12 +36,15 @@ export function TalkStrip({
   cast,
   selectedId,
   touch,
+  idle = true,
 }: {
   talk: TalkController;
   cast: Character[];
   selectedId: string | null;
   /** Touch device: explain touch-and-hold instead of dragging with a mouse. */
   touch: boolean;
+  /** Show the hint + "Talk to…" row when nothing is happening (short windows put the button in the dock header). */
+  idle?: boolean;
 }) {
   const { t } = useI18n();
   const s = talk.session;
@@ -51,7 +54,7 @@ export function TalkStrip({
   if (s?.phase === "SELECT_TARGET") {
     const others = cast.filter((c) => c.id !== s.actorId);
     return (
-      <section aria-label={t("talk.chooseFor", { name: name(s.actorId) })} className="content-block flex flex-col gap-2 bg-lavender-hi px-3 py-2.5 shadow-[inset_4px_0_0_var(--color-lavender)]">
+      <section aria-label={t("talk.chooseFor", { name: name(s.actorId) })} className="flex min-h-0 flex-col gap-1.5 overflow-y-auto bg-lavender-hi px-3 py-2 shadow-[inset_4px_0_0_var(--color-lavender)]">
         <p className="font-head text-base font-bold leading-tight">{t("talk.chooseFor", { name: name(s.actorId) })}</p>
         <p className="text-sm text-ink-soft">{t("talk.chooseHelp")}</p>
         <div className="flex flex-wrap gap-2">
@@ -70,7 +73,7 @@ export function TalkStrip({
 
   if (s?.phase === "MOVE_TO_TARGET") {
     return (
-      <section role="status" className="content-block flex items-center justify-between gap-2 bg-mint-hi px-3 py-2 shadow-[inset_4px_0_0_var(--color-mint)]">
+      <section role="status" className="flex items-center justify-between gap-2 bg-mint-hi px-3 py-1.5 shadow-[inset_4px_0_0_var(--color-mint)]">
         <p className="flex min-w-0 items-center gap-2 text-base">
           <PixelIcon name="right" size={12} className="shrink-0 animate-bob text-mint-deep" />
           <span className="min-w-0">{t("talk.walking", { name: name(s.actorId), other: name(s.targetId) })}</span>
@@ -83,14 +86,15 @@ export function TalkStrip({
   }
 
   if (s) return null; // the conversation panel takes over
+  if (!idle) return talk.notice ? <div className="panel-pad-x py-1.5"><Notice notice={talk.notice} onDismiss={talk.dismissNotice} /></div> : null;
 
   return (
-    <div className="content-block flex flex-col gap-2">
+    <div className="panel-pad-x flex flex-col gap-1.5 py-1.5">
       {talk.notice && <Notice notice={talk.notice} onDismiss={talk.dismissNotice} />}
-      <div className="plain-pad-x flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <p className="flex min-w-0 flex-1 basis-56 items-center gap-2 text-sm text-ink-soft">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p className="flex min-w-0 flex-1 basis-48 items-center gap-2 text-[13px] leading-snug text-ink-soft">
           <PixelIcon name="chat" size={12} className="shrink-0 text-label" />
-          <span>{touch ? t("talk.hintTouch") : t("talk.hint")}</span>
+          <span className="line-clamp-2 [[data-compact]_&]:line-clamp-1">{touch ? t("talk.hintTouch") : t("talk.hint")}</span>
         </p>
         <PixelButton size="sm" variant="calm" icon="chat" disabled={!selectedId || cast.length < 2} onClick={() => selectedId && talk.beginSelect(selectedId)} title={selectedId ? undefined : t("talk.chooseNeedsSelection")} className="shrink-0 px-2">
           {selectedId ? `${name(selectedId)}: ${t("talk.chooseButton")}` : t("talk.chooseButton")}
@@ -106,7 +110,7 @@ function Notice({ notice, onDismiss }: { notice: TalkNotice; onDismiss: () => vo
   return (
     <p
       role="status"
-      className={`flex items-start justify-between gap-2 px-3 py-2 text-base ${soft ? "bg-butter-hi shadow-[inset_4px_0_0_var(--color-butter-lo)]" : "bg-peach-hi text-ink shadow-[inset_4px_0_0_var(--color-coral)]"}`}
+      className={`flex items-start justify-between gap-2 px-3 py-1.5 text-sm ${soft ? "bg-butter-hi shadow-[inset_4px_0_0_var(--color-butter-lo)]" : "bg-peach-hi text-ink shadow-[inset_4px_0_0_var(--color-coral)]"}`}
     >
       <span className="min-w-0">{t(`talk.notices.${notice.kind}`, { name: notice.actor || t("common.someone"), other: notice.target || t("common.someone") })}</span>
       <button type="button" onClick={onDismiss} className="px-focus -m-1 shrink-0 p-1 text-ink-soft" aria-label={t("talk.dismiss")}>
@@ -122,6 +126,7 @@ export function ConversationPanel({
   story,
   lineInProgress,
   aiMode,
+  onInfo,
 }: {
   talk: TalkController;
   cast: Character[];
@@ -129,6 +134,8 @@ export function ConversationPanel({
   lineInProgress: boolean;
   /** Who answers: Claude, developer TEST replies, or the built-in rules. */
   aiMode: "ai" | "mock" | null;
+  /** Open the character info (phones, where the character row gives its room to the choices). */
+  onInfo?: () => void;
 }) {
   const { t, tx, locale } = useI18n();
   const s = talk.session;
@@ -142,11 +149,6 @@ export function ConversationPanel({
     const timer = window.setTimeout(() => setSlow(true), 8000);
     return () => window.clearTimeout(timer);
   }, [waiting, s?.round]);
-  const open = !!s && (s.phase === "FACE_TARGET" || s.phase === "SHOW_OPTIONS");
-  // Phones: the panel opens below the dialogue; bring it into view once.
-  useEffect(() => {
-    if (open) box.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [open, s?.id]);
   if (!s || !s.targetId || s.phase === "SELECT_TARGET" || s.phase === "MOVE_TO_TARGET") return null;
   const me = cast.find((c) => c.id === s.actorId);
   const them = cast.find((c) => c.id === s.targetId);
@@ -178,50 +180,53 @@ export function ConversationPanel({
             : null;
 
   return (
-    <section ref={box} aria-label={t("talk.panel.title")} className="content-block px-frame px-shadow px-panel relative mt-6" style={{ "--frame": "var(--frame-card)" } as CSSProperties} data-conversation-panel>
-      <span className="px-tab absolute -top-7 left-[calc(var(--u)*-4)] sm:-top-8" style={{ borderImageSource: "var(--frame-lavender)" }}>
-        {t("talk.panel.title")}
-      </span>
-      <div className="panel-pad-x flex flex-col gap-3 pb-1 pt-2">
-        {/* Who, relationship, mood */}
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <div className="min-w-0">
-            <p className="flex flex-wrap items-center gap-x-2 font-head text-lg font-bold leading-tight">
-              {t("talk.panel.pair", { name: myName, other: theirName })}
+    <section ref={box} aria-label={t("talk.panel.title")} className="flex min-h-0 flex-col" data-conversation-panel>
+      <div className="panel-pad-x flex min-h-0 flex-col gap-1.5 pb-1 pt-1.5">
+        {/* Who (one row with End), then relationship and mood on one wrapping line */}
+        <div className="flex shrink-0 flex-col gap-0.5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 font-head text-[15px] font-bold leading-tight">
+              <span className="min-w-0">{t("talk.panel.pair", { name: myName, other: theirName })}</span>
               <span
                 data-reply-mode={aiMode ?? "builtin"}
                 title={t(aiMode === "ai" ? "talk.ai.modeAiDesc" : aiMode === "mock" ? "talk.ai.modeMockDesc" : "talk.ai.modeOffDesc")}
-                className={`px-1.5 py-0.5 font-label text-[9px] font-normal uppercase ${aiMode === "ai" ? "bg-lavender-hi text-label" : aiMode === "mock" ? "bg-butter-hi text-ink" : "bg-well text-ink-soft"}`}
+                className={`px-1.5 py-0.5 font-label text-[9px] font-normal uppercase hidden @[24rem]:inline ${aiMode === "ai" ? "bg-lavender-hi text-label" : aiMode === "mock" ? "bg-butter-hi text-ink" : "bg-well text-ink-soft"}`}
               >
                 {t(aiMode === "ai" ? "talk.ai.modeAi" : aiMode === "mock" ? "talk.ai.modeMock" : "talk.ai.modeOff")}
               </span>
             </p>
-            <dl className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-sm">
-              <dt className="font-label text-[10px] uppercase leading-5 text-ink-mute">{t("talk.panel.relationship")}</dt>
-              <dd className="min-w-0" title={t("talk.panel.relationshipOf", { name: myName, other: theirName })}>
-                <span className="font-bold">{tx(`talk.relation.labels.${words.label}`)}</span>
-                <span className="text-ink-soft"> · {words.words.map((w) => tx(`talk.relation.${w}`)).join(locale === "en" ? ", " : "、")}</span>
-              </dd>
-              <dt className="font-label text-[10px] uppercase leading-5 text-ink-mute">{t("talk.panel.mood", { other: theirName })}</dt>
-              <dd className="min-w-0 font-bold" data-mood={unreadable ? "unknown" : mood.emotion}>
-                {unreadable ? <span className="font-normal italic text-ink-soft">{t("talk.panel.hardToRead")}</span> : tx(`emotions.${mood.emotion}`)}
-              </dd>
-            </dl>
+            <span className="flex shrink-0 items-center gap-1">
+              {onInfo && (
+                <PixelButton size="sm" variant="ghost" icon="user" onClick={onInfo} aria-label={t("play.sidebar.open")} className="min-w-11 px-0" data-conversation-info />
+              )}
+              <PixelButton size="sm" variant="ghost" icon="close" onClick={talk.endConversation} className="px-2" data-end-conversation aria-label={t("talk.panel.end")}>
+                <span className="@[26rem]:hidden">{t("talk.panel.endShort")}</span>
+                <span className="hidden @[26rem]:inline">{t("talk.panel.end")}</span>
+              </PixelButton>
+            </span>
           </div>
-          <PixelButton size="sm" variant="ghost" icon="close" onClick={talk.endConversation} className="shrink-0 px-2">
-            {t("talk.panel.end")}
-          </PixelButton>
+          <dl className="flex flex-wrap items-baseline gap-x-2 text-[13px] leading-snug">
+            <dt className="font-label text-[9px] uppercase text-ink-mute">{t("talk.panel.relationship")}</dt>
+            <dd className="min-w-0" title={t("talk.panel.relationshipOf", { name: myName, other: theirName })}>
+              <span className="font-bold">{tx(`talk.relation.labels.${words.label}`)}</span>
+              <span className="text-ink-soft"> · {words.words.map((w) => tx(`talk.relation.${w}`)).join(locale === "en" ? ", " : "、")}</span>
+            </dd>
+            <dt className="font-label text-[9px] uppercase text-ink-mute">{t("talk.panel.mood", { other: theirName })}</dt>
+            <dd className="min-w-0 font-bold" data-mood={unreadable ? "unknown" : mood.emotion}>
+              {unreadable ? <span className="font-normal italic text-ink-soft">{t("talk.panel.hardToRead")}</span> : tx(`emotions.${mood.emotion}`)}
+            </dd>
+          </dl>
         </div>
 
         {s.customPending && (
-          <p role="status" className="flex items-start gap-2 bg-lavender-hi px-3 py-2 text-sm shadow-[inset_4px_0_0_var(--color-lavender)]" data-ai-pending>
+          <p role="status" className="flex shrink-0 items-start gap-2 bg-lavender-hi px-3 py-1.5 text-sm shadow-[inset_4px_0_0_var(--color-lavender)]" data-ai-pending>
             <PixelIcon name="sparkle" size={12} className="mt-1 shrink-0 text-label" />
             <span>{t("talk.ai.offTyped", { other: theirName })}</span>
           </p>
         )}
 
         {s.aiError && (
-          <div role="alert" className="flex flex-wrap items-center justify-between gap-2 bg-peach-hi px-3 py-2 text-sm shadow-[inset_4px_0_0_var(--color-coral)]" data-ai-error={s.aiError}>
+          <div role="alert" className="flex shrink-0 flex-wrap items-center justify-between gap-2 bg-peach-hi px-3 py-1.5 text-sm shadow-[inset_4px_0_0_var(--color-coral)]" data-ai-error={s.aiError}>
             <p className="min-w-0 flex-1 basis-56">
               <span className="font-bold">{t("talk.ai.failed", { other: theirName })}</span> {tx(`ai.errors.${s.aiError}`)}
               {s.replySource === "builtin" && <> {t("talk.ai.usedBuiltin")}</>}
@@ -235,7 +240,7 @@ export function ConversationPanel({
         )}
 
         {status && (
-          <p role="status" className="font-label text-[10px] uppercase leading-relaxed text-ink-soft">
+          <p role="status" className="shrink-0 font-label text-[10px] uppercase leading-relaxed text-ink-soft">
             {status}
           </p>
         )}
@@ -243,9 +248,10 @@ export function ConversationPanel({
         {s.phase === "FACE_TARGET" ? null : s.composing ? (
           <Composer session={s} talk={talk} name={myName} other={theirName} disabled={!choosing} />
         ) : (
-          <div>
-            <p className="mb-1.5 font-label text-[10px] uppercase text-ink-mute">{t("talk.panel.suggested")}</p>
-            <ul className="grid gap-2 sm:grid-cols-2" aria-busy={!choosing}>
+          <div className="flex min-h-0 flex-col">
+            <p className="mb-1 shrink-0 font-label text-[10px] uppercase text-ink-mute [[data-compact]_&]:sr-only">{t("talk.panel.suggested")}</p>
+            {/* Choices scroll on their own when there are many; at least the first ones stay in view. */}
+            <ul className="-mx-1 grid min-h-[6.25rem] gap-1.5 overflow-y-auto overscroll-contain px-1 pb-1 @[30rem]:grid-cols-2" aria-busy={!choosing} data-choice-list>
               {s.aiTopics.map((sug, i) => (
                 <li key={`ai-${s.round}-${i}`}>
                   <button
@@ -255,7 +261,7 @@ export function ConversationPanel({
                     data-topic="ai"
                     data-intent={sug.intent}
                     title={sug.line}
-                    className="px-focus group flex min-h-12 w-full flex-col items-start justify-center bg-surface px-3 py-1.5 text-left shadow-[inset_0_0_0_2px_var(--color-lavender),inset_0_-4px_0_var(--color-lavender)] transition-colors enabled:hover:bg-lavender-hi enabled:active:translate-y-px disabled:opacity-50"
+                    className="px-focus group flex min-h-11 w-full flex-col items-start justify-center bg-surface px-3 py-1.5 text-left shadow-[inset_0_0_0_2px_var(--color-lavender),inset_0_-4px_0_var(--color-lavender)] transition-colors enabled:hover:bg-lavender-hi enabled:active:translate-y-px disabled:opacity-50"
                   >
                     <span className="text-[15px] font-bold leading-snug text-ink sm:text-base">{sug.label}</span>
                     <span className="flex items-center gap-1 text-xs text-ink-soft">
@@ -275,7 +281,7 @@ export function ConversationPanel({
                       disabled={!choosing}
                       onClick={() => talk.chooseTopic(topic)}
                       data-topic={topic.id}
-                      className="px-focus group flex min-h-12 w-full flex-col items-start justify-center bg-surface px-3 py-1.5 text-left shadow-[inset_0_0_0_2px_var(--color-line),inset_0_-4px_0_var(--color-line)] transition-colors enabled:hover:bg-butter-hi enabled:active:translate-y-px disabled:opacity-50"
+                      className="px-focus group flex min-h-11 w-full flex-col items-start justify-center bg-surface px-3 py-1.5 text-left shadow-[inset_0_0_0_2px_var(--color-line),inset_0_-4px_0_var(--color-line)] transition-colors enabled:hover:bg-butter-hi enabled:active:translate-y-px disabled:opacity-50"
                     >
                       <span className="text-[15px] font-bold leading-snug text-ink sm:text-base">{tx(`talk.topics.${topic.id}`, vars)}</span>
                       <span className="text-xs text-ink-soft">{tx(`talk.reasons.${topic.reason}`, vars)}</span>
@@ -289,7 +295,7 @@ export function ConversationPanel({
                   disabled={!choosing}
                   onClick={talk.openComposer}
                   data-topic="askElse"
-                  className="px-focus flex min-h-12 w-full items-center gap-2 bg-lavender-hi px-3 py-1.5 text-left shadow-[inset_0_0_0_2px_var(--color-lavender),inset_0_-4px_0_var(--color-lavender)] transition-colors enabled:hover:bg-lavender enabled:active:translate-y-px disabled:opacity-50"
+                  className="px-focus flex min-h-11 w-full items-center gap-2 bg-lavender-hi px-3 py-1.5 text-left shadow-[inset_0_0_0_2px_var(--color-lavender),inset_0_-4px_0_var(--color-lavender)] transition-colors enabled:hover:bg-lavender enabled:active:translate-y-px disabled:opacity-50"
                 >
                   <PixelIcon name="pencil" size={12} className="shrink-0 text-label" />
                   <span className="text-[15px] font-bold text-ink sm:text-base">{t("talk.panel.askElse")}</span>
@@ -321,13 +327,13 @@ function Composer({ session, talk, name, other, disabled }: { session: TalkSessi
   const id = `composer-${session.id}`;
   return (
     <form
-      className="flex flex-col gap-2"
+      className="flex min-h-0 shrink-0 flex-col gap-1.5"
       onSubmit={(e) => {
         e.preventDefault();
         send();
       }}
     >
-      <label htmlFor={id} className="font-head text-base font-bold">
+      <label htmlFor={id} className="font-head text-[15px] font-bold leading-tight">
         {t("talk.composer.label", { name, other })}
       </label>
       <textarea
@@ -351,7 +357,7 @@ function Composer({ session, talk, name, other, disabled }: { session: TalkSessi
             talk.closeComposer();
           }
         }}
-        className="px-focus w-full resize-y bg-well px-3 py-2 text-lg leading-snug text-ink shadow-[inset_0_0_0_2px_var(--color-line)] placeholder:text-ink-mute"
+        className="px-focus max-h-32 min-h-[3.25rem] w-full resize-y bg-well px-3 py-1.5 text-base leading-snug text-ink shadow-[inset_0_0_0_2px_var(--color-line)] placeholder:text-ink-mute"
       />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-label text-[10px] uppercase text-ink-mute">
