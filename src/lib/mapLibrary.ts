@@ -36,6 +36,13 @@ const STORE = "maps";
 export const MAP_HISTORY_LIMIT = 24;
 
 let memory: StoredMap[] = [];
+const changeListeners = new Set<() => void>();
+const changed = () => changeListeners.forEach((l) => l());
+/** Called after any map is added, changed or removed (cloud sync watches this). */
+export function subscribeMaps(l: () => void) {
+  changeListeners.add(l);
+  return () => void changeListeners.delete(l);
+}
 let dbPromise: Promise<IDBDatabase | null> | null = null;
 
 function open(): Promise<IDBDatabase | null> {
@@ -75,14 +82,15 @@ export async function listMaps(): Promise<StoredMap[]> {
 export async function putMap(map: StoredMap): Promise<void> {
   const db = await open();
   if (!db) {
-    memory = [map, ...memory].slice(0, MAP_HISTORY_LIMIT);
-    return;
+    memory = [map, ...memory.filter((m) => m.id !== map.id)].slice(0, MAP_HISTORY_LIMIT);
+    return changed();
   }
   try {
     await run(db, "readwrite", (s) => s.put(map));
   } catch {
-    memory = [map, ...memory].slice(0, MAP_HISTORY_LIMIT); // quota or blocked: keep it for this visit
+    memory = [map, ...memory.filter((m) => m.id !== map.id)].slice(0, MAP_HISTORY_LIMIT); // quota or blocked: keep it for this visit
   }
+  changed();
 }
 
 /** Change some fields of a stored map (its name or play-area layout). */
@@ -90,11 +98,18 @@ export async function patchMap(id: string, patch: Partial<Omit<StoredMap, "id" |
   const db = await open();
   const inMemory = memory.find((m) => m.id === id);
   if (inMemory) memory = memory.map((m) => (m.id === id ? { ...m, ...patch } : m));
-  if (!db) return !!inMemory;
+  if (!db) {
+    if (inMemory) changed();
+    return !!inMemory;
+  }
   try {
     const cur = (await run<StoredMap>(db, "readonly", (s) => s.get(id))) as StoredMap | undefined;
-    if (!cur) return !!inMemory;
+    if (!cur) {
+      if (inMemory) changed();
+      return !!inMemory;
+    }
     await run(db, "readwrite", (s) => s.put({ ...cur, ...patch }));
+    changed();
     return true;
   } catch {
     return false;
@@ -104,12 +119,19 @@ export async function patchMap(id: string, patch: Partial<Omit<StoredMap, "id" |
 export async function deleteMaps(ids: string[]): Promise<void> {
   memory = memory.filter((m) => !ids.includes(m.id));
   const db = await open();
-  if (!db || ids.length === 0) return;
-  await run(db, "readwrite", (s) => void ids.forEach((id) => s.delete(id))).catch(() => {});
+  if (db && ids.length) await run(db, "readwrite", (s) => void ids.forEach((id) => s.delete(id))).catch(() => {});
+  if (ids.length) changed();
 }
 
 export async function clearAllMaps(): Promise<void> {
   memory = [];
   const db = await open();
   if (db) await run(db, "readwrite", (s) => s.clear()).catch(() => {});
+  changed();
+}
+
+/** Tests only. */
+export function __resetMapsForTests() {
+  memory = [];
+  dbPromise = null;
 }

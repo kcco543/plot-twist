@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_SC, Noto_Serif_SC, Pixelify_Sans, Press_Start_2P, Silkscreen, ZCOOL_QingKe_HuangYou } from "next/font/google";
 import { AppEffects } from "@/components/AppEffects";
+import { CloudSavesHost } from "@/components/sync/CloudSavesModal";
 import { WorldThemeApplier } from "@/components/theme/WorldThemeApplier";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme/apply";
 import "./globals.css";
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <AppEffects />
         <WorldThemeApplier />
         {children}
+        <CloudSavesHost />
       </body>
     </html>
   );

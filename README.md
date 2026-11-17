@@ -71,7 +71,7 @@ To try it on your phone, connect it to the same Wi-Fi and open `http://<your-com
 | World builder | `/builder` | Description, 5 environment types, **Generate Map** (AI map in one fixed cozy pixel-art style, edit and regenerate, version history, download), and **Edit region**: drag a box over part of the map, describe the change and repaint only that area (undo, every edit is a new version). Built-in art until a map is generated. |
 | Play mode | `/play` | Wide stage + sidebar (About / Mood & bonds / Memories), dialogue (Talk / Observe / Wait / Twist!), story log, pause menu, touch pad, keyboard controls. On phones the character info opens as a bottom sheet. |
 
-Saves live in the browser's `localStorage` and survive refreshes, language switches and going offline.
+Saves live in the browser (`localStorage` + IndexedDB) and survive refreshes, language switches and going offline. **Cloud saves** (optional): sign in to continue the same worlds on another device, with conflict handling and automatic backups; **Export / Import Save** moves worlds as a file without the cloud. See `docs/CLOUD_SAVES.md`.
 
 ### Controls in Play Mode
 - **Keyboard:** ← → (or A / D) choose a character · Z / Enter / Space talk · X observe · C wait · V twist · L story log · Esc / P pause

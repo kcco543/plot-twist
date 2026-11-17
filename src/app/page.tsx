@@ -6,6 +6,7 @@ import { useWorldName } from "@/components/worlds/worldNames";
 import { Logo } from "@/components/Logo";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { SettingsModal } from "@/components/SettingsModal";
+import { SyncBadge } from "@/components/sync/SyncBadge";
 import { PixelButton, PixelLink } from "@/components/ui/PixelButton";
 import { Sparkle } from "@/components/ui/Deco";
 import { titleArt } from "@/assets/manifest";
@@ -28,7 +29,8 @@ export default function TitleScreen() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={titleArt.src} alt="" aria-hidden className="pixelated pointer-events-none absolute inset-0 h-full w-full object-cover object-bottom" />
 
-        <div className="gutter relative z-10 flex justify-end pt-3" style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}>
+        <div className="gutter relative z-10 flex items-center justify-end gap-2 pt-3" style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}>
+          <SyncBadge />
           <LanguageSwitch />
         </div>
 
