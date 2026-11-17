@@ -87,8 +87,8 @@ const HINTS: [AmbientKind, RegExp][] = [
 ];
 
 /** A default effect for an object, from its kind and words. Null = it stays still. */
-export function defaultAmbientFor(o: Pick<WorldObject, "type" | "tags" | "label" | "id">): AmbientSpec | null {
-  const words = [o.label ?? "", ...o.tags].join(" ");
+export function defaultAmbientFor(o: Pick<WorldObject, "type" | "tags" | "label" | "id"> & { name?: string }): AmbientSpec | null {
+  const words = [o.label ?? "", o.name ?? "", ...o.tags].join(" ");
   let kind: AmbientKind | null = null;
   for (const [k, re] of HINTS) if (re.test(words)) {
     kind = k;

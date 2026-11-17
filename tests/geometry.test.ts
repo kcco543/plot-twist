@@ -221,3 +221,24 @@ describe("ambient animation", () => {
     expect(readAmbient({ kind: "nope" })).toBeNull();
   });
 });
+
+describe("ambient layer helpers", async () => {
+  const { sparkleSpots, swayFor, ambientVars } = await import("@/components/game/AmbientLayer");
+  const o = (p: Partial<WorldObject>): WorldObject => ({ id: "x", type: "feature", name: "x", label: "", world: "default", place: "interior", bounds: { x0: 0, y0: 0, x1: 100, y1: 100 }, collider: null, anchors: [], radius: 6, actions: [], tags: [], ...p }) as WorldObject;
+
+  it("sparkles are stable and stay inside the outline", () => {
+    const shape = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 0, y: 100 }];
+    const a = sparkleSpots(o({ id: "gem", shape }));
+    expect(a).toEqual(sparkleSpots(o({ id: "gem", shape })));
+    expect(a.length).toBeGreaterThan(0);
+    for (const p of a) expect(p.x + p.y).toBeLessThan(100);
+  });
+
+  it("front cut-outs sway in place; timing vars come from the spec", () => {
+    const objs = [o({ id: "tree", type: "plant" }), o({ id: "bush", type: "plant" }), o({ id: "lamp", type: "light" })];
+    const s = swayFor(objs, new Set(["tree", "lamp"]));
+    expect(Object.keys(s)).toEqual(["tree"]);
+    expect(swayFor(objs, new Set(["tree"]), true)).toEqual({});
+    expect(ambientVars(ambientSpec("flame"))).toMatchObject({ "--amb-dur": "540ms", "--amb-steps": 3 });
+  });
+});

@@ -61,6 +61,7 @@ import { GiftCreator } from "@/components/keepsakes/GiftCreator";
 import { activeWorldId } from "@/lib/saves/worldSaves";
 import { useActiveScene } from "@/lib/scene/useScene";
 import { SceneFronts, SceneLoading, SceneNotice } from "@/components/game/SceneLayers";
+import { AmbientLayer, swayFor } from "@/components/game/AmbientLayer";
 import { SceneEditor } from "@/components/game/SceneEditor";
 import { WorldViewport, type ViewportApi } from "@/components/game/WorldViewport";
 import { ObjectActionMenu } from "@/components/explore/ObjectActionMenu";
@@ -545,6 +546,9 @@ export default function PlayPage() {
     return [...ownObjects, ...placeDisplayed(story, spots, sceneOfGifts).map(({ gift, spot }) => giftObject(gift, spot, room, group, envType))];
   }, [world?.id, envType, story, spots, room, ownObjects, sceneOfGifts]);
   useEffect(() => stage.setObjects(objects), [stage, objects]);
+  // ---- Ambient animation (water, lanterns, flames…): which objects move, and which of them are "in front" cut-outs.
+  const frontIds = useMemo(() => new Set(scene.kind === "map" ? scene.built.fronts.map((f) => f.id) : []), [scene]);
+  const frontSway = useMemo(() => swayFor(objects, frontIds, reducedMotion), [objects, frontIds, reducedMotion]);
   const objectName = useCallback(
     (id: string) => {
       const o = stage.objectById(id);
@@ -1340,7 +1344,8 @@ export default function PlayPage() {
                 />
               }
             >
-              {scene.kind === "map" && <SceneFronts src={scene.art.src} size={scene.built.size} fronts={scene.built.fronts} pixelated={!scene.art.smooth} stage={stage} actorIds={cast.map((c) => c.id)} />}
+              {scene.kind !== "loading" && <AmbientLayer objects={objects} art={scene.art} frontIds={frontIds} disabled={reducedMotion} />}
+              {scene.kind === "map" && <SceneFronts src={scene.art.src} size={scene.built.size} fronts={scene.built.fronts} pixelated={!scene.art.smooth} stage={stage} actorIds={cast.map((c) => c.id)} sway={frontSway} />}
               {scene.kind === "loading" && <SceneLoading />}
               <StageGifts placed={placeDisplayed(story, spots, sceneOfGifts)} nameOf={(id) => cast.find((c) => c.id === id)?.name.trim() ?? ""} />
               <StageActors stage={stage} characters={cast} selectedId={selected?.id ?? null} onSelect={onStageSelect} onPressStart={drag.onPressStart} reducedMotion={reducedMotion} />

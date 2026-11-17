@@ -1,7 +1,7 @@
 "use client";
 import { clipPathOf } from "@/lib/scene/geometry";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import type { Rect } from "@/lib/stage/room";
 import { LoadingDots } from "@/components/ui/LoadingDots";
 import { PixelIcon } from "@/components/ui/PixelIcon";
@@ -35,6 +35,7 @@ export function SceneFronts({
   pixelated = false,
   stage,
   actorIds = [],
+  sway = {},
 }: {
   src: string;
   size: { width: number; height: number };
@@ -44,6 +45,8 @@ export function SceneFronts({
   /** Characters on stage, to fade cut-outs that hide someone. */
   stage?: { position: (id: string) => { x: number; y: number } | null };
   actorIds?: string[];
+  /** Cut-outs that sway (ambient animation): their timing vars, by object id. */
+  sway?: Record<string, CSSProperties>;
 }) {
   const refs = useRef(new Map<string, HTMLSpanElement>());
   const live = useRef({ stage, actorIds, fronts });
@@ -79,8 +82,9 @@ export function SceneFronts({
           }}
           aria-hidden
           data-scene-front={f.id}
-          className={`${pixelated ? "pixelated " : ""}pointer-events-none absolute transition-opacity duration-200`}
+          className={`${pixelated ? "pixelated " : ""}${sway[f.id] ? "amb-sway " : ""}pointer-events-none absolute transition-opacity duration-200`}
           style={{
+            ...sway[f.id],
             left: f.bounds.x0,
             top: f.bounds.y0,
             width: f.bounds.x1 - f.bounds.x0,

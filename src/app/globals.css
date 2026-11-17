@@ -584,3 +584,94 @@ html[data-motion="reduced"] .skin-ambient { display: none; }
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='3' viewBox='0 0 8 3' shape-rendering='crispEdges'%3E%3Crect x='2' y='0' width='4' height='1' fill='%23fffaf3'/%3E%3Crect x='1' y='1' width='6' height='1' fill='%23fffaf3'/%3E%3Crect x='0' y='2' width='8' height='1' fill='%23fffaf3'/%3E%3C/svg%3E") 0 0 / calc(var(--u) * 8) 100% repeat-x;
   image-rendering: pixelated;
 }
+
+/* ---------------------------------------------------------------- ambient animation on the stage
+   (components/game/AmbientLayer.tsx). Stepped, slow, transform/opacity only. Timing comes from
+   --amb-dur / --amb-delay / --amb-steps / --amb-dir per object. Paused off camera; the global
+   reduce-motion rule above stops them. */
+.amb-ripple, .amb-sway, .amb-flicker, .amb-flame, .amb-flame-glow, .amb-twinkle, .amb-pulse {
+  animation-duration: var(--amb-dur, 2400ms);
+  animation-delay: var(--amb-delay, 0ms);
+  animation-direction: var(--amb-dir, normal);
+  animation-iteration-count: infinite;
+  animation-timing-function: steps(var(--amb-steps, 4), end);
+}
+[data-amb-paused], [data-amb-paused] * { animation-play-state: paused !important; }
+.amb-ripple {
+  position: absolute; left: 0; top: 0; width: 200%; height: 100%;
+  background: repeating-linear-gradient(0deg, transparent 0 5px, rgb(255 255 255 / 0.55) 5px 6px, transparent 6px 11px);
+  -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 7px, transparent 7px 19px);
+  mask-image: repeating-linear-gradient(90deg, #000 0 7px, transparent 7px 19px);
+  opacity: 0.7;
+  animation-name: amb-ripple;
+}
+@keyframes amb-ripple { from { transform: translateX(0); } to { transform: translateX(-38px); } }
+.amb-sway {
+  position: absolute; inset: 0;
+  transform-origin: 50% 100%;
+  animation-name: amb-sway;
+  animation-timing-function: step-end;
+}
+@keyframes amb-sway {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(1px); }
+  50% { transform: translateX(0); }
+  75% { transform: translateX(-1px); }
+}
+/* A front cut-out that sways (SceneFronts): same motion on the cut-out itself. */
+[data-scene-front].amb-sway { position: absolute; inset: auto; }
+.amb-flicker {
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 222 140 / 0.55) 0 22%, rgb(255 196 110 / 0.22) 45%, transparent 68%);
+  mix-blend-mode: screen;
+  animation-name: amb-flicker;
+}
+@keyframes amb-flicker {
+  0%, 100% { opacity: 0.7; }
+  20% { opacity: 1; }
+  40% { opacity: 0.8; }
+  60% { opacity: 0.95; }
+  80% { opacity: 0.6; }
+}
+.amb-flame {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, #e8662e 0 30%, #ffb238 30% 65%, #fff1a8 65%);
+  clip-path: polygon(50% 0, 75% 30%, 100% 70%, 80% 100%, 20% 100%, 0 70%, 25% 30%);
+  transform-origin: 50% 100%;
+  animation-name: amb-flame;
+}
+@keyframes amb-flame {
+  0%, 100% { transform: scale(1, 1); }
+  33% { transform: scale(0.82, 1.15) translateX(4%); }
+  66% { transform: scale(1.08, 0.9) translateX(-4%); }
+}
+.amb-flame-glow {
+  position: absolute; left: -100%; top: -40%; width: 300%; height: 220%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 190 90 / 0.45), transparent 65%);
+  mix-blend-mode: screen;
+  animation-name: amb-flicker;
+}
+.amb-twinkle {
+  position: absolute; width: 3px; height: 3px;
+  background:
+    linear-gradient(#fff, #fff) center / 1px 3px no-repeat,
+    linear-gradient(#fff, #fff) center / 3px 1px no-repeat;
+  filter: drop-shadow(0 0 1px rgb(255 240 190 / 0.9));
+  animation-name: amb-twinkle;
+}
+@keyframes amb-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  30% { opacity: 1; transform: scale(1); }
+  55% { opacity: 0.4; transform: scale(0.8); }
+}
+.amb-pulse {
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(196 168 255 / 0.5) 0 25%, rgb(168 214 255 / 0.25) 50%, transparent 70%);
+  mix-blend-mode: screen;
+  animation-name: amb-pulse;
+}
+@keyframes amb-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 0.8; transform: scale(1.08); }
+}
