@@ -54,6 +54,26 @@ const RETARGET_MS = 500;
 export const COMMAND_GRACE_MS = 2500;
 /** Seated (or resting) by the player: autonomy leaves them there this long before getting up or wandering off. */
 export const SEATED_GRACE_MS = 20000;
+/** After a conversation ends, the pair holds still this long before routine walks start again (no abrupt walk-off). */
+export const ENDING_HOLD_MS = 1500;
+/** How long an intentional exception (walking off angry, the player's own command) may move someone mid-conversation. */
+export const INTENT_MS = 6000;
+/** An approach toward a partner who is already this much closer than the talk distance is just a turn, not a walk. */
+export const CONVO_SLACK = 14;
+
+/**
+ * Where a character is in a conversation (stationary conversation rules).
+ *   approaching      walking up to someone to talk
+ *   in_conversation  standing and talking: routine walks, idle shuffles and
+ *                    crowd-shuffling are held; reactions play in place
+ *   intentional      an exception the story or the player chose: walking off
+ *                    upset, the player dragging them away, following someone
+ *   ending           just finished: a short hold, then free again
+ *   disengaged       not in a conversation
+ */
+export type ConversationPhase = "approaching" | "in_conversation" | "intentional" | "ending" | "disengaged";
+/** Feelings that make stepping back or walking away a believable, intentional move mid-conversation. */
+const LEAVING_FEELINGS: readonly Emotion[] = ["angry", "frustrated", "sad", "anxious", "embarrassed"];
 
 type Move = {
   kind: "approach" | "retreat" | "shift" | "makeRoom" | "goto" | "object";
@@ -163,6 +183,9 @@ export class StageSim {
   private snapKey = "";
   private convo = new Set<string>();
   private speakerId: string | null = null;
+  private endingUntil = new Map<string, number>();
+  private intentUntil = new Map<string, number>();
+  private approachFor = new Map<string, string>();
   room: RoomLayout;
   paused = false;
   reducedMotion: boolean;
@@ -519,6 +542,21 @@ export class StageSim {
     const a0 = this.actors.get(v.action.actor)!;
     const rank = PRIORITIES[priority];
     const moves = travels(v.action) || v.action.type === "stand_up";
+    // Stationary conversation: someone talking stays put unless the move is an intentional exception.
+    if (moves && this.held(a0)) {
+      const gated = this.conversationGate(a0, v.action, rank);
+      if (!gated) {
+        const r: ActionResult = { ok: false, reason: "in_conversation", action: v.action };
+        this.lastResult.set(v.action.actor, r);
+        return r;
+      }
+      if (gated !== v.action) {
+        const res = this.execute(gated, context);
+        this.lastResult.set(v.action.actor, res);
+        this.emit();
+        return res;
+      }
+    }
     if (moves && rank < PRIORITIES.player && this.time < a0.commandUntil) {
       const r: ActionResult = { ok: false, reason: "player_command", action: v.action };
       this.lastResult.set(v.action.actor, r);
@@ -804,7 +842,8 @@ export class StageSim {
   private idleReaction(a: Actor, kind: IdleKind, act: StageAction, force = false): ActionResult {
     if (!force && (a.state === "moving" || a.state === "speaking")) return { ok: false, reason: "busy", action: act };
     // Sitting: fidget in place (a shuffle step would stand them up).
-    if (kind === "shift" && a.pose === "sit") kind = "look_around";
+    // Sitting or talking: fidget in place (a shuffle step would stand them up / walk off mid-conversation).
+    if (kind === "shift" && (a.pose === "sit" || this.held(a))) kind = "look_around";
     if (kind === "shift") {
       if (this.reducedMotion) return { ok: true, action: act, note: "idle" };
       const rng = rngFrom(`${a.id}:shift:${a.idleSeq++}`);
@@ -878,14 +917,83 @@ export class StageSim {
     this.convo = new Set(ids.filter((id) => this.actors.has(id)));
     for (const id of this.convo) {
       const a = this.actors.get(id)!;
+      this.approachFor.delete(id);
+      this.endingUntil.delete(id);
+      // A routine walk someone was on is dropped, not resumed after the conversation (the walk to the partner is kept).
+      if (a.suspended && !(a.suspended.kind === "approach" && a.suspended.targetId && this.convo.has(a.suspended.targetId))) a.suspended = null;
       if (a.state === "idle") this.setState(a, "interacting");
     }
     this.emit();
   }
 
+  /** Where this character is in a conversation (see ConversationPhase). */
+  conversationPhase(id: string): ConversationPhase {
+    if ((this.intentUntil.get(id) ?? -1) > this.time) return "intentional";
+    if (this.convo.has(id)) return "in_conversation";
+    if ((this.endingUntil.get(id) ?? -1) > this.time) return "ending";
+    if (this.approachFor.has(id) && this.actors.get(id)?.move?.kind === "approach") return "approaching";
+    return "disengaged";
+  }
+
+  /** The walk this character just started is to talk to `targetId` (shown as "approaching"). */
+  markApproaching(id: string, targetId: string) {
+    this.approachFor.set(id, targetId);
+  }
+
+  /**
+   * An intentional exception to the stationary rule: this character may walk
+   * during the conversation for a moment (storming off, following someone).
+   */
+  leaveConversation(id: string, ms = INTENT_MS) {
+    if (!this.actors.has(id)) return;
+    this.intentUntil.set(id, this.time + ms);
+    this.emit();
+  }
+
+  /** Talking or just finished: routine movement is held. */
+  private held(a: Actor): boolean {
+    const p = this.conversationPhase(a.id);
+    return p === "in_conversation" || p === "ending";
+  }
+
+  /**
+   * What a movement request becomes while someone is held in a conversation:
+   * the same action (allowed), a stationary stand-in, or null (refused).
+   */
+  private conversationGate(a: Actor, act: StageAction, rank: number): StageAction | null {
+    const intend = () => {
+      this.intentUntil.set(a.id, this.time + INTENT_MS);
+      return act;
+    };
+    // The player's own command is always intentional.
+    if (rank >= PRIORITIES.player) return intend();
+    switch (act.type) {
+      case "approach": {
+        const t = this.actors.get(act.target)!;
+        const partner = this.convo.has(act.target);
+        // Too far apart to talk (the other one was pushed away): close the gap. Otherwise just turn to them.
+        if (partner && standGap(a, t) > (act.distance ?? 30) + CONVO_SLACK) return act;
+        return { type: "face_target", actor: a.id, target: act.target };
+      }
+      case "retreat":
+        // Stepping back is a choice the feeling explains (upset, scared, embarrassed); a calm one stays.
+        if (LEAVING_FEELINGS.includes(a.emotion)) return intend();
+        return act.from ? { type: "face_target", actor: a.id, target: act.from } : { type: "idle_reaction", actor: a.id, kind: "look_around" };
+      case "idle_reaction":
+        // An idle shuffle becomes a fidget in place.
+        return { type: "idle_reaction", actor: a.id, kind: "look_around" };
+      case "stand_up":
+        return act;
+      default:
+        // Routine walks and object use wait until the conversation is over.
+        return null;
+    }
+  }
+
   endConversation() {
     const ids = [...this.convo];
     this.convo.clear();
+    for (const id of ids) this.endingUntil.set(id, this.time + ENDING_HOLD_MS);
     for (const id of ids) {
       const a = this.actors.get(id);
       if (a && a.state === "interacting" && this.time >= a.interactUntil) this.setState(a, "idle");
@@ -900,6 +1008,8 @@ export class StageSim {
     this.speakerId = id;
     if (prev && prev.state === "speaking") {
       // Line finished: go back to what they were doing (a paused walk resumes).
+      // Held in a conversation: a paused routine walk is dropped (a walk to the partner may continue).
+      if (prev.suspended && this.held(prev) && !(prev.suspended.kind === "approach" && prev.suspended.targetId && this.convo.has(prev.suspended.targetId))) prev.suspended = null;
       this.setState(prev, prev.suspended ? "idle" : this.convo.has(prev.id) ? "interacting" : "idle");
       if (prev.suspended) this.resumeMove(prev);
     }
@@ -1110,7 +1220,8 @@ export class StageSim {
     if (m) this.onWalkEnd?.(a.id, "arrived", m.kind, priority);
     if (obj && m?.action) this.onObject?.(a.id, obj.id, m.action, priority);
     // Ended up in someone's personal space (they moved too)? Take one small step to make room.
-    if (m && m.kind !== "makeRoom" && m.kind !== "object" && this.crowding(a)) this.makeRoom(a, m.targetId);
+    // Not while talking: people in a conversation stand close on purpose.
+    if (m && m.kind !== "makeRoom" && m.kind !== "object" && !this.held(a) && this.crowding(a)) this.makeRoom(a, m.targetId);
     if (m?.kind === "approach" && m.targetId && this.actors.has(m.targetId)) this.onArrive?.(a.id, m.targetId, priority);
   }
 

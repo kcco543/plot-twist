@@ -211,6 +211,7 @@ export function useTalk(d: TalkDeps) {
         tell(res.reason === "no_room" ? "noRoom" : res.reason === "busy" || res.reason === "outranked" ? "busy" : "unreachable", actorId, targetId);
         return false;
       }
+      stage.markApproaching(actorId, targetId);
       walk.current = { started: performance.now(), dist };
       deps.current.onSelect(actorId);
       const s0 = newSession(nextId.current++, actorId, via);

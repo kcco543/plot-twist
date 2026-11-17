@@ -521,7 +521,8 @@
         "player_command": "you're steering them right now, so their own reaction waits",
         "outranked": "they're busy with something more important (your command or the story)",
         "unknown_object": "there's no such object here",
-        "not_allowed": "that isn't something they can do with it"
+        "not_allowed": "that isn't something they can do with it",
+        "in_conversation": "talking, so stays in place"
       },
       "notes": {
         "moving": "on the way",

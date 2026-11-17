@@ -61,6 +61,7 @@ export const REFUSALS = [
   "outranked",
   "unknown_object",
   "not_allowed",
+  "in_conversation",
 ] as const;
 export type Refusal = (typeof REFUSALS)[number];
 

@@ -521,7 +521,8 @@
         "player_command": "你正在操控他们，所以他们自己的反应会先等等",
         "outranked": "他们正忙着更重要的事（你的指令或剧情）",
         "unknown_object": "这里没有这个物品",
-        "not_allowed": "不能对它这样做"
+        "not_allowed": "不能对它这样做",
+        "in_conversation": "正在聊天，原地不动"
       },
       "notes": {
         "moving": "出发了",

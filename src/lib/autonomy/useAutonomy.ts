@@ -130,6 +130,8 @@ export function useAutonomy(d: AutonomyDeps) {
     (listenerId: string, speakerId: string) => {
       const x = deps.current;
       write((a, s) => recordBoundary(a, listenerId, speakerId, severityFrom(s, listenerId), s.turn));
+      // Walking off is the one intentional exception to standing still in a conversation.
+      x.stage.leaveConversation(listenerId);
       x.stage.request({ type: "turn_away", actor: listenerId, from: speakerId }, "event", "story");
       window.setTimeout(() => {
         const y = deps.current;
@@ -212,6 +214,8 @@ export function useAutonomy(d: AutonomyDeps) {
             continue;
           }
           const res: { status: "started" | "failed" } = { status: "failed" };
+          // They said they'd go: an intentional move, not a routine walk the conversation hold should stop.
+          x.stage.leaveConversation(g.actor);
           write((a) => {
             const r = submit(a, newIntent({ actor: g.actor, kind: "go_to_place", object: g.object!, place: g.place, reason: "saidSo", source: "dialogue" }), env());
             res.status = r.intent.status === "failed" ? "failed" : "started";
