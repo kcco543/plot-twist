@@ -58,7 +58,13 @@ export type ViewportApi = {
   camera: () => Camera | null;
   recenter: () => void;
   following: () => boolean;
+  /** Quick focus: leave Free mode, glide to the focused character and follow them. */
+  focus: () => void;
+  /** "follow": the camera keeps the focused character in view; "free": it stays where the player put it. */
+  mode: () => CameraMode;
 };
+
+export type CameraMode = "follow" | "free";
 
 export function WorldViewport({
   apiRef,
@@ -82,6 +88,7 @@ export function WorldViewport({
   onTap,
   locked = false,
   sceneKey,
+  hud,
 }: {
   apiRef?: Ref<ViewportApi>;
   art: ArtAsset;
@@ -113,6 +120,8 @@ export function WorldViewport({
   locked?: boolean;
   /** Changes when the scene changes: the camera jumps to the focus instead of gliding across. */
   sceneKey: string;
+  /** Drawn over the top-left of the view, outside the camera (the cast portraits). Never starts a pan. */
+  hud?: ReactNode;
 }) {
   const { t } = useI18n();
   const box = useRef<HTMLDivElement>(null);
@@ -148,6 +157,11 @@ export function WorldViewport({
   const recentering = useRef(true);
   const snapNext = useRef(true);
   const [following, setFollowing] = useState(true);
+  // Free mode: nothing moves the camera but the player (drag, zoom) or an explicit quick focus.
+  const free = useRef(false);
+  const [mode, setModeState] = useState<CameraMode>("follow");
+  // Momentum after a hand pan (world px per ms), so letting go glides to a stop instead of halting.
+  const glide = useRef<{ vx: number; vy: number } | null>(null);
   const [view, setView] = useState<StageView>(null);
   const lastView = useRef<{ x: number; y: number } | null>(null);
   const deps = useRef({ stage, focusId, drag, onDragScroll, reducedMotion, followSpeed, world, dpr });
@@ -211,8 +225,9 @@ export function WorldViewport({
     }
   }, [sceneKey, focusPoint, apply]);
 
-  // A different character to follow: glide over to them (and follow again after a manual pan).
+  // A different character to follow: glide over to them (and follow again after a manual pan). Not in Free mode.
   useEffect(() => {
+    if (free.current) return;
     recentering.current = true;
     follow.current = true;
     setFollowing(true);
@@ -242,9 +257,17 @@ export function WorldViewport({
         } else if (dragPanned) {
           // The drop is a command: follow the character again (gently, with the dead zone, from where the drag left the view).
           dragPanned = false;
-          follow.current = true;
-          recentering.current = false;
-          setFollowingSoon(true);
+          if (!free.current) {
+            follow.current = true;
+            recentering.current = false;
+            setFollowingSoon(true);
+          }
+        } else if (glide.current && !follow.current) {
+          // Coasting after a hand pan: slows to a stop (and stops at the map's edges).
+          const g = glide.current;
+          pos = { x: c.x + g.vx * dt, y: c.y + g.vy * dt };
+          const k = Math.pow(0.9, dt / 16);
+          glide.current = Math.hypot(g.vx, g.vy) * k < 0.004 ? null : { vx: g.vx * k, vy: g.vy * k };
         } else if (follow.current) {
           const f = focusPoint();
           if (f) {
@@ -279,9 +302,18 @@ export function WorldViewport({
   }, [following]);
 
   const recenter = useCallback(() => {
+    free.current = false;
+    setModeState("follow");
+    glide.current = null;
     follow.current = true;
     recentering.current = true;
     setFollowing(true);
+  }, []);
+  const goFree = useCallback(() => {
+    free.current = true;
+    setModeState("free");
+    follow.current = false;
+    setFollowing(false);
   }, []);
 
   useImperativeHandle(
@@ -302,19 +334,22 @@ export function WorldViewport({
       camera: () => (cam.current.scale ? { ...cam.current } : null),
       recenter,
       following: () => follow.current,
+      focus: recenter,
+      mode: () => (free.current ? "free" : "follow"),
     }),
     [recenter],
   );
 
   // ---- manual panning and taps on empty ground
-  const gesture = useRef<{ id: number; x0: number; y0: number; cx: number; cy: number; panning: boolean } | null>(null);
+  const gesture = useRef<{ id: number; x0: number; y0: number; cx: number; cy: number; panning: boolean; lx: number; ly: number; lt: number; vx: number; vy: number } | null>(null);
   const v = scale ? viewSize({ viewW: boxW, viewH, scale }) : null;
   const canPan = !!v && (world.width > v.width + 0.5 || world.height > v.height + 0.5);
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (locked || !e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
     const target = e.target as Element;
-    if (target.closest("[data-actor], [data-speech-bubble], [data-camera-controls], button, a, input, textarea, select, [role=menu]")) return;
-    gesture.current = { id: e.pointerId, x0: e.clientX, y0: e.clientY, cx: cam.current.x, cy: cam.current.y, panning: false };
+    if (target.closest("[data-actor], [data-speech-bubble], [data-camera-controls], [data-camera-hud], button, a, input, textarea, select, [role=menu]")) return;
+    glide.current = null;
+    gesture.current = { id: e.pointerId, x0: e.clientX, y0: e.clientY, cx: cam.current.x, cy: cam.current.y, panning: false, lx: e.clientX, ly: e.clientY, lt: e.timeStamp, vx: 0, vy: 0 };
   };
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
@@ -329,6 +364,13 @@ export function WorldViewport({
       setFollowingSoon(false);
     }
     const c = cam.current;
+    // Pointer velocity (smoothed), in world px per ms, for the glide on release.
+    const dt = Math.max(1, e.timeStamp - g.lt);
+    g.vx = g.vx * 0.6 + (-(e.clientX - g.lx) / c.scale / dt) * 0.4;
+    g.vy = g.vy * 0.6 + (-(e.clientY - g.ly) / c.scale / dt) * 0.4;
+    g.lx = e.clientX;
+    g.ly = e.clientY;
+    g.lt = e.timeStamp;
     const p = clampCamera(g.cx - dx / c.scale, g.cy - dy / c.scale, c, world);
     cam.current = { ...c, ...p };
     apply();
@@ -337,6 +379,7 @@ export function WorldViewport({
     const g = gesture.current;
     if (!g || g.id !== e.pointerId) return;
     gesture.current = null;
+    if (g.panning && !reducedMotion && e.timeStamp - g.lt < 80) glide.current = { vx: Math.max(-2, Math.min(2, g.vx)), vy: Math.max(-2, Math.min(2, g.vy)) };
     if (g.panning || locked) return;
     const el = box.current;
     if (!el || !onTap) return;
@@ -356,6 +399,7 @@ export function WorldViewport({
         ref={box}
         data-stage-view
         data-camera-zoom={zoom}
+        data-camera-mode={mode}
         data-camera-scale={scale || undefined}
         className="px-checker relative w-full overflow-hidden"
         style={{ height: viewH || undefined, aspectRatio: viewH ? undefined : `${art.width} / ${art.height}`, touchAction: canPan ? "none" : "pan-y", cursor: canPan && !locked ? "grab" : undefined }}
@@ -378,11 +422,17 @@ export function WorldViewport({
             </StageSizeContext.Provider>
           </StageViewContext.Provider>
         )}
-        {scale > 0 && tag && art.placeholder && <span className="pointer-events-none absolute left-1 top-1 bg-white/90 px-1.5 py-0.5 font-label text-[9px] uppercase leading-none text-ink-soft">{tag}</span>}
+        {scale > 0 && hud && <div className="pointer-events-none absolute left-1.5 top-1.5 z-40 w-[min(70%,30rem)]">{hud}</div>}
+        {scale > 0 && tag && art.placeholder && <span className={`pointer-events-none absolute top-1 ${hud ? "right-1" : "left-1"} bg-white/90 px-1.5 py-0.5 font-label text-[9px] uppercase leading-none text-ink-soft`}>{tag}</span>}
         {scale > 0 && (
           <div data-camera-controls className="absolute bottom-1.5 right-1.5 z-40 flex items-stretch gap-1" role="group" aria-label={t("camera.controls")}>
-            {!following && (
-              <button type="button" onClick={recenter} className="px-focus flex min-h-9 items-center gap-1 bg-butter px-2 font-label text-[10px] uppercase text-ink shadow-[inset_0_-3px_0_var(--color-butter-lo)]" data-camera-follow>
+            {following ? (
+              <button type="button" onClick={goFree} title={t("camera.freeHint")} aria-label={t("camera.freeHint")} className="px-focus flex min-h-9 items-center gap-1 bg-white/90 px-2 font-label text-[10px] uppercase text-ink-soft shadow-[inset_0_-3px_0_rgb(0_0_0/0.12)]" data-camera-free>
+                <PixelIcon name="hand" size={12} />
+                <span className="hidden sm:inline">{t("camera.free")}</span>
+              </button>
+            ) : (
+              <button type="button" onClick={recenter} title={t("camera.followHint")} className="px-focus flex min-h-9 items-center gap-1 bg-butter px-2 font-label text-[10px] uppercase text-ink shadow-[inset_0_-3px_0_var(--color-butter-lo)]" data-camera-follow>
                 <PixelIcon name="eye" size={12} />
                 <span>{followLabel ?? t("camera.follow")}</span>
               </button>

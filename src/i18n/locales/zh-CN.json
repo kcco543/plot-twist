@@ -548,7 +548,26 @@
     "sampleCast": "加入示例角色（米拉、雯雯、托比）",
     "earlierLines": "之前的台词",
     "details": "角色详情",
-    "detailsHint": "关于{name}的全部信息。打开时上方的对话不会中断。"
+    "detailsHint": "关于{name}的全部信息。打开时上方的对话不会中断。",
+    "castBar": {
+      "label": "找到角色",
+      "elsewhere": "在别的地方",
+      "here": "在这里"
+    },
+    "activity": {
+      "elsewhere": "最后出现在：{scene}",
+      "speaking": "正在说话",
+      "talking": "正在和{name}聊天",
+      "approaching": "正走向{name}",
+      "goingTo": "正去{object}",
+      "sittingOn": "坐在{object}上",
+      "using": "在{object}旁",
+      "steppingAway": "后退了一步",
+      "walking": "正在走动",
+      "sitting": "坐着",
+      "leaving": "正在走开",
+      "idle": "在一旁站着"
+    }
   },
   "scene": {
     "narrator": "旁白",
@@ -3393,7 +3412,12 @@
       "snappy": "灵敏"
     },
     "followSpeedDesc": "游戏镜头追上所跟随角色的速度。",
-    "followTalk": "回到对话"
+    "followTalk": "回到对话",
+    "free": "自由",
+    "freeHint": "自由镜头：停在你放的位置。拖动地图四处看看。",
+    "followHint": "跟随选中或正在说话的角色",
+    "modeFollow": "跟随中",
+    "modeFree": "自由镜头"
   },
   "sync": {
     "badge": {

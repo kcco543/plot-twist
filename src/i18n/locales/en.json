@@ -548,7 +548,26 @@
     "sampleCast": "Add the sample cast (Mira, Wren, Tobi)",
     "earlierLines": "Earlier lines",
     "details": "Character details",
-    "detailsHint": "Everything about {name}. The conversation above keeps going while this is open."
+    "detailsHint": "Everything about {name}. The conversation above keeps going while this is open.",
+    "castBar": {
+      "label": "Find a character",
+      "elsewhere": "in another place",
+      "here": "here"
+    },
+    "activity": {
+      "elsewhere": "Last seen: {scene}",
+      "speaking": "Speaking",
+      "talking": "Talking with {name}",
+      "approaching": "Going over to {name}",
+      "goingTo": "Heading to the {object}",
+      "sittingOn": "Sitting on the {object}",
+      "using": "At the {object}",
+      "steppingAway": "Stepping back",
+      "walking": "Walking",
+      "sitting": "Sitting",
+      "leaving": "Walking away",
+      "idle": "Standing around"
+    }
   },
   "scene": {
     "narrator": "Narrator",
@@ -3393,7 +3412,12 @@
       "snappy": "Snappy"
     },
     "followSpeedDesc": "How quickly the Play Mode camera catches up with the character it follows.",
-    "followTalk": "Speakers"
+    "followTalk": "Speakers",
+    "free": "Free",
+    "freeHint": "Free camera: it stays where you put it. Drag the map to look around.",
+    "followHint": "Follow the selected or speaking character",
+    "modeFollow": "Following",
+    "modeFree": "Free camera"
   },
   "sync": {
     "badge": {

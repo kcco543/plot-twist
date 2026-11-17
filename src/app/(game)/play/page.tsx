@@ -62,13 +62,15 @@ import { activeWorldId } from "@/lib/saves/worldSaves";
 import { useActiveScene } from "@/lib/scene/useScene";
 import { SceneFronts, SceneLoading, SceneNotice } from "@/components/game/SceneLayers";
 import { AmbientLayer, swayFor } from "@/components/game/AmbientLayer";
+import { CastFocusBar } from "@/components/game/CastFocusBar";
+import { activityOf } from "@/lib/camera/activity";
 import { SceneEditor } from "@/components/game/SceneEditor";
 import { WorldViewport, type ViewportApi } from "@/components/game/WorldViewport";
 import { ObjectActionMenu } from "@/components/explore/ObjectActionMenu";
 import { CurtainStatus, FadeCurtain, LeaveAreaDialog, ScenePicker, SceneTitleCard, type NewSceneDraft } from "@/components/explore/TravelUI";
 import { WorldMarks } from "@/components/explore/WorldMarks";
 import { availability, keeperOf, resolve as resolveInteraction, stateOf as objectStateOf, type InteractContext } from "@/lib/explore/interact";
-import { FIRST_SCENE_ID, activeScene, addMarker, addScene, connect, linkAt, linkKindFor, neighbours, newScene, normalizeScenes, presentIn, sceneById, setObjectState, twoWayByDefault, type SceneRecord, type WorldScenes } from "@/lib/explore/scenes";
+import { FIRST_SCENE_ID, activeScene, addMarker, addScene, connect, linkAt, linkKindFor, neighbours, newScene, normalizeScenes, presentIn, sceneById, sceneOf, setObjectState, twoWayByDefault, type SceneRecord, type WorldScenes } from "@/lib/explore/scenes";
 import { travel as travelScenes } from "@/lib/explore/scenes";
 import { generateSceneMap, useMapStudio } from "@/lib/mapGenerator";
 import { mapDisplayName, sceneForMap } from "@/lib/scene/useScene";
@@ -1088,7 +1090,41 @@ export default function PlayPage() {
     if (!lineInProgress && !talking) stage.endConversation();
   }, [stage, lineInProgress, talking]);
   // The camera follows whoever is speaking, otherwise the selected character (WorldViewport).
-  const cameraFocusId = speakerId ?? selected?.id ?? null;
+  // Quick focus (the portrait row): the camera goes to that character until the next speaker takes over.
+  const [quickFocus, setQuickFocus] = useState<string | null>(null);
+  useEffect(() => setQuickFocus(null), [speakerId]);
+  const cameraFocusId = (quickFocus && onStage.some((c) => c.id === quickFocus) ? quickFocus : null) ?? speakerId ?? selected?.id ?? null;
+  const focusCharacter = useCallback(
+    (id: string) => {
+      setPickedId(id);
+      setQuickFocus(id);
+      viewportApi.current?.focus();
+      // A short blink so the eye finds them (CSS; gone with Reduce motion).
+      const el = document.querySelector<HTMLElement>(`[data-actor="${CSS.escape(id)}"]`);
+      if (el) {
+        el.classList.remove("actor-ping");
+        void el.offsetWidth;
+        el.classList.add("actor-ping");
+        window.setTimeout(() => el.classList.remove("actor-ping"), 1700);
+      }
+    },
+    [],
+  );
+  // Everyone in this world for the portrait row: here first, then those in other places (last seen there).
+  const focusCast = useMemo(() => (isDemo || sandbox ? onStage : [...onStage, ...save.characters.filter((c) => !onStage.some((o) => o.id === c.id))]), [isDemo, sandbox, onStage, save.characters]);
+  const elsewhereOf = useCallback(
+    (id: string) => {
+      if (onStage.some((c) => c.id === id)) return null;
+      const sc = sceneById(scenes, sceneOf(scenes, id));
+      return sc ? sceneLabel(sc) : t("play.castBar.elsewhere");
+    },
+    [onStage, scenes, sceneLabel, t],
+  );
+  const activityFor = useCallback(
+    (id: string) =>
+      activityOf(id, stage, { person: (x) => castRef.current.find((c) => c.id === x)?.name.trim() || t("common.someone"), object: (x) => objectName(x) || t("common.someone") }, elsewhereOf(id)),
+    [stage, objectName, elsewhereOf, t],
+  );
 
   if (!hydrated) return <LoadingState label={t("common.loadingSave")} />;
 
@@ -1311,6 +1347,7 @@ export default function PlayPage() {
             <SceneTitleCard k={titleKey} title={envName} subtitle={worldName} />
             <WorldViewport
               apiRef={viewportApi}
+              hud={<CastFocusBar cast={focusCast} selectedId={selected?.id ?? null} elsewhere={elsewhereOf} activity={activityFor} onFocus={focusCharacter} />}
               art={scene.kind === "loading" ? environmentArt[world.id][envType] : scene.art}
               imageWidth={scene.kind === "map" ? scene.map.width : undefined}
               label={t("play.viewportAlt", { place: envName, world: worldName })}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { roomFor, standGap } from "@/lib/stage/room";
 import { ENDING_HOLD_MS, INTENT_MS, StageSim } from "@/lib/stage/sim";
+import { objectsFor } from "@/lib/stage/objects";
 import type { Character } from "@/lib/types";
 import { makeChar } from "./helpers";
 
@@ -113,5 +114,32 @@ describe("stationary conversation", () => {
     const p0 = sim.position("a")!;
     run(sim, 1500);
     expect(sim.position("a")).toEqual(p0);
+  });
+});
+
+describe("quick focus activity labels (from real state)", async () => {
+  const { activityOf } = await import("@/lib/camera/activity");
+  const names = { person: (id: string) => id.toUpperCase(), object: (id: string) => `obj:${id}` };
+
+  it("talking, walking over, stepping back, idle, elsewhere", () => {
+    const { sim } = setup();
+    expect(activityOf("a", sim, names, null)).toEqual({ key: "idle" });
+    expect(activityOf("a", sim, names, "Harbor")).toEqual({ key: "elsewhere", scene: "Harbor" });
+    sim.request({ type: "approach", actor: "c", target: "a", distance: 24 }, "conversation", "player");
+    expect(activityOf("c", sim, names, null)).toEqual({ key: "approaching", name: "A" });
+    sim.beginConversation(["a", "b"]);
+    expect(activityOf("a", sim, names, null)).toEqual({ key: "talking", name: "B" });
+    sim.setSpeaker("b");
+    expect(activityOf("b", sim, names, null)).toEqual({ key: "talking", name: "A" });
+  });
+
+  it("sitting on / heading to an object", () => {
+    const { sim } = setup();
+    sim.setObjects(objectsFor("modern", "interior"));
+    const rug = sim.objects.find((o) => o.actions.includes("sit"))!;
+    expect(sim.request({ type: "use_object", actor: "c", object: rug.id, action: "sit" }, "event", "story").ok).toBe(true);
+    expect(activityOf("c", sim, names, null)).toEqual({ key: "goingTo", object: `obj:${rug.id}` });
+    run(sim, 8000);
+    expect(activityOf("c", sim, names, null)).toEqual({ key: "sittingOn", object: `obj:${rug.id}` });
   });
 });

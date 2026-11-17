@@ -675,3 +675,11 @@ html[data-motion="reduced"] .skin-ambient { display: none; }
   0%, 100% { opacity: 0.35; transform: scale(0.85); }
   50% { opacity: 0.8; transform: scale(1.08); }
 }
+
+/* Quick focus: the character found from the portrait row blinks once. */
+[data-actor].actor-ping::after {
+  content: ""; position: absolute; left: 50%; bottom: -2px; width: 22px; height: 8px; margin-left: -11px;
+  border: 2px solid var(--color-butter-lo); border-radius: 50%;
+  animation: actor-ping 0.55s steps(3, end) 3; pointer-events: none;
+}
+@keyframes actor-ping { from { transform: scale(0.6); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }

@@ -935,6 +935,16 @@ export class StageSim {
     return "disengaged";
   }
 
+  /** Who else is in this character's conversation right now. */
+  conversationPartners(id: string): string[] {
+    return this.convo.has(id) ? [...this.convo].filter((x) => x !== id) : [];
+  }
+
+  /** The object this character is using / sitting on right now, if any. */
+  usingObjectOf(id: string): string | null {
+    return this.actors.get(id)?.usingObject ?? null;
+  }
+
   /** The walk this character just started is to talk to `targetId` (shown as "approaching"). */
   markApproaching(id: string, targetId: string) {
     this.approachFor.set(id, targetId);
