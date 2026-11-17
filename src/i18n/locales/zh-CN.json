@@ -310,7 +310,10 @@
       "remove": "删除",
       "usePlaceholder": "使用内置图片",
       "keepHint": "新地图完成前，你看到的仍是当前地图。",
-      "showingWhileDrawing": "正在生成 · 当前显示 v{n}"
+      "showingWhileDrawing": "正在生成 · 当前显示 v{n}",
+      "pixelGridCopy": "像素网格副本",
+      "pixelGridCopyHint": "较早的地图是高分辨率图片。这会在游戏的像素网格上做一份副本，存为新版本。原图保持不变，也不花钱。",
+      "pixelGridFailed": "这个浏览器无法生成像素网格副本。"
     },
     "edit": {
       "enter": "编辑区域",
@@ -3005,7 +3008,9 @@
     "note": "上面写着什么 / 备注",
     "notePlaceholder": "例如“楼上客房，一晚两枚铜币”",
     "contents": "里面有什么（用逗号分隔）",
-    "contentsPlaceholder": "例如 旧地图，银铃铛"
+    "contentsPlaceholder": "例如 旧地图，银铃铛",
+    "pixelGridSize": "角色与这张地图的像素网格一致：地图上的一个像素就是角色的一个像素，所以大小是固定的。",
+    "groundHint": "好读的地图会让可玩画面里大约三分之二是开阔、连通的地面。"
   },
   "theme": {
     "title": "界面风格",

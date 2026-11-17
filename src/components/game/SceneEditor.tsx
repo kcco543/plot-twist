@@ -16,6 +16,7 @@ import {
   floorShare,
   footprintOf,
   guessFloor,
+  lockedStageWidth,
   paintStroke,
   readLayout,
   type CharacterSize,
@@ -25,6 +26,8 @@ import {
 } from "@/lib/scene/layout";
 import type { Point, Rect } from "@/lib/stage/room";
 import { EXIT_TYPES, type ObjectType } from "@/lib/stage/objects";
+import { guessWalkable } from "@/lib/pixelArt/mapPixels";
+import { blobToImg } from "@/lib/pixelArt/mapPixelsBrowser";
 
 type Tool = "floor" | "wall" | "object" | "spawn";
 const BRUSHES = { s: 1, m: 2, l: 4 } as const;
@@ -70,6 +73,24 @@ export function SceneEditor({ open, map, onClose, onSaved, cast = [] }: { open: 
     setSelected(null);
     setError(false);
   }, [open, map]);
+
+  // Maps on the pixel grid: "Rough guess" reads the picture's open ground instead of a fixed shape.
+  const native = lockedStageWidth(map.width) !== null;
+  const [groundGuess, setGroundGuess] = useState<{ id: string; floor: string | null } | null>(null);
+  useEffect(() => {
+    if (!open || !native) return;
+    let live = true;
+    const { cols, rows } = readLayout(map.scene, map.width, map.height);
+    fetch(map.url)
+      .then((r) => r.blob())
+      .then(blobToImg)
+      .then((img) => live && setGroundGuess({ id: map.id, floor: guessWalkable(img, cols, rows) }))
+      .catch(() => live && setGroundGuess({ id: map.id, floor: null }));
+    return () => {
+      live = false;
+    };
+  }, [open, native, map]);
+  const roughGuess = () => (groundGuess?.id === map.id && groundGuess.floor && groundGuess.floor.length === layout.cols * layout.rows ? groundGuess.floor : guessFloor(layout.cols, layout.rows, layout.perspective));
 
   const built = useMemo(() => buildScene(layout, map.width, map.height, map.type), [layout, map.width, map.height, map.type]);
   const unreachable = new Set(built.problems.map((p) => p.objectId));
@@ -223,7 +244,7 @@ export function SceneEditor({ open, map, onClose, onSaved, cast = [] }: { open: 
           onPointerCancel={onUp}
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- generated blob */}
-          <img src={map.url} alt={name} draggable={false} className="absolute inset-0 block size-full" />
+          <img src={map.url} alt={name} draggable={false} className={`${native ? "pixelated " : ""}absolute inset-0 block size-full`} />
           <svg className="pointer-events-none absolute inset-0 size-full" viewBox={`0 0 ${layout.cols} ${layout.rows}`} preserveAspectRatio="none" aria-hidden>
             <path d={floorPath} fill="rgb(120 220 170 / 0.38)" stroke="none" />
           </svg>
@@ -284,6 +305,11 @@ export function SceneEditor({ open, map, onClose, onSaved, cast = [] }: { open: 
             </div>
             <div className="flex flex-col gap-1">
               <span className="font-label text-xs uppercase tracking-wide text-label">{t("playArea.characterSize")}</span>
+              {native ? (
+                <p className="text-sm text-ink-soft" data-pixel-grid-size>
+                  {t("playArea.pixelGridSize")}
+                </p>
+              ) : (
               <div className="flex flex-wrap gap-2">
                 {(Object.keys(STAGE_WIDTHS) as CharacterSize[]).map((k) => (
                   <PixelButton key={k} size="sm" variant={sizeOf(layout.stageWidth) === k ? "accent" : "ghost"} aria-pressed={sizeOf(layout.stageWidth) === k} onClick={() => patch({ stageWidth: STAGE_WIDTHS[k] })}>
@@ -291,13 +317,14 @@ export function SceneEditor({ open, map, onClose, onSaved, cast = [] }: { open: 
                   </PixelButton>
                 ))}
               </div>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <span className="font-label text-xs uppercase tracking-wide text-label">
                 {t("playArea.floor")} · {Math.round(share * 100)}%
               </span>
               <div className="flex flex-wrap gap-2">
-                <PixelButton size="sm" variant="ghost" icon="undo" onClick={() => patch({ floor: guessFloor(layout.cols, layout.rows, layout.perspective) })}>
+                <PixelButton size="sm" variant="ghost" icon="undo" onClick={() => patch({ floor: roughGuess() })}>
                   {t("playArea.resetGuess")}
                 </PixelButton>
                 <PixelButton size="sm" variant="ghost" onClick={() => patch({ floor: "1".repeat(layout.cols * layout.rows) })}>
@@ -310,7 +337,7 @@ export function SceneEditor({ open, map, onClose, onSaved, cast = [] }: { open: 
                   {t("playArea.startOver")}
                 </PixelButton>
               </div>
-              {share < 0.02 && <p className="text-sm text-coral-deep">{t("playArea.noFloor")}</p>}
+              {share < 0.02 ? <p className="text-sm text-coral-deep">{t("playArea.noFloor")}</p> : <p className="text-sm text-ink-mute">{t("playArea.groundHint")}</p>}
             </div>
           </div>
 
