@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { AiError, aiErrorResponse } from "@/lib/ai/server/claude";
+import { betaGuard } from "@/lib/ai/server/beta";
+import { logImageUsage } from "@/lib/ai/server/usage";
 import { getImageProvider } from "@/lib/ai/server/image";
 import { buildMask, imageSize } from "@/lib/ai/server/mapMask";
 import { mapEditPrompt } from "@/lib/ai/server/mapPrompt";
@@ -27,6 +29,7 @@ const EditSchema = z
 
 let inFlight = 0;
 const MAX_IN_FLIGHT = 2;
+const FEATURE = "map_edit";
 
 const sniff = (b: Buffer) =>
   b.length >= 8 && b[0] === 0x89 && b.toString("ascii", 1, 4) === "PNG" ? "image/png" : b.length >= 12 && b.toString("ascii", 0, 4) === "RIFF" && b.toString("ascii", 8, 12) === "WEBP" ? "image/webp" : null;
@@ -68,6 +71,13 @@ export async function POST(req: Request) {
     return Response.json({ error: "bad_type", message: "The map must be a PNG or WebP image" }, { status: 415 });
   }
   if (inFlight >= MAX_IN_FLIGHT) return Response.json({ error: "rate_limited", message: "An edit is already being drawn" }, { status: 429 });
+  const g = await betaGuard(req, FEATURE, { image: true });
+  if (!g.ok) return g.response;
+  const started = Date.now();
+  if (inFlight >= MAX_IN_FLIGHT) {
+    await g.refund();
+    return Response.json({ error: "rate_limited", message: "An edit is already being drawn" }, { status: 429 });
+  }
 
   inFlight++;
   try {
@@ -78,8 +88,11 @@ export async function POST(req: Request) {
     const out = await provider.editMap({ image, mime, mask, ...size, prompt: mapEditPrompt({ instruction, description, type, world }) });
     const outMime = sniff(out);
     if (!outMime) throw new AiError("invalid_output", "The image service returned an unexpected format");
+    logImageUsage(FEATURE, true, started);
     return Response.json({ image: `data:${outMime};base64,${out.toString("base64")}`, provider: provider.id, model: provider.model });
   } catch (err) {
+    await g.refundIf(err);
+    logImageUsage(FEATURE, false, started);
     return aiErrorResponse(err);
   } finally {
     inFlight--;

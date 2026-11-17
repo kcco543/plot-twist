@@ -159,7 +159,7 @@ export function buildConverseRequest(i: ConverseBuild): ConverseRequest {
 
 // ---------------------------------------------------------------- sending
 
-export type ConverseErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "timeout" | "busy" | "limit" | "bad_request" | "too_large" | "cancelled" | "billing" | "ai_off" | "budget";
+export type ConverseErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "timeout" | "busy" | "limit" | "bad_request" | "too_large" | "cancelled" | "billing" | "ai_off" | "budget" | "beta_locked" | "quota";
 export type ConverseResult = { ok: true; data: ConverseResponse } | { ok: false; code: ConverseErrorCode };
 
 export const CONVERSE_CLIENT_TIMEOUT_MS = 40_000;

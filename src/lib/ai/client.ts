@@ -14,8 +14,9 @@ import type { AnalysisProposal } from "../behavior/refine";
 import { activeWorldId } from "../saves/worldSaves";
 
 export type AiMode = "offline" | "balanced" | "full";
-export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null; talk?: "ai" | "mock" | null; mode?: AiMode };
-export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "timeout" | "busy" | "limit" | "unsupported" | "billing" | "ai_off" | "budget";
+export type BetaInfo = { required: boolean; unlocked: boolean; textAvailable: boolean; imageAvailable: boolean; allowance?: { text: number; auto: number; images: number; store: string } };
+export type AiStatus = { text: boolean; image: boolean; textModel: string | null; imageModel: string | null; talk?: "ai" | "mock" | null; mode?: AiMode; beta?: BetaInfo };
+export type AiErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "bad_request" | "too_large" | "bad_type" | "timeout" | "busy" | "limit" | "unsupported" | "billing" | "ai_off" | "budget" | "beta_locked" | "quota";
 
 export class AiRequestError extends Error {
   constructor(public code: AiErrorCode, message: string) {
@@ -44,17 +45,51 @@ export function fetchAiStatus(): Promise<AiStatus> {
   return statusPromise;
 }
 
+const statusListeners = new Set<(s: AiStatus) => void>();
+
+/** Ask the server again (after a beta code is entered or removed) and update every screen. */
+export async function refreshAiStatus(): Promise<AiStatus> {
+  statusCache = null;
+  const s = await fetchAiStatus();
+  statusListeners.forEach((l) => l(s));
+  return s;
+}
+
 /** null while loading. */
 export function useAiStatus(): AiStatus | null {
   const [status, setStatus] = useState<AiStatus | null>(statusCache);
   useEffect(() => {
     let live = true;
+    const listener = (s: AiStatus) => live && setStatus(s);
+    statusListeners.add(listener);
     fetchAiStatus().then((s) => live && setStatus(s));
     return () => {
       live = false;
+      statusListeners.delete(listener);
     };
   }, []);
   return status;
+}
+
+export type UnlockResult = { ok: true } | { ok: false; error: "wrong_code" | "too_many" | "closed" | "failed" };
+
+/** Send a tester code to the server; on success the server sets an HttpOnly pass cookie. */
+export async function unlockBeta(code: string): Promise<UnlockResult> {
+  try {
+    const res = await fetch("/api/beta/unlock", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
+    const data = await res.json().catch(() => ({}));
+    await refreshAiStatus();
+    if (res.ok) return { ok: true };
+    const e = data?.error;
+    return { ok: false, error: e === "wrong_code" || e === "too_many" || e === "closed" ? e : "failed" };
+  } catch {
+    return { ok: false, error: "failed" };
+  }
+}
+
+export async function lockBeta(): Promise<void> {
+  await fetch("/api/beta/lock", { method: "POST" }).catch(() => {});
+  await refreshAiStatus();
 }
 
 /**

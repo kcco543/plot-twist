@@ -57,7 +57,7 @@ export function buildGiftRequest(i: GiftBuildInput): GiftReactionRequest {
   };
 }
 
-export type GiftErrorCode = "not_configured" | "unsupported" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "timeout" | "busy" | "limit" | "bad_request" | "bad_image" | "too_large" | "cancelled" | "billing" | "ai_off" | "budget";
+export type GiftErrorCode = "not_configured" | "unsupported" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "timeout" | "busy" | "limit" | "bad_request" | "bad_image" | "too_large" | "cancelled" | "billing" | "ai_off" | "budget" | "beta_locked" | "quota";
 export type GiftResult = { ok: true; data: GiftReactionResponse } | { ok: false; code: GiftErrorCode };
 export const GIFT_RETRYABLE = new Set<GiftErrorCode>(["timeout", "offline", "failed", "rate_limited", "busy", "invalid_output", "refused", "limit"]);
 

@@ -1,7 +1,8 @@
 import { AiError, aiErrorResponse, assertImageInput, structuredCall } from "@/lib/ai/server/claude";
 import { TALK_MODEL, talkMock, textConfigured } from "@/lib/ai/server/config";
 import { GIFT_SYSTEM, giftContent, mockGiftReply } from "@/lib/ai/server/giftReaction";
-import { takeTalkSlot, visitorKey } from "@/lib/ai/server/limits";
+import { takeTalkSlot } from "@/lib/ai/server/limits";
+import { betaGuard } from "@/lib/ai/server/beta";
 import { checkGiftImage, GIFT_PROBLEM_FEEDBACK, giftProblem, sanitizeGiftReply } from "@/lib/gifts/checks";
 import { GiftReactionReplySchema, GiftReactionRequestSchema, type GiftReactionResponse } from "@/lib/gifts/contract";
 
@@ -34,8 +35,11 @@ export async function POST(req: Request) {
   const mock = !textConfigured() && talkMock();
   if (!textConfigured() && !mock) return aiErrorResponse(new AiError("not_configured", "ANTHROPIC_API_KEY is not set"));
 
-  const slot = takeTalkSlot(`gift:${visitorKey(req)}`);
+  const g = await betaGuard(req, "gift_reaction");
+  if (!g.ok) return g.response;
+  const slot = takeTalkSlot(`gift:${g.key}`);
   if (!slot.ok) {
+    await g.refund();
     const error = slot.reason === "busy" ? "busy" : "limit";
     return Response.json({ error, message: "Try again in a moment" }, { status: 429, headers: { "Retry-After": String(slot.retryAfter) } });
   }
@@ -61,6 +65,7 @@ export async function POST(req: Request) {
     }
     throw new AiError("invalid_output", "The reaction did not fit the character, even after a retry");
   } catch (err) {
+    await g.refundIf(err);
     return aiErrorResponse(err);
   } finally {
     slot.release();

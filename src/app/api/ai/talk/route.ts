@@ -1,6 +1,7 @@
 import { AiError, aiErrorResponse, structuredCall } from "@/lib/ai/server/claude";
 import { TALK_MODEL, textConfigured } from "@/lib/ai/server/config";
-import { takeTalkSlot, visitorKey } from "@/lib/ai/server/limits";
+import { takeTalkSlot } from "@/lib/ai/server/limits";
+import { betaGuard } from "@/lib/ai/server/beta";
 import { mockEnabled, mockReply, TALK_SYSTEM, talkParts } from "@/lib/ai/server/talk";
 import { PROBLEM_FEEDBACK, replyProblem, sanitizeReply } from "@/lib/talk/ai/checks";
 import { TalkReplySchema, TalkRequestSchema, type TalkResponse } from "@/lib/talk/ai/contract";
@@ -36,8 +37,11 @@ export async function POST(req: Request) {
   const mock = !textConfigured() && mockEnabled();
   if (!textConfigured() && !mock) return aiErrorResponse(new AiError("not_configured", "ANTHROPIC_API_KEY is not set"));
 
-  const slot = takeTalkSlot(visitorKey(req));
+  const g = await betaGuard(req, "talk");
+  if (!g.ok) return g.response;
+  const slot = takeTalkSlot(g.key);
   if (!slot.ok) {
+    await g.refund();
     const error = slot.reason === "busy" ? "busy" : "limit";
     return Response.json({ error, message: slot.reason === "busy" ? "A reply is already being written" : "Conversation limit reached, try again later" }, { status: 429, headers: { "Retry-After": String(slot.retryAfter) } });
   }
@@ -61,6 +65,7 @@ export async function POST(req: Request) {
     }
     throw new AiError("invalid_output", "The reply did not fit the character, even after a retry");
   } catch (err) {
+    await g.refundIf(err);
     return aiErrorResponse(err);
   } finally {
     slot.release();

@@ -1,7 +1,8 @@
 import { AiError, aiErrorResponse, structuredCall } from "@/lib/ai/server/claude";
 import { AUTO_TALK_MODEL, talkMock, textConfigured } from "@/lib/ai/server/config";
 import { CONVERSE_FEEDBACK, CONVERSE_SYSTEM, converseParts, converseProblem, mockConverse, sanitizeConverse } from "@/lib/ai/server/converse";
-import { takeAutoTalkSlot, visitorKey } from "@/lib/ai/server/limits";
+import { takeAutoTalkSlot } from "@/lib/ai/server/limits";
+import { betaGuard } from "@/lib/ai/server/beta";
 import { ConverseReplySchema, ConverseRequestSchema, type ConverseResponse } from "@/lib/talk/ai/converse";
 
 export const runtime = "nodejs";
@@ -33,7 +34,10 @@ export async function POST(req: Request) {
   const r = body.data;
   const mock = !textConfigured() && talkMock();
   if (!textConfigured() && !mock) return aiErrorResponse(new AiError("not_configured", "ANTHROPIC_API_KEY is not set"));
-  const slot = takeAutoTalkSlot(visitorKey(req));
+  const g = await betaGuard(req, "auto_talk");
+  if (!g.ok) return g.response;
+  const slot = takeAutoTalkSlot(g.key);
+  if (!slot.ok) await g.refund();
   if (!slot.ok) return Response.json({ error: slot.reason === "busy" ? "busy" : "limit", message: "Autonomous conversation limit reached" }, { status: 429, headers: { "Retry-After": String(slot.retryAfter) } });
   try {
     if (mock) {
@@ -54,6 +58,7 @@ export async function POST(req: Request) {
     }
     throw new AiError("invalid_output", "The conversation did not fit the characters, even after a retry");
   } catch (err) {
+    await g.refundIf(err);
     return aiErrorResponse(err);
   } finally {
     slot.release();

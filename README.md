@@ -46,6 +46,8 @@ Restart `npm run dev` afterwards. Settings → AI services shows what is set up,
 
 The game only calls Claude when you do something: send a message, show a photo, give a gift, run or refine an analysis, or press **Talk** / **Twist!** with AI story writing on. Idle screens, walking and characters acting on their own never call it (checked by `scripts/usage-check/`). Details and numbers: `docs/AI_COSTS.md`.
 
+**Public beta:** the hosted version needs a tester code for AI features (checked on the server), with small daily allowances per tester and for the whole site; image generation is off by default. Hosting, environment variables and limits: `docs/PUBLIC_BETA.md`.
+
 - **AI mode** (default **Balanced**): *Offline* sends nothing; *Balanced* uses AI only for what you start (Observe/Wait beats use built-in lines); *Full AI* also words Observe/Wait. Switch it on the dashboard below, or set `AI_MODE` in `.env.local`.
 - **Models**: conversations, photo and gift reactions use `claude-sonnet-5-5` (`ANTHROPIC_TALK_MODEL`); story-beat wording uses `claude-haiku-5-5` (`ANTHROPIC_STORY_MODEL`); personality analysis and refinement use `claude-opus-5-5` (`ANTHROPIC_MODEL`).
 - **API Usage dashboard** (development only): open <http://localhost:3000/dev/usage> (or Settings → *Open the API usage dashboard*). It shows requests, tokens, cache use, estimated cost and time per feature, lets you switch the mode, and set limits: requests per minute, requests at once, max output tokens, and a spending budget per session. When a limit is reached the request is refused before anything is sent. The budget is the app's own estimate, not a billing cap: set a real monthly limit in the Anthropic Console (Settings → Limits).

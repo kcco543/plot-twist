@@ -39,12 +39,12 @@ afterEach(() => {
 
 describe("/api/ai/status", () => {
   it("reports unconfigured services without leaking anything", async () => {
-    const res = await status();
-    expect(await res.json()).toEqual({ text: false, image: false, textModel: null, imageModel: null, talk: null, mode: "balanced" });
+    const res = await status(new Request("http://x"));
+    expect(await res.json()).toEqual({ text: false, image: false, textModel: null, imageModel: null, talk: null, mode: "balanced", beta: { required: false, unlocked: true, textAvailable: false, imageAvailable: false } });
   });
   it("reports configured services by model name only", async () => {
     process.env.ANTHROPIC_API_KEY = "sk-test-secret";
-    const body = JSON.stringify(await (await status()).json());
+    const body = JSON.stringify(await (await status(new Request("http://x"))).json());
     expect(body).toContain("claude-sonnet-5-5");
     expect(body).not.toContain("sk-test-secret");
   });

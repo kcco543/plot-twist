@@ -49,7 +49,7 @@
     "load": "Load Game",
     "settings": "Settings",
     "pressStart": "Press start",
-    "version": "v0.4 · prototype",
+    "version": "v0.5 · public beta",
     "menu": "Main menu",
     "menuTab": "Start",
     "paradeLabel": "A few characters waiting for a story",
@@ -309,7 +309,7 @@
       "iterateHint": "Change the description and generate again for a new version.",
       "needDescription": "Write a description first, then generate a map.",
       "unavailable": "Map generation is not set up yet",
-      "unavailableHint": "Add OPENAI_API_KEY to .env.local and restart the app to turn it on. Until then the preview shows built-in art.",
+      "unavailableHint": "Map generation isn't turned on for this site. The preview shows built-in art, and the built-in map kit still works.",
       "failed": "The map couldn't be generated: {reason}.",
       "outdated": "You changed the description or place type since this map. Generate again to see the new version.",
       "version": "Version {n}",
@@ -692,7 +692,7 @@
     "off": "Off",
     "offlineTitle": "Offline play",
     "offlineReady": "Everything except the AI features works offline after your first visit. Saves live in this browser.",
-    "offlineFuture": "AI analysis, AI dialogue and pixel generation need an internet connection and API keys on the server.",
+    "offlineFuture": "AI analysis, AI dialogue and pixel generation need an internet connection.",
     "danger": "Danger zone",
     "dangerDesc": "Deletes your world, characters and story log from this browser.",
     "erase": "Erase save data",
@@ -913,7 +913,7 @@
     "runLocal": "Use built-in analysis",
     "running": "Analyzing",
     "unavailable": "AI analysis unavailable until configured",
-    "unavailableHint": "Add ANTHROPIC_API_KEY to .env.local and restart the app. The built-in analysis works offline in the meantime.",
+    "unavailableHint": "AI analysis isn't available right now. The built-in analysis works in the meantime.",
     "needInput": "Write something in the profile or set a slider first.",
     "pending": "Waiting for your approval",
     "approved": "Approved · used in play",
@@ -1000,11 +1000,11 @@
   },
   "ai": {
     "errors": {
-      "not_configured": "not set up yet",
+      "not_configured": "this AI feature isn't turned on for this site",
       "refused": "the AI declined this request",
       "invalid_output": "the AI's answer didn't pass validation",
       "rate_limited": "too many requests, try again in a moment",
-      "auth": "the API key was rejected",
+      "auth": "the AI service is unavailable right now",
       "failed": "the AI service had a problem",
       "offline": "you're offline",
       "bad_request": "the request was invalid",
@@ -1015,9 +1015,11 @@
       "limit": "the conversation limit was reached, try again later",
       "cancelled": "the conversation ended",
       "unsupported": "this image service can't edit part of a map",
-      "billing": "the AI account has run out of credits or hit its spending limit (add credits in the provider's billing page, then try again)",
-      "ai_off": "AI is switched off in the current AI mode (Offline). The built-in lines are used instead",
-      "budget": "the development AI budget for this session is used up (raise it or reset it in the API Usage dashboard)"
+      "billing": "the AI service is unavailable right now (its credits may have run out)",
+      "ai_off": "AI is switched off right now, so the built-in lines are used",
+      "budget": "today's AI allowance for this site is used up",
+      "beta_locked": "AI features need a tester code (enter it on the home screen). Built-in lines still work",
+      "quota": "today's free AI allowance is used up. It resets at midnight UTC; built-in lines keep working"
     },
     "errorTitle": "That didn't work: {reason}."
   },
@@ -1036,7 +1038,7 @@
     "generating": "Drawing your character",
     "generatingHint": "This can take up to a minute.",
     "unavailable": "AI generation unavailable until configured",
-    "unavailableHint": "Add OPENAI_API_KEY to .env.local and restart the app to turn it on. You can still use the quick conversion below.",
+    "unavailableHint": "AI image generation isn't turned on for this site. You can still use the quick conversion below.",
     "convert": "Quick pixel conversion (no AI)",
     "convertHint": "Shrinks your picture straight into sprite pixels. Works best on drawings with a plain background.",
     "result": "Result",
@@ -2219,7 +2221,7 @@
       "modeMockDesc": "Developer test mode: canned replies, no AI. Add an Anthropic API key for real replies.",
       "modeOff": "Built-in replies",
       "modeOffDesc": "AI conversations are off or not set up, so the game's own rules answer.",
-      "offTyped": "{other} heard you, but answering your own words needs AI conversations. Turn on AI story writing in Settings (it needs an Anthropic API key on the server). Nothing scripted is shown in its place.",
+      "offTyped": "{other} heard you, but answering your own words needs AI conversations. Turn on AI story writing in Settings (on the public beta it also needs a tester code). Nothing scripted is shown in its place.",
       "failed": "{other}'s AI reply didn't arrive:",
       "usedBuiltin": "Showing the built-in reaction instead.",
       "retry": "Try again",
@@ -2317,17 +2319,17 @@
       "back": "Back",
       "thinking": "{name} is looking at your photo…",
       "stop": "Stop",
-      "aiOff": "Photo reactions use the AI. Turn on “AI story writing” in Settings (and the server needs an Anthropic API key).",
+      "aiOff": "Photo reactions use the AI. Turn on “AI story writing” in Settings (on the public beta it also needs a tester code).",
       "testTag": "TEST",
       "error": {
-        "not_configured": "Photo reactions aren't set up on this server yet (it needs an Anthropic API key).",
+        "not_configured": "Photo reactions aren't turned on for this site.",
         "unsupported": "The AI model set up on this server can't look at pictures.",
         "refused": "{name} didn't want to react to this photo. Try a different one.",
         "invalid_output": "{name}'s reaction didn't come out right. Try again.",
         "rate_limited": "The AI is busy right now. Try again in a moment.",
         "busy": "Another photo is still being looked at. Try again in a moment.",
         "limit": "That's a lot of photos for now. Try again later.",
-        "auth": "The server's Anthropic API key was turned down.",
+        "auth": "The AI service is unavailable right now. Try again later.",
         "failed": "Something went wrong on the way to the AI. Try again.",
         "offline": "You're offline. Connect and try again.",
         "timeout": "That took too long. Try again.",
@@ -2335,9 +2337,11 @@
         "bad_image": "The photo couldn't be read. Try another one.",
         "too_large": "That photo is too detailed to send. Try another one.",
         "cancelled": "Stopped.",
-        "billing": "The AI account is out of credits. Add credits, then try again.",
-        "ai_off": "AI reactions are off in Offline mode, so {name} didn't see the photo. Switch to Balanced in the API Usage dashboard to use them.",
-        "budget": "The development AI budget for this session is used up, so {name} didn't react. Raise or reset it in the API Usage dashboard."
+        "billing": "The AI service is unavailable right now. Try again later.",
+        "ai_off": "AI reactions are switched off right now, so {name} didn't see the photo.",
+        "budget": "Today's AI allowance for this site is used up, so {name} didn't react. Try again tomorrow.",
+        "beta_locked": "Photo reactions use the AI, which needs a tester code. Enter it on the home screen.",
+        "quota": "Your free AI allowance for today is used up, so {name} didn't see the photo. It resets at midnight UTC."
       }
     },
     "gift": {
@@ -2364,12 +2368,12 @@
       "aiUnavailableBody": "Image generation isn't set up for this game yet, so nothing can be generated. You can draw your gift instead.",
       "drawInstead": "Draw it instead",
       "aiError": {
-        "not_configured": "Image generation isn't set up, so no picture was made.",
+        "not_configured": "Picture generation isn't turned on for this site, so no picture was made.",
         "offline": "You're offline. Connect and try again.",
         "rate_limited": "A picture is already being drawn. Try again in a moment.",
         "refused": "The image service declined this description. Try different words.",
         "failed": "The picture couldn't be made. Try again.",
-        "billing": "The image account is out of credits, so no picture was made. Add credits on platform.openai.com → Billing."
+        "billing": "The image service is unavailable right now, so no picture was made."
       },
       "needName": "Give the gift a name first.",
       "preview": "Item preview",
@@ -2386,7 +2390,7 @@
       "unwrapping": "{name} is unwrapping it…",
       "sendNote": "Giving sends the gift's name, description and picture to Claude (Anthropic) so {name} can react.",
       "sendMock": "Test mode: {name} gives a TEST reaction (nothing is sent anywhere).",
-      "aiOff": "Gift reactions use the AI. Turn on “AI story writing” in Settings (and the server needs an Anthropic API key).",
+      "aiOff": "Gift reactions use the AI. Turn on “AI story writing” in Settings (on the public beta it also needs a tester code).",
       "transfer": {
         "not_in_world": "This gift belongs to another world.",
         "unknown_character": "{name} isn't in this world.",
@@ -2394,14 +2398,14 @@
         "no_name": "Give the gift a name first."
       },
       "error": {
-        "not_configured": "Gift reactions aren't set up on this server yet (it needs an Anthropic API key).",
+        "not_configured": "Gift reactions aren't turned on for this site.",
         "unsupported": "The AI model set up on this server can't look at pictures.",
         "refused": "{name} didn't want to react to this gift. Try a different one.",
         "invalid_output": "{name}'s reaction didn't come out right. Try again.",
         "rate_limited": "The AI is busy right now. Try again in a moment.",
         "busy": "Another gift is still being opened. Try again in a moment.",
         "limit": "That's a lot of gifts for now. Try again later.",
-        "auth": "The server's Anthropic API key was turned down.",
+        "auth": "The AI service is unavailable right now. Try again later.",
         "failed": "Something went wrong on the way to the AI. Try again.",
         "offline": "You're offline. Connect and try again.",
         "timeout": "That took too long. Try again.",
@@ -2409,9 +2413,11 @@
         "bad_image": "The gift picture couldn't be read. Try another one.",
         "too_large": "That gift picture is too big to send.",
         "cancelled": "Stopped.",
-        "billing": "The AI account is out of credits. Add credits, then try again.",
-        "ai_off": "AI reactions are off in Offline mode, so {name} didn't get the gift. Switch to Balanced in the API Usage dashboard to use them.",
-        "budget": "The development AI budget for this session is used up, so {name} didn't get the gift. Raise or reset it in the API Usage dashboard."
+        "billing": "The AI service is unavailable right now. Try again later.",
+        "ai_off": "AI reactions are switched off right now, so {name} didn't get the gift.",
+        "budget": "Today's AI allowance for this site is used up, so {name} didn't get the gift. Try again tomorrow.",
+        "beta_locked": "Gift reactions use the AI, which needs a tester code. Enter it on the home screen.",
+        "quota": "Your free AI allowance for today is used up, so {name} didn't get the gift. It resets at midnight UTC."
       }
     },
     "log": {
@@ -2826,7 +2832,7 @@
     "apply": "Apply Feedback",
     "applying": "Revising the analysis",
     "testMode": "Test replies (no AI)",
-    "unavailable": "Refining needs the AI (ANTHROPIC_API_KEY).",
+    "unavailable": "Refining needs the AI, which isn't available right now.",
     "restorePrevious": "Restore Previous Version",
     "proposalTitle": "Proposed revision",
     "yourFeedback": "Your feedback:",
@@ -3819,5 +3825,33 @@
         }
       }
     }
+  },
+  "beta": {
+    "title": "Public beta",
+    "intro": "PLOT TWIST! is a pixel-art story sandbox: build a world, create characters with real personalities, and watch them talk, react and remember.",
+    "savesNote": "Your worlds save in this browser. Sign in under Cloud saves to keep them on more than one device.",
+    "aiLocked": "The game works without AI (built-in lines). To turn on AI conversations, enter the tester code you were given.",
+    "aiUnlocked": "AI features are on for this browser.",
+    "allowance": "Daily free allowance: about {text} AI replies and {auto} conversations between characters. Resets at midnight UTC.",
+    "imagesOff": "AI image generation (portraits, maps) is off in this beta; the built-in art and map kit are used instead.",
+    "imagesOn": "AI images: {images} per day.",
+    "codeLabel": "Tester code",
+    "codePlaceholder": "Enter code",
+    "unlock": "Turn on AI",
+    "checking": "Checking…",
+    "lock": "Turn AI off on this browser",
+    "err": {
+      "wrong_code": "That code didn't work. Check it and try again.",
+      "too_many": "Too many tries. Wait a few minutes, then try again.",
+      "closed": "AI access isn't open right now. You can still play with built-in lines.",
+      "failed": "Couldn't check the code. Check your connection and try again."
+    },
+    "aiUnavailable": "AI isn't available on this site right now. Everything else works with built-in lines.",
+    "howTo": "How to play & tester code",
+    "stepsTitle": "Start here",
+    "step1": "Pick or create a world.",
+    "step2": "Add characters in the Character Studio, or bring some from the Library.",
+    "step3": "Press Play and explore. Use “Talk to…”, or drag one character onto another, to start a conversation.",
+    "step4": "Watch them talk and react on their own. Progress saves automatically."
   }
 }

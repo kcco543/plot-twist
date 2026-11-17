@@ -166,7 +166,7 @@ export function buildTalkRequest(i: BuildInput): TalkRequest {
 
 // ---------------------------------------------------------------- sending
 
-export type TalkErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "timeout" | "busy" | "limit" | "bad_request" | "too_large" | "cancelled" | "billing" | "ai_off" | "budget";
+export type TalkErrorCode = "not_configured" | "refused" | "invalid_output" | "rate_limited" | "auth" | "failed" | "offline" | "timeout" | "busy" | "limit" | "bad_request" | "too_large" | "cancelled" | "billing" | "ai_off" | "budget" | "beta_locked" | "quota";
 export type TalkResult = { ok: true; data: TalkResponse } | { ok: false; code: TalkErrorCode };
 
 /** Give up waiting after this long (the server's own calls stop sooner). */

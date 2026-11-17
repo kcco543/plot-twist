@@ -182,11 +182,27 @@ function toAiError(err: unknown): AiError {
   return new AiError("failed", "Could not reach the AI service");
 }
 
+const PUBLIC_MESSAGES: Record<AiError["code"], string> = {
+  not_configured: "This AI feature isn't turned on for this site",
+  refused: "The AI declined this request",
+  invalid_output: "The AI's answer didn't pass the game's checks",
+  rate_limited: "Too many requests, try again in a moment",
+  auth: "The AI service is unavailable right now",
+  failed: "The AI service had a problem",
+  timeout: "The AI took too long to answer",
+  unsupported: "This AI feature isn't available here",
+  billing: "The AI service is unavailable right now",
+  ai_off: "This AI feature is switched off right now",
+  budget: "Today's AI allowance for this site is used up",
+};
+
 export function aiErrorResponse(err: unknown) {
   const e = err instanceof AiError ? err : new AiError("failed", "Unexpected error");
   const status = e.code === "not_configured" || e.code === "unsupported" || e.code === "ai_off" ? 503 : e.code === "rate_limited" || e.code === "budget" ? 429 : e.code === "billing" ? 402 : e.code === "timeout" ? 504 : e.code === "refused" || e.code === "invalid_output" ? 422 : 502;
   if (!(err instanceof AiError)) console.error("[ai]", err instanceof Error ? err.name : "error");
-  return Response.json({ error: e.code, message: e.message }, { status, ...(e.retryAfter ? { headers: { "Retry-After": String(e.retryAfter) } } : {}) });
+  // Public builds never echo provider details: the browser shows its own message for each code.
+  const message = process.env.NODE_ENV === "production" ? PUBLIC_MESSAGES[e.code] : e.message;
+  return Response.json({ error: e.code, message }, { status, ...(e.retryAfter ? { headers: { "Retry-After": String(e.retryAfter) } } : {}) });
 }
 
 /** Per model: does it accept images? Looked up once (Models API), then remembered. */
