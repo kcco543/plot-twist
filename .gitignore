@@ -50,3 +50,4 @@ next-env.d.ts
 
 # AI usage mode + limits saved by the dev usage dashboard
 /.plot-twist-ai.json
+scripts/art-test/out/
