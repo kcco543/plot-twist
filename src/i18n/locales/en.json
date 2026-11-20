@@ -48,14 +48,14 @@
     "start": "Start Game",
     "load": "Load Game",
     "settings": "Settings",
-    "pressStart": "Press start",
     "version": "v0.5 · public beta",
     "menu": "Main menu",
     "menuTab": "Start",
     "paradeLabel": "A few characters waiting for a story",
     "paradeBubble": "Plot twist?!",
     "worldsTeaser": "Four worlds to start in",
-    "savesBand": "Saved worlds"
+    "savesBand": "Saved worlds",
+    "createOwn": "Create your own world"
   },
   "nav": {
     "steps": "Game steps",
@@ -124,7 +124,7 @@
   "studio": {
     "kicker": "Step 2 · Character studio",
     "heading": "Assemble your cast",
-    "introWorld": "Your story takes place in {world}. Everything saves automatically in this browser.",
+    "introWorld": "Your story takes place in {world}.",
     "intro": "Everything saves automatically in this browser.",
     "emptyTitle": "No characters yet",
     "emptyBody": "Create your first original character. Who are they, and what are they hiding?",
@@ -287,7 +287,7 @@
   "builder": {
     "kicker": "Step 3 · World builder",
     "heading": "Set the scene",
-    "intro": "Describe where your story begins, pick a type of place, then generate a map. Edit the words and generate again until it feels right.",
+    "intro": "Where does your story begin? Describe it, pick a type of place, and generate a map if you like.",
     "description": "Description",
     "describeLabel": "Describe the environment",
     "describePlaceholder": "A cramped bookshop above a noodle stand. It always smells like rain, and the back door is locked from the inside...",
@@ -379,7 +379,7 @@
     "noWorldTitle": "No world chosen",
     "noWorldBody": "Every story needs somewhere to happen. Pick a world first.",
     "chooseWorld": "Choose world",
-    "demoNotice": "You haven't created anyone yet, so a demo cast is standing in.",
+    "demoNotice": "No characters yet. A stand-in cast is here for now.",
     "storyLog": "Story log",
     "pause": "Pause",
     "pauseMenu": "Pause menu",
@@ -546,7 +546,7 @@
       },
       "close": "Hide test panel"
     },
-    "sampleCast": "Add the sample cast (Mira, Wren, Tobi)",
+    "sampleCast": "Add Mira, Wren & Tobi",
     "earlierLines": "Earlier lines",
     "details": "Character details",
     "detailsHint": "Everything about {name}. The conversation above keeps going while this is open.",
@@ -2278,7 +2278,8 @@
       "label": "Things to do with {name}",
       "photo": "Photo",
       "gift": "Gift",
-      "demo": "Add your own characters (or the sample cast) to share photos and gifts."
+      "demo": "Add your own characters (or the sample cast) to share photos and gifts.",
+      "talk": "Talk to…"
     },
     "done": "Done",
     "saveFailed": "Couldn't save it in this world. Try again, or reopen the world from My Worlds.",
@@ -3847,11 +3848,43 @@
       "failed": "Couldn't check the code. Check your connection and try again."
     },
     "aiUnavailable": "AI isn't available on this site right now. Everything else works with built-in lines.",
-    "howTo": "How to play & tester code",
-    "stepsTitle": "Start here",
-    "step1": "Pick or create a world.",
-    "step2": "Add characters in the Character Studio, or bring some from the Library.",
-    "step3": "Press Play and explore. Use “Talk to…”, or drag one character onto another, to start a conversation.",
-    "step4": "Watch them talk and react on their own. Progress saves automatically."
+    "howTo": "About the beta & tester code"
+  },
+  "quickstart": {
+    "worldName": "Demo: Cloud Island",
+    "play": "Play the demo",
+    "tag": "Demo",
+    "intro": "Wren has a secret crush on Mira. Tobi has been scared of Wren ever since the storm race.",
+    "reset": "Reset demo",
+    "resetTitle": "Start the demo over?",
+    "resetBody": "The demo's story, moods, memories, photos and gifts go back to the beginning. Your other worlds aren't touched.",
+    "resetConfirm": "Start over"
+  },
+  "tips": {
+    "label": "Tip",
+    "skip": "Skip tips",
+    "talkDrag": "Drag {a} onto {b} to make them talk.",
+    "talkClick": "Or click {a}, then Talk to…",
+    "talkTouch": "Tap {a}, choose Talk to…, then pick {b}.",
+    "talkTouchOr": "Or hold {a} and drag onto {b}.",
+    "reacted": "{b} reacted. Their mood shows above their head.",
+    "contrast": "Now try {a} with {b}. Same game, very different feelings.",
+    "objectDrag": "Drag someone onto something in the room, like the {object}.",
+    "objectTouch": "Tap someone, then tap something in the room, like the {object}.",
+    "objectThing": "window",
+    "watch": "Now just watch for a minute. They talk and wander on their own.",
+    "autoSeen": "{a} and {b} started talking on their own. Click either of them to read along.",
+    "autoSeenTouch": "{a} and {b} started talking on their own. Tap either of them to read along.",
+    "makeOwnTitle": "Ready to make your own?",
+    "newWorld": "Create a world",
+    "editCast": "Edit this cast",
+    "keepPlaying": "Keep playing",
+    "showAgain": "Show first-time tips again"
+  },
+  "playActionHints": {
+    "talk": "{name} says something",
+    "observe": "Watch what they do",
+    "wait": "Let some time pass",
+    "twist": "Something unexpected happens"
   }
 }

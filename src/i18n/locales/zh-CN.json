@@ -48,14 +48,14 @@
     "start": "开始游戏",
     "load": "读取存档",
     "settings": "设置",
-    "pressStart": "按下开始",
     "version": "v0.5 · 公开测试版",
     "menu": "主菜单",
     "menuTab": "开始",
     "paradeLabel": "几位等着故事开场的角色",
     "paradeBubble": "剧情反转？！",
     "worldsTeaser": "四个世界，任你开局",
-    "savesBand": "已保存的世界"
+    "savesBand": "已保存的世界",
+    "createOwn": "创建自己的世界"
   },
   "nav": {
     "steps": "游戏步骤",
@@ -124,7 +124,7 @@
   "studio": {
     "kicker": "第 2 步 · 角色工作室",
     "heading": "召集你的角色",
-    "introWorld": "你的故事发生在{world}。所有内容都会自动保存在此浏览器中。",
+    "introWorld": "你的故事发生在{world}。",
     "intro": "所有内容都会自动保存在此浏览器中。",
     "emptyTitle": "还没有角色",
     "emptyBody": "创建你的第一个原创角色。他们是谁？又在隐瞒什么？",
@@ -287,7 +287,7 @@
   "builder": {
     "kicker": "第 3 步 · 世界构建",
     "heading": "布置场景",
-    "intro": "描述故事开始的地方，选择场所类型，然后生成地图。修改文字再生成一次，直到满意为止。",
+    "intro": "故事从哪里开始？描述一下，选一个场所类型，想要的话再生成地图。",
     "description": "描述",
     "describeLabel": "描述这个环境",
     "describePlaceholder": "面馆楼上一间挤得满满的书店。这里总有雨的味道，后门却是从里面锁上的……",
@@ -379,7 +379,7 @@
     "noWorldTitle": "尚未选择世界",
     "noWorldBody": "每个故事都需要一个发生的地方。先选择一个世界吧。",
     "chooseWorld": "选择世界",
-    "demoNotice": "你还没有创建角色，所以先由示例角色登场。",
+    "demoNotice": "还没有角色，先由临时角色登场。",
     "storyLog": "故事记录",
     "pause": "暂停",
     "pauseMenu": "暂停菜单",
@@ -546,7 +546,7 @@
       },
       "close": "隐藏测试面板"
     },
-    "sampleCast": "加入示例角色（米拉、雯雯、托比）",
+    "sampleCast": "加入米拉、雯雯和托比",
     "earlierLines": "之前的台词",
     "details": "角色详情",
     "detailsHint": "关于{name}的全部信息。打开时上方的对话不会中断。",
@@ -2278,7 +2278,8 @@
       "label": "和{name}互动",
       "photo": "照片",
       "gift": "礼物",
-      "demo": "添加你自己的角色（或示例角色）后，就能分享照片和礼物。"
+      "demo": "添加你自己的角色（或示例角色）后，就能分享照片和礼物。",
+      "talk": "找人聊天…"
     },
     "done": "完成",
     "saveFailed": "没能保存到这个世界。请再试一次，或从“我的世界”重新进入。",
@@ -3847,11 +3848,43 @@
       "failed": "无法检查测试码，请检查网络后再试。"
     },
     "aiUnavailable": "本网站目前无法使用 AI。其他功能都可以用内置台词正常游玩。",
-    "howTo": "玩法说明与测试码",
-    "stepsTitle": "从这里开始",
-    "step1": "选择或创建一个世界。",
-    "step2": "在角色工作室添加角色，或从角色库带入。",
-    "step3": "点击开始游戏并探索。用“找人聊天…”，或把一个角色拖到另一个角色身上，开始对话。",
-    "step4": "看他们自己交谈、互相反应。进度会自动保存。"
+    "howTo": "关于测试版与测试码"
+  },
+  "quickstart": {
+    "worldName": "演示：云岛",
+    "play": "试玩演示",
+    "tag": "演示",
+    "intro": "雯雯暗恋米拉。自从那场暴风竞速之后，托比一直怕雯雯。",
+    "reset": "重置演示",
+    "resetTitle": "要重新开始演示吗？",
+    "resetBody": "演示里的故事、心情、记忆、照片和礼物都会回到开头。你的其他世界不受影响。",
+    "resetConfirm": "重新开始"
+  },
+  "tips": {
+    "label": "提示",
+    "skip": "跳过提示",
+    "talkDrag": "把{a}拖到{b}身上，让他们聊聊。",
+    "talkClick": "也可以点击{a}，再选“找人聊天”。",
+    "talkTouch": "点一下{a}，选“找人聊天”，再选{b}。",
+    "talkTouchOr": "也可以按住{a}，拖到{b}身上。",
+    "reacted": "{b}有反应了，心情会显示在头顶。",
+    "contrast": "再试试让{a}找{b}。同样是聊天，感受完全不同。",
+    "objectDrag": "把角色拖到房间里的东西上，比如{object}。",
+    "objectTouch": "先点一个角色，再点房间里的东西，比如{object}。",
+    "objectThing": "窗户",
+    "watch": "现在静静看一会儿，他们会自己聊天、走动。",
+    "autoSeen": "{a}和{b}自己聊起来了。点击其中一人，就能看到他们在说什么。",
+    "autoSeenTouch": "{a}和{b}自己聊起来了。点一下其中一人，就能看到他们在说什么。",
+    "makeOwnTitle": "想创造自己的故事吗？",
+    "newWorld": "创建世界",
+    "editCast": "编辑这些角色",
+    "keepPlaying": "继续玩",
+    "showAgain": "重新显示新手提示"
+  },
+  "playActionHints": {
+    "talk": "{name}说点什么",
+    "observe": "看看他们在做什么",
+    "wait": "让时间流逝一会儿",
+    "twist": "发生意想不到的事"
   }
 }
