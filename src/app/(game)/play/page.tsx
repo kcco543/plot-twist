@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import { CharacterInfoPanel } from "@/components/game/CharacterInfoPanel";
 import { ControlPad } from "@/components/game/ControlPad";
@@ -50,6 +50,10 @@ import { useReducedMotion, useStageSim } from "@/lib/stage/useStage";
 import { useTalk } from "@/lib/talk/useTalk";
 import { editMemory, type MemoryPatch } from "@/lib/talk/ai/apply";
 import { TALKING_PHASES } from "@/lib/talk/flow";
+import { isDemoData, resetDemo } from "@/lib/demo/demoWorld";
+import { nextTip, tipsActions, useTips } from "@/lib/onboarding/tips";
+import { ObjectHover, TipCard, TipStage, type TipView } from "@/components/onboarding/FirstTips";
+import { useCreateWorld } from "@/components/worlds/MyWorlds";
 import type { Character, StoryLine, StoryState } from "@/lib/types";
 import { useI18n } from "@/i18n";
 import { InteractionMenu, type InteractionKind } from "@/components/keepsakes/InteractionMenu";
@@ -113,6 +117,9 @@ const ADVANCE_GUARD_MS = 250;
 /** Space kept under the play area (the page ends exactly at the window's bottom edge). */
 const PAGE_BOTTOM_GAP = 12;
 
+/** The demo world opens on its situation (who likes whom, who fears whom) instead of an instruction. */
+const DEMO_INTRO: StoryLine = { speaker: { kind: "narrator" }, key: "tpl", tpl: "quickstart.intro", params: {} };
+
 export default function PlayPage() {
   const { t, tx, locale } = useI18n();
   const router = useRouter();
@@ -144,6 +151,8 @@ export default function PlayPage() {
   );
 
   const isDemo = save.characters.length === 0;
+  /** The Quick Start demo world (an ordinary save with the sample cast): first-time tips and its own opening line. */
+  const isDemoWorld = isDemoData(save);
   const isDemoRef = useRef(isDemo);
   isDemoRef.current = isDemo;
   // Only the characters in this scene are here; everyone else stays where they were.
@@ -213,7 +222,7 @@ export default function PlayPage() {
   const [beatNo, setBeatNo] = useState(0);
   const [lineIndex, setLineIndex] = useState(0);
   const current = queue[lineIndex] ?? null;
-  const rawLine = renderLine(current ?? introLine(placeDescription, envType), locale);
+  const rawLine = renderLine(current ?? (isDemoWorld && !placeDescription ? DEMO_INTRO : introLine(placeDescription, envType)), locale);
   // No stray blank lines (AI replies sometimes have them): the text starts at the top of the dock.
   const shownLine = { ...rawLine, text: tidyLine(rawLine.text) };
   // Lines already read in this exchange (scroll up in the dock to reread them).
@@ -235,6 +244,7 @@ export default function PlayPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [resetDone, setResetDone] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   /** The play-area editor for the generated map in use. */
   const [areaOpen, setAreaOpen] = useState(false);
   /** Personal interactions: the Photo / Gift menu next to a character, or the window it opened. */
@@ -248,10 +258,6 @@ export default function PlayPage() {
   /** The action menu next to an object (who would do it, and to what). */
   const [objMenu, setObjMenu] = useState<{ actorId: string; objectId: string } | null>(null);
   const viewportApi = useRef<ViewportApi>(null);
-  const zoom: Zoom = settings.cameraZoom ?? "normal";
-  const zoomRef = useRef(zoom);
-  zoomRef.current = zoom;
-  const getZoom = useCallback(() => zoomRef.current, []);
   const [titleKey, setTitleKey] = useState("");
 
   // Play layout: viewport beside the dialogue dock ("side") or above it ("stack"), sized to the window
@@ -259,6 +265,11 @@ export default function PlayPage() {
   const playRef = useRef<HTMLDivElement>(null);
   const layout = usePlayLayout(playRef, PAGE_BOTTOM_GAP);
   const wide = layout.shape === "side";
+  // Phones see the whole demo cast at once until the player picks a zoom of their own (nothing is saved).
+  const zoom: Zoom = settings.cameraZoom ?? (isDemoWorld && !wide ? "wide" : "normal");
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const getZoom = useCallback(() => zoomRef.current, []);
   const headerH = layout.headerH;
   /** Desktop: character details open in the secondary panel under the play area. */
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -639,6 +650,41 @@ export default function PlayPage() {
     reasonText: (r) => t(`autoTalk.reasonsPlain.${r}` as "autoTalk.reasonsPlain.chats"),
   });
   autoRef.current = autoConvo;
+
+  // ---- First-time tips (lib/onboarding/tips.ts): one short hint at a time in the dock, learnt by doing.
+  // Shown in the demo world only; each one ends the moment the player has done it once.
+  const tips = useTips();
+  const createWorld = useCreateWorld();
+  const autoSessions = useSyncExternalStore(autoConvo.director.subscribe, autoConvo.director.getSnapshot, autoConvo.director.getSnapshot);
+  const [tipWin, setTipWin] = useState<string | null>(null);
+  const firstPair = useRef<string | null>(null);
+  const nameOfId = useCallback((id: string) => castRef.current.find((c) => c.id === id)?.name.trim() || t("common.unnamed"), [t]);
+  // A conversation the player started (drag, tap, or Talk to…) counts once someone is on their way.
+  const talkPair = talk.session && talk.session.targetId && talk.session.phase !== "SELECT_TARGET" ? `${talk.session.actorId}>${talk.session.targetId}` : null;
+  useEffect(() => {
+    if (!talkPair || sandboxRef.current) return;
+    const [a, b] = talkPair.split(">");
+    const pair = [a, b].sort().join("|");
+    const s = tipsActions.get();
+    if (!s.done.includes("talk")) {
+      tipsActions.done("talk");
+      firstPair.current = pair;
+      setTipWin(t("tips.reacted", { b: nameOfId(b) }));
+    } else if (!s.done.includes("contrast") && isDemoWorld && pair !== firstPair.current) {
+      tipsActions.done("contrast");
+      setTipWin(null);
+    }
+  }, [talkPair, isDemoWorld, nameOfId, t]);
+  // The first conversation characters start on their own: say so once (they can be clicked to read along).
+  const autoActive = autoSessions.find((c) => c.state === "active");
+  const autoPair = autoActive ? autoActive.participants.join(">") : null;
+  useEffect(() => {
+    if (!autoPair || !isDemoWorld || sandboxRef.current || tipsActions.get().done.includes("watch")) return;
+    const [a, b] = autoPair.split(">");
+    tipsActions.done("watch");
+    setTipWin(t(touch ? "tips.autoSeenTouch" : "tips.autoSeen", { a: nameOfId(a), b: nameOfId(b) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `touch` only picks the wording
+  }, [autoPair, isDemoWorld, nameOfId, t]);
   /** Which autonomous conversation the player is inspecting (live session id, or a finished record id). */
   const [inspectConvo, setInspectConvo] = useState<string | null>(null);
   // ---- Object interactions (explore/interact.ts): what can be done right now, and what doing it really does.
@@ -724,6 +770,10 @@ export default function PlayPage() {
       const me = castRef.current.find((c) => c.id === actorId);
       if (!o || !me) return;
       const say = (line: StoryLine) => (lineInProgressRef.current ? logLines([line]) : showLines([line]));
+      if (priority === "player" && !sandboxRef.current && !tipsActions.get().done.includes("object")) {
+        tipsActions.done("object");
+        setTipWin(null);
+      }
       if (o.type === "gift") {
         if (action === "pick_up" && o.giftId && o.ownerId === actorId) setStoryState(moveGift(getStory(), o.giftId, "carried", "picked_up", [actorId]));
         say({ speaker: { kind: "narrator" }, key: "tpl", tpl: `objects.do.${action}`, params: { name: me.name.trim(), object: objectName(objectId) }, source: "builtin" });
@@ -1197,6 +1247,49 @@ export default function PlayPage() {
     [stage, objectName, elsewhereOf, t],
   );
 
+  // ---- Which tip, about whom (the demo names its own cast; elsewhere the first two people here).
+  const tipId = isDemoWorld && !sandbox ? nextTip(tips, { demo: true, canTalk: onStage.length >= 2 }) : null;
+  const tipView = useMemo<TipView | null>(() => {
+    if (!tipId) return null;
+    const who = (id: string, fallback: number) => {
+      const c = onStage.find((x) => x.id === id) ?? onStage[fallback];
+      return c ? { id: c.id, name: c.name.trim() || t("common.unnamed") } : null;
+    };
+    if (tipId === "talk") return { tip: tipId, a: who("sample-wren", 0), b: who("sample-mira", 1), win: tipWin };
+    if (tipId === "contrast") return { tip: tipId, a: who("sample-tobi", 2), b: who("sample-wren", 0), win: tipWin };
+    if (tipId === "object") {
+      // Name something the selected character can actually reach and use right now (not a window high on the wall).
+      const actor = selected?.id ?? onStage[0]?.id;
+      const usable = actor ? ownObjects.filter((x) => x.type !== "gift" && !x.exit && actionsFor(actor, x).some((a) => a.ok)) : [];
+      const o = usable.find((x) => ["potionShelf", "bookshelf", "plant", "lantern"].includes(x.name) && !x.private) ?? usable.find((x) => !x.private) ?? usable[0];
+      return { tip: tipId, object: o ? { id: o.id, name: objectName(o.id) } : null, win: tipWin };
+    }
+    return { tip: tipId, win: tipWin };
+  }, [tipId, onStage, ownObjects, objectName, tipWin, t, selected?.id, actionsFor]);
+  const showTip = !!tipView && !talk.session && !anyModal;
+  // A talk tip selects the character it names, so the camera shows them and "Talk to…" is about them.
+  const tipActor = showTip && (tipId === "talk" || tipId === "contrast") ? (tipView?.a?.id ?? null) : null;
+  useEffect(() => {
+    if (tipActor) setPickedId(tipActor);
+  }, [tipActor]);
+  // "Just watch" ends with their first conversation on their own, or after 40 s of watching them wander.
+  useEffect(() => {
+    if (tipId !== "watch" || !showTip) return;
+    const id = window.setTimeout(() => tipsActions.done("watch"), 40_000);
+    return () => window.clearTimeout(id);
+  }, [tipId, showTip]);
+  // Hover feedback for objects (mouse only; touch has no hover): outline + name.
+  const [hoverObj, setHoverObj] = useState<string | null>(null);
+  const onViewportHover = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse" || e.buttons) return;
+    const overActor = (e.target as HTMLElement | null)?.closest?.("[data-actor],[data-camera-controls],[data-interaction-menu]");
+    const p = overActor ? null : viewportApi.current?.toWorld(e.clientX, e.clientY);
+    const o = p ? hitObject(stage.objects, p, 1) : null;
+    const id = o && o.type !== "gift" ? o.id : null;
+    if (id !== hoverObj) setHoverObj(id);
+  };
+  const hovered = hoverObj && !drag.dragging ? (stage.objectById(hoverObj) ?? null) : null;
+
   if (!hydrated) return <LoadingState label={t("common.loadingSave")} />;
 
   if (!world) {
@@ -1328,7 +1421,8 @@ export default function PlayPage() {
   // Stacked: the dock keeps a fixed share under the viewport. Side by side: the viewport may use the full
   // height (minus the keyboard hint) and the dock matches it.
   const dockH = stackDockHeight(playH);
-  const hintH = wide && !layout.short ? 18 : 0;
+  // The keyboard hint lives in the Pause menu now, so the play area gets the full height.
+  const hintH = 0;
   // Stacked during a conversation: the character row (disabled then anyway) gives its room to the choices;
   // character info stays one tap away from the conversation header.
   /** Small windows: tighter dock, and "Talk to…" moves into the dock header. */
@@ -1403,10 +1497,11 @@ export default function PlayPage() {
       {scene.kind === "map" && <SceneEditor open={areaOpen} map={scene.map} onClose={() => setAreaOpen(false)} cast={save.characters.map((c) => ({ id: c.id, name: c.name.trim() || t("common.unnamed") }))} scenes={scenes.list.filter((sc) => sc.id !== sceneId).map((sc) => ({ id: sc.id, name: sceneLabel(sc) }))} />}
 
       {isDemo && !sandbox && (
-        <p className="content-block plain-pad-x mb-4 flex flex-wrap items-center gap-2 bg-butter-hi py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
+        <p className="content-block plain-pad-x mb-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 bg-butter-hi py-2 text-base text-ink-soft shadow-[inset_4px_0_0_var(--color-butter-lo)]">
           <PixelIcon name="star" size={12} className="shrink-0 text-label" />
-          <span className="min-w-0 flex-1">{t("play.demoNotice")}</span>
-          <PixelButton size="sm" variant="calm" icon="user" onClick={() => gameActions.addSampleCast(locale)} className="shrink-0 px-2" data-sample-cast>
+          {/* The text keeps a real width (never one character per line); the button wraps under it on phones. */}
+          <span className="min-w-[12rem] flex-1 basis-48">{t("play.demoNotice")}</span>
+          <PixelButton size="sm" variant="calm" icon="user" onClick={() => gameActions.addSampleCast(locale)} className="max-w-full px-2" data-sample-cast>
             {t("play.sampleCast")}
           </PixelButton>
         </p>
@@ -1417,7 +1512,7 @@ export default function PlayPage() {
           response choices are visible together. What doesn't fit scrolls inside the dock, not the page. */}
       {(() => {
         const viewport = (
-          <div className="relative">
+          <div className="relative" onPointerMove={onViewportHover} onPointerLeave={() => setHoverObj(null)}>
             <SceneTitleCard k={titleKey} title={envName} subtitle={worldName} />
             <WorldViewport
               apiRef={viewportApi}
@@ -1455,6 +1550,8 @@ export default function PlayPage() {
                     <>
                       <WorldMarks objects={ownObjects} stateOf={objectState} labelOf={(o) => o.label ?? null} reducedMotion={reducedMotion} />
                       <AutoConvoLayer stage={stage} director={autoConvo.director} characters={cast} mainSpeakerId={speakerId} textSpeed={settings.textSpeed} onInspect={setInspectConvo} />
+                      <ObjectHover object={hovered} name={hovered ? objectName(hovered.id) : ""} />
+                      {showTip && tipView && <TipStage view={tipView} stage={stage} objects={objects} touch={touch} />}
                     </>
                   }
                 />
@@ -1518,15 +1615,32 @@ export default function PlayPage() {
             compact={compactDock}
             headerAction={
               compactDock && !talk.session ? (
-                <PixelButton size="sm" variant="calm" icon="chat" disabled={!selected || onStage.length < 2} onClick={() => selected && talk.beginSelect(selected.id)} className="!min-h-9 shrink-0 px-2 text-[13px]" data-talk-to>
+                <PixelButton size="sm" variant="primary" icon="chat" disabled={!selected || onStage.length < 2} onClick={() => selected && talk.beginSelect(selected.id)} className="!min-h-9 shrink-0 px-2 text-[13px]" data-talk-to>
                   {t("talk.chooseButton")}
                 </PixelButton>
               ) : undefined
             }
             extra={moments}
+            talkFirst={showTip}
             talk={
               <>
-                <TalkStrip talk={talk} cast={onStage} selectedId={selected?.id ?? null} touch={touch} idle={!compactDock} />
+                {showTip && tipView && (
+                  <TipCard
+                    view={tipView}
+                    touch={touch}
+                    onSkip={tipsActions.skip}
+                    onNewWorld={() => {
+                      tipsActions.done("makeOwn");
+                      createWorld();
+                    }}
+                    onEditCast={() => {
+                      tipsActions.done("makeOwn");
+                      router.push("/studio");
+                    }}
+                    onKeepPlaying={() => tipsActions.done("makeOwn")}
+                  />
+                )}
+                <TalkStrip talk={talk} cast={onStage} selectedId={selected?.id ?? null} touch={touch} idle={!compactDock} hint={!showTip && !tips.done.includes("talk")} />
                 <ConversationPanel talk={talk} cast={onStage} story={story} lineInProgress={lineInProgress || busy} aiMode={aiTalk} onInfo={hidePad ? () => openInfo() : undefined} />
               </>
             }
@@ -1560,7 +1674,6 @@ export default function PlayPage() {
                     <div className="absolute inset-0">{dock}</div>
                   </div>
                 </div>
-                {hintH > 0 && <p className="mt-1 truncate font-label text-[10px] uppercase leading-[14px] text-ink-mute">{t("play.keyboardHint")}</p>}
               </>
             ) : (
               <div className="flex h-full min-h-0 flex-col gap-2">
@@ -1606,6 +1719,10 @@ export default function PlayPage() {
           characterId={interactWith.id}
           name={interactName}
           unavailable={canKeep ? null : t("keepsakes.menu.demo")}
+          onTalk={onStage.length >= 2 && !talk.session ? () => {
+            setInteraction(null);
+            talk.beginSelect(interactWith.id);
+          } : null}
           onClose={() => setInteraction(null)}
           onPick={(kind) => setInteraction({ kind, characterId: interactWith.id })}
         />
@@ -1771,6 +1888,7 @@ export default function PlayPage() {
         onClose={() => {
           setPauseOpen(false);
           setResetDone(false);
+          setConfirmReset(false);
         }} title={t("play.paused")} closeLabel={t("common.close")} size="sm">
         <nav className="flex flex-col gap-3" aria-label={t("play.pauseMenu")}>
           <PixelButton variant="primary" icon="play" onClick={() => setPauseOpen(false)} data-autofocus>
@@ -1816,6 +1934,34 @@ export default function PlayPage() {
               <AutonomyFrequency value={frequency} />
             </div>
           )}
+          {isDemoWorld && !sandbox && (
+            <div className="flex flex-col gap-2 border-t-[3px] border-dashed border-line pt-3" data-demo-reset>
+              {confirmReset ? (
+                <>
+                  <p className="font-head text-base font-bold">{t("quickstart.resetTitle")}</p>
+                  <p className="text-sm text-ink-soft">{t("quickstart.resetBody")}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <PixelButton size="sm" variant="ghost" onClick={() => setConfirmReset(false)}>
+                      {t("common.keep")}
+                    </PixelButton>
+                    <PixelButton size="sm" variant="danger" icon="undo" onClick={() => void resetDemo(locale)} data-demo-reset-confirm>
+                      {t("quickstart.resetConfirm")}
+                    </PixelButton>
+                  </div>
+                </>
+              ) : (
+                <PixelButton variant="ghost" icon="undo" onClick={() => setConfirmReset(true)}>
+                  {t("quickstart.reset")}
+                </PixelButton>
+              )}
+            </div>
+          )}
+          {tips.skipped || tips.done.length > 0 ? (
+            <button type="button" onClick={tipsActions.reset} className="px-focus text-center font-label text-[10px] uppercase text-ink-soft underline decoration-dotted underline-offset-4 hover:text-ink" data-tips-again>
+              {t("tips.showAgain")}
+            </button>
+          ) : null}
+          {!touch && <p className="text-center font-label text-[10px] uppercase leading-relaxed text-ink-mute">{t("play.keyboardHint")}</p>}
           <p className="text-center text-sm text-ink-soft">{t("play.autosaveNote")}</p>
         </nav>
       </Modal>

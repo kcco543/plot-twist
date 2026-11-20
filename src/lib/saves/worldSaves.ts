@@ -245,14 +245,25 @@ export function createActiveWorldStore<T extends object>(defaults: T, normalize:
 
 // ---------------------------------------------------------------- managing worlds
 
-/** A new, empty world save (not entered yet). */
-export function createWorld(): WorldSave {
+/**
+ * A new world save (not entered yet): empty, or with a name and starting data
+ * (the demo world). Throws storage_full and changes nothing when starting data
+ * doesn't fit.
+ */
+export function createWorld(init?: { name?: string; data?: object }): WorldSave {
   const idx = getIndex();
   const now = Date.now();
   const id = makeId("world");
+  if (init?.data) {
+    try {
+      local()?.setItem(worldKey(id), JSON.stringify(init.data));
+    } catch {
+      throw new WorldSaveError("storage_full");
+    }
+  }
   const w: WorldSave = {
     id,
-    name: "",
+    name: init?.name ? cleanWorldName(init.name) : "",
     theme: null,
     number: idx.nextNumber,
     createdAt: now,
@@ -262,6 +273,7 @@ export function createWorld(): WorldSave {
     envType: "interior",
     mapId: null,
     storageKey: worldKey(id),
+    ...(init?.data ? summarize(init.data) : {}),
     // Made while signed in: it belongs to that account and is saved to the cloud.
     ...(currentAccountId() ? { owner: currentAccountId()! } : {}),
   };
@@ -287,6 +299,48 @@ export function enterWorld(id: string, href: string): boolean {
   leaving = true;
   window.location.assign(href);
   return false;
+}
+
+/**
+ * Stop playing any world in this tab and go to `href` (e.g. "/worlds" to set up
+ * a new one). Nothing is created until the player actually saves something, so
+ * looking around and leaving never leaves an empty "New World" behind. Like
+ * enterWorld, the page reloads so the previous world leaves nothing in memory.
+ */
+export function leaveWorld(href: string) {
+  const idx = getIndex();
+  if (activeWorldId() === null && idx.activeWorldId === null) return true;
+  try {
+    session()?.removeItem(SESSION_ACTIVE_KEY);
+  } catch {}
+  writeIndex({ ...idx, activeWorldId: null });
+  current = null;
+  leaving = true;
+  window.location.assign(href);
+  return false;
+}
+
+/**
+ * Start a world over from new data, keeping its id, name and place in the
+ * list (used by "Reset demo"). When it is this tab's world, later writes from
+ * the page are dropped and the caller reloads, so nothing old survives.
+ */
+export function replaceWorldData(id: string, data: object): boolean {
+  const w = findWorld(id);
+  if (!w || w.storageKey === LEGACY_SAVE_KEY) return false;
+  try {
+    local()?.setItem(w.storageKey, JSON.stringify(data));
+  } catch {
+    throw new WorldSaveError("storage_full");
+  }
+  const now = Date.now();
+  const idx = getIndex();
+  if (activeWorldId() === id) leaving = true;
+  writeIndex({ ...idx, activeWorldId: id, worlds: idx.worlds.map((x) => (x.id === id ? { ...x, ...summarize(data), updatedAt: now, lastPlayedAt: now } : x)) });
+  try {
+    session()?.setItem(SESSION_ACTIVE_KEY, id);
+  } catch {}
+  return true;
 }
 
 /** Rename a world. Only the name changes: id, theme, characters and progress are untouched. */
