@@ -8,6 +8,7 @@ import { useI18n } from "@/i18n";
 
 export type InteractionKind = "photo" | "gift";
 
+const TALK = { kind: "talk" as const, icon: "chat" as IconName, tile: "var(--color-lavender-hi)", ink: "var(--color-label)" };
 const OPTIONS: { kind: InteractionKind; icon: IconName; tile: string; ink: string }[] = [
   { kind: "photo", icon: "camera", tile: "var(--color-pink-hi)", ink: "var(--color-rose)" },
   { kind: "gift", icon: "gift", tile: "var(--color-mint-hi)", ink: "var(--color-mint-deep)" },
@@ -30,6 +31,7 @@ export function InteractionMenu({
   onPick,
   onClose,
   unavailable = null,
+  onTalk,
 }: {
   characterId: string;
   name: string;
@@ -37,13 +39,15 @@ export function InteractionMenu({
   onClose: () => void;
   /** When set, the options are shown but disabled, with this explanation. */
   unavailable?: string | null;
+  /** "Talk to…": the click / tap way to start a conversation (the alternative to dragging). Hidden when not possible. */
+  onTalk?: (() => void) | null;
 }) {
   const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   const items = useRef<(HTMLButtonElement | null)[]>([]);
   const [pos, setPos] = useState<{ left: number; top: number; side: "above" | "below"; arrowX: number } | null>(null);
-  const cb = useRef({ onClose, onPick });
-  cb.current = { onClose, onPick };
+  const cb = useRef({ onClose, onPick, onTalk });
+  cb.current = { onClose, onPick, onTalk };
 
   const sprite = useCallback(() => document.querySelector<HTMLElement>(`[data-actor="${CSS.escape(characterId)}"]`), [characterId]);
 
@@ -133,27 +137,30 @@ export function InteractionMenu({
           <PixelIcon name="heart" size={8} className="text-pink-lo" />
           <span className="truncate">{name}</span>
         </p>
-        <div className="flex gap-1.5">
-          {OPTIONS.map((o, i) => (
-            <button
-              key={o.kind}
-              ref={(el) => {
-                items.current[i] = el;
-              }}
-              type="button"
-              role="menuitem"
-              disabled={!!unavailable}
-              data-interaction={o.kind}
-              onClick={() => cb.current.onPick(o.kind)}
-              className="px-focus group flex min-h-11 min-w-[4.75rem] items-center gap-2 py-1 pr-2.5 pl-1 text-left font-head text-[15px] font-bold text-ink transition-transform duration-75 enabled:hover:-translate-y-px enabled:active:translate-y-px disabled:cursor-not-allowed disabled:text-ink-mute"
-              style={{ background: o.tile, boxShadow: `inset 0 0 0 2px ${unavailable ? "var(--color-line)" : "color-mix(in srgb, " + o.ink + " 35%, transparent)"}, inset 0 -3px 0 0 color-mix(in srgb, ${o.ink} 18%, transparent)` }}
-            >
-              <span className="grid size-8 shrink-0 place-items-center bg-surface" style={{ color: unavailable ? "var(--color-ink-mute)" : o.ink, boxShadow: "inset 0 0 0 2px var(--color-line)" }}>
-                <PixelIcon name={o.icon} size={16} />
-              </span>
-              {t(`keepsakes.menu.${o.kind}`)}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-1.5">
+          {[...(onTalk ? [TALK] : []), ...OPTIONS].map((o, i) => {
+            const off = o.kind !== "talk" && !!unavailable;
+            return (
+              <button
+                key={o.kind}
+                ref={(el) => {
+                  items.current[i] = el;
+                }}
+                type="button"
+                role="menuitem"
+                disabled={off}
+                data-interaction={o.kind}
+                onClick={() => (o.kind === "talk" ? cb.current.onTalk?.() : cb.current.onPick(o.kind))}
+                className="px-focus group flex min-h-11 min-w-[4.75rem] items-center gap-2 py-1 pr-2.5 pl-1 text-left font-head text-[15px] font-bold text-ink transition-transform duration-75 enabled:hover:-translate-y-px enabled:active:translate-y-px disabled:cursor-not-allowed disabled:text-ink-mute"
+                style={{ background: o.tile, boxShadow: `inset 0 0 0 2px ${off ? "var(--color-line)" : "color-mix(in srgb, " + o.ink + " 35%, transparent)"}, inset 0 -3px 0 0 color-mix(in srgb, ${o.ink} 18%, transparent)` }}
+              >
+                <span className="grid size-8 shrink-0 place-items-center bg-surface" style={{ color: off ? "var(--color-ink-mute)" : o.ink, boxShadow: "inset 0 0 0 2px var(--color-line)" }}>
+                  <PixelIcon name={o.icon} size={16} />
+                </span>
+                {t(`keepsakes.menu.${o.kind}`)}
+              </button>
+            );
+          })}
         </div>
         {unavailable && <p className="mt-1.5 max-w-[13rem] text-xs leading-snug text-ink-soft">{unavailable}</p>}
         {/* Pixel pointer at the character */}

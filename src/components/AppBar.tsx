@@ -11,6 +11,8 @@ import { SettingsModal } from "./SettingsModal";
 import { SyncBadge } from "./sync/SyncBadge";
 import { useI18n, type MessageKey } from "@/i18n";
 import { useOnline } from "@/lib/useOnline";
+import { useSave } from "@/lib/gameStore";
+import { useHydrated } from "@/lib/persistentStore";
 
 const STEPS: { href: string; label: MessageKey }[] = [
   { href: "/worlds", label: "nav.world" },
@@ -25,6 +27,11 @@ export function AppBar() {
   const online = useOnline();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const current = STEPS.findIndex((s) => pathname.startsWith(s.href));
+  // A step is ticked only when it is really done: a world chosen, someone in the cast,
+  // and the setting counted once both are done and the player has moved past it.
+  const save = useSave();
+  const hydrated = useHydrated();
+  const finished = [!!save.worldId, !!save.worldId && save.characters.length > 0, !!save.worldId && save.characters.length > 0 && current > 2, false];
 
   return (
     <header className="sticky top-0 z-40 border-b-2 border-line bg-surface/95 shadow-[0_4px_14px_rgba(91,74,134,0.08)] backdrop-blur-sm" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
@@ -36,7 +43,7 @@ export function AppBar() {
           <ol className="flex items-center gap-1">
             {STEPS.map((s, i) => {
               const active = i === current;
-              const done = current > i;
+              const done = hydrated && i !== current && finished[i];
               return (
                 <li key={s.href} className="flex items-center gap-1">
                   {i > 0 && (

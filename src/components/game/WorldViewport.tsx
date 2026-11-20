@@ -422,10 +422,11 @@ export function WorldViewport({
             </StageSizeContext.Provider>
           </StageViewContext.Provider>
         )}
-        {scale > 0 && hud && <div className="pointer-events-none absolute left-1.5 top-1.5 z-40 w-[min(70%,30rem)]">{hud}</div>}
-        {scale > 0 && tag && art.placeholder && <span className={`pointer-events-none absolute top-1 ${hud ? "right-1" : "left-1"} bg-white/90 px-1.5 py-0.5 font-label text-[9px] uppercase leading-none text-ink-soft`}>{tag}</span>}
+        {/* The portrait row (top left) leaves room for the camera controls (top right), so neither covers a name tag near the floor. */}
+        {scale > 0 && hud && <div className="pointer-events-none absolute left-1.5 top-1.5 z-40 w-[min(calc(100%-11.5rem),30rem)] sm:w-[min(calc(100%-15rem),30rem)]">{hud}</div>}
+        {scale > 0 && tag && art.placeholder && <span className="pointer-events-none absolute right-1.5 top-[2.9rem] z-30 bg-white/90 px-1.5 py-0.5 font-label text-[9px] uppercase leading-none text-ink-soft">{tag}</span>}
         {scale > 0 && (
-          <div data-camera-controls className="absolute bottom-1.5 right-1.5 z-40 flex items-stretch gap-1" role="group" aria-label={t("camera.controls")}>
+          <div data-camera-controls className="absolute right-1.5 top-1.5 z-40 flex items-stretch gap-1" role="group" aria-label={t("camera.controls")}>
             {following ? (
               <button type="button" onClick={goFree} title={t("camera.freeHint")} aria-label={t("camera.freeHint")} className="px-focus flex min-h-9 items-center gap-1 bg-white/90 px-2 font-label text-[10px] uppercase text-ink-soft shadow-[inset_0_-3px_0_rgb(0_0_0/0.12)]" data-camera-free>
                 <PixelIcon name="hand" size={12} />

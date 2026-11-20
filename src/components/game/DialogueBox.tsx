@@ -1,6 +1,7 @@
 "use client";
 
-import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import type { IconName } from "@/components/ui/PixelIcon";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { LoadingDots } from "@/components/ui/LoadingDots";
 import { splitTrailingSpace } from "@/lib/dialogue/typewriter";
@@ -25,6 +26,13 @@ import type { Action } from "@/lib/story/engine";
  * play in the speech bubbles on stage; this dock mirrors the same typewriter
  * (no second timer), so opening other panels never restarts it.
  */
+const ACTIONS: { id: Action; icon: IconName }[] = [
+  { id: "talk", icon: "chat" },
+  { id: "observe", icon: "eye" },
+  { id: "wait", icon: "clock" },
+  { id: "twist", icon: "star" },
+];
+
 export function DialogueBox({
   speaker,
   text,
@@ -45,6 +53,7 @@ export function DialogueBox({
   footer,
   compact = false,
   headerAction,
+  talkFirst = false,
 }: {
   speaker: string;
   text: string;
@@ -70,6 +79,8 @@ export function DialogueBox({
   extra?: ReactNode;
   /** Conversation panel or the talk strip, between the text and the actions. */
   talk?: ReactNode;
+  /** A first-time tip is showing in `talk`: it keeps its height and the text above scrolls instead. */
+  talkFirst?: boolean;
   /** Character row at the bottom. */
   footer?: ReactNode;
   /** Short window: tighter spacing. */
@@ -81,6 +92,8 @@ export function DialogueBox({
   const { shown, rest, done } = typer;
   const [head, space] = splitTrailingSpace(shown);
   const disabled = !targetName || busy || actionsDisabled;
+  const [hint, setHint] = useState<Action | null>(null);
+  const hintFor = (a: Action) => t(`playActionHints.${a}` as "playActionHints.talk", { name: targetName ?? "" });
   const more = index < total - 1;
   const scroller = useRef<HTMLDivElement>(null);
   const currentEl = useRef<HTMLDivElement>(null);
@@ -180,22 +193,36 @@ export function DialogueBox({
 
       {/* Conversation / talk strip: its own internal scroll for long choice lists */}
       {/* If even the shrunken choices don't fit (tiny windows), this area scrolls instead of overlapping. */}
-      {talk && <div className={`flex min-h-0 flex-col overflow-y-auto overscroll-contain border-t-2 border-dashed border-line ${hideActions ? "flex-1" : "shrink"}`} data-dock-talk>{talk}</div>}
+      {talk && <div className={`flex min-h-0 flex-col overflow-y-auto overscroll-contain border-t-2 border-dashed border-line ${hideActions ? "flex-1" : talkFirst ? "max-h-[70%] shrink-0" : "shrink"}`} data-dock-talk>{talk}</div>}
 
       {!hideActions && (
-        <div className="dialogue-actions panel-pad-x grid shrink-0 grid-cols-2 gap-1.5 @[17rem]:grid-cols-4 @[17rem]:[&_svg]:hidden @[17rem]:[&>button]:px-0 @[17rem]:[&>button]:text-[13px] @[24rem]:[&>button]:text-[15px] @[27rem]:[&_svg]:block">
-          <PixelButton size="sm" variant="accent" icon="chat" disabled={disabled} onClick={() => onAction("talk")} className="px-1" data-action="talk">
-            {t("play.actions.talk")}
-          </PixelButton>
-          <PixelButton size="sm" variant="magic" icon="eye" disabled={disabled} onClick={() => onAction("observe")} className="px-1" data-action="observe">
-            {t("play.actions.observe")}
-          </PixelButton>
-          <PixelButton size="sm" variant="secondary" icon="clock" disabled={disabled} onClick={() => onAction("wait")} className="px-1" data-action="wait">
-            {t("play.actions.wait")}
-          </PixelButton>
-          <PixelButton size="sm" variant="primary" icon="star" disabled={disabled} onClick={() => onAction("twist")} title={t("play.twistHint")} className="px-1" data-action="twist">
-            {t("play.actions.twist")}
-          </PixelButton>
+        <div className="relative shrink-0">
+          {/* Story actions: secondary to "Talk to…". What each one does shows on hover / focus (and as a tooltip). */}
+          <div className="dialogue-actions panel-pad-x grid grid-cols-2 gap-1.5 @[17rem]:grid-cols-4 @[17rem]:[&_svg]:hidden @[17rem]:[&>button]:px-0 @[17rem]:[&>button]:text-[13px] @[24rem]:[&>button]:text-[15px] @[27rem]:[&_svg]:block" onMouseLeave={() => setHint(null)}>
+            {ACTIONS.map(({ id, icon }) => (
+              <PixelButton
+                key={id}
+                size="sm"
+                variant="secondary"
+                icon={icon}
+                disabled={disabled}
+                onClick={() => onAction(id)}
+                onMouseEnter={() => setHint(id)}
+                onFocus={() => setHint(id)}
+                onBlur={() => setHint(null)}
+                title={hintFor(id)}
+                className="px-1"
+                data-action={id}
+              >
+                {t(`play.actions.${id}`)}
+              </PixelButton>
+            ))}
+          </div>
+          {hint && !disabled && (
+            <p className="pointer-events-none absolute inset-x-0 bottom-full mx-[var(--panel-pad-x)] mb-1 truncate bg-ink px-2 py-1 text-center text-xs text-white" aria-hidden data-action-hint>
+              {hintFor(hint)}
+            </p>
+          )}
         </div>
       )}
       {footer && <div className="shrink-0 border-t-2 border-dashed border-line">{footer}</div>}
