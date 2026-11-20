@@ -12,7 +12,7 @@ import { migrateSave, nextStepFor } from "@/lib/gameStore";
 import { useHydrated } from "@/lib/persistentStore";
 import {
   WorldSaveError,
-  createWorld,
+  leaveWorld,
   deleteWorld,
   duplicateWorld,
   enterWorld,
@@ -37,9 +37,9 @@ export const byLastPlayed = (a: WorldSave, b: WorldSave) => b.lastPlayedAt - a.l
 /** Start a brand-new world and go pick its theme. */
 export function useCreateWorld() {
   const router = useRouter();
+  // The save is made when the player picks a world type, so looking around never leaves an empty world behind.
   return () => {
-    const w = createWorld();
-    if (enterWorld(w.id, "/worlds")) router.push("/worlds");
+    if (leaveWorld("/worlds")) router.push("/worlds");
   };
 }
 

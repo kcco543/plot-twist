@@ -448,6 +448,8 @@ export type SaveData = {
    * Missing = Medium.
    */
   observation?: { frequency: import("./autonomy/frequency").Frequency };
+  /** Set only on the Quick Start demo world (src/lib/demo/demoWorld.ts). Otherwise an ordinary save. */
+  demo?: { version: number; locale: string };
 };
 
 export type TextSpeed = "slow" | "normal" | "fast" | "instant";

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MyWorlds, byLastPlayed, useContinueWorld, useCreateWorld } from "@/components/worlds/MyWorlds";
 import { useWorldName } from "@/components/worlds/worldNames";
 import { Logo } from "@/components/Logo";
@@ -15,15 +16,22 @@ import { BetaPanel } from "@/components/BetaPanel";
 import { titleArt } from "@/assets/manifest";
 import { useWorldIndex } from "@/lib/saves/worldSaves";
 import { useI18n } from "@/i18n";
+import { findDemoWorldId, playDemo } from "@/lib/demo/demoWorld";
 
 export default function TitleScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const index = useWorldIndex();
   const nameOf = useWorldName();
   const create = useCreateWorld();
   const continueWorld = useContinueWorld();
   const last = [...index.worlds].sort(byLastPlayed)[0] ?? null;
+  // Read after hydration (the save index only exists in the browser).
+  const router = useRouter();
+  const startDemo = () => {
+    if (playDemo(locale)) router.push("/play");
+  };
+  const demoId = useMemo(() => (index.worlds.length ? findDemoWorldId() : null), [index]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg">
@@ -69,11 +77,22 @@ export default function TitleScreen() {
                       {t("myWorlds.heading")}
                     </PixelLink>
                   </div>
+                  {demoId !== last.id && (
+                    <PixelButton variant="calm" size="md" icon="star" onClick={startDemo} data-play-demo>
+                      {t("quickstart.play")}
+                    </PixelButton>
+                  )}
                 </>
               ) : (
-                <PixelButton variant="primary" size="lg" icon="play" onClick={create}>
-                  {t("title.start")}
-                </PixelButton>
+                <>
+                  {/* First visit: one obvious way in. The demo needs no account, setup or AI. */}
+                  <PixelButton variant="primary" size="lg" icon="play" onClick={startDemo} data-play-demo>
+                    {t("quickstart.play")}
+                  </PixelButton>
+                  <PixelButton variant="magic" size="md" icon="plus" onClick={create}>
+                    {t("title.createOwn")}
+                  </PixelButton>
+                </>
               )}
               <PixelLink href="/library" variant="accent" size="md" icon="book">
                 {t("library.menu")}
@@ -84,10 +103,7 @@ export default function TitleScreen() {
             </nav>
           </Panel>
 
-          <p className="mt-6 animate-blink bg-surface/80 px-2 py-1 font-label text-xs uppercase text-label" aria-hidden>
-            ▶ {t("title.pressStart")}
-          </p>
-          <a href="#beta" className="mt-3 bg-surface/80 px-2 py-1 font-label text-xs uppercase text-ink underline decoration-dotted underline-offset-4">
+          <a href="#beta" className="mt-6 bg-surface/80 px-2 py-1 font-label text-xs uppercase text-ink underline decoration-dotted underline-offset-4">
             {t("beta.title")} · {t("beta.howTo")} ↓
           </a>
         </div>

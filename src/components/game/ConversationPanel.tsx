@@ -37,6 +37,7 @@ export function TalkStrip({
   selectedId,
   touch,
   idle = true,
+  hint = true,
 }: {
   talk: TalkController;
   cast: Character[];
@@ -45,6 +46,8 @@ export function TalkStrip({
   touch: boolean;
   /** Show the hint + "Talk to…" row when nothing is happening (short windows put the button in the dock header). */
   idle?: boolean;
+  /** The drag / touch explanation. Off once the player has started a conversation (or while a first-time tip says it). */
+  hint?: boolean;
 }) {
   const { t } = useI18n();
   const s = talk.session;
@@ -92,11 +95,13 @@ export function TalkStrip({
     <div className="panel-pad-x flex flex-col gap-1.5 py-1.5">
       {talk.notice && <Notice notice={talk.notice} onDismiss={talk.dismissNotice} />}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <p className="flex min-w-0 flex-1 basis-48 items-center gap-2 text-[13px] leading-snug text-ink-soft">
-          <PixelIcon name="chat" size={12} className="shrink-0 text-label" />
-          <span className="line-clamp-2 [[data-compact]_&]:line-clamp-1">{touch ? t("talk.hintTouch") : t("talk.hint")}</span>
-        </p>
-        <PixelButton size="sm" variant="calm" icon="chat" disabled={!selectedId || cast.length < 2} onClick={() => selectedId && talk.beginSelect(selectedId)} title={selectedId ? undefined : t("talk.chooseNeedsSelection")} className="shrink-0 px-2">
+        {hint && (
+          <p className="flex min-w-0 flex-1 basis-48 items-center gap-2 text-[13px] leading-snug text-ink-soft">
+            <PixelIcon name="chat" size={12} className="shrink-0 text-label" />
+            <span className="line-clamp-2 [[data-compact]_&]:line-clamp-1">{touch ? t("talk.hintTouch") : t("talk.hint")}</span>
+          </p>
+        )}
+        <PixelButton size="sm" variant="primary" icon="chat" disabled={!selectedId || cast.length < 2} onClick={() => selectedId && talk.beginSelect(selectedId)} title={selectedId ? undefined : t("talk.chooseNeedsSelection")} className="shrink-0 px-2">
           {selectedId ? `${name(selectedId)}: ${t("talk.chooseButton")}` : t("talk.chooseButton")}
         </PixelButton>
       </div>

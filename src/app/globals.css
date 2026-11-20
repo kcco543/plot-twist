@@ -151,6 +151,31 @@
 @keyframes twinkle { 0%, 60% { opacity: 1; transform: scale(1); } 61%, 80% { opacity: 0.35; transform: scale(0.6); } 81%, 100% { opacity: 1; transform: scale(1); } }
 @keyframes dots { 0% { clip-path: inset(0 100% 0 0); } 100% { clip-path: inset(0 0 0 0); } }
 
+/* First-time tips (components/onboarding/FirstTips.tsx): a ghost hand drags from one character to another,
+   and a soft pulse marks what the tip points at. Positions come in as custom properties (percent of the stage). */
+@keyframes tip-drag {
+  0% { left: var(--x0); top: var(--y0); opacity: 0; transform: translate(-30%, 0) scale(1); }
+  12% { left: var(--x0); top: var(--y0); opacity: 1; transform: translate(-30%, 0) scale(0.85); }
+  70% { left: var(--x1); top: var(--y1); opacity: 1; transform: translate(-30%, 0) scale(0.85); }
+  82% { left: var(--x1); top: var(--y1); opacity: 1; transform: translate(-30%, 0) scale(1); }
+  100% { left: var(--x1); top: var(--y1); opacity: 0; transform: translate(-30%, 0) scale(1); }
+}
+@keyframes tip-tap { 0%, 100% { transform: translate(-30%, 0) scale(1); } 40% { transform: translate(-30%, 3px) scale(0.85); } }
+@keyframes tip-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+.tip-hand { position: absolute; pointer-events: none; z-index: 30; color: var(--color-ink); filter: drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff); }
+.tip-hand.is-drag { animation: tip-drag 2.6s ease-in-out infinite; }
+.tip-hand.is-tap { animation: tip-tap 1.1s ease-in-out infinite; }
+.tip-pulse { animation: tip-pulse 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .tip-hand.is-drag { animation: none; left: var(--x0); top: var(--y0); transform: translate(-30%, 0); }
+  .tip-hand.is-tap, .tip-pulse { animation: none; }
+}
+/* Characters and objects on stage look touchable: a 1px lift and an outline in the world's accent on hover / keyboard focus. */
+.actor-hit:hover > span:not([aria-hidden]), .actor-hit:focus-visible > span:not([aria-hidden]) {
+  transform: translateY(-1px);
+  filter: drop-shadow(1px 0 0 var(--color-label)) drop-shadow(-1px 0 0 var(--color-label)) drop-shadow(0 1px 0 var(--color-label)) drop-shadow(0 -1px 0 var(--color-label));
+}
+
 /*
  * The page background comes only from the theme tokens (--color-bg,
  * --bg-pattern): the brand values here, a world skin's on world screens
